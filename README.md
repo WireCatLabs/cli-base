@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/WireCatLabs/cli-core/main/docs/images/social-preview.png" alt="The foundation for agent-ready CLIs: output for people and machines, stable exit codes, keyring, testable clocks" width="100%">
+
 # @wirecat/cli-core
 
 The parts every command line tool needs and nobody enjoys writing twice: the two output streams,
