@@ -75,7 +75,7 @@
     "./cspell": "./config/cspell.json"
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build --force",
     "typecheck": "tsc --build --force --emitDeclarationOnly && tsc -p tsconfig.test.json && tsc -p tsconfig.scripts.json",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
