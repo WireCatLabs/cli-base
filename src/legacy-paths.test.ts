@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -177,5 +178,30 @@ describe("lsofHolders", () => {
       throw Object.assign(new Error("spawn /usr/sbin/lsof ENOENT"), { code: "ENOENT" })
     }
     expect(() => lsofHolders(["/d"], missing)).toThrow(/could not check whether a process has files open in \/d/)
+  })
+})
+
+describe.runIf(process.platform === "darwin")("on a real Mac", () => {
+  const options = { appName: "tg-cli", prefix: "TG" }
+
+  it("moves the folders, asking the real lsof first", () => {
+    const { HOME, old } = darwinHome()
+    seed(old.state)
+
+    expect(migrateLegacyMacPaths({ ...options, env: { HOME } })).toHaveLength(1)
+    expect(readFileSync(join(HOME, ".local/share/tg-cli/wirecat.db"), "utf8")).toBe("rows")
+  })
+
+  it("refuses while another process holds a file open there", async () => {
+    const { HOME, old } = darwinHome()
+    seed(old.state)
+    const holder = spawn("tail", ["-f", join(old.state, "wirecat.db")], { stdio: "ignore" })
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      expect(() => migrateLegacyMacPaths({ ...options, env: { HOME } })).toThrow(new RegExp(`pid ${holder.pid}`))
+      expect(existsSync(join(old.state, "wirecat.db"))).toBe(true)
+    } finally {
+      holder.kill()
+    }
   })
 })
