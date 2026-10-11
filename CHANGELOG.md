@@ -1,12 +1,24 @@
 # Changelog
 
-Notable changes to `@wirecat/cli-core`, one section per version, newest
+Notable changes to `@wirecat/cli-base` (published as `@wirecat/cli-core` up to 0.20.0), one section per version, newest
 first. Versions follow [semantic versioning](https://semver.org/); before `1.0.0` a minor release may change
 the API.
-Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-core/tags).
+Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-base/tags).
 
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
+
+## 0.21.0 — 11.10.2026
+
+### Changed — may break callers
+
+- **The package is now `@wirecat/cli-base`, and the repository `WireCatLabs/cli-base`.** The code is the same as
+  0.20.0. Change every `@wirecat/cli-core` import, `extends` (`biome.json`, `tsconfig*.json`), lefthook,
+  cspell, rumdl and vale path, and every `uses: WireCatLabs/cli-core/.github/workflows/…` to `cli-base`. The
+  name `@wirecat/cli-core` is not deprecated: the messenger layer, now `@wirecat/cli-messaging`, takes it over
+  in a later release, with versions above 0.24x, so a pin such as `>=0.20.0 <0.21.0` never crosses over. The
+  code generator's default imports are now `@wirecat/cli-base/codegen` and `/codegen/runtime`; pass
+  `coreImport` and `runtimeImport` to keep the old ones.
 
 ## 0.20.0 — 11.10.2026
 

@@ -1,6 +1,6 @@
 # Architecture
 
-`cli-core` is the part of a command line tool that is not about any one service: the two output
+`cli-base` is the part of a command line tool that is not about any one service: the two output
 streams, the renderer, the error model and exit codes, the keyring and credentials, config and
 paths, clocks, retry, and — behind their own entry points — HTTP, the command registry, completion,
 self-update and code generation. What each export does is the table in the
@@ -10,7 +10,7 @@ self-update and code generation. What each export does is the table in the
 
 | Import | Owns | Depends on |
 |---|---|---|
-| `@wirecat/cli-core` | streams, renderer, pretty, errors, exit codes, keyring, credentials, config, paths, logging, retry, time, sanitize, field projection, output buffering, deadlines | `pino`, `cli-table3`, `picocolors`; `@napi-rs/keyring` loaded on first use |
+| `@wirecat/cli-base` | streams, renderer, pretty, errors, exit codes, keyring, credentials, config, paths, logging, retry, time, sanitize, field projection, output buffering, deadlines | `pino`, `cli-table3`, `picocolors`; `@napi-rs/keyring` loaded on first use |
 | `/http` | status → error code, `Retry-After` and rate-limit parsing, the `fetch` seam | the root's `ErrorCode` and `WallClock` types |
 | `/commands` | the command tree as data (`describeProgram`, `annotate`, `flatten`), and the reference page written from it (`commandsPage`) | Commander, as a type only |
 | `/completion` | shell completion over that tree | `/commands` types |
@@ -32,7 +32,7 @@ Two more things ship that are not imports:
   CLI used to copy. It reads and writes the repository it is run in and never the network.
 - **[`config/`](../../config)**: the tsconfig, Biome and lefthook bases a CLI extends, exported as
   `./tsconfig.base.json`, `./tsconfig.test.json`, `./tsconfig.scripts.json`, `./biome` and
-  `./lefthook.yml`. cli-core extends them itself, so its own checks exercise them. The reusable CI
+  `./lefthook.yml`. cli-base extends them itself, so its own checks exercise them. The reusable CI
   workflow, [`.github/workflows/node-ci.yml`](../../.github/workflows/node-ci.yml), is not in the
   package; a repository calls it from GitHub.
 
@@ -48,7 +48,7 @@ and makes the keyring unreachable from a test ([`TESTING.md`](TESTING.md)). The 
 `new Credentials({...})` without `keyring` is the owner's real keychain, and `resolvePaths` without
 `env` reads `process.env`.
 
-**cli-core logs nothing and prints nothing by itself.** It hands a host a `Logger` interface, a Pino
+**cli-base logs nothing and prints nothing by itself.** It hands a host a `Logger` interface, a Pino
 adapter and a renderer; what is written, and where, is the host's call.
 
 ## Portable command control
@@ -82,7 +82,7 @@ Each consumer's pin is in its `package.json`; a caret on `0.x` does not cross a 
 exact in effect. **A release reaches nobody until each consumer bumps its pin.**
 
 ⚠ **cli-messaging carries its own copy** under `dependencies`. When a CLI and the cli-messaging it
-pins use different cli-core versions, both are installed, and `isCliError()` — an `instanceof` check —
+pins use different cli-base versions, both are installed, and `isCliError()` — an `instanceof` check —
 does not recognise a `CliError` made by the other copy. Bump cli-messaging together with the CLIs.
 
 ## How a change is published and picked up
@@ -94,4 +94,4 @@ does not recognise a `CliError` made by the other copy. Bump cli-messaging toget
    [`release.yml`](../../.github/workflows/release.yml), which runs every check, publishes through
    npm's trusted publishing and tags `v<version>`.
 3. In each consumer, raise the pin in `package.json` and run its suite — cli-messaging first, since
-   max-cli and tg-cli also get cli-core through it.
+   max-cli and tg-cli also get cli-base through it.

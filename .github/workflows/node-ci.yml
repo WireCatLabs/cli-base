@@ -2,7 +2,7 @@
 #
 #   jobs:
 #     ci:
-#       uses: WireCatLabs/cli-core/.github/workflows/node-ci.yml@<tag or sha>
+#       uses: WireCatLabs/cli-base/.github/workflows/node-ci.yml@<tag or sha>
 #       with:
 #         checks: |
 #           pnpm docs:check

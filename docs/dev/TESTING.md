@@ -43,7 +43,7 @@ file, including the next one:
   prompt). Keep `get` first in that test: without the sandbox it fails there, before `set` and
   `delete` can write anything.
 
-No `*_CONFIG_DIR` is set: cli-core has no app name of its own, and every test that resolves paths
+No `*_CONFIG_DIR` is set: cli-base has no app name of its own, and every test that resolves paths
 passes `env` explicitly.
 
 ## No test waits for real

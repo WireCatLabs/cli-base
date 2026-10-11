@@ -122,7 +122,7 @@ export const probeStdio = async (
     await request(1, "initialize", {
       protocolVersion: "2025-11-25",
       capabilities: {},
-      clientInfo: { name: "cli-core-mcp-doctor", version: "1" },
+      clientInfo: { name: "cli-base-mcp-doctor", version: "1" },
     })
     child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`)
     const result = await request(2, "tools/list", {})
