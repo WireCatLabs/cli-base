@@ -115,7 +115,7 @@ export const mayNotify = ({
 const updateState = v.object({
   checkedAt: v.number(),
   latest: v.optional(v.string()),
-  /** When the skill hint (`cli-core/skill`) was last shown — the other daily notice kept in this file. */
+  /** When the skill hint (`cli-base/skill`) was last shown — the other daily notice kept in this file. */
   skillHintAt: v.optional(v.number()),
 })
 export type UpdateState = v.InferOutput<typeof updateState>

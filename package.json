@@ -1,12 +1,12 @@
 {
-  "name": "@wirecat/cli-core",
-  "version": "0.20.0",
+  "name": "@wirecat/cli-base",
+  "version": "0.21.0",
   "description": "The parts every command line tool needs: output modes, terminal rendering, error model, exit codes, credentials, clocks",
   "license": "Apache-2.0",
   "author": "Viacheslav Ptsarev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/WireCatLabs/cli-core.git"
+    "url": "git+https://github.com/WireCatLabs/cli-base.git"
   },
   "type": "module",
   "engines": {

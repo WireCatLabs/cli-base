@@ -1,5 +1,5 @@
 /**
- * `cli-dev`: the development scripts every CLI on cli-core used to carry a copy of. Each command
+ * `cli-dev`: the development scripts every CLI on cli-base used to carry a copy of. Each command
  * reads and writes under `cwd` and reports through `out` and `err`; `main` returns the exit code.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs"

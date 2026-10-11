@@ -1,4 +1,4 @@
-# cli-core — working rules
+# cli-base — working rules
 
 The shared layer under max-cli, cli-messaging, tg-cli and brazecli. **A change here reaches four
 tools at their next bump**, so read [`docs/dev/ARCHITECTURE.md`](docs/dev/ARCHITECTURE.md) before
