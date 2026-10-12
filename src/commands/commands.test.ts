@@ -8,6 +8,7 @@ import {
   describeProgram,
   flatten,
   metaOf,
+  refuseJoinedPath,
 } from "./index.js"
 
 const program = (): Command => {
@@ -218,5 +219,28 @@ describe("commandsPage", () => {
     })
     expect(piped).toContain("| `--order <recent\\|name>` | a\\|b \\~\\~x\\~\\~. |")
     expect(piped).toContain("| `0` | получилось |")
+  })
+})
+
+describe("refuseJoinedPath", () => {
+  const check =
+    (...args: string[]) =>
+    () =>
+      refuseJoinedPath(program(), args)
+
+  it("names the words to type when a command path came as one argument", () => {
+    expect(check("messages list", "--help")).toThrow(
+      expect.objectContaining({
+        code: "validation_error",
+        message: '"messages list" was given as one argument; run: tool messages list',
+      }),
+    )
+    expect(check("messages", "list 42")).toThrow(/run: tool messages list 42/)
+  })
+
+  it("leaves separate words, a quoted value and an unknown word to the parser", () => {
+    expect(check("messages", "list", "--help")).not.toThrow()
+    expect(check("messages", "send", "42", "hello there")).not.toThrow()
+    expect(check("work chats", "list")).not.toThrow()
   })
 })

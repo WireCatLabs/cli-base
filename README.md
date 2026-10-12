@@ -49,7 +49,7 @@ streams.stderr // []
 | `logging` | a Pino adapter writing JSON lines with secrets redacted by field name; a file that cannot be written is reported to `onError`, never thrown |
 | `retry` | full-jitter backoff, and the distinction between "no answer came" and "safe to repeat" |
 | `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock` |
-| `/commands` | the command registry: `describeProgram`, `annotate`, `flatten` — see below |
+| `/commands` | the command registry: `describeProgram`, `annotate`, `flatten`, `refuseJoinedPath` — see below |
 | `/completion` | shell completion over the registry: `suggest`, `formatSuggestions` — see below |
 | `/update` | keeping an install current: `installerOf`, `updateCommand`, `latestVersion`, `mayNotify`, `updateNotice`, `runUpdate` — see below |
 | `/codegen` | build time: an official API description → types, Valibot schemas, an operation manifest and a coverage page — see below |
@@ -111,6 +111,11 @@ describeProgram(program) // [{ path: ["send"], usage, origin, mutates, options: 
 Each option says whether it `takesValue` and, separately, whether it is `mandatory` — not
 Commander's `required`, which means "takes a value when given" — plus its choices, default,
 environment variable, the options it `conflicts` with and the values it `implies`.
+
+`refuseJoinedPath(program, args)` throws a `validation_error` when a command path arrived as one
+argument (`"projects add" --help`, what a zsh loop over `$c` passes), naming the words to type.
+Commander would print the root help instead; call it on the words before `parseAsync`, after a
+leading profile word if the CLI takes one.
 
 **Shell completion is `@wirecat/cli-base/completion`**, built on the registry. `suggest` takes the
 words typed so far and answers what may come next: a command, an action, an option, one of its

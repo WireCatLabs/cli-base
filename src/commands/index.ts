@@ -10,6 +10,7 @@
  * root of this package stays free of any command-line framework.
  */
 import type { Argument, Command, Option } from "commander"
+import { CliError } from "../errors.js"
 
 export type Origin = "handwritten" | "generated"
 export type CommandState = "beta" | "deprecated"
@@ -158,3 +159,26 @@ export {
   type CommandsPageText,
   commandsPage,
 } from "./page.js"
+
+/**
+ * Refuses a command path that arrived as one argument — `"projects add" --help`, what a zsh loop over
+ * `$c` passes. Commander settles `--help` for an unknown word before any hook runs and prints the root
+ * help, so the words are checked before parsing. Pass the words after a leading profile, if any.
+ */
+export const refuseJoinedPath = (root: Command, args: readonly string[]): void => {
+  let command = root
+  const path: string[] = []
+  for (const arg of args) {
+    if (arg.startsWith("-")) return
+    const [first = "", ...rest] = arg.trim().split(/\s+/)
+    const next = command.commands.find((child) => child.name() === first || child.aliases().includes(first))
+    if (next === undefined) return
+    if (rest.length > 0)
+      throw new CliError(
+        "validation_error",
+        `"${arg}" was given as one argument; run: ${[root.name(), ...path, first, ...rest].join(" ")}`,
+      )
+    path.push(first)
+    command = next
+  }
+}
