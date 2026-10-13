@@ -83,8 +83,9 @@ Each consumer's pin is in its `package.json`; a caret on `0.x` does not cross a 
 exact in effect. **A release reaches nobody until each consumer bumps its pin.**
 
 ⚠ **cli-messaging carries its own copy** under `dependencies`. When a CLI and the cli-messaging it
-pins use different cli-base versions, both are installed, and `isCliError()` — an `instanceof` check —
-does not recognise a `CliError` made by the other copy. Bump cli-messaging together with the CLIs.
+pins use different cli-base versions, both are installed. `isCliError()` checks a `Symbol.for` brand, so
+copies from 0.22.0 on recognise each other; an older copy has no brand, which is why `errorObjectOf` also
+accepts a `CliError` by name and code. Bump cli-messaging together with the CLIs.
 
 ## How a change is published and picked up
 

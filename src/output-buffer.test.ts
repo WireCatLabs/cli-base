@@ -20,7 +20,7 @@ describe("portable output buffering", () => {
     expect(() => buffer.data("é")).toThrow(
       expect.objectContaining({
         code: "invalid_response",
-        details: expect.objectContaining({ reason: "output_limit", bufferedBytes: 2, partialOutput: false }),
+        details: expect.objectContaining({ reason: "output.too-large", bufferedBytes: 2, partialOutput: false }),
       }),
     )
     buffer.discard()

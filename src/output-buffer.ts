@@ -52,7 +52,7 @@ export const createOutputBuffer = ({
         } catch (error) {
           if (isCliError(error)) throw error
           throw new CliError("invalid_response", "field projection requires complete JSON values or JSONL lines", {
-            reason: "projection_unavailable",
+            reason: "output.fields-unavailable",
             retryable: false,
           })
         }
@@ -60,7 +60,7 @@ export const createOutputBuffer = ({
       const size = Buffer.byteLength(result)
       if (!Number.isSafeInteger(bytes + size) || (maxOutputBytes !== 0 && bytes + size > maxOutputBytes))
         throw new CliError("invalid_response", "output exceeds the configured byte limit", {
-          reason: "output_limit",
+          reason: "output.too-large",
           maxBytes: maxOutputBytes,
           bufferedBytes: bytes,
           retryable: false,

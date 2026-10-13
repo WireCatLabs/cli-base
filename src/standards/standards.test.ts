@@ -135,6 +135,7 @@ describe("errors registry", () => {
     const error = { code: "not_found", reason: "chat.unknown", message: "no chat 42", param: "chat", runId: "r1" }
     expect(v.is(errorObjectSchema, { error })).toBe(true)
     expect(v.is(errorObjectSchema, { error: { ...error, code: "generic_failure" } })).toBe(false)
+    expect(v.is(errorObjectSchema, { error: { ...error, code: "internal_error", runId: undefined } })).toBe(true)
   })
 
   it("refuses a reason whose message names a detail it does not declare", () => {

@@ -17,9 +17,28 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   hands it to a function, so a log written to stderr gets the same record. The event becomes `attributes`;
   `body` is the message when given, else the event's `event` name. Lines are appended synchronously, so an exit
   never drops the tail.
+- **One failure handler: `errorObjectOf`, `renderError`, `errorRecordOf`, `mcpErrorResult`, `catchCrashes`.**
+  Any thrown value becomes the one error object `{ error: { code, reason, message, param?, details?, next?,
+  runId? } }`. The reason comes from `details.reason` when the package registered it, else from the code's
+  base reason (`BASE_REASONS`, one per code). Only the reason's detail keys and `COMMON_DETAILS` survive;
+  `cause` never does. The next step is chosen by the reason's `step`, never by the message text. A person sees
+  `✗ message`, one `→ next step` line and `details: <cli> runs show <runId>`; `--debug` callers pass the
+  record from `errorRecordOf` instead, the only place a cause or stack is shown. The CLI's machine output and
+  MCP's `structuredContent` are the same value. `catchCrashes` reports a throw before a CLI's own handler.
+- **`CRASH_CODE` (`internal_error`) and `CRASH_REASON` (`command.crashed`)** for a failure that is not a
+  `CliError`: exit 1, a fixed message — the thrown text never reaches the user. It stays outside `errorCodes`,
+  so no command can raise it.
+- `CliErrorDetails` names `reason` and `param`.
+- `FailureContext.details`: detail keys a package allows on every reason until each is registered on its own.
 
 ### Changed — may break callers
 
+- **`errorObjectSchema.runId` is optional** until every CLI keeps a run for each failure.
+- **Reasons cli-base raises are dotted and registered:** `command_timeout` → `command.timed-out`,
+  `output_limit` → `output.too-large`, `projection_unavailable` → `output.fields-unavailable`. A script that
+  matched the old strings has to switch.
+- The handler also recognises a `CliError` from a cli-base copy older than 0.22.0 by name and code, since
+  those carry no brand.
 - **Redaction applies at every depth, arrays included.** It used to stop two levels down.
 
 ### Removed
