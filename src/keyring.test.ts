@@ -37,8 +37,8 @@ describe("brokenKeyring", () => {
 
 describe("systemKeyring", () => {
   it("cannot reach the real keychain from a test", () => {
-    expect(() => systemKeyring.get("cli-core-test", "default")).toThrow(/real OS keyring/)
-    expect(() => systemKeyring.set("cli-core-test", "default", "x")).toThrow(/real OS keyring/)
-    expect(() => systemKeyring.delete("cli-core-test", "default")).toThrow(/real OS keyring/)
+    expect(() => systemKeyring.get("cli-base-test", "default")).toThrow(/real OS keyring/)
+    expect(() => systemKeyring.set("cli-base-test", "default", "x")).toThrow(/real OS keyring/)
+    expect(() => systemKeyring.delete("cli-base-test", "default")).toThrow(/real OS keyring/)
   })
 })

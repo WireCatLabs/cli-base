@@ -6,7 +6,7 @@ import { Credentials, keyringService } from "./credentials.js"
 import { CliError } from "./errors.js"
 import { brokenKeyring, memoryKeyring } from "./keyring.js"
 
-const dir = () => mkdtempSync(join(tmpdir(), "cli-core-creds-"))
+const dir = () => mkdtempSync(join(tmpdir(), "cli-base-creds-"))
 const make = (options: Partial<ConstructorParameters<typeof Credentials>[0]> = {}) =>
   new Credentials({
     configDir: dir(),

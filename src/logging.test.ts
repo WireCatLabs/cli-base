@@ -7,7 +7,7 @@ import type { Logger } from "./logger.js"
 import { createRecordLog, type RecordLogOptions } from "./logging.js"
 import { logRecordSchema } from "./standards/log.js"
 
-const logFile = () => join(mkdtempSync(join(tmpdir(), "cli-core-log-")), "events.jsonl")
+const logFile = () => join(mkdtempSync(join(tmpdir(), "cli-base-log-")), "events.jsonl")
 
 const base = {
   runId: "20261013T080000Z-chats-list-a81f2c",
@@ -101,7 +101,7 @@ describe("createRecordLog", () => {
 
   it("survives a file it cannot write, and says so once", () => {
     const errors: Error[] = []
-    const path = join(mkdtempSync(join(tmpdir(), "cli-core-log-")), "gone", "events.jsonl")
+    const path = join(mkdtempSync(join(tmpdir(), "cli-base-log-")), "gone", "events.jsonl")
     const log = createRecordLog({ ...base, to: path, onError: (error) => errors.push(error) })
 
     log.info({ event: "first" })

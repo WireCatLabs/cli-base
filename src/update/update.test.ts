@@ -120,7 +120,7 @@ describe("the check's state", () => {
     for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true })
   })
   const file = () => {
-    const dir = mkdtempSync(join(tmpdir(), "cli-core-update-"))
+    const dir = mkdtempSync(join(tmpdir(), "cli-base-update-"))
     dirs.push(dir)
     return join(dir, "state", "update-check.json")
   }
@@ -185,7 +185,7 @@ describe("updateNotice", () => {
     packageName: "@wirecat/tool",
     command: "tool",
     version: "1.0.0",
-    statePath: join(mkdtempSync(join(tmpdir(), "cli-core-notice-")), "update-check.json"),
+    statePath: join(mkdtempSync(join(tmpdir(), "cli-base-notice-")), "update-check.json"),
     fetch: npm("1.1.0"),
     format: "pretty",
     stderrIsTTY: true,

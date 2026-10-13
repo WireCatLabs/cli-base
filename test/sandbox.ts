@@ -17,7 +17,7 @@ import { afterAll } from "vitest"
  * token lives there. `keyring.ts` loads `@napi-rs/keyring` through `createRequire`, which vitest's
  * `vi.mock` does not intercept, so the stand-in goes into the CommonJS require cache instead.
  */
-const sandbox = mkdtempSync(join(tmpdir(), "cli-core-test-"))
+const sandbox = mkdtempSync(join(tmpdir(), "cli-base-test-"))
 process.env.TMPDIR = sandbox
 
 export const REAL_KEYRING_REACHED = "a test reached the real OS keyring — pass memoryKeyring() instead"
