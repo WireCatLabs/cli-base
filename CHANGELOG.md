@@ -12,6 +12,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- The `passage` view names a cited transcript anchor with bounded surrounding lines. Evidence budgets `--bytes` / `--max-read-bytes` and `--expected-fingerprint` are registered; the existing `--before-n` / `--after-n` counts also describe transcript lines.
+
 - **The verb `rebuild`**: compute again, from what the store already holds, what the tool derives from it, keeping
   the owner's decisions. cli-messaging's `mentions rebuild` (phones, e-mail and links found in stored text) is
   the first command to use it.

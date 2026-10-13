@@ -240,6 +240,7 @@ const views: [string, string][] = [
   ["official", "the view the messenger itself computed, under stats"],
   ["transcript", "the text of speech: a voice message or a meeting recording"],
   ["evidence", "the stored messages or lines a result or a reference rests on"],
+  ["passage", "a cited transcript line with bounded surrounding lines from the same revision"],
 ]
 
 const roots: [string, string][] = [
@@ -258,6 +259,29 @@ const roots: [string, string][] = [
 ]
 
 const flags: Vocabulary["flags"] = [
+  {
+    name: "--bytes",
+    value: "<n>",
+    role: "budget",
+    type: "count",
+    meaning: "at most this many bytes of included evidence content",
+    unit: "bytes",
+  },
+  {
+    name: "--max-read-bytes",
+    value: "<bytes>",
+    role: "budget",
+    type: "count",
+    meaning: "at most this many stored text bytes read for one bounded evidence window",
+    unit: "bytes",
+  },
+  {
+    name: "--expected-fingerprint",
+    value: "<hash>",
+    role: "target",
+    type: "string",
+    meaning: "require the selected evidence anchor to match this previously read fingerprint",
+  },
   { name: "--limit", value: "<n>", role: "paging", type: "count", meaning: "how many items", unit: "items" },
   {
     name: "--page",
@@ -299,16 +323,16 @@ const flags: Vocabulary["flags"] = [
     value: "<n>",
     role: "output",
     type: "count",
-    meaning: "how many messages before it",
-    unit: "messages",
+    meaning: "how many messages or transcript lines before it",
+    unit: "items",
   },
   {
     name: "--after-n",
     value: "<n>",
     role: "output",
     type: "count",
-    meaning: "how many messages after it",
-    unit: "messages",
+    meaning: "how many messages or transcript lines after it",
+    unit: "items",
   },
   { name: "--timeout", value: "<duration>", role: "budget", type: "duration", meaning: "give up after this long" },
   {
