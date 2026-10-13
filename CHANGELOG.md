@@ -30,6 +30,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   so no command can raise it.
 - `CliErrorDetails` names `reason` and `param`.
 - `FailureContext.details`: detail keys a package allows on every reason until each is registered on its own.
+- **Two `cli-dev lint` rules for help examples**, ported from the Azure CLI linter. `command-example-count`: every
+  handwritten leaf has one to three `examples`. `faulty-help-example-parameters`: each example starts with the
+  tool, may name a profile, runs the exact command path, gives the arguments that command takes and only its own,
+  its parents' and the global options. The check reads `commands --json`, so it needs no live Commander tree.
+  Generated commands are exempt: their examples would restate the API they mirror.
+- **Vocabulary for drive, memo and zm.** Verb `run`; resources `files`, `comments`, `meetings`, `recordings`,
+  `jobs`, `actions`, `aliases` and the singular `vocabulary`; views `transcript` and `evidence`; root `api`; flag
+  `--until-time <time>`.
 
 ### Changed â€” may break callers
 
@@ -39,6 +47,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   matched the old strings has to switch.
 - The handler also recognises a `CliError` from a cli-base copy older than 0.22.0 by name and code, since
   those carry no brand.
+- **`unknown-verb` accepts `search <resource>`.** A leaf under `search` (`search messages`, `bot search messages`)
+  passes when its name is a resource noun or `all`, as STANDARD's search hierarchy places it. A CLI that adopts
+  this must delete the now-stale baseline entries and overrides, and runs the two example rules for the first
+  time: `--write-baseline` records the examples it still lacks.
 - **Redaction applies at every depth, arrays included.** It used to stop two levels down.
 
 ### Removed

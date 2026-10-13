@@ -133,6 +133,7 @@ const verbs: [string, string][] = [
   ["reject", "the owner refuses what an agent proposed"],
   ["move", "move a file in the source"],
   ["copy", "copy a file in the source"],
+  ["run", "run a saved job once, now, as its timer would"],
 ]
 
 const replaces: Record<string, string[]> = {
@@ -178,6 +179,13 @@ const collections: [string, string][] = [
   ["facts", "what happened, with evidence"],
   ["memories", "what an agent concluded, with evidence and scope"],
   ["relationships", "confirmed or suggested links between people, organizations and projects"],
+  ["files", "files in the source, such as Google Drive, read and changed there"],
+  ["comments", "comments people left on a thing in the source: a channel post or a file"],
+  ["meetings", "stored meetings, from Zoom or another provider"],
+  ["recordings", "the files a provider recorded of a meeting"],
+  ["jobs", "work this tool runs in the background or on a timer"],
+  ["actions", "what an agent proposes to do; the owner confirms or rejects each"],
+  ["aliases", "other names of one thing"],
 ]
 
 const singulars: [string, string][] = [
@@ -189,6 +197,7 @@ const singulars: [string, string][] = [
   ["skill", "the agent skill file of this tool"],
   ["cache", "max's per-profile cache"],
   ["flood", "what the messenger told this profile to hold off on"],
+  ["vocabulary", "the owner's catalogue of canonical names, with their aliases"],
 ]
 
 const views: [string, string][] = [
@@ -201,6 +210,8 @@ const views: [string, string][] = [
   ["history", "past uses of a thing"],
   ["top", "a ranked view under stats"],
   ["official", "the view the messenger itself computed, under stats"],
+  ["transcript", "the text of speech: a voice message or a meeting recording"],
+  ["evidence", "the stored messages or lines a result or a reference rests on"],
 ]
 
 const roots: [string, string][] = [
@@ -216,6 +227,7 @@ const roots: [string, string][] = [
   ["bot", "the profile's bot account"],
   ["stats", "statistics"],
   ["search", "searches across resources"],
+  ["api", "the source's own API, one command per operation"],
 ]
 
 const flags: Vocabulary["flags"] = [
@@ -234,6 +246,7 @@ const flags: Vocabulary["flags"] = [
   { name: "--before-time", value: "<time>", type: "time", meaning: "read what came before this time" },
   { name: "--after-time", value: "<time>", type: "time", meaning: "read what came after this time" },
   { name: "--since-time", value: "<time>", type: "time", meaning: "only what came since this time" },
+  { name: "--until-time", value: "<time>", type: "time", meaning: "only what came up to and including this time" },
   { name: "--at-time", value: "<time>", type: "time", meaning: "do it at this time" },
   { name: "--before-n", value: "<n>", type: "count", meaning: "how many messages before it", unit: "messages" },
   { name: "--after-n", value: "<n>", type: "count", meaning: "how many messages after it", unit: "messages" },

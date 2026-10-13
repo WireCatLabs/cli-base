@@ -25,7 +25,8 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     id: "unknown-verb",
     severity: "high",
     scope: "command",
-    summary: "a command's last word is a verb or view noun from the vocabulary; a top-level one may be a root word",
+    summary:
+      "a command's last word is a verb or view noun from the vocabulary; a top-level one may be a root word; under search, a resource or all",
   },
   {
     id: "unknown-resource",
@@ -45,6 +46,18 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     severity: "low",
     scope: "command",
     summary: "a summary is at most 80 characters",
+  },
+  {
+    id: "command-example-count",
+    severity: "medium",
+    scope: "command",
+    summary: "a leaf command has one to three examples; generated commands are exempt",
+  },
+  {
+    id: "faulty-help-example-parameters",
+    severity: "high",
+    scope: "command",
+    summary: "an example starts with the tool, runs its own command, and gives only arguments and options it takes",
   },
   { id: "missing-argument-help", severity: "high", scope: "argument", summary: "every argument is described" },
   { id: "missing-option-help", severity: "high", scope: "option", summary: "every option is described" },

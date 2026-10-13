@@ -7,15 +7,19 @@ import { commandsDocument } from "../commands/document.js"
 import { annotate } from "../commands/index.js"
 import { LINT_RULES } from "../standards/lint.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
-import { judge, lintCommands, lintRuleIds } from "./lint.js"
+import { exampleWords, judge, lintCommands, lintRuleIds } from "./lint.js"
 import { type DevIo, main } from "./main.js"
 
 const clean = (): Command => {
   const root = new Command("tool").description("a tool").option("--json", "print JSON")
   const chats = root.command("chats").description("chats in the messenger")
-  chats.command("list").description("list chats").option("--limit <n>", "how many chats")
-  chats.command("show").description("show one chat").argument("<chat>", "chat id or name")
-  root.command("doctor").description("check this machine")
+  annotate(chats.command("list").description("list chats").option("--limit <n>", "how many chats"), {
+    examples: ["tool chats list", "tool work chats list --limit=5 --json"],
+  })
+  annotate(chats.command("show").description("show one chat").argument("<chat>", "chat id or name"), {
+    examples: ["tool work chats show 'Kai Sample'"],
+  })
+  annotate(root.command("doctor").description("check this machine"), { examples: ["tool doctor"] })
   const bot = root.command("bot").description("the bot account")
   annotate(bot.command("getMe").description(""), { origin: "generated" })
   return root
@@ -24,34 +28,33 @@ const clean = (): Command => {
 const lintOf = (root: Command) =>
   lintCommands(commandsDocument(root, { cli: "tool", version: "1.0.0", contract: 0 }), VOCABULARY)
 
+const chatsOf = (root: Command): Command => root.commands.find((one) => one.name() === "chats") ?? root
+
 const failing: Record<string, (root: Command) => void> = {
   "unknown-verb": (root) =>
-    root.commands
-      .find((one) => one.name() === "chats")
-      ?.command("grab")
-      .description("grab a chat"),
+    annotate(chatsOf(root).command("grab").description("grab a chat"), { examples: ["tool chats grab"] }),
   "unknown-resource": (root) =>
-    root.command("metadata").description("chat metadata").command("list").description("list it"),
+    annotate(root.command("metadata").description("chat metadata").command("list").description("list it"), {
+      examples: ["tool metadata list"],
+    }),
   "flag-two-meanings": (root) =>
-    root.commands
-      .find((one) => one.name() === "chats")
-      ?.command("export")
-      .description("export")
-      .option("--limit <time>", "until"),
-  "missing-command-help": (root) => root.commands.find((one) => one.name() === "chats")?.command("delete"),
-  "command-help-too-long": (root) => root.command("inbox").description("x".repeat(81)),
+    annotate(chatsOf(root).command("export").description("export").option("--limit <time>", "until"), {
+      examples: ["tool chats export --limit 2h"],
+    }),
+  "missing-command-help": (root) => annotate(chatsOf(root).command("delete"), { examples: ["tool chats delete"] }),
+  "command-help-too-long": (root) =>
+    annotate(root.command("inbox").description("x".repeat(81)), { examples: ["tool inbox"] }),
+  "command-example-count": (root) => root.command("review").description("go through what needs you"),
+  "faulty-help-example-parameters": (root) =>
+    annotate(root.command("watch").description("follow new events"), { examples: ["tool watch --follow"] }),
   "missing-argument-help": (root) =>
-    root.commands
-      .find((one) => one.name() === "chats")
-      ?.command("leave")
-      .description("leave a chat")
-      .argument("<chat>"),
+    annotate(chatsOf(root).command("leave").description("leave a chat").argument("<chat>"), {
+      examples: ["tool chats leave 42"],
+    }),
   "missing-option-help": (root) =>
-    root.commands
-      .find((one) => one.name() === "chats")
-      ?.command("clear")
-      .description("empty a chat")
-      .option("--all"),
+    annotate(chatsOf(root).command("clear").description("empty a chat").option("--all"), {
+      examples: ["tool chats clear --all"],
+    }),
 }
 
 describe("lint rules", () => {
@@ -75,6 +78,78 @@ describe("lint rules", () => {
       const fresh = lintOf(root).filter((found) => !before.has(`${found.rule} ${found.target}`))
       expect(fresh.map((found) => found.rule)).toEqual([rule])
     })
+
+  it("passes a resource or all under search, at the root or under bot, and nothing else there", () => {
+    const root = clean()
+    const search = root.command("search").description("searches across resources")
+    const botSearch = root.commands
+      .find((one) => one.name() === "bot")
+      ?.command("search")
+      .description("bot searches")
+    for (const [group, name] of [
+      [search, "messages"],
+      [search, "all"],
+      [search, "grab"],
+      [botSearch, "messages"],
+    ] as const)
+      annotate(group?.command(name).description(`search ${name}`) ?? root, { examples: [`tool search ${name}`] })
+    expect(lintOf(root).filter((found) => found.rule === "unknown-verb")).toEqual([
+      { rule: "unknown-verb", target: "search grab", message: '"grab" is not a verb or view noun in the vocabulary' },
+    ])
+  })
+
+  it("says why an example would not parse", () => {
+    const root = clean()
+    const add = (path: string, ...examples: string[]) => {
+      const [group, name] = path.split(" ")
+      const parent = root.commands.find((one) => one.name() === group) ?? root.command(group ?? "")
+      annotate(
+        parent
+          .command(name ?? "")
+          .description("x")
+          .argument("<chat>", "a chat")
+          .option("--at-time <time>", "when"),
+        {
+          examples,
+        },
+      )
+    }
+    add(
+      "chats pin",
+      "other chats pin 1",
+      "tool chats pin",
+      "tool chats pin 1 2",
+      "tool chats pin 1 --at-time",
+      "tool chats pin 1 -x",
+      "tool a b chats pin 1",
+      "tool chats pin -- -1 --at-time=now --json",
+    )
+    expect(
+      lintOf(root)
+        .filter((found) => found.rule === "faulty-help-example-parameters")
+        .map((found) => `${found.target} => ${found.message}`),
+    ).toEqual([
+      'chats pin: other chats pin 1 => does not start with "tool"',
+      "chats pin: tool a b chats pin 1 => does not run chats pin",
+      "chats pin: tool chats pin => chats pin needs 1 argument(s); the example gives 0",
+      "chats pin: tool chats pin -- -1 --at-time=now --json => chats pin takes 1 argument(s); the example gives 3",
+      "chats pin: tool chats pin 1 --at-time => --at-time needs a value",
+      "chats pin: tool chats pin 1 -x => chats pin has no option -x",
+      "chats pin: tool chats pin 1 2 => chats pin takes 1 argument(s); the example gives 2",
+    ])
+  })
+
+  it("splits an example as a shell would", () => {
+    expect(exampleWords(`memo context telegram:'Kai Sample' --body '{"a":1}' "say \\"hi\\"" a\\ b`)).toEqual([
+      "memo",
+      "context",
+      "telegram:Kai Sample",
+      "--body",
+      '{"a":1}',
+      'say "hi"',
+      "a b",
+    ])
+  })
 
   it("says a group named with a verb is named with a verb", () => {
     const root = clean()
