@@ -130,6 +130,10 @@ const verbs: [string, string][] = [
   ["backup", "copy a file somewhere safe"],
   ["restore", "put a backup back in its place"],
   ["repair", "bring a file's tables to this build's shape without deleting anything"],
+  [
+    "rebuild",
+    "compute again, from what the store already holds, what the tool derives from it, keeping the owner's decisions",
+  ],
   ["link", "record that two identities are one person"],
   ["unlink", "undo a link"],
   ["lookup", "ask the messenger who is behind a phone number"],
@@ -194,7 +198,10 @@ const collections: [string, string][] = [
   ["notes", "text the owner writes, or files from a notes folder"],
   ["projects", "the owner's work units with a task key"],
   ["organizations", "companies, teams, families or communities"],
-  ["identities", "accounts of a person in one messenger or mailbox"],
+  [
+    "identities",
+    "ways to reach a person or an organization: an account in one messenger or mailbox, an e-mail address, a phone",
+  ],
   ["facts", "what happened, with evidence"],
   ["memories", "what an agent concluded, with evidence and scope"],
   ["relationships", "confirmed or suggested links between people, organizations and projects"],
@@ -205,6 +212,7 @@ const collections: [string, string][] = [
   ["jobs", "work this tool runs in the background or on a timer"],
   ["actions", "what an agent proposes to do; the owner confirms or rejects each"],
   ["aliases", "other names of one thing"],
+  ["mentions", "phones, e-mail addresses, links and documents found in stored text, each where it was written"],
 ]
 
 const singulars: [string, string][] = [
