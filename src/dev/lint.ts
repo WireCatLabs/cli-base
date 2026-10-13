@@ -26,18 +26,19 @@ const SEARCH_EVERYTHING = "all"
 
 const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 
-const walk = (commands: readonly CommandInfo[]): CommandInfo[] =>
+export const walk = (commands: readonly CommandInfo[]): CommandInfo[] =>
   commands.flatMap((one) => [one, ...walk(one.commands)])
 
-const longName = (flags: string): string => flags.split(/[ ,|]+/).find((part) => part.startsWith("--")) ?? flags
+export const longName = (flags: string): string => flags.split(/[ ,|]+/).find((part) => part.startsWith("--")) ?? flags
 
 /** A flag's kind of value: its value name, or `switch`. Two kinds under one name are two meanings. */
-const kindOf = (option: OptionInfo): string => {
+export const kindOf = (option: OptionInfo): string => {
   if (!option.takes_value) return "switch"
   return option.flags.match(/[<[]([^>\]]+)[>\]]/)?.[1]?.toLowerCase() ?? "value"
 }
 
-const summaryOf = (command: CommandInfo): string => (command.summary ?? command.description.split("\n")[0] ?? "").trim()
+export const summaryOf = (command: CommandInfo): string =>
+  (command.summary ?? command.description.split("\n")[0] ?? "").trim()
 
 const label = (command: CommandInfo): string => command.path.join(" ")
 

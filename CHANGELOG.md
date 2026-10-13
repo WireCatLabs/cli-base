@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`cli-dev audit`**: two or more CLIs, from their `commands --json`, against every lint rule and against each other
+  — required roots, the same contract on a shared path, the same meaning for a flag, one schema per output entity, one
+  name per failure. It prints a scorecard (a table, or the list envelope with `--json`) and fails on a finding the
+  baseline in `audit/baseline/` does not hold. `/standards` adds `AUDIT_RULES`, `PARITY_GROUPS`, `REQUIRED_ROOTS` and
+  `AUDIT_BLOCKS`, the switch that makes a new cross-CLI divergence fail a release (`"new"`, today) or only show
+  (`"never"`). A weekly workflow audits the five latest published CLIs and rewrites one pinned issue.
+
 ## 0.27.0 — 14.10.2026
 
 ### Changed — may break callers

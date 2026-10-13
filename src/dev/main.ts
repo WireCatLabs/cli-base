@@ -2,6 +2,7 @@
  * `cli-dev`: the development scripts every CLI on cli-base used to carry a copy of. Each command
  * reads and writes under `cwd` and reports through `out` and `err`; `main` returns the exit code.
  */
+import { randomUUID } from "node:crypto"
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { isAbsolute, join } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -19,6 +20,8 @@ import {
   structureProblems,
   versionScript,
 } from "../release/index.js"
+import { AUDIT_BLOCKS, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
+import { defineReasons } from "../standards/errors.js"
 import {
   baselineProblems,
   baselineSchema,
@@ -30,6 +33,7 @@ import {
 } from "../standards/lint.js"
 import { issuesOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
+import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { baselineOf, judge, lintCommands } from "./lint.js"
 import { nextVersion } from "./next-version.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
@@ -58,7 +62,16 @@ const USAGE = `usage: cli-dev <command> [options]
                                        new violation, a stale baseline entry or override, or more
                                        overrides than the budget (10). --write-baseline rewrites
                                        lint/baseline/<rule>.json to today's violations. --schemas
-                                       is a JSON object of the CLI's own JSON Schemas by name`
+                                       is a JSON object of the CLI's own JSON Schemas by name
+  audit (--cli <bin> | --commands <file>)... [--schemas <cli>=<file>]... [--reasons <cli>=<file>]...
+        [--lint <cli>=<dir>]... [--baseline <dir>] [--for <cli>] [--json] [--write-baseline]
+                                       several CLIs against every lint rule and against each other:
+                                       required roots, same path same contract, same flag same
+                                       meaning, same entity same schema, same failure same reason.
+                                       Prints the scorecard; fails on a new finding (one naming
+                                       --for's CLI, when given). --lint judges that CLI's lint
+                                       rules by its own lint/ folder; the rest by --baseline
+                                       (audit/baseline)`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -169,6 +182,18 @@ const commandsJson = (io: DevIo, cli: string | undefined, file: string | undefin
   return JSON.parse(String(run.stdout))
 }
 
+const readBaseline = (dir: string, label: string, problems: string[]) => {
+  const baseline: Record<string, string[]> = {}
+  if (existsSync(dir))
+    for (const file of readdirSync(dir).filter((name) => name.endsWith(".json"))) {
+      const read = v.safeParse(baselineSchema, readJson(join(dir, file)))
+      const found = read.success ? baselineProblems(read.output) : issuesOf(read.issues)
+      if (read.success) baseline[file.slice(0, -".json".length)] = read.output
+      problems.push(...found.map((issue) => `${label}/${file}: ${issue}`))
+    }
+  return baseline
+}
+
 const lint = (args: string[], io: DevIo) => {
   try {
     return lintRun(args, io)
@@ -226,14 +251,7 @@ const lintRun = (args: string[], io: DevIo) => {
     problems.push(...found.map((issue) => `${values.overrides}: ${issue}`))
   }
   const baselineDir = join(io.cwd, values.baseline)
-  const baseline: Record<string, string[]> = {}
-  if (existsSync(baselineDir))
-    for (const file of readdirSync(baselineDir).filter((name) => name.endsWith(".json"))) {
-      const read = v.safeParse(baselineSchema, readJson(join(baselineDir, file)))
-      const found = read.success ? baselineProblems(read.output) : issuesOf(read.issues)
-      if (read.success) baseline[file.slice(0, -".json".length)] = read.output
-      problems.push(...found.map((issue) => `${values.baseline}/${file}: ${issue}`))
-    }
+  const baseline = readBaseline(baselineDir, values.baseline, problems)
 
   const schemas = values.schemas === undefined ? undefined : readJson(join(io.cwd, values.schemas))
   if (schemas !== undefined && (typeof schemas !== "object" || schemas === null || Array.isArray(schemas))) {
@@ -275,6 +293,136 @@ const lintRun = (args: string[], io: DevIo) => {
   return report(io, problems, "lint: ok")
 }
 
+const byCli = (pairs: readonly string[] | undefined, flag: string): Map<string, string> =>
+  new Map(
+    (pairs ?? []).map((pair) => {
+      const [cli, path] = pair.split(/=(.*)/s)
+      if (!cli || !path) throw new Error(`${flag} takes <cli>=<path>, not "${pair}"`)
+      return [cli, path]
+    }),
+  )
+
+const audit = (args: string[], io: DevIo) => {
+  try {
+    return auditRun(args, io)
+  } catch (error) {
+    io.err((error as Error).message)
+    return 2
+  }
+}
+
+const auditRun = (args: string[], io: DevIo) => {
+  const started = Date.now()
+  const { values } = parseArgs({
+    args,
+    options: {
+      cli: { type: "string", multiple: true },
+      commands: { type: "string", multiple: true },
+      schemas: { type: "string", multiple: true },
+      reasons: { type: "string", multiple: true },
+      lint: { type: "string", multiple: true },
+      baseline: { type: "string", default: "audit/baseline" },
+      for: { type: "string" },
+      json: { type: "boolean", default: false },
+      "write-baseline": { type: "boolean", default: false },
+    },
+  })
+  const raws = [
+    ...(values.cli ?? []).map((bin) => commandsJson(io, bin, undefined)),
+    ...(values.commands ?? []).map((file) => commandsJson(io, undefined, file)),
+  ]
+  if (raws.length < 2) {
+    io.err("audit needs two or more CLIs: --cli <bin> or --commands <file>, repeated")
+    return 2
+  }
+  const at = (path: string) => (isAbsolute(path) ? path : join(io.cwd, path))
+  const schemas = byCli(values.schemas, "--schemas")
+  const reasons = byCli(values.reasons, "--reasons")
+  const lintDirs = byCli(values.lint, "--lint")
+  const problems: string[] = []
+
+  const inputs = raws.map((raw): AuditInput => {
+    const parsed = parseCommandsDocument(snakeKeys(raw))
+    if (!parsed.document)
+      throw new Error(
+        `a commands document is not the shape cli-base's commandsDocument() writes: ${parsed.problems[0]}`,
+      )
+    const cli = parsed.document.cli
+    const input: AuditInput = { document: parsed.document, raw }
+    const schemaFile = schemas.get(cli)
+    if (schemaFile) input.schemas = readJson(at(schemaFile)) as Record<string, unknown>
+    const reasonFile = reasons.get(cli)
+    if (reasonFile) input.reasons = defineReasons(readJson(at(reasonFile)))
+    const dir = lintDirs.get(cli)
+    if (dir) {
+      const overridesPath = join(at(dir), "overrides.json")
+      let overrides: Override[] = []
+      if (existsSync(overridesPath)) {
+        const read = v.safeParse(overridesSchema, readJson(overridesPath))
+        if (read.success) overrides = read.output
+        else problems.push(...issuesOf(read.issues).map((issue) => `${dir}/overrides.json: ${issue}`))
+      }
+      input.lint = {
+        baseline: readBaseline(join(at(dir), "baseline"), `${dir}/baseline`, problems),
+        overrides,
+        budget: OVERRIDE_BUDGET,
+      }
+    }
+    return input
+  })
+  const given = new Set(inputs.map((input) => input.document.cli))
+  for (const [flag, map] of [
+    ["--schemas", schemas],
+    ["--reasons", reasons],
+    ["--lint", lintDirs],
+  ] as const)
+    for (const cli of map.keys()) if (!given.has(cli)) problems.push(`${flag} names ${cli}, which is not audited`)
+  if (values.for !== undefined && !given.has(values.for))
+    problems.push(`--for names ${values.for}, which is not audited`)
+
+  const baselineDir = at(values.baseline)
+  const baseline = readBaseline(baselineDir, values.baseline, problems)
+  const result = auditClis(inputs, {
+    groups: PARITY_GROUPS,
+    roots: REQUIRED_ROOTS,
+    vocabulary: VOCABULARY,
+    baseline,
+    blocks: AUDIT_BLOCKS,
+    only: values.for,
+  })
+  problems.push(...result.problems)
+
+  if (values["write-baseline"]) {
+    mkdirSync(baselineDir, { recursive: true })
+    for (const [rule, targets] of Object.entries(result.nextBaseline)) {
+      const path = join(baselineDir, `${rule}.json`)
+      if (targets.length > 0) writeFileSync(path, `${JSON.stringify(targets, null, 2)}\n`)
+      else rmSync(path, { force: true })
+    }
+    io.err(`audit: wrote ${values.baseline}`)
+    for (const problem of problems) io.err(problem)
+    return problems.length > 0 ? 1 : 0
+  }
+
+  if (values.json)
+    io.out(
+      JSON.stringify({
+        items: result.rows,
+        page: { limit: Math.max(result.rows.length, 1), has_more: false },
+        meta: { run_id: randomUUID(), duration_ms: Date.now() - started },
+      }),
+    )
+  else io.out(scorecardTable(result.rows))
+  for (const finding of result.blocking) problems.push(`new  ${finding.rule}  ${finding.target}: ${finding.message}`)
+  io.err(
+    `audit: ${inputs.length} CLIs, ${result.findings.length} findings, ${result.blocking.length} new that block${
+      AUDIT_BLOCKS === "never" ? " (cross-CLI divergences do not block)" : ""
+    }`,
+  )
+  for (const problem of problems) io.err(problem)
+  return problems.length > 0 ? 1 : 0
+}
+
 export const main = async (argv: readonly string[], io: DevIo): Promise<number> => {
   const [command, ...args] = argv
   switch (command) {
@@ -310,6 +458,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       return testMatrix(args, io)
     case "lint":
       return lint(args, io)
+    case "audit":
+      return audit(args, io)
     case "help":
     case "--help":
     case "-h":

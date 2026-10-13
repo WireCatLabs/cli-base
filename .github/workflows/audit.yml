@@ -1,0 +1,87 @@
+name: Weekly CLI audit
+
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm build
+      # A CLI that starts moves the store under HOME; every CLI run here gets a throwaway one.
+      - name: Audit the five latest published CLIs
+        run: |
+          scratch=$(mktemp -d)
+          export HOME="$scratch/home" MESSAGING_STORE="$scratch/store" WIRECAT_STATE_DIR="$scratch/state"
+          mkdir -p "$HOME"
+          npm install -g --prefix "$scratch/prefix" --ignore-scripts --no-audit --no-fund \
+            @wirecat/tg-cli @wirecat/max-cli @wirecat/cli-memo @wirecat/drive-cli @wirecat/zoom-cli
+          bin="$scratch/prefix/bin"
+          for cli in tg max memo drive zm; do
+            printf '%s ' "$cli $("$bin/$cli" --version)" >> "$RUNNER_TEMP/versions.txt"
+          done
+          status=0
+          node dist/dev/bin.js audit --cli "$bin/tg" --cli "$bin/max" --cli "$bin/memo" --cli "$bin/drive" \
+            --cli "$bin/zm" > "$RUNNER_TEMP/scorecard.txt" 2> "$RUNNER_TEMP/findings.txt" || status=$?
+          echo "$status" > "$RUNNER_TEMP/status.txt"
+          cat "$RUNNER_TEMP/scorecard.txt" "$RUNNER_TEMP/findings.txt"
+          [ "$status" -le 1 ]
+      - name: Update the pinned scorecard issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          status=$(cat "$RUNNER_TEMP/status.txt")
+          verdict="nothing new against audit/baseline"
+          [ "$status" = 0 ] || verdict="new findings or problems — see below"
+          {
+            echo "Scorecard of \`cli-dev audit\` over the latest published CLIs, rewritten every week."
+            echo
+            echo "- **When:** $(date -u +%Y-%m-%d) — [run]($RUN_URL)"
+            echo "- **Versions:** $(cat "$RUNNER_TEMP/versions.txt")"
+            echo "- **Verdict:** $verdict"
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/scorecard.txt"
+            echo '```'
+            echo
+            echo "<details><summary>New findings and problems (first 200 lines)</summary>"
+            echo
+            echo '```text'
+            head -n 200 "$RUNNER_TEMP/findings.txt"
+            echo '```'
+            echo
+            echo "</details>"
+          } > "$RUNNER_TEMP/body.md"
+          gh label create cli-audit --color 5319e7 --description "The weekly cross-CLI scorecard" --force
+          number=$(gh issue list --label cli-audit --state open --json number --jq '.[0].number')
+          if [ -z "$number" ]; then
+            url=$(gh issue create --title "CLI audit scorecard" --label cli-audit --body-file "$RUNNER_TEMP/body.md")
+            number=${url##*/}
+            gh issue pin "$number"
+          else
+            gh issue edit "$number" --body-file "$RUNNER_TEMP/body.md"
+          fi
