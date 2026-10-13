@@ -19,6 +19,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ### Added
 
+- **116 more vocabulary flags with a role**, from the flags tg, max, memo, drive, zoom and cli-messaging share:
+  output (`--json`, `--jsonl`, `--fields`, `--brief`, `--full`, `--quiet`, …), sort (`--measure`, `--score`,
+  `--newest`, `--order`, `--weights`), mode, action, budget (`--max-*` with their units), target and value rows.
+  `option-role` drops in every app: memo 244 → 141, drive 66 → 56, max 562 → 317, tg 576 → 329, zoom 157 → 106,
+  cli-messaging's chat app 366 → 151; no other rule rises. Filter flags get no row: they become query fields.
+  Regenerate cli-messaging's STANDARD flag table and shrink each app's `option-role` baseline at the next bump.
 - **`queryAstSchema` and `queryNodeSchema`** in `/query`: the tree's valibot schema, so a caller validates an `ast`
   it receives instead of keeping its own. `key-casing` checks it as the base schema `query_ast`.
 
