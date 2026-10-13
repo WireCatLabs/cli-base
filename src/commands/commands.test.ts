@@ -263,7 +263,7 @@ describe("commands document", () => {
       "commands",
       "exitCodes",
     ])
-    expect(document.exitCodes).toMatchObject({ ok: 0, generic_failure: 1, validation_error: 2 })
+    expect(document.exitCodes).toMatchObject({ ok: 0, internal_error: 1, validation_error: 2 })
     expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
   })
 

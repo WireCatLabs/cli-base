@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`commands --json` names exit code 1 `internal_error`**, the code a crash reports, in place of
+  `generic_failure`. A reader that looked the key up by its old name reads `internal_error`.
+
+### Added
+
+- **`--debug` in the vocabulary:** on failure, show the full error record, cause and stack.
+
 ## 0.23.0 — 13.10.2026
 
 ### Added
