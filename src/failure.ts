@@ -72,7 +72,7 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
         code: CRASH_CODE,
         reason: reason.reason,
         message: reason.message,
-        ...(context.runId ? { runId: context.runId } : {}),
+        ...(context.runId ? { run_id: context.runId } : {}),
       },
     }
   }
@@ -84,7 +84,7 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
     Object.entries(details).filter(([key, value]) => allowed.has(key) && value !== undefined),
   )
   const next = nextFor(reason, details, context.steps ?? [])
-  const runId = context.runId ?? (typeof details.runId === "string" ? details.runId : undefined)
+  const runId = context.runId ?? (typeof details.run_id === "string" ? details.run_id : undefined)
   return {
     error: {
       code,
@@ -93,7 +93,7 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
       ...(typeof details.param === "string" ? { param: details.param } : {}),
       ...(Object.keys(kept).length > 0 ? { details: kept } : {}),
       ...(next.length > 0 ? { next } : {}),
-      ...(runId ? { runId } : {}),
+      ...(runId ? { run_id: runId } : {}),
     },
   }
 }
@@ -101,7 +101,7 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
 export const exitCodeOfError = ({ error }: ErrorObject): number =>
   error.code === CRASH_CODE ? GENERIC_FAILURE : EXIT_CODES[error.code]
 
-const kebab = (name: string) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
+const kebab = (name: string) => name.replaceAll("_", "-")
 
 const commandLine = (cli: string, step: NextStep): string =>
   [
@@ -120,7 +120,7 @@ export interface ErrorRecordOptions {
   time?: Date
 }
 
-export type ErrorRecord = Omit<LogRecord, "runId"> & { runId?: string }
+export type ErrorRecord = Omit<LogRecord, "run_id"> & { run_id?: string }
 
 const STACK_FRAMES = 10
 
@@ -137,13 +137,15 @@ export const errorRecordOf = (failure: unknown, object: ErrorObject, options: Er
     time: (options.time ?? new Date()).toISOString(),
     severity: "error",
     body: object.error.message,
-    ...(object.error.runId ? { runId: object.error.runId } : {}),
+    ...(object.error.run_id ? { run_id: object.error.run_id } : {}),
     command: options.command,
     attributes: {
       code: object.error.code,
       reason: object.error.reason,
       ...(Object.keys(details).length > 0 ? { details } : {}),
-      ...(thrown ? { name: thrown.name, thrownMessage: visibleControls(thrown.message) } : { thrown: String(failure) }),
+      ...(thrown
+        ? { name: thrown.name, thrown_message: visibleControls(thrown.message) }
+        : { thrown: String(failure) }),
       ...(reason === undefined
         ? {}
         : { cause: visibleControls(reason instanceof Error ? reason.message : String(reason)) }),
@@ -165,7 +167,7 @@ export interface RenderErrorOptions {
 export const renderError = (object: ErrorObject, options: RenderErrorOptions): string => {
   if (!options.interactive)
     return [JSON.stringify(object), ...(options.record ? [JSON.stringify(options.record)] : [])].join("\n")
-  const { message, next, runId } = object.error
+  const { message, next, run_id: runId } = object.error
   const step = next?.[0]
   return [
     `✗ ${visibleControls(message)}`,

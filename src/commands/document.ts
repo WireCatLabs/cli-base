@@ -16,7 +16,7 @@ const argumentInfoSchema = v.object({
 const optionInfoSchema = v.object({
   flags: v.string(),
   description: v.string(),
-  takesValue: v.boolean(),
+  takes_value: v.boolean(),
   mandatory: v.boolean(),
   choices: v.optional(v.array(v.string())),
   default: v.optional(v.unknown()),
@@ -32,7 +32,7 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   description: v.string(),
   usage: v.string(),
   origin: v.picklist(["handwritten", "generated"]),
-  operationId: v.optional(v.string()),
+  operation_id: v.optional(v.string()),
   mutates: v.optional(v.boolean()),
   local: v.optional(v.boolean()),
   state: v.optional(v.picklist(["beta", "deprecated"])),
@@ -43,7 +43,7 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
 })
 
 /**
- * What `<cli> commands --json` prints, in every CLI on cli-base. `scope` and `inheritedOptions` are
+ * What `<cli> commands --json` prints, in every CLI on cli-base. `scope` and `inherited_options` are
  * there only when one command path was asked for. Nothing else at the top: `cli-dev lint` refuses it.
  */
 export const commandsDocumentSchema = v.strictObject({
@@ -52,11 +52,11 @@ export const commandsDocumentSchema = v.strictObject({
   /** The major version of the JSON the CLI's commands print. */
   contract: v.pipe(v.number(), v.integer(), v.minValue(0)),
   description: v.string(),
-  globalOptions: v.array(optionInfoSchema),
+  global_options: v.array(optionInfoSchema),
   scope: v.optional(v.array(v.string())),
-  inheritedOptions: v.optional(v.array(v.object({ path: v.array(v.string()), options: v.array(optionInfoSchema) }))),
+  inherited_options: v.optional(v.array(v.object({ path: v.array(v.string()), options: v.array(optionInfoSchema) }))),
   commands: v.array(commandInfoSchema),
-  exitCodes: v.record(v.string(), v.pipe(v.number(), v.integer())),
+  exit_codes: v.record(v.string(), v.pipe(v.number(), v.integer())),
 })
 
 export interface CommandsDocument {
@@ -64,11 +64,11 @@ export interface CommandsDocument {
   version: string
   contract: number
   description: string
-  globalOptions: OptionInfo[]
+  global_options: OptionInfo[]
   scope?: string[]
-  inheritedOptions?: { path: string[]; options: OptionInfo[] }[]
+  inherited_options?: { path: string[]; options: OptionInfo[] }[]
   commands: CommandInfo[]
-  exitCodes: Record<string, number>
+  exit_codes: Record<string, number>
 }
 
 export const commandsDocumentJsonSchema = () => jsonSchemaOf(commandsDocumentSchema, { command: commandInfoSchema })
@@ -86,13 +86,13 @@ export interface CommandsDocumentAbout {
   contract: number
 }
 
-/** The whole tree; a CLI that answers `commands <path>` adds `scope` and `inheritedOptions` itself. */
+/** The whole tree; a CLI that answers `commands <path>` adds `scope` and `inherited_options` itself. */
 export const commandsDocument = (root: Command, about: CommandsDocumentAbout): CommandsDocument => ({
   cli: about.cli,
   version: about.version,
   contract: about.contract,
   description: root.description(),
-  globalOptions: describeOptions(root),
+  global_options: describeOptions(root),
   commands: describeProgram(root),
-  exitCodes: { ok: 0, internal_error: GENERIC_FAILURE, ...EXIT_CODES },
+  exit_codes: { ok: 0, internal_error: GENERIC_FAILURE, ...EXIT_CODES },
 })

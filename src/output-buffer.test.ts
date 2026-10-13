@@ -20,7 +20,7 @@ describe("portable output buffering", () => {
     expect(() => buffer.data("é")).toThrow(
       expect.objectContaining({
         code: "invalid_response",
-        details: expect.objectContaining({ reason: "output.too-large", bufferedBytes: 2, partialOutput: false }),
+        details: expect.objectContaining({ reason: "output.too-large", buffered_bytes: 2, partial_output: false }),
       }),
     )
     buffer.discard()
@@ -41,11 +41,11 @@ describe("portable output buffering", () => {
   })
   it("projects each complete JSONL line and rejects fragmented JSON before buffering", () => {
     const buffer = createOutputBuffer({ format: "jsonl", fields: "id" })
-    buffer.data('{"id":1,"text":"Example"}\n{"id":2,"operationId":"example","text":"Example"}\n')
+    buffer.data('{"id":1,"text":"Example"}\n{"id":2,"operation_id":"example","text":"Example"}\n')
     buffer.data('{"id":3}')
     const output: string[] = []
     buffer.flush((text) => output.push(text))
-    expect(output.join("")).toBe('{"id":1}\n{"id":2,"operationId":"example"}\n{"id":3}')
+    expect(output.join("")).toBe('{"id":1}\n{"id":2,"operation_id":"example"}\n{"id":3}')
     for (const format of ["json", "jsonl"] as const) {
       const broken = createOutputBuffer({ format, fields: "id" })
       expect(() => broken.data('{"id":')).toThrow(expect.objectContaining({ code: "invalid_response" }))

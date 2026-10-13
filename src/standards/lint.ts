@@ -7,7 +7,7 @@ const lintRuleSchema = v.strictObject({
   id: word,
   severity: v.picklist(LINT_SEVERITIES),
   /** What the rule looks at; a violation's target names one of these. */
-  scope: v.picklist(["command", "group", "argument", "option", "flag"]),
+  scope: v.picklist(["command", "group", "argument", "option", "flag", "key"]),
   summary: text,
 })
 
@@ -61,6 +61,12 @@ export const LINT_RULES: LintRule[] = defineLintRules([
   },
   { id: "missing-argument-help", severity: "high", scope: "argument", summary: "every argument is described" },
   { id: "missing-option-help", severity: "high", scope: "option", summary: "every option is described" },
+  {
+    id: "key-casing",
+    severity: "high",
+    scope: "key",
+    summary: "every key of a registered JSON Schema and of the commands document is snake_case",
+  },
 ])
 
 /** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */

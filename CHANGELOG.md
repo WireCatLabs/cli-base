@@ -8,6 +8,31 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **Every JSON key the standard defines is snake_case.** The envelope: `page.has_more`, `meta.run_id`,
+  `meta.duration_ms`. The error object: `error.run_id`; error details `retry_after_ms`, `request_id`,
+  `timeout_ms`, `max_bytes`, `buffered_bytes`, `partial_output`. The log record: `run_id`, and `trace_id` as
+  OpenTelemetry spells it for JSON log lines; `thrown_message` in an error record's attributes.
+  `commands --json`: `global_options`, `inherited_options`, `exit_codes`, `takes_value`, `operation_id`, and
+  `implies` keyed by long flag (`--refresh`) instead of Commander's attribute name. One casing for every key, so
+  an agent never guesses. Reasons' `details`, step argument names and `{placeholders}` must now be snake_case,
+  or `defineReasons` and `defineSteps` throw at start-up; `annotate` takes `operation_id`; `projectFields` keeps
+  `operation_id` and `send_id`. Bump your `contract`.
+- **The field rule `camel-case` is now `snake-case`**, and a duration key ends in `_ms`.
+
+### Added
+
+- **`cli-dev lint` checks key casing.** The new rule `key-casing` fails on a key that is not snake_case in
+  cli-base's schemas, the commands document as the CLI printed it, and the schemas given with
+  `--schemas <file>`. A CLI with camelCase keys left baselines them with `--write-baseline`.
+
+### Security
+
+- **Log redaction also hides `refresh_token` and `verify_code`**, so snake_case events are covered.
+
 ## 0.24.0 — 13.10.2026
 
 ### Changed — may break callers

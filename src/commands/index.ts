@@ -18,7 +18,7 @@ export type CommandState = "beta" | "deprecated"
 export interface CommandMeta {
   origin?: Origin
   /** The catalog operation a generated command was made from. */
-  operationId?: string
+  operation_id?: string
   /** True when running the command changes something: a write, wherever it lands. */
   mutates?: boolean
   /** With `mutates`: what it changes is only on this machine — a file, the keyring — never the service. */
@@ -40,7 +40,7 @@ export interface OptionInfo {
   flags: string
   description: string
   /** False for a plain switch like `--json`, so an agent knows not to look for a value. */
-  takesValue: boolean
+  takes_value: boolean
   /**
    * Whether the option itself must be given. Deliberately not Commander's `required`, which means
    * "takes a value when present" — reading that as "you must pass this" is the obvious misreading.
@@ -51,7 +51,7 @@ export interface OptionInfo {
   env?: string
   /** Options that may not be given together with this one. */
   conflicts?: readonly string[]
-  /** Values this option sets on others when they are not given. */
+  /** Values this option sets on others when they are not given, by long flag. */
   implies?: Readonly<Record<string, unknown>>
 }
 
@@ -63,7 +63,7 @@ export interface CommandInfo {
   description: string
   usage: string
   origin: Origin
-  operationId?: string
+  operation_id?: string
   mutates?: boolean
   local?: boolean
   state?: CommandState
@@ -137,18 +137,27 @@ const describeArgument = (argument: Argument): ArgumentInfo => ({
 // Commander 15 keeps these on every option but leaves them out of its type declarations.
 type Related = { conflictsWith?: string[]; implied?: Record<string, unknown> }
 
+// Commander keys `implies` by attribute name (`dryRun`); the document names the flag, as everywhere else.
+const impliesOf = (implied: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(implied).map(([name, value]) => [
+      `--${name.replace(/[A-Z]/g, (l) => `-${l.toLowerCase()}`)}`,
+      value,
+    ]),
+  )
+
 const describeOption = (option: Option): OptionInfo => {
   const { conflictsWith = [], implied } = option as Option & Related
   return {
     flags: option.flags,
     description: option.description,
-    takesValue: option.required || option.optional,
+    takes_value: option.required || option.optional,
     mandatory: option.mandatory,
     ...(option.argChoices ? { choices: option.argChoices } : {}),
     ...(option.defaultValue === undefined ? {} : { default: option.defaultValue }),
     ...(option.envVar ? { env: option.envVar } : {}),
     ...(conflictsWith.length > 0 ? { conflicts: conflictsWith } : {}),
-    ...(implied ? { implies: implied } : {}),
+    ...(implied ? { implies: impliesOf(implied) } : {}),
   }
 }
 

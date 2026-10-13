@@ -85,7 +85,7 @@ describe("portable command deadlines", () => {
     finish()
     await expect(running).rejects.toMatchObject({
       code: "timeout",
-      details: { reason: "command.timed-out", timeoutMs: 20 },
+      details: { reason: "command.timed-out", timeout_ms: 20 },
     })
     expect(timer.sleep).toHaveBeenCalledWith(20, expect.any(AbortSignal), "timeout")
     deadline.dispose()
@@ -186,7 +186,7 @@ it("a zero deadline aborts synchronously with the real sleep default and never i
   const body = vi.fn(async () => "body ran")
   try {
     expect(deadline.signal.aborted).toBe(true)
-    await expect(deadline.race(body)).rejects.toMatchObject({ code: "timeout", details: { timeoutMs: 0 } })
+    await expect(deadline.race(body)).rejects.toMatchObject({ code: "timeout", details: { timeout_ms: 0 } })
     expect(body).not.toHaveBeenCalled()
   } finally {
     deadline.dispose()

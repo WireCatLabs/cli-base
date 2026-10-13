@@ -53,10 +53,12 @@ const USAGE = `usage: cli-dev <command> [options]
   test-matrix --program <module> --untested <module> --name <cli> [--page <path>] [--check]
                                        docs/dev/test-matrix.md from coverage/argv.jsonl
   lint (--cli <bin> | --commands <file>) [--baseline <dir>] [--overrides <file>] [--budget <n>]
-       [--write-baseline]              the command tree against the standard's rules; fails on a
+       [--schemas <file>] [--write-baseline]
+                                       the command tree against the standard's rules; fails on a
                                        new violation, a stale baseline entry or override, or more
                                        overrides than the budget (10). --write-baseline rewrites
-                                       lint/baseline/<rule>.json to today's violations`
+                                       lint/baseline/<rule>.json to today's violations. --schemas
+                                       is a JSON object of the CLI's own JSON Schemas by name`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -185,6 +187,7 @@ const lintRun = (args: string[], io: DevIo) => {
       baseline: { type: "string", default: "lint/baseline" },
       overrides: { type: "string", default: "lint/overrides.json" },
       budget: { type: "string", default: String(OVERRIDE_BUDGET) },
+      schemas: { type: "string" },
       "write-baseline": { type: "boolean", default: false },
     },
   })
@@ -232,7 +235,15 @@ const lintRun = (args: string[], io: DevIo) => {
       problems.push(...found.map((issue) => `${values.baseline}/${file}: ${issue}`))
     }
 
-  const violations = lintCommands(parsed.document, VOCABULARY)
+  const schemas = values.schemas === undefined ? undefined : readJson(join(io.cwd, values.schemas))
+  if (schemas !== undefined && (typeof schemas !== "object" || schemas === null || Array.isArray(schemas))) {
+    io.err(`${values.schemas}: a JSON object of JSON Schemas by name`)
+    return 2
+  }
+  const violations = lintCommands(parsed.document, VOCABULARY, LINT_RULES, {
+    raw,
+    schemas: schemas as Record<string, unknown> | undefined,
+  })
   const severity = new Map(LINT_RULES.map((rule) => [rule.id, rule.severity]))
 
   if (values["write-baseline"]) {

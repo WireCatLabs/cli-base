@@ -16,9 +16,11 @@ export const REDACTED_FIELDS = [
   "accessToken",
   "access_token",
   "refreshToken",
+  "refresh_token",
   "password",
   "secret",
   "verifyCode",
+  "verify_code",
   "phone",
 ]
 
@@ -40,7 +42,7 @@ export interface RecordLogOptions {
 }
 
 /**
- * One `LogRecord` per line, OpenTelemetry's field names, flat — never OTLP's nested export format.
+ * One `LogRecord` per line, flat — never OTLP's nested export format.
  * The event becomes `attributes`; `body` is the message when one is given, else the event's own
  * `event` name, so it never needs content to say what happened.
  *
@@ -82,8 +84,8 @@ export const createRecordLog = ({
         time: now().toISOString(),
         severity,
         body: message ?? name,
-        runId,
-        ...(traceId === undefined ? {} : { traceId }),
+        run_id: runId,
+        ...(traceId === undefined ? {} : { trace_id: traceId }),
         command,
         attributes,
         resource,

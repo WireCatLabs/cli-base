@@ -7,10 +7,10 @@ describe("error model", () => {
   })
 
   it("carries the code and details an agent branches on", () => {
-    const error = new CliError("rate_limited", "slow down", { status: 429, retryAfterMs: 1200 })
+    const error = new CliError("rate_limited", "slow down", { status: 429, retry_after_ms: 1200 })
 
     expect(error.code).toBe("rate_limited")
-    expect(error.details.retryAfterMs).toBe(1200)
+    expect(error.details.retry_after_ms).toBe(1200)
     expect(error).toBeInstanceOf(Error)
   })
 

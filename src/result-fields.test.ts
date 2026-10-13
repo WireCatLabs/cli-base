@@ -7,9 +7,9 @@ describe("portable result projection", () => {
       items: [{ id: 1, speaker: { id: 2, name: "Alice Example" }, text: "Example" }],
       page: 2,
       limit: 1,
-      hasMore: true,
+      has_more: true,
       nextCursor: "example",
-      operationId: "example-operation",
+      operation_id: "example-operation",
     }
     expect(projectFields(input, fieldsOf("items.id,speaker.id"))).toEqual({
       ...input,
@@ -21,8 +21,8 @@ describe("portable result projection", () => {
   })
   it("keeps operation identifiers, null values and parent selections", () => {
     expect(
-      projectFields({ id: 1, operationId: "example", sendId: "example-send", missing: null }, ["missing", "unknown"]),
-    ).toEqual({ missing: null, operationId: "example", sendId: "example-send" })
+      projectFields({ id: 1, operation_id: "example", send_id: "example-send", missing: null }, ["missing", "unknown"]),
+    ).toEqual({ missing: null, operation_id: "example", send_id: "example-send" })
     const speaker = { id: 1, name: "Alice Example" }
     expect(projectFields({ speaker }, ["speaker.id", "speaker"])).toEqual({ speaker })
     expect(projectFields({ speaker: null }, ["speaker.id"])).toEqual({})

@@ -68,7 +68,7 @@ import { providerWaitMs, statusToCode } from "@wirecat/cli-base/http"
 
 **Portable command control stays independent of provider and store lifetimes.**
 `fieldsOf("id,speaker.id")` parses up to 128 field paths; `projectFields(value, paths)` selects data
-from objects or list items while preserving the list envelope and `operationId` / `sendId`.
+from objects or list items while preserving the list envelope and `operation_id` / `send_id`.
 `items.id` also works for bare objects and JSONL items. Unknown fields are omitted; parent selections
 win over their children. Unsafe prototype paths are refused, including when paths are passed directly.
 
@@ -104,14 +104,15 @@ is a type here, not a runtime dependency — an optional peer, 15 or newer.
 import { annotate, describeProgram } from "@wirecat/cli-base/commands"
 
 annotate(program.command("send"), { mutates: true, examples: ["max messages send 42 hi"] })
-annotate(generated, { origin: "generated", operationId: "campaigns.list" })
+annotate(generated, { origin: "generated", operation_id: "campaigns.list" })
 
 describeProgram(program) // [{ path: ["send"], usage, origin, mutates, options: [...], commands: [...] }]
 ```
 
-Each option says whether it `takesValue` and, separately, whether it is `mandatory` — not
+Each option says whether it `takes_value` and, separately, whether it is `mandatory` — not
 Commander's `required`, which means "takes a value when given" — plus its choices, default,
-environment variable, the options it `conflicts` with and the values it `implies`.
+environment variable, the options it `conflicts` with and the values it `implies`, keyed by long flag.
+Every key of the document is snake_case.
 
 `refuseJoinedPath(program, args)` throws a `validation_error` when a command path arrived as one
 argument (`"projects add" --help`, what a zsh loop over `$c` passes), naming the words to type.
@@ -317,6 +318,8 @@ judges it by `LINT_RULES` and `VOCABULARY` from `/standards`. Known violations l
 `lint/baseline/<rule-id>.json`, one file per rule, and may only shrink: an entry with no violation left
 fails the run. `--write-baseline` rewrites those files to today's violations. Permanent exceptions go in
 `lint/overrides.json` — `[{ "rule", "target", "reason" }]` — and more than `--budget` (10) of them fails.
+`--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
+keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed.
 
 `--rules` names a module exporting `CHANGELOG` and `docsRules(root)`; `--program` one exporting
 `createProgram`; `--untested` one exporting `UNTESTED`. A TypeScript module loads on Node 24 as it is.

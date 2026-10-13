@@ -61,10 +61,10 @@ export const createOutputBuffer = ({
       if (!Number.isSafeInteger(bytes + size) || (maxOutputBytes !== 0 && bytes + size > maxOutputBytes))
         throw new CliError("invalid_response", "output exceeds the configured byte limit", {
           reason: "output.too-large",
-          maxBytes: maxOutputBytes,
-          bufferedBytes: bytes,
+          max_bytes: maxOutputBytes,
+          buffered_bytes: bytes,
           retryable: false,
-          partialOutput: false,
+          partial_output: false,
         })
       bytes += size
       chunks.push(result)

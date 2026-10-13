@@ -1,7 +1,7 @@
 import * as v from "valibot"
 import { errorCodes } from "../errors.js"
 import { MAX_NEXT_STEPS, nextStepSchema } from "./output.js"
-import { dottedId, duplicates, parseRegistry, placeholders, text } from "./registry.js"
+import { dottedId, duplicates, parseRegistry, placeholders, SNAKE_CASE, text } from "./registry.js"
 
 /**
  * What a failure that is not a `CliError` reports: a bug, not a refusal. Outside `errorCodes` on purpose,
@@ -21,7 +21,7 @@ export const errorObjectSchema = v.strictObject({
     details: v.optional(v.record(v.string(), v.unknown())),
     next: v.optional(v.pipe(v.array(nextStepSchema), v.maxLength(MAX_NEXT_STEPS))),
     /** Optional until every CLI keeps a run for each failure. */
-    runId: v.optional(text),
+    run_id: v.optional(text),
   }),
 })
 
@@ -32,7 +32,7 @@ const reasonSchema = v.strictObject({
   code: v.picklist([...errorCodes, CRASH_CODE]),
   /** `{name}` placeholders, each one of `details`. */
   message: v.pipe(text, v.maxLength(120)),
-  details: v.array(v.pipe(v.string(), v.regex(/^[a-z][a-zA-Z0-9]*$/, "a camelCase key"))),
+  details: v.array(v.pipe(v.string(), v.regex(SNAKE_CASE, "a snake_case key"))),
   step: v.optional(dottedId),
 })
 
@@ -50,7 +50,7 @@ export const defineReasons = (input: unknown): ErrorReason[] =>
   ])
 
 /** Keys any reason's `details` may carry; the handler drops every other key it was not told about. */
-export const COMMON_DETAILS = ["retryable", "retryAfterMs", "attempts", "status", "requestId", "operation"] as const
+export const COMMON_DETAILS = ["retryable", "retry_after_ms", "attempts", "status", "request_id", "operation"] as const
 
 /** One reason per code, used when the code site named none, the crash, and the reasons cli-base raises itself. */
 export const BASE_REASONS: ErrorReason[] = defineReasons([
@@ -66,7 +66,7 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
     details: [],
   },
   { reason: "provider.rate-limited", code: "rate_limited", message: "too many requests; wait", details: [] },
-  { reason: "command.timed-out", code: "timeout", message: "the command took too long", details: ["timeoutMs"] },
+  { reason: "command.timed-out", code: "timeout", message: "the command took too long", details: ["timeout_ms"] },
   { reason: "network.failed", code: "network_error", message: "the network did not answer", details: [] },
   { reason: "provider.refused", code: "provider_error", message: "the provider refused", details: [] },
   { reason: "provider.unavailable", code: "provider_unavailable", message: "the provider is down", details: [] },
@@ -79,8 +79,8 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
   {
     reason: "output.too-large",
     code: "invalid_response",
-    message: "the output is over {maxBytes} bytes",
-    details: ["maxBytes", "bufferedBytes", "partialOutput"],
+    message: "the output is over {max_bytes} bytes",
+    details: ["max_bytes", "buffered_bytes", "partial_output"],
   },
   {
     reason: "output.fields-unavailable",

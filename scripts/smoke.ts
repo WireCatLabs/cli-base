@@ -105,7 +105,7 @@ const pretty = captureStreams()
 createRenderer({ format: "pretty", color: false, streams: pretty }).result([{ id: 1, title: "Family" }])
 check("pretty renders a table", pretty.stdout.join("").includes("Family"))
 
-const error = new CliError("rate_limited", "slow down", { retryAfterMs: 1200 })
+const error = new CliError("rate_limited", "slow down", { retry_after_ms: 1200 })
 check("error carries its code", error.code === "rate_limited")
 check("exit code is stable", exitCodeFor("cancelled") === 130)
 
