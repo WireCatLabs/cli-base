@@ -5,9 +5,10 @@ import { Command } from "commander"
 import { beforeEach, describe, expect, it } from "vitest"
 import { commandsDocument } from "../commands/document.js"
 import { annotate } from "../commands/index.js"
+import type { QueryRegistry } from "../query/fields.js"
 import { LINT_RULES } from "../standards/lint.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
-import { exampleWords, judge, lintCommands, lintRuleIds } from "./lint.js"
+import { exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
 import { type DevIo, main } from "./main.js"
 
 const clean = (): Command => {
@@ -25,8 +26,26 @@ const clean = (): Command => {
   return root
 }
 
-const lintOf = (root: Command) =>
-  lintCommands(commandsDocument(root, { cli: "tool", version: "1.0.0", contract: 0 }), VOCABULARY)
+const vocabulary = {
+  ...VOCABULARY,
+  flags: [
+    ...VOCABULARY.flags,
+    { name: "--json", type: "switch" as const, role: "output" as const, meaning: "print JSON" },
+  ],
+}
+
+const lintOf = (root: Command, context: LintContext = {}) =>
+  lintCommands(commandsDocument(root, { cli: "tool", version: "1.0.0", contract: 0 }), vocabulary, LINT_RULES, context)
+
+const messageQuery: QueryRegistry = {
+  entity: "message",
+  backend: "sql",
+  fields: [
+    { name: "date", type: "time", operators: ["term", "range"], example: "date>=7d" },
+    { name: "kind", type: "enum", operators: ["term"], values: ["group", "dialog"], example: "kind:group" },
+  ],
+  defaults: ["-kind:dialog"],
+}
 
 const chatsOf = (root: Command): Command => root.commands.find((one) => one.name() === "chats") ?? root
 
@@ -57,9 +76,38 @@ const failing: Record<string, (root: Command) => void> = {
       ...({ operationId: "chats.sync" } as object),
     }),
   "missing-option-help": (root) =>
-    annotate(chatsOf(root).command("clear").description("empty a chat").option("--all"), {
-      examples: ["tool chats clear --all"],
+    annotate(chatsOf(root).command("clear").description("empty a chat").option("--dry-run"), {
+      examples: ["tool chats clear --dry-run"],
     }),
+  "filter-flag": (root) =>
+    annotate(
+      root
+        .command("messages")
+        .description("messages")
+        .command("list")
+        .description("list messages")
+        .argument("[query...]", "field:value terms")
+        .option("--since-time <time>", "since when"),
+      { examples: ["tool messages list --since-time 2h"], output: { entity: "message" }, query: messageQuery },
+    ),
+  "option-role": (root) =>
+    annotate(chatsOf(root).command("pin").description("pin a chat").option("--unread", "only unread"), {
+      examples: ["tool chats pin --unread"],
+    }),
+  "list-without-query": (root) =>
+    annotate(root.command("contacts").description("contacts").command("list").description("list contacts"), {
+      examples: ["tool contacts list"],
+      output: { entity: "contact" },
+    }),
+  "query-example": (root) =>
+    annotate(
+      chatsOf(root).command("events").description("what happened in chats").argument("[query...]", "field:value terms"),
+      {
+        examples: ["tool chats events kind:group"],
+        output: { entity: "message" },
+        query: { ...messageQuery, defaults: ["kind:channel"] },
+      },
+    ),
 }
 
 describe("lint rules", () => {
@@ -108,6 +156,49 @@ describe("lint rules", () => {
 
   it("passes cli-base's own schemas and document", () => {
     expect(lintOf(clean()).filter((one) => one.rule === "key-casing")).toEqual([])
+  })
+
+  it("reads a list's entity fields from its schema, and leaves a scope flag alone", () => {
+    const root = clean()
+    annotate(
+      chatsOf(root)
+        .command("events")
+        .description("what happened in chats")
+        .option("--kind <kind>", "which kind")
+        .option("--before-id <id>", "older than")
+        .option("--account <name>", "which account"),
+      { examples: ["tool chats events"], output: { entity: "chat_event" } },
+    )
+    const scoped = {
+      ...vocabulary,
+      flags: [
+        ...vocabulary.flags,
+        {
+          name: "--account",
+          value: "<name>",
+          type: "string" as const,
+          role: "scope" as const,
+          meaning: "which account",
+        },
+      ],
+    }
+    const found = lintCommands(
+      commandsDocument(root, { cli: "tool", version: "1.0.0", contract: 0 }),
+      scoped,
+      LINT_RULES,
+      {
+        schemas: {
+          chat_event: {
+            type: "object",
+            properties: { id: { type: "string" }, kind: { type: "string" }, account: { type: "string" } },
+          },
+        },
+      },
+    )
+    expect(found.filter((one) => one.rule === "filter-flag").map((one) => `${one.target}: ${one.message}`)).toEqual([
+      "chats events --before-id: filters by id; use the query",
+      "chats events --kind: filters by kind; use the query",
+    ])
   })
 
   it("passes a resource or all under search, at the root or under bot, and nothing else there", () => {

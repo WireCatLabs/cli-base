@@ -15,6 +15,24 @@ export const FLAG_TYPES = [
   "cursor",
 ] as const
 
+/**
+ * What a flag does to a command. There is no `filter`: a list filters with its query, so a flag that filters has no
+ * role and `option-role` reports it.
+ */
+export const FLAG_ROLES = {
+  paging: "which part of a long answer: how many, which page, where to continue",
+  output: "how the answer is shaped or shown",
+  sort: "the order of the answer",
+  mode: "how the command runs, not what it reads",
+  action: "does something extra besides the answer",
+  budget: "how much time or work the command may spend",
+  scope: "which accounts, providers or sources are read; never picked for you, so a flag and not a query field",
+  target: "which thing or time window the command acts on, when that is not a list's filter",
+  value: "sets a field on a write",
+  query: "a query in the query language, beside a search's own words",
+} as const
+export type FlagRole = keyof typeof FLAG_ROLES
+
 const verbSchema = v.strictObject({ word, meaning: text, replaces: v.optional(v.array(word)) })
 const nounSchema = v.strictObject({
   word,
@@ -29,6 +47,7 @@ const flagSchema = v.strictObject({
   name: v.pipe(v.string(), v.regex(/^--[a-z][a-z0-9]*(-[a-z0-9]+)*$/, "a long flag: --lower-case-words")),
   value: v.optional(v.pipe(v.string(), v.regex(/^<[a-z][a-z0-9-|]*>$/, "a value name such as <n>"))),
   type: v.picklist(FLAG_TYPES),
+  role: v.picklist(Object.keys(FLAG_ROLES) as [FlagRole, ...FlagRole[]]),
   meaning: text,
   unit: v.optional(text),
 })
@@ -231,28 +250,66 @@ const roots: [string, string][] = [
 ]
 
 const flags: Vocabulary["flags"] = [
-  { name: "--limit", value: "<n>", type: "count", meaning: "how many items", unit: "items" },
-  { name: "--page", value: "<n>", type: "count", meaning: "which page, from 1, where the source has no cursor" },
+  { name: "--limit", value: "<n>", role: "paging", type: "count", meaning: "how many items", unit: "items" },
+  {
+    name: "--page",
+    value: "<n>",
+    role: "paging",
+    type: "count",
+    meaning: "which page, from 1, where the source has no cursor",
+  },
   {
     name: "--page-size",
     value: "<n>",
+    role: "paging",
     type: "count",
     meaning: "how many items one request to the source asks for",
     unit: "items",
   },
-  { name: "--cursor", value: "<cursor>", type: "cursor", meaning: "continue from where the previous page ended" },
-  { name: "--before-id", value: "<id>", type: "id", meaning: "read what came before this message id" },
-  { name: "--after-id", value: "<id>", type: "id", meaning: "read what came after this message id" },
-  { name: "--before-time", value: "<time>", type: "time", meaning: "read what came before this time" },
-  { name: "--after-time", value: "<time>", type: "time", meaning: "read what came after this time" },
-  { name: "--since-time", value: "<time>", type: "time", meaning: "only what came since this time" },
-  { name: "--until-time", value: "<time>", type: "time", meaning: "only what came up to and including this time" },
-  { name: "--at-time", value: "<time>", type: "time", meaning: "do it at this time" },
-  { name: "--before-n", value: "<n>", type: "count", meaning: "how many messages before it", unit: "messages" },
-  { name: "--after-n", value: "<n>", type: "count", meaning: "how many messages after it", unit: "messages" },
-  { name: "--timeout", value: "<duration>", type: "duration", meaning: "give up after this long" },
-  { name: "--dry-run", type: "switch", meaning: "judge and plan; do nothing" },
-  { name: "--debug", type: "switch", meaning: "on failure, show the full error record: cause and stack" },
+  {
+    name: "--cursor",
+    value: "<cursor>",
+    role: "paging",
+    type: "cursor",
+    meaning: "continue from where the previous page ended",
+  },
+  { name: "--before-id", value: "<id>", role: "paging", type: "id", meaning: "read what came before this message id" },
+  { name: "--after-id", value: "<id>", role: "paging", type: "id", meaning: "read what came after this message id" },
+  { name: "--before-time", value: "<time>", role: "target", type: "time", meaning: "read what came before this time" },
+  { name: "--after-time", value: "<time>", role: "target", type: "time", meaning: "read what came after this time" },
+  { name: "--since-time", value: "<time>", role: "target", type: "time", meaning: "only what came since this time" },
+  {
+    name: "--until-time",
+    value: "<time>",
+    role: "target",
+    type: "time",
+    meaning: "only what came up to and including this time",
+  },
+  { name: "--at-time", value: "<time>", role: "value", type: "time", meaning: "do it at this time" },
+  {
+    name: "--before-n",
+    value: "<n>",
+    role: "output",
+    type: "count",
+    meaning: "how many messages before it",
+    unit: "messages",
+  },
+  {
+    name: "--after-n",
+    value: "<n>",
+    role: "output",
+    type: "count",
+    meaning: "how many messages after it",
+    unit: "messages",
+  },
+  { name: "--timeout", value: "<duration>", role: "budget", type: "duration", meaning: "give up after this long" },
+  { name: "--dry-run", role: "mode", type: "switch", meaning: "judge and plan; do nothing" },
+  {
+    name: "--debug",
+    role: "output",
+    type: "switch",
+    meaning: "on failure, show the full error record: cause and stack",
+  },
 ]
 
 /** The words every CLI on cli-base is judged against. Seeded from STANDARD's command-name rules and the glossary. */

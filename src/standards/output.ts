@@ -6,6 +6,9 @@ export const MAX_NEXT_STEPS = 3
 
 export const isoTime = v.pipe(v.string(), v.isoTimestamp("an ISO 8601 time with a zone"))
 
+/** The typed name of a stored thing, `msg:telegram/1/2/3` or `note:42`: what every other command takes. */
+export const reference = v.pipe(v.string(), v.regex(/^[a-z]+:\S+$/, "a reference such as `note:42`"))
+
 export const nextStepSchema = v.strictObject({
   step: dottedId,
   /** The command path as one string, `messages list` — what the MCP router tools take as `command`. */

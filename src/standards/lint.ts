@@ -67,6 +67,30 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     scope: "key",
     summary: "every key of a registered JSON Schema and of the commands document is snake_case",
   },
+  {
+    id: "filter-flag",
+    severity: "high",
+    scope: "option",
+    summary: "a command that changes nothing filters with its query, not with a flag named after a field of its entity",
+  },
+  {
+    id: "option-role",
+    severity: "high",
+    scope: "option",
+    summary: "every option has a role in the vocabulary; a filter has none, it is a query field",
+  },
+  {
+    id: "list-without-query",
+    severity: "medium",
+    scope: "command",
+    summary: "a list that answers with an entity takes a query over that entity's fields",
+  },
+  {
+    id: "query-example",
+    severity: "high",
+    scope: "command",
+    summary: "every query field's example, and every default term, parses and validates",
+  },
 ])
 
 /** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */

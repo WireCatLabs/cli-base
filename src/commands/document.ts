@@ -1,6 +1,7 @@
 import type { Command } from "commander"
 import * as v from "valibot"
 import { EXIT_CODES, GENERIC_FAILURE } from "../exit-codes.js"
+import { FIELD_TYPES, QUERY_BACKENDS } from "../query/fields.js"
 import { issuesOf, jsonSchemaOf } from "../standards/registry.js"
 import { type CommandInfo, describeOptions, describeProgram, type OptionInfo } from "./index.js"
 
@@ -25,6 +26,17 @@ const optionInfoSchema = v.object({
   implies: v.optional(v.record(v.string(), v.unknown())),
 })
 
+const fieldInfoSchema = v.object({
+  name: v.string(),
+  type: v.picklist(FIELD_TYPES),
+  operators: v.array(v.picklist(["term", "phrase", "wildcard", "regex", "range"])),
+  values: v.optional(v.array(v.string())),
+  example: v.string(),
+  relation: v.optional(v.string()),
+  native: v.optional(v.boolean()),
+  placement: v.optional(v.literal("and")),
+})
+
 const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   path: v.array(v.string()),
   name: v.string(),
@@ -37,6 +49,15 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   local: v.optional(v.boolean()),
   state: v.optional(v.picklist(["beta", "deprecated"])),
   examples: v.optional(v.array(v.string())),
+  output: v.optional(v.object({ entity: v.string(), view: v.optional(v.string()) })),
+  query: v.optional(
+    v.object({
+      entity: v.string(),
+      backend: v.picklist(QUERY_BACKENDS),
+      fields: v.array(fieldInfoSchema),
+      defaults: v.optional(v.array(v.string())),
+    }),
+  ),
   arguments: v.array(argumentInfoSchema),
   options: v.array(optionInfoSchema),
   commands: v.array(v.lazy(() => commandInfoSchema)),
