@@ -198,6 +198,7 @@ const singulars: [string, string][] = [
   ["cache", "max's per-profile cache"],
   ["flood", "what the messenger told this profile to hold off on"],
   ["vocabulary", "the owner's catalogue of canonical names, with their aliases"],
+  ["api", "the source's own API, one command per operation"],
 ]
 
 const views: [string, string][] = [
@@ -227,7 +228,6 @@ const roots: [string, string][] = [
   ["bot", "the profile's bot account"],
   ["stats", "statistics"],
   ["search", "searches across resources"],
-  ["api", "the source's own API, one command per operation"],
 ]
 
 const flags: Vocabulary["flags"] = [

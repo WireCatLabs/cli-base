@@ -36,7 +36,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   its parents' and the global options. The check reads `commands --json`, so it needs no live Commander tree.
   Generated commands are exempt: their examples would restate the API they mirror.
 - **Vocabulary for drive, memo and zm.** Verb `run`; resources `files`, `comments`, `meetings`, `recordings`,
-  `jobs`, `actions`, `aliases` and the singular `vocabulary`; views `transcript` and `evidence`; root `api`; flag
+  `jobs`, `actions`, `aliases` and the singulars `vocabulary` and `api`; views `transcript` and `evidence`; flag
   `--until-time <time>`.
 
 ### Changed â€” may break callers
