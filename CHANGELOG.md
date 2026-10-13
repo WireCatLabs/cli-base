@@ -86,6 +86,17 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 - **`identities` now means every way to reach a person or an organization** — an account in a messenger or mailbox,
   an e-mail address, a phone — not only messenger and mailbox accounts. Only the description changes; no rule does.
+||||||| parent of 8f70f02 (fix: report config read errors and support output backpressure)
+### Fixed
+
+- **A config file that exists but cannot be read is an error, not an empty config.** Only a missing file falls back
+  to defaults; a directory, a file used as a parent folder, or an I/O failure reports the filesystem error, so a bad
+  path no longer silently resets every setting.
+
+### Added
+
+- **`Streams.drain(signal?)`.** A caller that wrote a lot of output can wait until stdout and stderr have flushed, or
+  give up when the signal aborts. Optional on `Streams`; `processStreams` implements it.
 
 ## 0.26.0 — 13.10.2026
 

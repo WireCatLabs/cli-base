@@ -1,3 +1,4 @@
+import { waitForDrain } from "./drain.js"
 /**
  * The line every machine mode depends on: **stdout carries data, stderr carries everything
  * else.** Two functions and no formatting decisions — the renderer that chooses tables, colour
@@ -6,6 +7,7 @@
 export interface Streams {
   data: (text: string) => void
   diagnostic: (text: string) => void
+  drain?: (signal?: AbortSignal) => Promise<void>
   /**
    * A line that replaces itself — a progress counter, and nothing else.
    *
@@ -17,6 +19,9 @@ export interface Streams {
 }
 
 export const processStreams: Streams = {
+  drain: async (signal) => {
+    await Promise.all([waitForDrain(process.stdout, signal), waitForDrain(process.stderr, signal)])
+  },
   data: (text) => {
     process.stdout.write(`${text}\n`)
   },
