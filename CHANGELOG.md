@@ -12,10 +12,32 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ### Added
 
+- **`/standards`: the registries one standard for every CLI is built from.** `VOCABULARY` (verbs, resource nouns,
+  view nouns, root words, flags with one meaning each), the answer envelope (`listEnvelopeSchema`,
+  `itemEnvelopeSchema`, `pageSchema`, `metaSchema`, `nextStepSchema`, `missingSchema`, `FIELD_RULES`), the error
+  object and reasons (`errorObjectSchema`, `defineReasons`), next steps (`STEPS`, `defineSteps`, `stepOf`), the
+  log record (`logRecordSchema`) and the lint rules (`LINT_RULES`). Each is a Valibot schema; `jsonSchemaOf`
+  emits JSON Schema 2020-12. A malformed entry throws a `RegistryError` naming every problem. Nothing uses them
+  yet: the output, error and log streams adopt them in later releases.
+- **`commandsDocument` in `/commands`: one `commands --json` shape for every CLI**, with
+  `commandsDocumentSchema`, `commandsDocumentJsonSchema()` and `parseCommandsDocument`. memo, drive and zoom
+  print their own shapes today; `cli-dev lint` refuses them until they switch.
+- **`cli-dev lint`** judges a CLI's command tree by the lint rules — verbs from the vocabulary, resources,
+  one meaning per flag, summaries present and at most 80 characters, every argument and option described —
+  against a shrink-only baseline in `lint/baseline/<rule-id>.json` and counted overrides in
+  `lint/overrides.json`.
+
 - **`refuseJoinedPath` in `/commands` refuses a command path given as one argument.** `tool "projects add" --help` —
   what a zsh loop over `$c` passes — made Commander print the root help, and an agent read it as a missing
   command. Called on the words before `parseAsync`, it throws a `validation_error` naming the words to type. A
   CLI adopts it at its next bump; memo has the same check of its own until then.
+
+### Fixed
+
+- **`isCliError` recognises an error made by another copy of the package.** It checked `instanceof`, which is
+  false when a CLI and one of its dependencies each load their own cli-base during a pin bump. It
+  now checks a brand set by the constructor; `deadline` and `createOutputBuffer` use it too. Use
+  `isCliError(error)` instead of `error instanceof CliError`.
 
 ## 0.21.0 — 11.10.2026
 

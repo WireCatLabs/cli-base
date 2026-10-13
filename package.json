@@ -67,6 +67,10 @@
       "types": "./dist/mcp/index.d.ts",
       "default": "./dist/mcp/index.js"
     },
+    "./standards": {
+      "types": "./dist/standards/index.d.ts",
+      "default": "./dist/standards/index.js"
+    },
     "./biome": "./config/biome.base.json",
     "./tsconfig.base.json": "./config/tsconfig.base.json",
     "./tsconfig.test.json": "./config/tsconfig.test.json",
@@ -94,6 +98,7 @@
     "ci:quick": "pnpm typecheck"
   },
   "dependencies": {
+    "@valibot/to-json-schema": "1.8.0",
     "cli-table3": "^0.6.5",
     "cross-spawn": "7.0.6",
     "picocolors": "^1.1.1",

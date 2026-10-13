@@ -153,6 +153,14 @@ const describeOption = (option: Option): OptionInfo => {
 }
 
 export {
+  type CommandsDocument,
+  type CommandsDocumentAbout,
+  commandsDocument,
+  commandsDocumentJsonSchema,
+  commandsDocumentSchema,
+  parseCommandsDocument,
+} from "./document.js"
+export {
   COMMANDS_PAGE_LABELS,
   type CommandsPage,
   type CommandsPageLabels,

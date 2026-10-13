@@ -43,6 +43,10 @@ export interface CliErrorDetails {
   readonly [key: string]: unknown
 }
 
+// Symbol.for, so two copies of this package — one CLI's and one dependency's, during a pin bump —
+// recognise each other's errors where `instanceof` cannot.
+const BRAND = Symbol.for("@wirecat/cli-base/CliError")
+
 export class CliError extends Error {
   readonly code: ErrorCode
   readonly details: CliErrorDetails
@@ -52,7 +56,9 @@ export class CliError extends Error {
     this.name = "CliError"
     this.code = code
     this.details = details
+    Object.defineProperty(this, BRAND, { value: true })
   }
 }
 
-export const isCliError = (value: unknown): value is CliError => value instanceof CliError
+export const isCliError = (value: unknown): value is CliError =>
+  typeof value === "object" && value !== null && (value as { [BRAND]?: unknown })[BRAND] === true
