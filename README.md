@@ -102,7 +102,7 @@ record — live in `/standards` as Valibot schemas that also emit JSON Schema 20
 
 - **The whole command tree as data.** `describeProgram` walks the live Commander tree, like `rails routes`: every
   command, option, default, conflict and whether it writes. `commands --json` gives it to an agent instead of `--help`.
-- **A linter for command trees.** `cli-dev lint` checks a CLI's tree against 14 rules — unknown verbs, filter flags
+- **A linter for command trees.** `cli-dev lint` checks a CLI's tree against 15 rules — unknown verbs, filter flags
   that should be query fields, examples that do not run, key casing and more. Known violations live in a baseline
   that may only shrink.
 - **An audit across CLIs.** `cli-dev audit` reads several CLIs' command trees and checks them against each other:
