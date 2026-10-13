@@ -1,6 +1,6 @@
-import { createWriteStream } from "node:fs"
-import { pino } from "pino"
+import { appendFileSync } from "node:fs"
 import type { Logger } from "./logger.js"
+import type { LogRecord, LogSeverity } from "./standards/log.js"
 
 /**
  * Field names whose value must never reach a log file. This is the **second** line of defence, not
@@ -22,66 +22,88 @@ export const REDACTED_FIELDS = [
   "phone",
 ]
 
-export interface FileLogger extends Logger {
-  /** Must be awaited before the process exits, or the tail of the file is lost. */
-  close(): Promise<void>
-}
-
-export interface FileLoggerOptions {
-  /** Where the JSON lines go. Omit for a logger that writes nowhere. */
-  path?: string
-  level?: string
-  base?: Record<string, unknown>
+export interface RecordLogOptions {
+  /** A file the JSON lines are appended to, or a function handed each line. Omit for a log that writes nowhere. */
+  to?: string | ((line: string) => void)
+  runId: string
+  command: string
+  resource: LogRecord["resource"]
+  traceId?: string
   /** Added to `REDACTED_FIELDS` — the names only this program knows about. */
   redact?: string[]
   /**
-   * Told once when the file cannot be opened or written; every record after that is dropped.
-   * Without it the failure is silent, so a host that promised a log should say it is gone.
+   * Told once when the file cannot be written; every record after that is dropped. Without it the
+   * failure is silent, so a host that promised a log should say it is gone.
    */
   onError?: (error: Error) => void
+  now?: () => Date
 }
 
 /**
- * Structured records for machines: JSON lines, no ANSI ever, secrets redacted. The terminal is a
- * different concern and goes through the renderer — a spinner frame must never reach a log file,
- * and a log record must never reach stdout.
+ * One `LogRecord` per line, OpenTelemetry's field names, flat — never OTLP's nested export format.
+ * The event becomes `attributes`; `body` is the message when one is given, else the event's own
+ * `event` name, so it never needs content to say what happened.
+ *
+ * Appended synchronously: a log exists to explain the exit that would have dropped a buffered tail.
  */
-export const createFileLogger = ({
-  path,
-  level = "info",
-  base = {},
+export const createRecordLog = ({
+  to,
+  runId,
+  command,
+  resource,
+  traceId,
   redact = [],
   onError = () => {},
-}: FileLoggerOptions = {}): FileLogger => {
-  if (!path) return { ...silent, close: async () => {} }
+  now = () => new Date(),
+}: RecordLogOptions): Logger => {
+  if (to === undefined) return silent
 
-  // A plain append stream, not a worker transport: logging must not need a second process, and
-  // `sync: false` drops the tail of the file when a command exits — which is exactly the failure
-  // the log exists to explain.
-  const file = createWriteStream(path, { flags: "a" })
-  // The open is asynchronous, so a directory removed a moment ago surfaces here as an `error`
-  // event — and one with no listener kills the process the log was only meant to describe.
-  file.on("error", onError)
-  const fields = [...new Set([...REDACTED_FIELDS, ...redact])]
-  const paths = fields.flatMap((field) => [field, `*.${field}`, `*.*.${field}`])
+  const hidden = new Set([...REDACTED_FIELDS, ...redact])
+  let broken = false
+  const write =
+    typeof to === "string"
+      ? (line: string) => {
+          if (broken) return
+          try {
+            appendFileSync(to, line, { mode: 0o600 })
+          } catch (error) {
+            broken = true
+            onError(error instanceof Error ? error : new Error(String(error)))
+          }
+        }
+      : (line: string) => to(line.trimEnd())
 
-  const logger = pino(
-    { level, base, redact: { paths, censor: "[redacted]" }, timestamp: pino.stdTimeFunctions.isoTime },
-    file,
+  const at =
+    (severity: LogSeverity) =>
+    (event: object, message?: string): void => {
+      const attributes = redacted(event, hidden) as Record<string, unknown>
+      const name = typeof attributes.event === "string" ? attributes.event : ""
+      const record: LogRecord = {
+        time: now().toISOString(),
+        severity,
+        body: message ?? name,
+        runId,
+        ...(traceId === undefined ? {} : { traceId }),
+        command,
+        attributes,
+        resource,
+      }
+      write(`${JSON.stringify(record)}\n`)
+    }
+
+  return { debug: at("debug"), info: at("info"), warn: at("warn"), error: at("error") }
+}
+
+const redacted = (value: unknown, hidden: Set<string>): unknown => {
+  const plain =
+    value !== null && typeof value === "object" && "toJSON" in value && typeof value.toJSON === "function"
+      ? (value.toJSON() as unknown)
+      : value
+  if (Array.isArray(plain)) return plain.map((item) => redacted(item, hidden))
+  if (plain === null || typeof plain !== "object") return plain
+  return Object.fromEntries(
+    Object.entries(plain).map(([key, item]) => [key, hidden.has(key) ? "[redacted]" : redacted(item, hidden)]),
   )
-
-  return {
-    debug: (event, message) => logger.debug(event, message),
-    info: (event, message) => logger.info(event, message),
-    warn: (event, message) => logger.warn(event, message),
-    error: (event, message) => logger.error(event, message),
-    close: () =>
-      new Promise<void>((resolve) => {
-        file.end(() => {
-          resolve()
-        })
-      }),
-  }
 }
 
 const silent: Logger = {

@@ -2,7 +2,7 @@ import * as v from "valibot"
 import { isoTime } from "./output.js"
 import { text } from "./registry.js"
 
-/** pino's level names, so a record maps to OpenTelemetry's SeverityText by upper-casing it. */
+/** Upper-cased, these are OpenTelemetry's SeverityText values. */
 export const LOG_SEVERITIES = ["trace", "debug", "info", "warn", "error", "fatal"] as const
 
 /** One log record, OpenTelemetry's field names, one flat JSON line. */
