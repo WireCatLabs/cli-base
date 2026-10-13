@@ -263,7 +263,7 @@ const roots: [string, string][] = [
 const flags: Vocabulary["flags"] = [
   {
     name: "--bytes",
-    value: "<n>",
+    value: "<bytes>",
     role: "budget",
     type: "count",
     meaning: "at most this many bytes of included evidence content",

@@ -19,6 +19,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `AUDIT_BLOCKS`, the switch that makes a new cross-CLI divergence fail a release (`"new"`, today) or only show
   (`"never"`). A weekly workflow audits the five latest published CLIs and rewrites one pinned issue.
 
+### Fixed
+
+- The shared `--bytes` budget uses `<bytes>`, matching existing evidence commands and preventing a false two-meanings lint failure.
+
 ## 0.27.0 — 14.10.2026
 
 ### Changed — may break callers
