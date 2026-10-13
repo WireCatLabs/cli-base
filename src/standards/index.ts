@@ -1,5 +1,6 @@
 export { defineReasons, type ErrorObject, type ErrorReason, errorObjectSchema } from "./errors.js"
 export {
+  baselineProblems,
   baselineSchema,
   defineLintRules,
   LINT_RULES,
@@ -8,6 +9,7 @@ export {
   type LintSeverity,
   OVERRIDE_BUDGET,
   type Override,
+  overridesProblems,
   overridesSchema,
 } from "./lint.js"
 export { LOG_SEVERITIES, type LogRecord, type LogSeverity, logRecordSchema } from "./log.js"

@@ -19,7 +19,15 @@ import {
   structureProblems,
   versionScript,
 } from "../release/index.js"
-import { baselineSchema, LINT_RULES, OVERRIDE_BUDGET, type Override, overridesSchema } from "../standards/lint.js"
+import {
+  baselineProblems,
+  baselineSchema,
+  LINT_RULES,
+  OVERRIDE_BUDGET,
+  type Override,
+  overridesProblems,
+  overridesSchema,
+} from "../standards/lint.js"
 import { issuesOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { baselineOf, judge, lintCommands } from "./lint.js"
@@ -137,7 +145,13 @@ const testMatrix = async (args: string[], io: DevIo) => {
   return failed ? 1 : 0
 }
 
-const readJson = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"))
+const readJson = (path: string): unknown => {
+  try {
+    return JSON.parse(readFileSync(path, "utf8"))
+  } catch (error) {
+    throw new Error(`${path}: ${(error as Error).message}`)
+  }
+}
 
 const commandsJson = (io: DevIo, cli: string | undefined, file: string | undefined): unknown => {
   if (file) return readJson(isAbsolute(file) ? file : join(io.cwd, file))
@@ -154,6 +168,15 @@ const commandsJson = (io: DevIo, cli: string | undefined, file: string | undefin
 }
 
 const lint = (args: string[], io: DevIo) => {
+  try {
+    return lintRun(args, io)
+  } catch (error) {
+    io.err((error as Error).message)
+    return 2
+  }
+}
+
+const lintRun = (args: string[], io: DevIo) => {
   const { values } = parseArgs({
     args,
     options: {
@@ -195,16 +218,18 @@ const lint = (args: string[], io: DevIo) => {
   let overrides: Override[] = []
   if (existsSync(overridesPath)) {
     const read = v.safeParse(overridesSchema, readJson(overridesPath))
+    const found = read.success ? overridesProblems(read.output) : issuesOf(read.issues)
     if (read.success) overrides = read.output
-    else problems.push(...issuesOf(read.issues).map((issue) => `${values.overrides}: ${issue}`))
+    problems.push(...found.map((issue) => `${values.overrides}: ${issue}`))
   }
   const baselineDir = join(io.cwd, values.baseline)
   const baseline: Record<string, string[]> = {}
   if (existsSync(baselineDir))
     for (const file of readdirSync(baselineDir).filter((name) => name.endsWith(".json"))) {
       const read = v.safeParse(baselineSchema, readJson(join(baselineDir, file)))
+      const found = read.success ? baselineProblems(read.output) : issuesOf(read.issues)
       if (read.success) baseline[file.slice(0, -".json".length)] = read.output
-      else problems.push(...issuesOf(read.issues).map((issue) => `${values.baseline}/${file}: ${issue}`))
+      problems.push(...found.map((issue) => `${values.baseline}/${file}: ${issue}`))
     }
 
   const violations = lintCommands(parsed.document, VOCABULARY)

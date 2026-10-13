@@ -36,8 +36,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **`isCliError` recognises an error made by another copy of the package.** It checked `instanceof`, which is
   false when a CLI and one of its dependencies each load their own cli-base during a pin bump. It
-  now checks a brand set by the constructor; `deadline` and `createOutputBuffer` use it too. Use
-  `isCliError(error)` instead of `error instanceof CliError`.
+  now checks a brand set by the constructor; `deadline` and `createOutputBuffer` use it too. Both copies must be
+  this release or later: an error made by 0.21.0 carries no brand. Use `isCliError(error)` instead of
+  `error instanceof CliError`.
 
 ## 0.21.0 â€” 11.10.2026
 

@@ -216,6 +216,17 @@ describe("cli-dev lint", () => {
     expect(err).toContain('no lint rule "old-rule" (named in lint/baseline or lint/overrides.json)')
   })
 
+  it("names a baseline file that is not JSON, and one that lists a target twice", async () => {
+    document(clean())
+    mkdirSync(join(root, "lint/baseline"), { recursive: true })
+    writeFileSync(join(root, "lint/baseline/unknown-verb.json"), '["a", "a"]')
+    expect(await lint()).toBe(1)
+    expect(err).toContain('lint/baseline/unknown-verb.json: "a" is listed twice')
+    writeFileSync(join(root, "lint/baseline/unknown-verb.json"), "[")
+    expect(await lint()).toBe(2)
+    expect(err.at(-1)).toMatch(/unknown-verb\.json: /)
+  })
+
   it("refuses a commands document of another shape, saying what is wrong", async () => {
     writeFileSync(join(root, "commands.json"), JSON.stringify({ commands: [], options: [] }))
     expect(await lint()).toBe(2)

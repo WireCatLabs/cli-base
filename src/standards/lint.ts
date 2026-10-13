@@ -51,22 +51,20 @@ export const LINT_RULES: LintRule[] = defineLintRules([
 ])
 
 /** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */
-export const baselineSchema = v.pipe(
-  v.array(text),
-  v.check((targets) => duplicates(targets).length === 0, "a target is listed twice"),
-)
+export const baselineSchema = v.array(text)
 
 /** `lint/overrides.json`: permanent exceptions, each with its reason, counted against a budget. */
-export const overridesSchema = v.pipe(
-  v.array(
-    v.strictObject({ rule: word, target: text, reason: v.pipe(text, v.minLength(10, "say why, in a sentence")) }),
-  ),
-  v.check(
-    (entries) => duplicates(entries.map((entry) => `${entry.rule} ${entry.target}`)).length === 0,
-    "a rule and target are listed twice",
-  ),
+export const overridesSchema = v.array(
+  v.strictObject({ rule: word, target: text, reason: v.pipe(text, v.minLength(10, "say why, in a sentence")) }),
 )
 
 export type Override = v.InferOutput<typeof overridesSchema>[number]
+
+/** What the schemas cannot say, so they stay convertible to JSON Schema: no entry twice. */
+export const baselineProblems = (targets: readonly string[]): string[] =>
+  duplicates(targets).map((target) => `"${target}" is listed twice`)
+
+export const overridesProblems = (entries: readonly Override[]): string[] =>
+  duplicates(entries.map((entry) => `${entry.rule} ${entry.target}`)).map((both) => `"${both}" is listed twice`)
 
 export const OVERRIDE_BUDGET = 10

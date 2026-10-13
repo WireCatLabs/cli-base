@@ -25,19 +25,13 @@ const nounSchema = v.strictObject({
 })
 const viewSchema = v.strictObject({ word, meaning: text })
 const rootSchema = v.strictObject({ word, meaning: text })
-const flagSchema = v.pipe(
-  v.strictObject({
-    name: v.pipe(v.string(), v.regex(/^--[a-z][a-z0-9]*(-[a-z0-9]+)*$/, "a long flag: --lower-case-words")),
-    value: v.optional(v.pipe(v.string(), v.regex(/^<[a-z][a-z0-9-|]*>$/, "a value name such as <n>"))),
-    type: v.picklist(FLAG_TYPES),
-    meaning: text,
-    unit: v.optional(text),
-  }),
-  v.check(
-    (flag) => (flag.type === "switch") === (flag.value === undefined),
-    "a switch has no value name; every other type has one",
-  ),
-)
+const flagSchema = v.strictObject({
+  name: v.pipe(v.string(), v.regex(/^--[a-z][a-z0-9]*(-[a-z0-9]+)*$/, "a long flag: --lower-case-words")),
+  value: v.optional(v.pipe(v.string(), v.regex(/^<[a-z][a-z0-9-|]*>$/, "a value name such as <n>"))),
+  type: v.picklist(FLAG_TYPES),
+  meaning: text,
+  unit: v.optional(text),
+})
 
 export const vocabularySchema = v.strictObject({
   verbs: v.array(verbSchema),
@@ -66,6 +60,9 @@ export const defineVocabulary = (input: unknown): Vocabulary =>
     }
     for (const [kind, words] of Object.entries(kinds))
       for (const repeated of duplicates(words)) problems.push(`${kind}: "${repeated}" is listed twice`)
+    for (const flag of vocabulary.flags)
+      if ((flag.type === "switch") !== (flag.value === undefined))
+        problems.push(`flags: ${flag.name} — a switch has no value name; every other type has one`)
     const verbs = new Set(kinds.verbs)
     for (const verb of vocabulary.verbs)
       for (const old of verb.replaces ?? [])

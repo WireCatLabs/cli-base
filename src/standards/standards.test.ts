@@ -1,6 +1,7 @@
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import {
+  baselineProblems,
   baselineSchema,
   defineFieldRules,
   defineLintRules,
@@ -19,6 +20,7 @@ import {
   STEPS,
   stepOf,
   VOCABULARY,
+  vocabularySchema,
 } from "./index.js"
 
 const vocabulary = (patch: object) => ({
@@ -68,7 +70,7 @@ describe("vocabulary registry", () => {
       problemsOf(() =>
         defineVocabulary(vocabulary({ flags: [{ name: "--all", value: "<n>", type: "switch", meaning: "every" }] })),
       ),
-    ).toEqual(["flags.0: a switch has no value name; every other type has one"])
+    ).toEqual(["flags: --all — a switch has no value name; every other type has one"])
   })
 
   it("refuses a verb that replaces another listed verb", () => {
@@ -220,7 +222,7 @@ describe("lint registry", () => {
   })
 
   it("refuses a baseline that lists a target twice and an override with no reason", () => {
-    expect(v.is(baselineSchema, ["chats list", "chats list"])).toBe(false)
+    expect(baselineProblems(["chats list", "chats list"])).toEqual(['"chats list" is listed twice'])
     expect(v.is(overridesSchema, [{ rule: "unknown-verb", target: "bot api", reason: "" }])).toBe(false)
     expect(
       v.is(overridesSchema, [{ rule: "unknown-verb", target: "bot api", reason: "mirrors the official Bot API" }]),
@@ -229,12 +231,15 @@ describe("lint registry", () => {
 })
 
 describe("JSON Schema", () => {
-  it("emits draft 2020-12 for every shape an answer, an error or a log line takes", () => {
+  it("emits draft 2020-12 for every exported schema", () => {
     for (const schema of [
       errorObjectSchema,
       logRecordSchema,
       listEnvelopeSchema(v.string()),
       itemEnvelopeSchema(v.string()),
+      vocabularySchema,
+      baselineSchema,
+      overridesSchema,
     ])
       expect(jsonSchemaOf(schema).$schema).toBe("https://json-schema.org/draft/2020-12/schema")
   })
