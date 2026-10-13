@@ -35,7 +35,7 @@ const matchOne = (field: FieldSpec, node: Predicate, value: unknown, options: Ev
     case "num": {
       const number = Number(value)
       if (node.operator !== "range") return number === Number(node.value)
-      const { value: lower, upper = "*", lowerInclusive, upperInclusive } = node
+      const { value: lower, upper = "*", lower_inclusive: lowerInclusive, upper_inclusive: upperInclusive } = node
       return (
         (lower === "*" || (lowerInclusive ? number >= Number(lower) : number > Number(lower))) &&
         (upper === "*" || (upperInclusive ? number <= Number(upper) : number < Number(upper)))
@@ -45,7 +45,7 @@ const matchOne = (field: FieldSpec, node: Predicate, value: unknown, options: Ev
       const time = Date.parse(text)
       const [lower, upper, lowerInclusive, upperInclusive] =
         node.operator === "range"
-          ? [node.value, node.upper ?? "*", node.lowerInclusive ?? true, node.upperInclusive ?? true]
+          ? [node.value, node.upper ?? "*", node.lower_inclusive ?? true, node.upper_inclusive ?? true]
           : [node.value, node.value, true, true]
       const range = dateRange(
         lower,
@@ -57,8 +57,8 @@ const matchOne = (field: FieldSpec, node: Predicate, value: unknown, options: Ev
         options.now,
       )
       return (
-        (range.lower === undefined || (range.lowerInclusive ? time >= range.lower : time > range.lower)) &&
-        (range.upper === undefined || (range.upperInclusive ? time <= range.upper : time < range.upper))
+        (range.lower === undefined || (range.lower_inclusive ? time >= range.lower : time > range.lower)) &&
+        (range.upper === undefined || (range.upper_inclusive ? time <= range.upper : time < range.upper))
       )
     }
     default:
@@ -76,7 +76,7 @@ const matches = (
 ): boolean => {
   if (node.kind === "boolean") {
     const by = (occur: string) => node.clauses.filter((clause) => clause.occur === occur)
-    const [must, should, mustNot] = [by("must"), by("should"), by("mustNot")]
+    const [must, should, mustNot] = [by("must"), by("should"), by("must_not")]
     const holds = (clause: { node: QueryNode }) => matches(clause.node, item, byName, options)
     return must.every(holds) && !mustNot.some(holds) && (should.length === 0 || must.length > 0 || should.some(holds))
   }

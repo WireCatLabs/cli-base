@@ -38,7 +38,7 @@ describe("Lucene 9.12.3 grammar port", () => {
       kind: "boolean",
       clauses: [{ occur: "must" }, { occur: "should" }],
     })
-    expect(parseLucene("NOT alpha").root).toMatchObject({ kind: "boolean", clauses: [{ occur: "mustNot" }] })
+    expect(parseLucene("NOT alpha").root).toMatchObject({ kind: "boolean", clauses: [{ occur: "must_not" }] })
   })
   it("decodes standard escaped punctuation and Unicode without turning escaped stars into wildcards", () => {
     expect(parseLucene("text:hello\\:world").root).toMatchObject({ value: "hello:world", operator: "term" })

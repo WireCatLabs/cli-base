@@ -8,6 +8,20 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **The parsed query tree is snake_case.** A range predicate carries `lower_inclusive` and `upper_inclusive`, and a
+  negated clause has `occur: "must_not"`; `DateRange` from `dateRange` has `lower_inclusive` and `upper_inclusive`.
+  The tree is JSON an agent sends back (an MCP `ast`, a saved search), so it follows the one casing for every key.
+  A tree stored in the old form fails the new `queryAstSchema`: rewrite stored trees before reading them.
+
+### Added
+
+- **`queryAstSchema` and `queryNodeSchema`** in `/query`: the tree's valibot schema, so a caller validates an `ast`
+  it receives instead of keeping its own. `key-casing` checks it as the base schema `query_ast`.
+
 ## 0.25.0 — 13.10.2026
 
 ### Changed — may break callers

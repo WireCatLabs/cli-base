@@ -67,8 +67,8 @@ const dayOf = (word: string, zone: string, now: number, span: Span): string => {
 export interface DateRange {
   lower?: number
   upper?: number
-  lowerInclusive: boolean
-  upperInclusive: boolean
+  lower_inclusive: boolean
+  upper_inclusive: boolean
 }
 export const dateEndpoint = (
   value: string,
@@ -121,7 +121,7 @@ export const dateRange = (
   return {
     ...(lo.time === undefined ? {} : { lower: lo.time }),
     ...(hi.time === undefined ? {} : { upper: hi.time }),
-    lowerInclusive: lo.inclusive,
-    upperInclusive: hi.inclusive,
+    lower_inclusive: lo.inclusive,
+    upper_inclusive: hi.inclusive,
   }
 }

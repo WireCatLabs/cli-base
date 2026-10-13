@@ -33,7 +33,9 @@ export {
   type QueryAst,
   type QueryContext,
   type QueryNode,
+  queryAstSchema,
   queryError,
+  queryNodeSchema,
   type Span,
   walkQuery,
 } from "./types.js"

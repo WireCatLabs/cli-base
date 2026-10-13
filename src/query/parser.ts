@@ -126,7 +126,7 @@ const tokensOf = (text: string, fail: Fail = queryError): Token[] => {
 }
 interface Clause {
   node: QueryNode
-  modifier?: "must" | "mustNot"
+  modifier?: "must" | "must_not"
 }
 export interface ParseOptions extends QueryContext {
   /** The field a bare word searches; `none` for a list, where a bare word is `query.bare-word`. */
@@ -172,8 +172,8 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
     } while (!["EOF", ")"].includes(peek().kind))
     const result = combine(clauses, "must")
     depth--
-    if (result.modifier === "mustNot")
-      return built({ kind: "boolean", clauses: [{ node: result.node, occur: "mustNot" }], span: result.node.span })
+    if (result.modifier === "must_not")
+      return built({ kind: "boolean", clauses: [{ node: result.node, occur: "must_not" }], span: result.node.span })
     return result.node
   }
   const disjunction = (field: string, implicit: boolean): Clause => {
@@ -194,7 +194,7 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
   }
   const clause = (inherited: string, inheritedImplicit: boolean): Clause => {
     let modifier: Clause["modifier"]
-    if (["+", "-", "NOT", "!"].includes(peek().kind)) modifier = take().kind === "+" ? "must" : "mustNot"
+    if (["+", "-", "NOT", "!"].includes(peek().kind)) modifier = take().kind === "+" ? "must" : "must_not"
     let field = inherited
     // An error about `field:value` points at the field, where the comparison form already starts.
     let start: number | undefined
@@ -217,8 +217,8 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
           operator: "range",
           value: lower ? decoded : "*",
           upper: lower ? "*" : decoded,
-          lowerInclusive: !lower || operator.kind.endsWith("="),
-          upperInclusive: lower || operator.kind.endsWith("="),
+          lower_inclusive: !lower || operator.kind.endsWith("="),
+          upper_inclusive: lower || operator.kind.endsWith("="),
           span: { start: token.span.start, end: value.span.end },
         })
         return { node, ...(modifier ? { modifier } : {}) }
@@ -247,8 +247,8 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
         operator: "range",
         value: decode(lower),
         upper: decode(upper),
-        lowerInclusive: opening.kind === "[",
-        upperInclusive: closing.kind === "]",
+        lower_inclusive: opening.kind === "[",
+        upper_inclusive: closing.kind === "]",
         span: { start: start ?? opening.span.start, end: closing.span.end },
       })
     } else {

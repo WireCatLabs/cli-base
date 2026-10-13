@@ -10,7 +10,7 @@ describe("typed calendar boundaries", () => {
     const range = dateRange(day, day, true, true, "Europe/Madrid", span)
     expect(new Date(range.lower as number).toISOString()).toBe(expected)
     expect((Number(range.upper) - Number(range.lower)) / 3600000).toBe(hours)
-    expect(range).toMatchObject({ lowerInclusive: true, upperInclusive: false })
+    expect(range).toMatchObject({ lower_inclusive: true, upper_inclusive: false })
   })
   it("handles inclusive/exclusive day and exact timestamp endpoints separately", () => {
     expect(dateEndpoint("2026-01-01", "UTC", "lower", false, span)).toEqual({
@@ -25,7 +25,7 @@ describe("typed calendar boundaries", () => {
       time: Date.parse("2026-01-01T08:00:00Z"),
       inclusive: false,
     })
-    expect(dateRange("*", "*", true, true, "UTC", span)).toEqual({ lowerInclusive: true, upperInclusive: true })
+    expect(dateRange("*", "*", true, true, "UTC", span)).toEqual({ lower_inclusive: true, upper_inclusive: true })
     expect(dayBoundary("2024-02-29", "UTC", true, span)).toBe(Date.parse("2024-03-01T00:00:00Z"))
     expect(dayBoundary("0099-01-01", "UTC", false, span)).toBe(Date.parse("0099-01-01T00:00:00Z"))
     expect(dayBoundary("0000-01-01", "UTC", false, span)).toBe(Date.parse("0000-01-01T00:00:00Z"))
@@ -56,8 +56,8 @@ describe("relative dates", () => {
     expect(dateRange("today", "today", true, true, "Europe/Madrid", span, now)).toEqual({
       lower: Date.parse("2026-10-03T22:00:00Z"),
       upper: Date.parse("2026-10-04T22:00:00Z"),
-      lowerInclusive: true,
-      upperInclusive: false,
+      lower_inclusive: true,
+      upper_inclusive: false,
     })
     expect(dateRange("Yesterday", "yesterday", true, true, "UTC", span, now)).toMatchObject({
       lower: Date.parse("2026-10-03T00:00:00Z"),
@@ -68,8 +68,8 @@ describe("relative dates", () => {
     expect(dateRange("7d", "*", true, true, "UTC", span, now)).toMatchObject({ lower: now - 7 * 86_400_000 })
     expect(dateRange("2h", "2h", true, true, "UTC", span, now)).toEqual({
       lower: now - 2 * 3_600_000,
-      lowerInclusive: true,
-      upperInclusive: true,
+      lower_inclusive: true,
+      upper_inclusive: true,
     })
     expect(dateRange("2026-10-01", "30m", true, false, "UTC", span, now)).toMatchObject({ upper: now - 1_800_000 })
   })

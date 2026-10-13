@@ -8,7 +8,7 @@ import { annotate } from "../commands/index.js"
 import type { QueryRegistry } from "../query/fields.js"
 import { LINT_RULES } from "../standards/lint.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
-import { exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
+import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
 import { type DevIo, main } from "./main.js"
 
 const clean = (): Command => {
@@ -152,6 +152,19 @@ describe("lint rules", () => {
       "schema chat: lastMessage",
       "schema chat: lastMessage.sentAt",
     ])
+  })
+
+  it("checks the query tree's keys, nested clauses included", () => {
+    const camel = JSON.parse(JSON.stringify(baseSchemas().query_ast).replace('"lower_inclusive"', '"lowerInclusive"'))
+    const found = lintCommands(
+      commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 }),
+      VOCABULARY,
+      LINT_RULES,
+      {
+        schemas: { tree: camel },
+      },
+    ).filter((one) => one.rule === "key-casing")
+    expect(found.map((one) => one.target)).toEqual(["schema tree: $defs.query_node.lowerInclusive"])
   })
 
   it("passes cli-base's own schemas and document", () => {
