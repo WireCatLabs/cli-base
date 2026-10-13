@@ -1,3 +1,4 @@
+import * as v from "valibot"
 import { CliError } from "../errors.js"
 
 export const QUERY_LIMITS = {
@@ -7,7 +8,7 @@ export const QUERY_LIMITS = {
 } as const
 
 export type Span = { start: number; end: number }
-export type Occur = "must" | "should" | "mustNot"
+export type Occur = "must" | "should" | "must_not"
 export type Operator = "term" | "phrase" | "wildcard" | "regex" | "range"
 export interface Predicate {
   kind: "predicate"
@@ -15,8 +16,8 @@ export interface Predicate {
   operator: Operator
   value: string
   upper?: string
-  lowerInclusive?: boolean
-  upperInclusive?: boolean
+  lower_inclusive?: boolean
+  upper_inclusive?: boolean
   span: Span
   /** A bare word, under no field. */
   implicit?: true
@@ -27,6 +28,35 @@ export interface QueryAst {
   language: "lucene-v1"
   root: QueryNode
 }
+
+const spanSchema = v.object({ start: v.number(), end: v.number() })
+const predicateSchema = v.object({
+  kind: v.literal("predicate"),
+  field: v.string(),
+  operator: v.picklist(["term", "phrase", "wildcard", "regex", "range"]),
+  value: v.string(),
+  upper: v.optional(v.string()),
+  lower_inclusive: v.optional(v.boolean()),
+  upper_inclusive: v.optional(v.boolean()),
+  span: spanSchema,
+  implicit: v.optional(v.literal(true)),
+})
+export const queryNodeSchema: v.GenericSchema<QueryNode> = v.variant("kind", [
+  predicateSchema,
+  v.object({
+    kind: v.literal("boolean"),
+    clauses: v.array(
+      v.object({ occur: v.picklist(["must", "should", "must_not"]), node: v.lazy(() => queryNodeSchema) }),
+    ),
+    span: spanSchema,
+  }),
+])
+/** The parsed tree as JSON: what an MCP `ast` argument and a saved search carry. */
+export const queryAstSchema = v.object({
+  version: v.literal(1),
+  language: v.literal("lucene-v1"),
+  root: queryNodeSchema,
+})
 
 /** Who reports a query error: `chats list`, `search`. Without it the message starts with `query:`. */
 export interface QueryContext {

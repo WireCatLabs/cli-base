@@ -2,6 +2,7 @@ import * as v from "valibot"
 import { type CommandsDocument, commandsDocumentJsonSchema } from "../commands/document.js"
 import type { CommandInfo, OptionInfo } from "../commands/index.js"
 import { exampleProblems } from "../query/registry.js"
+import { queryAstSchema, queryNodeSchema } from "../query/types.js"
 import { errorObjectSchema } from "../standards/errors.js"
 import { LINT_RULES, type LintRule, type Override } from "../standards/lint.js"
 import { logRecordSchema } from "../standards/log.js"
@@ -56,6 +57,7 @@ export const baseSchemas = (): Record<string, unknown> => ({
   error_object: jsonSchemaOf(errorObjectSchema),
   log_record: jsonSchemaOf(logRecordSchema),
   commands_document: commandsDocumentJsonSchema(),
+  query_ast: jsonSchemaOf(queryAstSchema, { query_node: queryNodeSchema }),
 })
 
 const isObject = (value: unknown): value is Record<string, unknown> =>

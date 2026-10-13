@@ -7,6 +7,7 @@ import { type FieldSpec, type QueryRegistry, queryFieldsOf } from "./fields.js"
 import { fieldsHelp } from "./help.js"
 import { parseLucene } from "./parser.js"
 import { defineQuery, describeQuery, exampleProblems, QUERY_REASONS } from "./registry.js"
+import { queryAstSchema } from "./types.js"
 import { validateQuery } from "./validate.js"
 
 const task = v.strictObject({
@@ -62,6 +63,18 @@ describe("queryFieldsOf", () => {
     ])
     expect(fields.find((field) => field.name === "is")?.relation).toBe("ready: open with nothing blocking it")
     expect(exampleProblems(registry)).toEqual([])
+  })
+})
+
+describe("the query tree as JSON", () => {
+  it("is snake_case and matches its schema for a range, a negation and nested clauses", () => {
+    const ast = parseLucene("size:[1 TO 20} AND -(alpha OR beta)")
+    expect(v.parse(queryAstSchema, JSON.parse(JSON.stringify(ast)))).toEqual(ast)
+    expect(JSON.stringify(ast)).toContain('"lower_inclusive":true,"upper_inclusive":false')
+    expect(JSON.stringify(ast)).toContain('"occur":"must_not"')
+    expect(v.safeParse(queryAstSchema, JSON.parse(JSON.stringify(ast).replace("must_not", "mustNot"))).success).toBe(
+      false,
+    )
   })
 })
 
