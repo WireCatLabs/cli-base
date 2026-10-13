@@ -40,7 +40,7 @@ Two more things ship that are not imports:
 ## The two lines this package does not cross
 
 **Nothing in the root export is HTTP**, so a CLI that only speaks a socket never depends on an HTTP
-stack. max-cli's personal account is a WebSocket; its bot commands, brazecli and tg-cli import
+stack. max-cli's personal account is a WebSocket; its bot commands and tg-cli import
 `/http`. A new helper that reads a status code or a header goes to `/http`.
 
 **The environment is an argument.** Clock, sleep, keyring, `env`, `fetch`, streams — each is a
@@ -72,28 +72,27 @@ in `finally`; timers and listeners do not belong to the store or a messenger exe
 
 ## Who consumes it
 
-| Repository | Subpaths used |
+| Repository | Subpaths used (source and scripts, `main`, 2026-10-14) |
 |---|---|
-| [max-cli](https://github.com/WireCatLabs/max-cli) | root, `/commands`, `/codegen`, `/codegen/runtime`, `/http`, `/release`, `/update`, `/completion` |
-| [cli-messaging](https://github.com/WireCatLabs/cli-messaging) | root, `/commands`, `/completion`, `/update` |
-| [tg-cli](https://github.com/WireCatLabs/tg-cli) | root, `/commands`, `/http`, `/release`, `/update` |
-| [brazecli](https://github.com/leemour/brazecli) | root, `/commands`, `/completion`, `/http`, `/update` |
+| [cli-core](https://github.com/WireCatLabs/cli-core) | root, `/codegen`, `/codegen/runtime`, `/commands`, `/completion`, `/mcp`, `/query`, `/skill`, `/standards`, `/update` |
+| [max-cli](https://github.com/WireCatLabs/max-cli) | root, `/codegen`, `/codegen/runtime`, `/commands`, `/http`, `/mcp`, `/query`, `/release`, `/skill`, `/update` |
+| [tg-cli](https://github.com/WireCatLabs/tg-cli) | root, `/codegen`, `/codegen/runtime`, `/commands`, `/http`, `/release`, `/skill`, `/testing`, `/update` |
 
 Each consumer's pin is in its `package.json`; a caret on `0.x` does not cross a minor, so every pin is
 exact in effect. **A release reaches nobody until each consumer bumps its pin.**
 
-⚠ **cli-messaging carries its own copy** under `dependencies`. When a CLI and the cli-messaging it
-pins use different cli-base versions, both are installed. `isCliError()` checks a `Symbol.for` brand, so
-copies from 0.22.0 on recognise each other; an older copy has no brand, which is why `errorObjectOf` also
-accepts a `CliError` by name and code. Bump cli-messaging together with the CLIs.
+⚠ **cli-core takes cli-base as a peer dependency** with a range (`>=0.26.0 <0.27.0` today), so a CLI installs
+one copy that both use. A new minor version of cli-base reaches the CLIs only after cli-core widens its range.
+`isCliError()` checks a `Symbol.for` brand, so copies from 0.22.0 on recognise each other if two are ever
+installed; an older copy has no brand, which is why `errorObjectOf` also accepts a `CliError` by name and code.
 
 ## How a change is published and picked up
 
 1. A pull request here, with the `CHANGELOG.md` entry under `## Unreleased` and, when it is ready to
    ship, `version` in `package.json` raised and the heading dated as that version.
-2. After merge, `bin/release` on `main` ([README](../../README.md#releasing)). If npm already has the
+2. After merge, `bin/release` on `main` ([RELEASING.md](RELEASING.md)). If npm already has the
    number, it takes the next free one and renames the changelog heading with it, then starts
    [`release.yml`](../../.github/workflows/release.yml), which runs every check, publishes through
    npm's trusted publishing and tags `v<version>`.
-3. In each consumer, raise the pin in `package.json` and run its suite — cli-messaging first, since
-   max-cli and tg-cli also get cli-base through it.
+3. In each consumer, raise the pin in `package.json` and run its suite — cli-core first, since
+   its peer range decides which cli-base the CLIs may install.
