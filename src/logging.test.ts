@@ -4,7 +4,7 @@ import { join } from "node:path"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import type { Logger } from "./logger.js"
-import { createRecordLog, type RecordLogOptions } from "./logging.js"
+import { createRecordLog, NOT_ALLOWED, type RecordLogOptions } from "./logging.js"
 import { logRecordSchema } from "./standards/log.js"
 
 const logFile = () => join(mkdtempSync(join(tmpdir(), "cli-base-log-")), "events.jsonl")
@@ -58,21 +58,40 @@ describe("createRecordLog", () => {
   })
 
   it("redacts a secret by field name at any depth, arrays included", () => {
-    const text = written((log) =>
-      log.info({
-        token: "t0ken",
-        nested: { password: "hunter2" },
-        deep: { a: { b: { access_token: "leak" } } },
-        list: [{ secret: "s3" }],
-      }),
+    const text = written(
+      (log) =>
+        log.info({
+          token: "t0ken",
+          nested: { password: "hunter2" },
+          deep: { a: { b: { access_token: "leak" } } },
+          list: [{ secret: "s3" }],
+        }),
+      { allow: ["nested", "deep", "list"] },
     )
 
     for (const secret of ["t0ken", "hunter2", "leak", "s3"]) expect(text).not.toContain(secret)
     expect(text).toContain("[redacted]")
   })
 
+  it("redacts a key that names content at any depth: a title, a message's text, a phone number", () => {
+    const text = written(
+      (log) => log.info({ event: "x", ids: { chatTitle: "Family", chat: "42" }, errorMessage: "quoted payload" }),
+      { allow: ["ids", "errorMessage"] },
+    )
+    for (const content of ["Family", "quoted payload"]) expect(text).not.toContain(content)
+    expect(text).toContain('"chat":"42"')
+  })
+
+  it("writes a top-level key off the allow-list without its value", () => {
+    const [line] = records(written((log) => log.info({ event: "x", operation: "chats.list", chat: "Family" })))
+    expect(line).toMatchObject({ attributes: { event: "x", operation: "chats.list", chat: NOT_ALLOWED } })
+    expect(records(written((log) => log.info({ event: "x", chat: "42" }), { allow: ["chat"] }))[0]).toMatchObject({
+      attributes: { chat: "42" },
+    })
+  })
+
   it("redacts the names this program adds, on top of the defaults", () => {
-    const text = written((log) => log.info({ deviceId: "device-1" }), { redact: ["deviceId"] })
+    const text = written((log) => log.info({ deviceId: "device-1" }), { redact: ["deviceId"], allow: ["deviceId"] })
     expect(text).not.toContain("device-1")
   })
 

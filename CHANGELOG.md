@@ -8,6 +8,24 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **A log record carries only allow-listed attribute keys.** `createRecordLog` writes a top-level attribute key that is
+  not in `LOG_ATTRIBUTE_KEYS` or the new `allow` option as `"[not allowed]"`, and redacts any key that names content
+  (`isContentKey`: `text`, `chatTitle`, `errorMessage`, `accessToken`, `phoneNumber`, …) at any depth. Pass every key
+  your writers log in `allow`, or `runs show` loses those fields. A writer that builds its own lines calls
+  `logRecordOf`, the same builder.
+
+### Added
+
+- **`log-attribute-key` lint rule** (high): no key of the CLI's log allow-list names message text, a token or a phone
+  number. Pass `logAttributesJsonSchema(allow)` as `log_attributes` in `cli-dev lint --schemas`; without it the rule
+  checks cli-base's own list. `key-casing` skips that entry, as log attribute keys are camelCase for now.
+- **`traceIdOf(traceparent)`** in `/standards`: the trace id of a W3C `traceparent`, or undefined for one the spec
+  says to ignore — for an MCP caller's `_meta.traceparent` or a `TRACEPARENT` variable.
+
 ## 0.26.1 — 14.10.2026
 
 ### Added

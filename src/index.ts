@@ -25,7 +25,14 @@ export {
   migrateLegacyMacPaths,
 } from "./legacy-paths.js"
 export { type Logger, noopLogger } from "./logger.js"
-export { createRecordLog, REDACTED_FIELDS, type RecordLogOptions } from "./logging.js"
+export {
+  createRecordLog,
+  logRecordOf,
+  NOT_ALLOWED,
+  REDACTED_FIELDS,
+  type RecordInput,
+  type RecordLogOptions,
+} from "./logging.js"
 export { createOutputBuffer, type OutputBuffer, type OutputBufferOptions } from "./output-buffer.js"
 export { configFilePath, type Paths, type PathsOptions, pathsAreOverridden, resolvePaths } from "./paths.js"
 export { indent, type PrettyOptions, renderPretty } from "./pretty.js"

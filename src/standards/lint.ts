@@ -91,6 +91,12 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     scope: "command",
     summary: "every query field's example, and every default term, parses and validates",
   },
+  {
+    id: "log-attribute-key",
+    severity: "high",
+    scope: "key",
+    summary: "no log attribute key on the allow-list names message text, a token or a phone number",
+  },
 ])
 
 /** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */
