@@ -2,27 +2,43 @@
 
 # @wirecat/cli-base
 
-The parts every command line tool needs and nobody enjoys writing twice: the two output streams,
-a renderer for people and for machines, a closed error model with stable exit codes, the OS
-keyring behind a testable seam, and injectable clocks.
+The foundation for command-line tools that people and AI agents both use. Output for a person and for a program,
+a closed error model with stable exit codes, secrets in the OS keyring, injectable clocks, one query language,
+the command tree as data — the parts every CLI needs and nobody should write twice.
 
-Extracted from [`brazecli`](https://github.com/leemour/brazecli), where each piece earned its
-shape, and shared with [`max-cli`](https://github.com/WireCatLabs/max-cli).
+[Architecture](docs/dev/ARCHITECTURE.md) · [API reference](docs/REFERENCE.md) · [Shared tooling](docs/TOOLING.md) ·
+[Testing](docs/dev/TESTING.md) · [Changelog](CHANGELOG.md) · [wirecat.dev](https://wirecat.dev)
 
-Published on npm and used by `max-cli`, `cli-messaging`, `tg-cli` and `brazecli`. What changed in
-each version is in [`CHANGELOG.md`](CHANGELOG.md); how the package is put together and released is in
-[`docs/dev/`](docs/dev/ARCHITECTURE.md).
+[![npm](https://img.shields.io/npm/v/@wirecat/cli-base)](https://www.npmjs.com/package/@wirecat/cli-base)
+[![CI](https://github.com/WireCatLabs/cli-base/actions/workflows/ci.yml/badge.svg)](https://github.com/WireCatLabs/cli-base/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/node/v/@wirecat/cli-base)](https://nodejs.org/)
+[![Bun](https://img.shields.io/badge/bun-tested-f9f1e1)](https://bun.sh/)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-Up to version 0.20.0 (October 2026) this package was `@wirecat/cli-core`, in the repository `WireCatLabs/cli-core`.
-That name now passes to the shared messaging library (today `@wirecat/cli-messaging`): in older changelogs, plans and
-issues, "cli-core" means this package.
+## Key documents
 
-## The rule this package exists to keep
+| Document | What it answers |
+|---|---|
+| [Architecture](docs/dev/ARCHITECTURE.md) | The entry points, the lines this package does not cross, who consumes what |
+| [API reference](docs/REFERENCE.md) | What each entry point holds, with examples |
+| [Shared tooling](docs/TOOLING.md) | The TypeScript, Biome, lefthook, docs and CI setup a CLI takes from here, and `cli-dev` |
+| [Testing](docs/dev/TESTING.md) | The checks, and what each one is for |
+| [Conventions](docs/dev/CONVENTIONS.md) | How code here is written |
+| [CLI standard](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md) | The rules every WireCat CLI follows; this package holds them as data |
+| [Changelog](CHANGELOG.md) | What each version changed, and what may break callers |
 
-**In a machine mode, stdout carries data and nothing else.** No spinner, no `✓`, no warning, no
-ANSI. Diagnostics go to stderr, in every mode including the pretty one. That is the contract a
-script or an agent depends on, and `captureStreams` exists so a test can prove nothing leaked
-across.
+## What it is
+
+Every WireCat tool is built on it: [tg-cli](https://github.com/WireCatLabs/tg-cli),
+[max-cli](https://github.com/WireCatLabs/max-cli), and [cli-core](https://github.com/WireCatLabs/cli-core) — the shared
+messaging engine — and through it the mail, notes, Zoom and Drive tools.
+
+Up to version 0.20.0 (October 2026) this package was `@wirecat/cli-core`. That name now belongs to the shared
+messaging engine: in older changelogs, plans and issues, "cli-core" means this package.
+
+**One rule shapes everything here: in a machine mode, stdout carries data and nothing else.** No spinner, no `✓`, no
+warning, no ANSI. Diagnostics go to stderr, in every mode including the pretty one. That is the contract a script or
+an agent depends on, and `captureStreams` exists so a test can prove nothing leaked across.
 
 ```ts
 import { captureStreams, createRenderer } from "@wirecat/cli-base"
@@ -34,215 +50,75 @@ streams.stdout // ['{"chats":2}']
 streams.stderr // []
 ```
 
-## What is in it
+## Architecture
 
-| | |
+The package is split by **when** a piece runs, so a tool loads only what it calls:
+
+| When | Entry points |
 |---|---|
-| `streams` | the stdout/stderr split, and the capture used to test it |
-| `renderer` · `pretty` | `pretty` / `json` / `jsonl`; tables for lists, labelled lines for objects; `quiet` keeps only failures on stderr |
-| `errors` · `exit-codes` | 14 closed error codes, one exit number each, so a script can branch on `$?` |
-| `keyring` | `KeyringStore` with the system, memory and deliberately-broken implementations |
-| `fieldsOf` · `projectFields` | validated field selection preserving list metadata and operation identifiers |
-| `createOutputBuffer` | bounded UTF-8 output held until successful completion and resource cleanup |
-| `createDeadline` | cooperative command cancellation with injected sleep and a parent abort signal |
-| `time` | monotonic and wall clocks, and the one sleep that both timeouts and backoff use |
-| `logger` | the four-method interface a host adapts Pino to — this package logs nothing itself |
-| `paths` | config, state and cache in the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`) and the `AppData` one on Windows, each overridable by environment variable; `migrateLegacyMacPaths` moves an older release's `~/Library` folders once |
-| `config` | JSON config loading that names the bad field, and an atomic write that locks the directory down |
-| `credentials` | environment → keyring → file, warning once and falling through when the keyring refuses |
-| `logging` | `createRecordLog`: one `LogRecord` per JSON line (OpenTelemetry field names, flat), secrets and content-naming keys redacted at any depth, top-level keys off the allow-list (`LOG_ATTRIBUTE_KEYS` + `allow`) written without their value; `logRecordOf` builds the same record for a writer of its own; a file that cannot be written is reported to `onError`, never thrown |
-| `retry` | full-jitter backoff, and the distinction between "no answer came" and "safe to repeat" |
-| `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock` |
-| `/commands` | the command registry: `describeProgram`, `annotate`, `flatten`, `refuseJoinedPath`, and `commandsDocument` — the one `commands --json` shape, with its schema — see below |
-| `/completion` | shell completion over the registry: `suggest`, `formatSuggestions` — see below |
-| `/update` | keeping an install current: `installerOf`, `updateCommand`, `latestVersion`, `mayNotify`, `updateNotice`, `runUpdate` — see below |
-| `/codegen` | build time: an official API description → types, Valibot schemas, an operation manifest and a coverage page — see below |
-| `/release` | release time: `releaseCheck` and the checks it runs — changelog shape, links, package contents, version in step — see below |
-| `/skill` | the CLI's SKILL.md for coding agents: `skillCommand` (`show`, `install`), `skillHint`, `skillResource` — see below |
-| `/mcp` | local stdio MCP setup for Codex and Claude Code, plus a read-only handshake and tool-list probe |
-| `/query` | one query language for every list: the Lucene 9.12.3 parser port, fields from an entity schema, validation, the Fields help and `evaluate` as a test oracle — see below |
-| `/standards` | the registries the standard is made of — vocabulary, output envelope, error object and reasons, next steps, log record, lint rules — as Valibot schemas that also emit JSON Schema 2020-12 |
+| Every command | root: streams, renderer, errors and exit codes, keyring, credentials, paths, config, time, retry, logging, field selection, output buffer, deadlines |
+| Only if the tool speaks HTTP | `/http` |
+| Commands that describe the tool | `/commands`, `/completion`, `/query`, `/skill`, `/mcp`, `/update`, `/standards` |
+| Build time | `/codegen`, with a small `/codegen/runtime` for the generated schemas |
+| Release time | `/release` |
+| Tests | `/testing`: captured streams, memory and broken keyrings, a fake clock |
+| Configuration | `biome`, `tsconfig.*.json`, `lefthook.yml`, `cspell` presets |
 
-**Nothing in the root export is HTTP.** Status classification, `Retry-After` parsing and the fetch
-seam live in `@wirecat/cli-base/http`, so a CLI that speaks a socket never depends on a stack it
-does not call:
+Three lines this package does not cross:
 
-```ts
-import { providerWaitMs, statusToCode } from "@wirecat/cli-base/http"
-```
+- **Nothing in the root export is HTTP.** Status classification, `Retry-After` and the fetch seam live in `/http`, so a
+  CLI that speaks a WebSocket never carries an HTTP stack.
+- **The environment is an argument.** The clock, the sleep, the keyring, `env`, `fetch` and the streams are all
+  parameters; the real ones are only defaults. A timeout test finishes instantly, and a keyring test cannot reach a
+  real keychain.
+- **It logs nothing and prints nothing by itself.** It hands the host a `Logger` interface, a Pino adapter and a
+  renderer; what is written, and where, is the host's call.
 
-**Portable command control stays independent of provider and store lifetimes.**
-`fieldsOf("id,speaker.id")` parses up to 128 field paths; `projectFields(value, paths)` selects data
-from objects or list items while preserving the list envelope and `operation_id` / `send_id`.
-`items.id` also works for bare objects and JSONL items. Unknown fields are omitted; parent selections
-win over their children. Unsafe prototype paths are refused, including when paths are passed directly.
+Five runtime dependencies: valibot and its JSON Schema converter, cli-table3, picocolors and cross-spawn. Commander is
+an optional peer, used as a type.
 
-`createOutputBuffer({ maxOutputBytes })` retains raw output chunks until `flush(write)` or `discard()`.
-Its default limit is 4 MiB; zero disables the limit. It counts actual UTF-8 bytes, including delimiters
-the caller passes, and adds no newlines. Use a new buffer for each command and flush only after resource
-cleanup succeeds; discard on failure. A flush consumes the buffer even when its writer throws.
-The `bytes` property reports the cumulative accepted byte count. A writer failure can leave partial
-output; buffering only guarantees no output before flushing.
+## Features
 
-Optional `{ fields, format: "json" | "jsonl" }` projects before counting bytes. With projection,
-each `data(text)` must contain a complete JSON value or complete JSONL lines; fragments fail before
-buffering. Without projection, arbitrary text chunks work. Hosts can instead project values before
-rendering and buffer the renderer's raw text. For core renderers, pass the line delimiter explicitly
-when adapting `Streams.data`: `data: (text) => buffer.data(text + "\n")`.
+### Output for people and machines
 
-`createDeadline({ timeoutMs, signal, sleep })` supplies a command signal and `race(body)`. An omitted
-timeout creates no timer; zero aborts synchronously without calling sleep, and the maximum is 2147483647 milliseconds.
-Pass its signal to every cancellable operation and check it before writes. On timeout or parent
-cancellation, `race` waits for the body to settle before rejecting, so a caller can safely close
-resources afterwards. An operation ignoring its signal can delay completion; this helper never
-abandons it in the background. A body's more precise `outcome_unknown` error survives interruption.
-Call `dispose()` in `finally` to remove the timer and parent listener. There are no process signal
-handlers, retries, automatic resource cleanup or HTTP behavior in these helpers.
+- **Three formats from one renderer:** `pretty` for a person — tables for lists, labelled lines for objects — and
+  `json` or `jsonl` for a program. `quiet` keeps only failures.
+- **Field selection** (`--json=id,speaker.id`) that keeps the list envelope and the operation ids, and refuses unsafe
+  paths.
+- **A bounded output buffer.** Output waits until the command succeeds and has closed what it holds; past the limit
+  (4 MiB by default) it fails visibly instead of truncating.
 
-**The command registry is `@wirecat/cli-base/commands`** — the whole command tree as data, like
-`rails routes`, for an agent to read instead of `--help` and for generated documentation. It walks
-the live [Commander](https://github.com/tj/commander.js) tree, so a command built in a loop from a
-catalog appears exactly like a handwritten one; `annotate` adds what the tree cannot say. Commander
-is a type here, not a runtime dependency — an optional peer, 15 or newer.
+### Errors a script can branch on
 
-```ts
-import { annotate, describeProgram } from "@wirecat/cli-base/commands"
+Fourteen closed error codes, one exit number each: validation, configuration, authentication, permission, not found,
+rate limited, timeout, network, provider, outcome unknown and the rest. A script branches on `$?`, an agent on the
+`code` and `reason` in one JSON object on stderr. Errors are recognised by a brand, so two installed copies of the
+package still understand each other's errors.
 
-annotate(program.command("send"), { mutates: true, examples: ["max messages send 42 hi"] })
-annotate(generated, { origin: "generated", operation_id: "campaigns.list" })
+### The standard, as data a machine checks
 
-describeProgram(program) // [{ path: ["send"], usage, origin, mutates, options: [...], commands: [...] }]
-```
+The rules every WireCat CLI follows — the verb vocabulary, the output envelope, the error reasons, next steps, the log
+record — live in `/standards` as Valibot schemas that also emit JSON Schema 2020-12.
 
-Each option says whether it `takes_value` and, separately, whether it is `mandatory` — not
-Commander's `required`, which means "takes a value when given" — plus its choices, default,
-environment variable, the options it `conflicts` with and the values it `implies`, keyed by long flag.
-Every key of the document is snake_case.
+- **The whole command tree as data.** `describeProgram` walks the live Commander tree, like `rails routes`: every
+  command, option, default, conflict and whether it writes. `commands --json` gives it to an agent instead of `--help`.
+- **A linter for command trees.** `cli-dev lint` checks a CLI's tree against 14 rules — unknown verbs, filter flags
+  that should be query fields, examples that do not run, key casing and more. Known violations live in a baseline
+  that may only shrink.
+- **An audit across CLIs.** `cli-dev audit` reads several CLIs' command trees and checks them against each other:
+  the commands every CLI must have, the same options and output where two CLIs share a path, the same meaning for the
+  same flag, the same entity schemas and error reasons. A weekly workflow runs it over the published CLIs.
 
-**A list filters with one query, `@wirecat/cli-base/query`** — `tasks list state:open priority>1`, the
-query positional and last, `[query...]`, over the entity's own snake_case keys. `queryFieldsOf(schema, annotations)`
-reads the fields from the entity's Valibot schema (string → `kw`, a list of choices → `enum`, number → `num`, `isoTime` →
-`time`, boolean → `bool`, `reference` → `ref`); annotations add the exceptions: words (`text`), relations,
-`is:` states, examples, the fields a provider filters natively. `parseLucene(text, { defaultField: "none",
-command })` refuses a bare word (`query.bare-word`); `validateQuery` checks names, operators, values and
-placement and names every field when one is unknown; `fieldsHelp` prints the help's Fields section;
-`QUERY_REASONS` registers the errors. A list filters where its data lives — its store or the provider — and
-never in memory: `evaluate` exists to test those compilers against. `annotate(list, { output: { entity },
-query })` puts both in `commands --json`, where `cli-dev lint` reads them.
+### One query language for every list
 
-`refuseJoinedPath(program, args)` throws a `validation_error` when a command path arrived as one
-argument (`"projects add" --help`, what a zsh loop over `$c` passes), naming the words to type.
-Commander would print the root help instead; call it on the words before `parseAsync`, after a
-leading profile word if the CLI takes one.
+`tasks list state:open priority>1`: a port of the Lucene 9.12.3 parser, with the fields read from the entity's own
+schema — strings, choices, numbers, times, booleans, references. A list filters where its data lives, in its store or
+at the provider, never in memory; `evaluate` exists only as a test oracle for those compilers. An unknown field fails
+with the list of fields that exist.
 
-**Shell completion is `@wirecat/cli-base/completion`**, built on the registry. `suggest` takes the
-words typed so far and answers what may come next: a command, an action, an option, one of its
-values, or an argument's values from a source the CLI hands in — a local cache, never the network,
-because a shell calls it on every Tab. `formatSuggestions` writes the answer in the protocol of the
-shell scripts [`@bomb.sh/tab`](https://github.com/bombshell-dev/tab) generates, so the CLI prints
-those scripts with tab and answers `<cli> complete -- <words>` with this; cli-base itself does not
-depend on tab.
+### Secrets in the OS keyring, on every platform
 
-```ts
-import { formatSuggestions, suggest } from "@wirecat/cli-base/completion"
-
-const words = argv.slice(argv.indexOf("--") + 1)
-streams.data(formatSuggestions(suggest({ commands, globalOptions, words, sources: { arguments: { chat: chatNames } } })))
-```
-
-**Two traps worth knowing before you use the credential store.** The OS keyring is global: an entry
-is addressed by service and account and knows nothing about which config directory asked for it, so
-a throwaway config directory silently overwrites the real secret unless you pass `isolated: true`.
-And a secret should never be handed to a logger in the first place — redaction by field name is the
-second line of defence, not the first.
-
-**Everything the environment knows can be passed in**: the clock, the sleep, the keyring, `env`,
-`fetch` and the streams. The real ones are only defaults — `Credentials` without a `keyring` uses the
-system keychain, `resolvePaths` without `env` reads `process.env`. Passing them is what makes a
-timeout test finish instantly and a keyring test incapable of reaching a real keychain.
-
-**Generating an API catalog is `@wirecat/cli-base/codegen`**, a build-time tool. It reads a
-format-neutral `ApiModel` — operations with a transport binding (`http` method and path, or `rpc`
-name), an `effect` (`read`, `write`, `destructive`) and how far the source can be trusted
-(`contract`, `example`, `inferred`, `override`) — and writes committed files. It parses no file
-format: the adapter from OpenAPI, Postman or anything else lives in the CLI that has that source,
-so this adds no dependency. Generation stops, naming the problem, when two operations collide, an
-operation is not classified as a read or a write, an override matches nothing, a reference points
-nowhere or a construct cannot be expressed; it never drops an operation or falls back to `any`.
-
-```ts
-import { generate, manifestGenerator, typesGenerator, valibotGenerator, writeArtifacts } from "@wirecat/cli-base/codegen"
-
-const artifacts = generate(model, [typesGenerator({ path }), valibotGenerator({ path, typesImport }), manifestGenerator({ path })], {
-  overrides: { answerOnCallback: { effect: "write", reason: "a POST that edits a message" } },
-  banner: ["Source: spec/bot/schema.yaml", "Run: pnpm bot:generate"],
-})
-const stale = writeArtifacts(artifacts, { root, check: process.argv.includes("--check") })
-```
-
-The generated schemas import `@wirecat/cli-base/codegen/runtime` at run time — a few number
-helpers, not the generator. Numbers are expected from a lossless JSON parser (`lossless-json`): a
-64-bit integer comes out as its exact decimal string, and any other integer that does not fit a JS
-number fails instead of rounding. Objects are loose, so a field the API added later passes through.
-Unions retain every alternative, including recursive references and Boolean literals.
-`definitionsGenerator` emits the same schema nodes for runtime input traversal; RPC parameters can be in the JSON body.
-Enums and discriminated unions are **strict**: a value or subtype the snapshot does not know fails,
-so decode a live stream (updates, webhooks) only where that is what you want.
-
-**The schemas decode; they do not encode.** Their output carries an `int64` as a string, so sending
-it back would put a string where the API expects a number. Validate a request with the schema, then
-send the original lossless value.
-
-**Keeping an install current is `@wirecat/cli-base/update`.** `installerOf(realpath(script))` says
-which package manager put the CLI there — pnpm, npm or bun, measured on real installs — and
-`updateCommand` gives the argv that updates it; a checkout or `npx` gets none. `latestVersion` asks
-npm with a timeout and answers `undefined` on any failure. `mayNotify` says whether a person is at a
-terminal to be told: never in JSON, a pipe, `--quiet`, `CI` or with `NO_UPDATE_NOTIFIER`.
-`updateNotice` is the whole daily line: it stays silent when `update` or `complete` is anywhere on
-the command line, asks npm at most once a day through a state file the CLI names, and returns the
-sentence or `undefined` — it never throws. `runUpdate` starts the package manager with its output on
-stderr (`spawnPlan` is the Windows `.cmd` rule). Nothing here updates or prints by itself — a CLI
-holding somebody's credentials must not change itself unasked.
-
-**A CLI's guide for coding agents is `@wirecat/cli-base/skill`.** `skillCommand(app, skillUrl,
-environment)` is `<cli> skill show` — SKILL.md on stdout, even into a pipe, or `{ name, content }`
-with `--json` — and `<cli> skill install [--for claude|agents|all]`, which writes it to
-`~/.claude/skills/<appName>/` and `~/.agents/skills/<appName>/` with the CLI's version as
-`metadata.version` in the frontmatter, refusing a file whose `name` is not `<appName>`. `environment` is the host's own renderer, streams and `env` for that invocation.
-`skillHint` is one line, or `undefined`, for an agent (`AI_AGENT` or `CLAUDECODE` set) with no copy
-installed or an older one, at most once a day, through the same state file as `updateNotice`; the
-host prints it on stderr. `skillResource` is what an MCP server registers to serve the file as
-`<command>://skill`, plus a line for its `instructions` — the SDK stays the host's.
-
-**The release checks are `@wirecat/cli-base/release`** — everything about a release that a program
-can decide. A check is `{ name, run }`, and `run` returns the problems it found, one line each; an
-empty list is a pass. `releaseCheck(checks, { version, log })` runs them all, even after a failure,
-prints `ok` or `FAIL` per check and returns how many failed — the caller exits. The checks every CLI
-shares: `command(root, "pnpm", "lint")` for anything that passes by exiting 0, `notOnNpm`,
-`packContents` against a list of what may ship, `changelogProblems` for the fixed headings and the
-dated top section, `docsProblems` for dead links and anchors and the rules of the pages a user reads,
-and `versionScript` — the whole of a `version:check` / `version:sync` script. Each CLI passes its
-own headings, id prefixes and pages; the checks that belong to one messenger stay in that CLI.
-
-```ts
-import { command, notOnNpm, packageVersion, releaseCheck } from "@wirecat/cli-base/release"
-
-const version = packageVersion(root)
-const failed = releaseCheck(
-  [
-    { name: "version not on npm", run: notOnNpm(root, "@wirecat/tg-cli", version) },
-    { name: "lint", run: command(root, "pnpm", "lint") },
-  ],
-  { version, log: console.log },
-)
-process.exit(failed === 0 ? 0 : 1)
-```
-
-## Where secrets actually go, per platform
-
-The keyring is real on every desktop and absent on most servers, so the fallback is not an edge
-case — it is the normal path in CI and containers. Checked against `@napi-rs/keyring` 2.1.0 on
-2026-09-19.
+Credentials resolve environment → keyring → file, warning once and falling through when the keyring refuses.
 
 | Platform | Backing store | Needs installing |
 |---|---|---|
@@ -252,182 +128,67 @@ case — it is the normal path in CI and containers. Checked against `@napi-rs/k
 | Linux headless, container, WSL, CI | usually **nothing** — no session bus, no secrets daemon | falls back to a `0600` file, with one warning on stderr |
 | FreeBSD | Secret Service, same as Linux | same |
 
-**No compiler is involved.** The package ships prebuilt binaries for twelve platform triples —
-macOS arm64/x64, Windows x64/ia32/arm64, Linux x64 and arm64 in both glibc and musl, armv7,
-riscv64, FreeBSD x64 — so there is no Rust toolchain and no node-gyp on any mainstream target.
-The Linux binary links only against libc: it speaks D-Bus itself rather than through libsecret,
-so *libsecret is not a requirement* — a running Secret Service provider is.
+**No compiler is involved.** Prebuilt binaries cover twelve platform triples, and the Linux one speaks D-Bus itself,
+so libsecret is not a requirement. Checked against `@napi-rs/keyring` 2.1.0 on 2026-09-19.
 
-Two consequences worth designing for rather than discovering:
+Two traps worth designing for: the keyring is global, so a throwaway config directory overwrites the real secret
+unless you pass `isolated: true`; and a locked Linux keyring can block on a prompt rather than fail.
 
-- **`auto` is the right default and `file` must stay available.** `credentialStorage: "file"` skips
-  the keyring entirely, which is what a container wants and what a locked keyring makes necessary.
-- **A locked Linux keyring can block on a prompt** rather than failing. That is the one case the
-  fallback does not rescue, and a CLI that hangs looks broken rather than locked.
+### Time, retries and deadlines
 
-## Both runtimes
+- **Monotonic and wall clocks, and one sleep** that both timeouts and backoff use, so a fake clock controls both.
+- **Retries with full-jitter backoff**, and a distinction most retry helpers miss: "no answer came" is not "safe to
+  repeat". A write whose outcome is unknown stays unknown.
+- **Cooperative deadlines.** A timeout waits for the command to settle before it rejects, so resources close in order.
 
-Node 22+ and Bun, and the Bun half is executed rather than assumed:
+### Files on disk
+
+- **Paths:** the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`), `AppData` on Windows,
+  each overridable by environment variable. Folders an older release kept in `~/Library` move once.
+- **Config** that names the bad field, and an atomic write that locks the directory down.
+- **Logs** as one JSON record per line with OpenTelemetry field names; secrets are redacted by field name at any
+  depth.
+
+### Generated API clients that never guess
+
+`/codegen` turns an API description into TypeScript types, Valibot schemas, an operation manifest and a coverage page.
+Every operation is classified as a read, a write or destructive, with how far the source can be trusted. Generation
+stops, naming the problem, on a collision, an unclassified operation or a dangling reference — it never drops an
+operation and never falls back to `any`. 64-bit integers stay exact.
+
+### Built for agents and for keeping installs current
+
+- **`skill show` and `skill install`** give a coding agent the CLI's own guide, versioned with the CLI.
+- **MCP setup** for Codex and Claude Code, with a read-only handshake probe.
+- **Shell completion** from the command tree, answered from local data only — a shell asks on every Tab.
+- **Update checks that never update unasked.** Which package manager installed the CLI, the command that updates it,
+  and a daily notice only when a person is at a terminal. A tool holding someone's credentials does not change itself.
+- **Release checks** every CLI shares: changelog shape, dead links, package contents, versions in step.
+
+## Engineering
+
+- **Both runtimes, executed.** Node 22+ and Bun; `pnpm smoke:bun` runs the same exports under Bun rather than
+  assuming they work.
+- **One shared toolchain.** TypeScript, Biome, lefthook, CSpell, a Markdown linter and a reusable CI workflow — install, lint,
+  typecheck, test with coverage, build, Bun and a gitleaks scan of the whole history. A CLI takes each piece on its
+  own: [Shared tooling](docs/TOOLING.md).
+- **`cli-dev`** replaces the scripts every CLI used to copy: version sync, docs checks, slow-test reports, the test
+  matrix and the command-tree lint.
 
 ```sh
 pnpm test        # vitest, Node
-pnpm smoke:bun   # the same exports, actually run under Bun
+pnpm smoke:bun   # the same exports, run under Bun
 pnpm lint
 pnpm typecheck
 pnpm build
 ```
 
-The rest of the checks, and what each is for, are in [`docs/dev/TESTING.md`](docs/dev/TESTING.md).
-
-## Shared tooling
-
-The configuration, development scripts and CI that every CLI on cli-base used to copy. A repository
-takes each piece on its own.
-
-**TypeScript.** Compiler options only; paths and file lists stay in the repository, because `tsc`
-resolves them against the file that declares them.
-
-```jsonc
-// tsconfig.json
-{
-  "extends": "@wirecat/cli-base/tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts"]
-}
-// tsconfig.test.json — checks every file under src/, tests included, without emitting
-{ "extends": ["./tsconfig.json", "@wirecat/cli-base/tsconfig.test.json"] }
-// tsconfig.scripts.json — checks scripts/
-{ "extends": ["./tsconfig.json", "@wirecat/cli-base/tsconfig.scripts.json"] }
-```
-
-**Biome.** Formatter, linter and the rule that lets `scripts/` print. Your `files.includes` and
-your own `overrides` (import boundaries) stay in your file; Biome adds them to the shared ones.
-Write the specifier without `.json`: Biome reads anything ending in `.json` as a relative path.
-
-```json
-{ "extends": ["@wirecat/cli-base/biome"], "files": { "includes": ["**", "!**/dist", "!**/node_modules", "!pnpm-lock.yaml"] } }
-```
-
-**lefthook.** Biome and gitleaks on staged files before a commit, `pnpm typecheck` before a push.
-An extended file **overrides** your `lefthook.yml`; to change a shared hook, use `lefthook-local.yml`.
-
-```yaml
-extends:
-  - node_modules/@wirecat/cli-base/config/lefthook.yml
-```
-
-**`cli-dev`.** Installed with the package; `pnpm exec cli-dev help` lists the commands.
-
-| Instead of | Run |
-|---|---|
-| `scripts/slow-tests.ts` | `cli-dev slow-tests [report] [count]` |
-| `scripts/next-version.mjs` | `cli-dev next-version <wanted> <latest> <versions-json>` |
-| `scripts/version.ts` | `cli-dev version [--sync] [--file src/version.ts]` |
-| `scripts/docs-check.ts` | `cli-dev docs-check --rules scripts/release/checks.ts`, or `--ids CLI,MAX` with the English defaults |
-| `scripts/test-matrix.ts` | `cli-dev test-matrix --program dist/program.js --untested scripts/test-matrix-untested.ts --name max [--check]` |
-
-| — | `cli-dev lint --cli dist/bin.js` (or `--commands <file>`): the command tree against the standard |
-| — | `cli-dev audit --cli <bin> --cli <bin> …`: several CLIs against the standard and against each other |
-
-`cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and
-judges it by `LINT_RULES` and `VOCABULARY` from `/standards`. Known violations live in
-`lint/baseline/<rule-id>.json`, one file per rule, and may only shrink: an entry with no violation left
-fails the run. `--write-baseline` rewrites those files to today's violations. Permanent exceptions go in
-`lint/overrides.json` — `[{ "rule", "target", "reason" }]` — and more than `--budget` (10) of them fails.
-Every option needs a role from the vocabulary (`paging`, `output`, `sort`, `mode`, `action`, `budget`, `scope`,
-`target`, `value`, `query`) — there is no filter role. `filter-flag` reports an option of a read-only command
-named after a field of its entity (`--kind`, `--since-time`, `--before-id`), except a `scope` flag such as
-`--account`; `list-without-query` a `list` with an `output` entity and no query; `query-example` a field example
-or default term that does not run. `--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
-keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed. Its entry
-`log_attributes` (`logAttributesJsonSchema(allow)`) is the CLI's log allow-list instead: `log-attribute-key` fails a
-key that names message text, a token or a phone number.
-
-`cli-dev audit` reads two or more commands documents (`--cli <bin>` or `--commands <file>`, repeated) and prints a
-scorecard: per CLI and rule, what it found, what the baseline holds, what is overridden, what is new and what was
-fixed; `--json` prints it as the list envelope. Every lint rule judges each CLI alone; `AUDIT_RULES` in `/standards`
-compare them: `required-root` (`REQUIRED_ROOTS`: `commands`, `doctor`, `skill show|install`, `mcp`, `upgrade`),
-`same-path-contract` (a path two CLIs of a parity group share has the same options, value names, output and summary;
-a group covering the whole tree has the same paths), `same-flag-meaning`, `same-entity-schema` (from `--schemas
-<cli>=<file>`) and `same-error-reason` (from `--reasons <cli>=<file>`, a JSON list of `defineReasons` entries). The two
-last rules print `n/a` for a CLI that gave no such file. `PARITY_GROUPS` names who is compared where — `messengers`
-(tg, max) over the whole tree, `all` over the shared roots — and each group's declared `differences`, each with a reason,
-at most 10. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
-(`max+tg chats list --limit`, `tg: chats grab` for a lint violation); `--write-baseline` rewrites them. `--lint
-<cli>=<dir>` judges that CLI's lint rules by its own `lint/` folder instead. A new finding fails the run — only one
-naming `--for <cli>` when given — and a fixed one is reported, not failed. `AUDIT_BLOCKS` decides whether a new
-cross-CLI divergence fails the run (`"new"`) or only shows (`"never"`); a new lint violation always fails. A document
-from a cli-base before 0.26, with camelCase keys, is read too, and `key-casing` reports it. The weekly `Weekly CLI
-audit` workflow runs it over the five latest published CLIs and rewrites the pinned issue labelled `cli-audit`.
-
-`--rules` names a module exporting `CHANGELOG` and `docsRules(root)`; `--program` one exporting
-`createProgram`; `--untested` one exporting `UNTESTED`. A TypeScript module loads on Node 24 as it is.
-
-**Docs.** Spelling, Markdown form and prose rules for the pages a user reads. The tools are your
-own dev dependencies (`cspell`, `@cspell/dict-ru_ru`, `@cspell/dict-en-gb`, `rumdl`); the settings
-and the shared word list are here. Code blocks and inline code are not spell-checked: commands and
-options are checked against the program by the parity check.
-
-```jsonc
-// cspell.json — the dictionaries resolve from your node_modules, so you import them yourself
-{
-  "version": "0.2",
-  "import": ["@wirecat/cli-base/cspell", "@cspell/dict-en-gb/cspell-ext.json", "@cspell/dict-ru_ru/cspell-ext.json"],
-  "ignorePaths": ["docs/commands.md", "docs/dev/**", "CHANGELOG.md"],
-  "words": []
-}
-```
-
-```sh
-cspell --no-progress README.md "docs/*.md"
-rumdl check --config node_modules/@wirecat/cli-base/config/rumdl.toml README.md docs/*.md
-vale README.md docs/*.md   # .vale.ini: StylesPath = node_modules/@wirecat/cli-base/config/vale
-```
-
-`cli-dev docs-check --pages` adds the structure check: `docs/` against `docs/meta.json`, the
-sidebar of [the docs portal](https://github.com/WireCatLabs/cli-docs/blob/main/docs/STRUCTURE.md).
-Vale's styles are `CliDocs` (filler words, long sentences) and `Tg` (tg's tone: a Telegram client,
-never "unofficial"); its rules warn rather than fail until they are tuned.
-
-**CI.** Install, lint, typecheck, test with coverage, build, your extra checks, Bun, and a gitleaks
-scan of the whole history. Jobs only your repository needs stay beside it in your `ci.yml`.
-
-```yaml
-jobs:
-  ci:
-    uses: WireCatLabs/cli-base/.github/workflows/node-ci.yml@v<version>
-    with:
-      checks: |
-        pnpm docs:check
-      bun-run: pnpm build && pnpm smoke:bun   # the default is pnpm smoke:bun
-```
-
-Inputs: `node-version` (`"24"`), `checks` (shell lines run after the build), `bun` (`true`),
-`bun-run`. The workflow is in the repository, not the package: pin a tag or a commit, not `main`.
-
 ## Releasing
 
-Raise `version` in `package.json` and date the `## Unreleased` section of
-[`CHANGELOG.md`](CHANGELOG.md) as that version, through a pull request; merge it, then on `main`:
-
-```sh
-bin/release
-```
-
-It refuses a dirty tree, a branch other than `main` and a `main` that is not pushed. When npm already
-has the version, or a higher one, it commits the next free version to `main` — the next minor for
-`x.y.0`, the next patch otherwise — renames the changelog heading to match, and publishes that. Then it starts
-[`release.yml`](.github/workflows/release.yml) and follows it. The workflow runs every check,
-publishes through npm's [trusted publishing](https://docs.npmjs.com/trusted-publishers/) — no npm
-token in GitHub, and npm attaches provenance — and tags `v<version>` only once npm shows the new version.
-
-npm trusts the workflow **by file name**: the package's Trusted Publisher settings on npmjs.com name
-`WireCatLabs` / `cli-base` / `release.yml`. Rename the file and publishing stops until they are updated.
-
-`bin/release --local` is the fallback: it runs the same checks here and publishes with the npm token
-from the keyring (`secret-tool`, service `npm`, account `leemour`) without printing it. The token
-must be allowed to write `@wirecat/cli-base`, not only `@wirecat/max-cli`.
+`bin/release` on `main` starts [`release.yml`](.github/workflows/release.yml), which runs every check and publishes
+through npm's [trusted publishing](https://docs.npmjs.com/trusted-publishers/) with provenance — no npm token in
+GitHub. It tags `v<version>` once npm shows the new version. The steps are in [RELEASING.md](docs/dev/RELEASING.md); how a release reaches the tools is in the
+[architecture](docs/dev/ARCHITECTURE.md#how-a-change-is-published-and-picked-up).
 
 ## Licence
 
