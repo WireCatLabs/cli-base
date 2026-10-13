@@ -252,6 +252,7 @@ const flags: Vocabulary["flags"] = [
   { name: "--after-n", value: "<n>", type: "count", meaning: "how many messages after it", unit: "messages" },
   { name: "--timeout", value: "<duration>", type: "duration", meaning: "give up after this long" },
   { name: "--dry-run", type: "switch", meaning: "judge and plan; do nothing" },
+  { name: "--debug", type: "switch", meaning: "on failure, show the full error record: cause and stack" },
 ]
 
 /** The words every CLI on cli-base is judged against. Seeded from STANDARD's command-name rules and the glossary. */

@@ -94,5 +94,5 @@ export const commandsDocument = (root: Command, about: CommandsDocumentAbout): C
   description: root.description(),
   globalOptions: describeOptions(root),
   commands: describeProgram(root),
-  exitCodes: { ok: 0, generic_failure: GENERIC_FAILURE, ...EXIT_CODES },
+  exitCodes: { ok: 0, internal_error: GENERIC_FAILURE, ...EXIT_CODES },
 })
