@@ -32,7 +32,7 @@ export const createDeadline = ({ timeoutMs, signal, sleep = realSleep }: Deadlin
   const expire = () =>
     abort(
       new CliError("timeout", "the command did not finish before its deadline", {
-        reason: "command_timeout",
+        reason: "command.timed-out",
         timeoutMs,
         retryable: false,
       }),

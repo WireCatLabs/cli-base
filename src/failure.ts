@@ -16,6 +16,8 @@ import { type StepDefinition, stepOf } from "./standards/steps.js"
 export interface FailureContext {
   /** The package's own reasons; the base ones are always known. */
   reasons?: readonly ErrorReason[]
+  /** Detail keys the package allows on every reason, until each one is registered on its reason. */
+  details?: readonly string[]
   steps?: readonly StepDefinition[]
   runId?: string
 }
@@ -42,6 +44,7 @@ const recognise = (failure: unknown): Recognised | undefined => {
 const reasonFor = (code: ErrorObject["error"]["code"], named: unknown, reasons: readonly ErrorReason[]) =>
   reasons.find((entry) => entry.reason === named && entry.code === code) ??
   BASE_REASONS.find((entry) => entry.reason === named && entry.code === code) ??
+  // The first base reason for each code is its fallback.
   (BASE_REASONS.find((entry) => entry.code === code) as ErrorReason)
 
 const nextFor = (reason: ErrorReason, details: CliErrorDetails, steps: readonly StepDefinition[]): NextStep[] => {
@@ -75,7 +78,8 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
   }
   const { code, message, details } = recognised
   const reason = reasonFor(code, details.reason, reasons)
-  const allowed = new Set<string>([...COMMON_DETAILS, ...reason.details])
+  const allowed = new Set<string>([...COMMON_DETAILS, ...(context.details ?? []), ...reason.details])
+  allowed.delete("cause")
   const kept = Object.fromEntries(
     Object.entries(details).filter(([key, value]) => allowed.has(key) && value !== undefined),
   )

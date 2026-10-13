@@ -29,10 +29,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `CliError`: exit 1, a fixed message — the thrown text never reaches the user. It stays outside `errorCodes`,
   so no command can raise it.
 - `CliErrorDetails` names `reason` and `param`.
+- `FailureContext.details`: detail keys a package allows on every reason until each is registered on its own.
 
 ### Changed — may break callers
 
 - **`errorObjectSchema.runId` is optional** until every CLI keeps a run for each failure.
+- **Reasons cli-base raises are dotted and registered:** `command_timeout` → `command.timed-out`,
+  `output_limit` → `output.too-large`, `projection_unavailable` → `output.fields-unavailable`. A script that
+  matched the old strings has to switch.
 - The handler also recognises a `CliError` from a cli-base copy older than 0.22.0 by name and code, since
   those carry no brand.
 - **Redaction applies at every depth, arrays included.** It used to stop two levels down.

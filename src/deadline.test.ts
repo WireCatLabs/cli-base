@@ -85,7 +85,7 @@ describe("portable command deadlines", () => {
     finish()
     await expect(running).rejects.toMatchObject({
       code: "timeout",
-      details: { reason: "command_timeout", timeoutMs: 20 },
+      details: { reason: "command.timed-out", timeoutMs: 20 },
     })
     expect(timer.sleep).toHaveBeenCalledWith(20, expect.any(AbortSignal), "timeout")
     deadline.dispose()

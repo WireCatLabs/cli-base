@@ -63,6 +63,13 @@ describe("errorObjectOf", () => {
     })
   })
 
+  it("keeps the package-wide detail keys, still never the cause", () => {
+    const failure = new CliError("validation_error", "which chat?", { candidates: ["a", "b"], cause: "raw" })
+    expect(errorObjectOf(failure, { details: ["candidates", "cause"] }).error.details).toEqual({
+      candidates: ["a", "b"],
+    })
+  })
+
   it("chooses the next step by reason, and drops it when a required argument is missing", () => {
     const object = errorObjectOf(new CliError("configuration_error", "locked", { reason: "store.locked" }), {
       reasons,

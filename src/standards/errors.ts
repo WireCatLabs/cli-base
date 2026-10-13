@@ -52,7 +52,7 @@ export const defineReasons = (input: unknown): ErrorReason[] =>
 /** Keys any reason's `details` may carry; the handler drops every other key it was not told about. */
 export const COMMON_DETAILS = ["retryable", "retryAfterMs", "attempts", "status", "requestId", "operation"] as const
 
-/** One reason per code, used when the code site named none, plus the crash. */
+/** One reason per code, used when the code site named none, the crash, and the reasons cli-base raises itself. */
 export const BASE_REASONS: ErrorReason[] = defineReasons([
   { reason: "input.invalid", code: "validation_error", message: "the input is not valid", details: [] },
   { reason: "config.invalid", code: "configuration_error", message: "the configuration is not valid", details: [] },
@@ -66,7 +66,7 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
     details: [],
   },
   { reason: "provider.rate-limited", code: "rate_limited", message: "too many requests; wait", details: [] },
-  { reason: "command.timed-out", code: "timeout", message: "the command took too long", details: [] },
+  { reason: "command.timed-out", code: "timeout", message: "the command took too long", details: ["timeoutMs"] },
   { reason: "network.failed", code: "network_error", message: "the network did not answer", details: [] },
   { reason: "provider.refused", code: "provider_error", message: "the provider refused", details: [] },
   { reason: "provider.unavailable", code: "provider_unavailable", message: "the provider is down", details: [] },
@@ -74,6 +74,18 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
     reason: "provider.invalid-response",
     code: "invalid_response",
     message: "the answer could not be read",
+    details: [],
+  },
+  {
+    reason: "output.too-large",
+    code: "invalid_response",
+    message: "the output is over {maxBytes} bytes",
+    details: ["maxBytes", "bufferedBytes", "partialOutput"],
+  },
+  {
+    reason: "output.fields-unavailable",
+    code: "invalid_response",
+    message: "fields can be picked only from whole JSON values",
     details: [],
   },
   { reason: "outcome.unknown", code: "outcome_unknown", message: "it is not known whether it worked", details: [] },
