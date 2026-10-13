@@ -2,6 +2,9 @@ import { toJsonSchema } from "@valibot/to-json-schema"
 import * as v from "valibot"
 
 export const word = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/, "a lower-case word, words joined by -"))
+/** Every JSON key: `has_more`, `run_id`. */
+export const SNAKE_CASE = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/
+
 export const text = v.pipe(v.string(), v.regex(/\S/, "must not be empty"))
 export const dottedId = v.pipe(
   v.string(),
@@ -44,7 +47,7 @@ export const duplicates = (values: readonly string[]): string[] =>
 export const jsonSchemaOf = (schema: v.GenericSchema, definitions?: Record<string, v.GenericSchema>) =>
   toJsonSchema(schema, { target: "draft-2020-12", ...(definitions ? { definitions } : {}) })
 
-const PLACEHOLDER = /\{([a-zA-Z][a-zA-Z0-9]*)\}/g
+const PLACEHOLDER = /\{([a-z][a-z0-9]*(?:_[a-z0-9]+)*)\}/g
 
 export const placeholders = (template: string): string[] =>
   [...template.matchAll(PLACEHOLDER)].map((match) => match[1] ?? "")

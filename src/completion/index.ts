@@ -53,7 +53,7 @@ export const suggest = ({ commands, globalOptions = [], words, sources = {} }: C
     }
     if (word.startsWith("-")) {
       const option = findOption(word, current, globalOptions)
-      if (option?.takesValue && !word.includes("=")) pending = option
+      if (option?.takes_value && !word.includes("=")) pending = option
       continue
     }
     const child = level.find((command) => command.name === word)
@@ -124,7 +124,7 @@ const valuesAfterEquals = (
 ): Suggestion[] => {
   const [flag] = typed.split("=")
   const option = findOption(flag ?? "", current, globals)
-  if (!option?.takesValue) return []
+  if (!option?.takes_value) return []
   return optionValues(option, sources).map(({ value, description }) => ({ value: `${flag}=${value}`, description }))
 }
 

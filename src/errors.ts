@@ -33,12 +33,13 @@ export type ErrorCode = (typeof errorCodes)[number]
  * retry. Those are different questions and conflating them is how a duplicate write happens.
  */
 export interface CliErrorDetails {
+  // Keys are the error object's `details` keys, so snake_case like every JSON key.
   readonly status?: number
   readonly retryable?: boolean
   readonly attempts?: number
-  readonly requestId?: string
-  readonly runId?: string
-  readonly retryAfterMs?: number
+  readonly request_id?: string
+  readonly run_id?: string
+  readonly retry_after_ms?: number
   readonly operation?: string
   /** A registered reason, `store.locked`; recovery is chosen by it and the code, never by the message. */
   readonly reason?: string

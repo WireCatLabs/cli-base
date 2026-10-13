@@ -36,7 +36,7 @@ const program = (): Command => {
 
   const catalog = root.command("campaigns").description("generated from the catalog")
   for (const id of ["campaigns.list", "campaigns.details"]) {
-    annotate(catalog.command(id.split(".")[1] as string), { origin: "generated", operationId: id })
+    annotate(catalog.command(id.split(".")[1] as string), { origin: "generated", operation_id: id })
   }
 
   annotate(root.command("legacy"), { state: "deprecated" })
@@ -62,9 +62,9 @@ describe("describeProgram", () => {
     const list = commands.find(({ path }) => path.join(" ") === "campaigns list")
     const handwritten = commands.find(({ path }) => path.join(" ") === "messages list")
 
-    expect(list).toMatchObject({ origin: "generated", operationId: "campaigns.list", usage: "tool campaigns list" })
+    expect(list).toMatchObject({ origin: "generated", operation_id: "campaigns.list", usage: "tool campaigns list" })
     expect(handwritten?.origin).toBe("handwritten")
-    expect(handwritten).not.toHaveProperty("operationId")
+    expect(handwritten).not.toHaveProperty("operation_id")
   })
 
   it("builds the usage line from the arguments", () => {
@@ -94,15 +94,15 @@ describe("options", () => {
   }
 
   it("says which options take a value, and separately which must be given", () => {
-    expect(options().get("--limit")).toMatchObject({ takesValue: true, mandatory: false, default: "20" })
-    expect(options().get("--token")).toMatchObject({ takesValue: true, mandatory: true, env: "TOOL_TOKEN" })
-    expect(options().get("--offline")).toMatchObject({ takesValue: false, mandatory: false })
+    expect(options().get("--limit")).toMatchObject({ takes_value: true, mandatory: false, default: "20" })
+    expect(options().get("--token")).toMatchObject({ takes_value: true, mandatory: true, env: "TOOL_TOKEN" })
+    expect(options().get("--offline")).toMatchObject({ takes_value: false, mandatory: false })
   })
 
   it("carries choices, conflicts and implied values", () => {
     expect(options().get("--sort")?.choices).toEqual(["new", "old"])
     expect(options().get("--offline")?.conflicts).toEqual(["online"])
-    expect(options().get("--online")?.implies).toEqual({ refresh: true })
+    expect(options().get("--online")?.implies).toEqual({ "--refresh": true })
   })
 
   it("leaves hidden options out", () => {
@@ -206,7 +206,7 @@ describe("commandsPage", () => {
     const piped = commandsPage({
       cli: "t",
       commands: [],
-      options: [{ flags: "--order <recent|name>", description: "a|b ~~x~~", takesValue: true, mandatory: false }],
+      options: [{ flags: "--order <recent|name>", description: "a|b ~~x~~", takes_value: true, mandatory: false }],
       labels: COMMANDS_PAGE_LABELS.ru,
       text: {
         banner: "",
@@ -259,11 +259,11 @@ describe("commands document", () => {
       "version",
       "contract",
       "description",
-      "globalOptions",
+      "global_options",
       "commands",
-      "exitCodes",
+      "exit_codes",
     ])
-    expect(document.exitCodes).toMatchObject({ ok: 0, internal_error: 1, validation_error: 2 })
+    expect(document.exit_codes).toMatchObject({ ok: 0, internal_error: 1, validation_error: 2 })
     expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
   })
 

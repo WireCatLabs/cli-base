@@ -43,7 +43,7 @@ describe("createRecordLog", () => {
       time: "2026-10-13T08:00:00.000Z",
       severity: "info",
       body: "request",
-      runId: base.runId,
+      run_id: base.runId,
       command: "chats list",
       attributes: { event: "request", operation: "chats.list" },
       resource: { service: "tg", version: "1.2.3" },
@@ -54,7 +54,7 @@ describe("createRecordLog", () => {
 
   it("carries a trace id when one was handed in", () => {
     const [line] = records(written((log) => log.info({ event: "x" }), { traceId: "0af7651916cd43dd8448eb211c80319c" }))
-    expect(v.parse(logRecordSchema, line)).toMatchObject({ traceId: "0af7651916cd43dd8448eb211c80319c" })
+    expect(v.parse(logRecordSchema, line)).toMatchObject({ trace_id: "0af7651916cd43dd8448eb211c80319c" })
   })
 
   it("redacts a secret by field name at any depth, arrays included", () => {

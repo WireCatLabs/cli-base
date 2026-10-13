@@ -51,6 +51,11 @@ const failing: Record<string, (root: Command) => void> = {
     annotate(chatsOf(root).command("leave").description("leave a chat").argument("<chat>"), {
       examples: ["tool chats leave 42"],
     }),
+  "key-casing": (root) =>
+    annotate(chatsOf(root).command("sync").description("sync chats"), {
+      examples: ["tool chats sync"],
+      ...({ operationId: "chats.sync" } as object),
+    }),
   "missing-option-help": (root) =>
     annotate(chatsOf(root).command("clear").description("empty a chat").option("--all"), {
       examples: ["tool chats clear --all"],
@@ -78,6 +83,32 @@ describe("lint rules", () => {
       const fresh = lintOf(root).filter((found) => !before.has(`${found.rule} ${found.target}`))
       expect(fresh.map((found) => found.rule)).toEqual([rule])
     })
+
+  it("checks every key of a registered schema and of the document as printed, but not a record's data keys", () => {
+    const document = commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 })
+    const found = lintCommands(document, VOCABULARY, LINT_RULES, {
+      raw: { ...document, exitCodes: document.exit_codes },
+      schemas: {
+        chat: {
+          type: "object",
+          properties: {
+            unread_count: { type: "number" },
+            lastMessage: { type: "object", properties: { sentAt: { type: "string" } } },
+            labels: { type: "object", additionalProperties: { type: "string" } },
+          },
+        },
+      },
+    }).filter((one) => one.rule === "key-casing")
+    expect(found.map((one) => one.target)).toEqual([
+      "commands --json: exitCodes",
+      "schema chat: lastMessage",
+      "schema chat: lastMessage.sentAt",
+    ])
+  })
+
+  it("passes cli-base's own schemas and document", () => {
+    expect(lintOf(clean()).filter((one) => one.rule === "key-casing")).toEqual([])
+  })
 
   it("passes a resource or all under search, at the root or under bot, and nothing else there", () => {
     const root = clean()

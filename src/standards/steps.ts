@@ -1,6 +1,6 @@
 import * as v from "valibot"
 import type { NextStep } from "./output.js"
-import { dottedId, duplicates, fill, parseRegistry, text } from "./registry.js"
+import { dottedId, duplicates, fill, parseRegistry, SNAKE_CASE, text } from "./registry.js"
 
 /** A step's command: a path such as `messages sync`, or `*` for the command that gave the answer (`page.next`). */
 export const SAME_COMMAND = "*"
@@ -13,7 +13,7 @@ const stepSchema = v.strictObject({
   ]),
   args: v.array(
     v.strictObject({
-      name: v.pipe(v.string(), v.regex(/^[a-z][a-zA-Z0-9]*$/, "an argument or option name in camelCase")),
+      name: v.pipe(v.string(), v.regex(SNAKE_CASE, "an argument or option name in snake_case")),
       required: v.boolean(),
     }),
   ),

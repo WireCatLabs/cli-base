@@ -44,7 +44,7 @@ const select = (value: unknown, paths: readonly string[], item = false): unknown
     }
     target[parts.at(-1) as string] = found
   }
-  for (const name of ["operationId", "sendId"]) if (Object.hasOwn(value, name)) result[name] = value[name]
+  for (const name of ["operation_id", "send_id"]) if (Object.hasOwn(value, name)) result[name] = value[name]
   return result
 }
 

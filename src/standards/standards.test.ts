@@ -90,16 +90,16 @@ describe("vocabulary registry", () => {
 })
 
 describe("output registry", () => {
-  const meta = { runId: "r1", durationMs: 12 }
+  const meta = { run_id: "r1", duration_ms: 12 }
 
   it("accepts a list and a single answer, and refuses a bare array or a fourth next step", () => {
     const list = listEnvelopeSchema(v.object({ ref: v.string() }))
     const next = { step: "page.next", command: "messages list", args: { page: 2 }, why: "20 shown, more exist" }
-    expect(v.is(list, { items: [{ ref: "chat:1" }], page: { limit: 20, hasMore: true }, next: [next], meta })).toBe(
+    expect(v.is(list, { items: [{ ref: "chat:1" }], page: { limit: 20, has_more: true }, next: [next], meta })).toBe(
       true,
     )
     expect(v.is(list, [{ ref: "chat:1" }])).toBe(false)
-    expect(v.is(list, { items: [], page: { limit: 20, hasMore: false }, next: [next, next, next, next], meta })).toBe(
+    expect(v.is(list, { items: [], page: { limit: 20, has_more: false }, next: [next, next, next, next], meta })).toBe(
       false,
     )
     expect(
@@ -132,10 +132,10 @@ describe("output registry", () => {
 
 describe("errors registry", () => {
   it("accepts the one error object and refuses a code off the closed list", () => {
-    const error = { code: "not_found", reason: "chat.unknown", message: "no chat 42", param: "chat", runId: "r1" }
+    const error = { code: "not_found", reason: "chat.unknown", message: "no chat 42", param: "chat", run_id: "r1" }
     expect(v.is(errorObjectSchema, { error })).toBe(true)
     expect(v.is(errorObjectSchema, { error: { ...error, code: "generic_failure" } })).toBe(false)
-    expect(v.is(errorObjectSchema, { error: { ...error, code: "internal_error", runId: undefined } })).toBe(true)
+    expect(v.is(errorObjectSchema, { error: { ...error, code: "internal_error", run_id: undefined } })).toBe(true)
   })
 
   it("refuses a reason whose message names a detail it does not declare", () => {
@@ -201,7 +201,7 @@ describe("log registry", () => {
     time: "2026-10-13T09:00:00.000Z",
     severity: "info",
     body: "fetched 20 messages",
-    runId: "r1",
+    run_id: "r1",
     command: "messages sync",
     attributes: { count: 20 },
     resource: { service: "tg", version: "0.52.0" },

@@ -1,7 +1,9 @@
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
+import { createDeadline } from "./deadline.js"
 import { CliError, type errorCodes } from "./errors.js"
 import { catchCrashes, errorObjectOf, errorRecordOf, exitCodeOfError, mcpErrorResult, renderError } from "./failure.js"
+import { createOutputBuffer } from "./output-buffer.js"
 import { BASE_REASONS, defineReasons, defineSteps, errorObjectSchema } from "./standards/index.js"
 
 const reasons = defineReasons([
@@ -30,6 +32,45 @@ describe("errorObjectOf", () => {
         mcpErrorResult(object).structuredContent,
       )
     }
+  })
+
+  it("keeps the details cli-base's own failures carry", async () => {
+    const deadline = createDeadline({ timeoutMs: 0 })
+    const timedOut = await deadline.race(async () => 1).catch((failure: unknown) => failure)
+    expect(errorObjectOf(timedOut).error.details).toEqual({ timeout_ms: 0, retryable: false })
+
+    const buffer = createOutputBuffer({ maxOutputBytes: 1 })
+    let tooLarge: unknown
+    try {
+      buffer.data("too long")
+    } catch (failure) {
+      tooLarge = failure
+    }
+    expect(errorObjectOf(tooLarge).error.details).toEqual({
+      max_bytes: 1,
+      buffered_bytes: 0,
+      partial_output: false,
+      retryable: false,
+    })
+  })
+
+  it("renders a snake_case step argument as its flag", () => {
+    const object = errorObjectOf(new CliError("rate_limited", "slow", { reason: "wait.retry", retry_after_ms: 5 }), {
+      reasons: defineReasons([
+        { reason: "wait.retry", code: "rate_limited", message: "wait", details: [], step: "wait.retry" },
+      ]),
+      steps: defineSteps([
+        {
+          id: "wait.retry",
+          command: "sync",
+          args: [{ name: "retry_after_ms", required: true }],
+          why: "wait {retry_after_ms} ms",
+        },
+      ]),
+    })
+    expect(renderError(object, { cli: "max", interactive: true })).toBe(
+      "✗ slow\n→ wait 5 ms: max sync --retry-after-ms 5",
+    )
   })
 
   it("falls back to the code's reason when the site named none or an unknown one", () => {
@@ -85,7 +126,7 @@ describe("errorObjectOf", () => {
         code: "internal_error",
         reason: "command.crashed",
         message: "the command failed; this is a bug",
-        runId: "r9",
+        run_id: "r9",
       },
     })
     expect(exitCodeOfError(object)).toBe(1)
@@ -141,7 +182,7 @@ describe("renderError", () => {
     expect(record).toMatchObject({
       time: "2026-10-13T10:00:00.000Z",
       severity: "error",
-      runId: "r1",
+      run_id: "r1",
       command: "messages list",
       attributes: { code: "configuration_error", reason: "store.locked", cause: "SQLITE_BUSY" },
     })

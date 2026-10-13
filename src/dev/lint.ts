@@ -1,6 +1,11 @@
-import type { CommandsDocument } from "../commands/document.js"
+import * as v from "valibot"
+import { type CommandsDocument, commandsDocumentJsonSchema } from "../commands/document.js"
 import type { CommandInfo, OptionInfo } from "../commands/index.js"
+import { errorObjectSchema } from "../standards/errors.js"
 import { LINT_RULES, type LintRule, type Override } from "../standards/lint.js"
+import { logRecordSchema } from "../standards/log.js"
+import { itemEnvelopeSchema, listEnvelopeSchema } from "../standards/output.js"
+import { jsonSchemaOf, SNAKE_CASE } from "../standards/registry.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
 
 export interface Violation {
@@ -26,7 +31,7 @@ const longName = (flags: string): string => flags.split(/[ ,|]+/).find((part) =>
 
 /** A flag's kind of value: its value name, or `switch`. Two kinds under one name are two meanings. */
 const kindOf = (option: OptionInfo): string => {
-  if (!option.takesValue) return "switch"
+  if (!option.takes_value) return "switch"
   return option.flags.match(/[<[]([^>\]]+)[>\]]/)?.[1]?.toLowerCase() ?? "value"
 }
 
@@ -34,7 +39,58 @@ const summaryOf = (command: CommandInfo): string => (command.summary ?? command.
 
 const label = (command: CommandInfo): string => command.path.join(" ")
 
-type Check = (document: CommandsDocument, vocabulary: Vocabulary) => Omit<Violation, "rule">[]
+export interface LintContext {
+  /** The commands document as the CLI printed it; parsing drops keys it does not know, so casing is checked here. */
+  raw?: unknown
+  /** The CLI's own JSON Schemas by name — entities, envelopes — checked by `key-casing` beside cli-base's. */
+  schemas?: Readonly<Record<string, unknown>>
+}
+
+type Check = (document: CommandsDocument, vocabulary: Vocabulary, context: LintContext) => Omit<Violation, "rule">[]
+
+/** The schemas cli-base itself defines; every CLI's lint checks them too. */
+export const baseSchemas = (): Record<string, unknown> => ({
+  list_envelope: jsonSchemaOf(listEnvelopeSchema(v.unknown())),
+  item_envelope: jsonSchemaOf(itemEnvelopeSchema(v.unknown())),
+  error_object: jsonSchemaOf(errorObjectSchema),
+  log_record: jsonSchemaOf(logRecordSchema),
+  commands_document: commandsDocumentJsonSchema(),
+})
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+/** Property names a JSON Schema declares, by path. A record's keys are data (`additionalProperties`), not checked. */
+const schemaKeys = (schema: unknown, path: string): [string, string][] => {
+  if (Array.isArray(schema)) return schema.flatMap((one) => schemaKeys(one, path))
+  if (!isObject(schema)) return []
+  const own = isObject(schema.properties)
+    ? Object.entries(schema.properties).flatMap(([key, value]): [string, string][] => [
+        [key, path ? `${path}.${key}` : key],
+        ...schemaKeys(value, path ? `${path}.${key}` : key),
+      ])
+    : []
+  const defs = isObject(schema.$defs)
+    ? Object.entries(schema.$defs).flatMap(([name, value]) => schemaKeys(value, `$defs.${name}`))
+    : []
+  const nested = ["items", "prefixItems", "anyOf", "oneOf", "allOf", "additionalProperties"].flatMap((at) =>
+    schemaKeys(schema[at], at === "items" || at === "prefixItems" ? `${path}[]` : path),
+  )
+  return [...own, ...defs, ...nested]
+}
+
+/** Values under these keys are data: Commander's flags, defaults, exit code names. */
+const DATA_KEYS = new Set(["implies", "default", "exit_codes"])
+
+/** Every key of the live document by its structural path, `commands[].options[].takes_value`, each path once. */
+const documentKeys = (value: unknown, path: string): [string, string][] => {
+  if (Array.isArray(value)) return value.flatMap((item) => documentKeys(item, `${path}[]`))
+  if (!isObject(value)) return []
+  return Object.entries(value).flatMap(([key, item]): [string, string][] => {
+    const at = path ? `${path}.${key}` : key
+    return [[key, at], ...(DATA_KEYS.has(key) ? [] : documentKeys(item, key === "commands" ? "commands" : at))]
+  })
+}
 
 const handwrittenLeaves = (document: CommandsDocument): CommandInfo[] =>
   walk(document.commands).filter((command) => command.commands.length === 0 && command.origin === "handwritten")
@@ -62,7 +118,7 @@ const faultOf = (
 ) => {
   const words = exampleWords(example)
   if (words[0] !== document.cli) return `does not start with "${document.cli}"`
-  const known = [document.globalOptions, ...ancestors.map((one) => one.options), command.options].flat()
+  const known = [document.global_options, ...ancestors.map((one) => one.options), command.options].flat()
   const find = (word: string) => known.find((option) => optionNames(option).includes(word))
 
   const option = (at: number): number | string => {
@@ -71,7 +127,7 @@ const faultOf = (
     if (BUILT_IN.includes(name)) return at + 1
     const found = find(name)
     if (!found) return `${command.path.join(" ")} has no option ${name}`
-    if (!found.takesValue || inline !== undefined) return at + 1
+    if (!found.takes_value || inline !== undefined) return at + 1
     const optional = /\[[^\]]*\]/.test(found.flags)
     if (/\.\.\.[>\]]/.test(found.flags)) {
       let next = at + 1
@@ -172,7 +228,7 @@ const CHECKS: Record<string, Check> = {
       kinds.set(kindOf(option), [...(kinds.get(kindOf(option)) ?? []), where])
       uses.set(name, kinds)
     }
-    for (const option of document.globalOptions) note(option, "every command")
+    for (const option of document.global_options) note(option, "every command")
     for (const command of walk(document.commands))
       if (command.origin === "handwritten") for (const option of command.options) note(option, label(command))
     const found: Omit<Violation, "rule">[] = []
@@ -229,8 +285,19 @@ const CHECKS: Record<string, Check> = {
         .filter((argument) => argument.description.trim() === "")
         .map((argument) => ({ target: `${label(command)} <${argument.name}>`, message: "argument not described" })),
     ),
+  "key-casing": (document, _vocabulary, context) => {
+    const schemas = { ...baseSchemas(), ...context.schemas }
+    return [
+      ...Object.entries(schemas).flatMap(([name, schema]) =>
+        schemaKeys(schema, "").map(([key, path]) => ({ key, target: `schema ${name}: ${path}` })),
+      ),
+      ...documentKeys(context.raw ?? document, "").map(([key, path]) => ({ key, target: `commands --json: ${path}` })),
+    ]
+      .filter(({ key }) => !SNAKE_CASE.test(key))
+      .map(({ key, target }) => ({ target, message: `"${key}" is not snake_case` }))
+  },
   "missing-option-help": (document) => [
-    ...document.globalOptions
+    ...document.global_options
       .filter((option) => option.description.trim() === "")
       .map((option) => ({ target: longName(option.flags), message: "global option not described" })),
     ...walk(document.commands).flatMap((command) =>
@@ -248,12 +315,13 @@ export const lintCommands = (
   document: CommandsDocument,
   vocabulary: Vocabulary,
   rules: readonly LintRule[] = LINT_RULES,
+  context: LintContext = {},
 ): Violation[] => {
   const seen = new Set<string>()
   return rules.flatMap((rule) => {
     const check = CHECKS[rule.id]
     if (!check) throw new Error(`lint rule "${rule.id}" has no check`)
-    return check(document, vocabulary)
+    return check(document, vocabulary, context)
       .filter(({ target }) => !seen.has(`${rule.id} ${target}`) && seen.add(`${rule.id} ${target}`))
       .map((found) => ({ rule: rule.id, ...found }))
       .sort((a, b) => byText(a.target, b.target))

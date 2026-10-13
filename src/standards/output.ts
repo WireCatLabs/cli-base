@@ -22,13 +22,13 @@ export const missingSchema = v.strictObject({
 
 export const pageSchema = v.strictObject({
   limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  hasMore: v.boolean(),
+  has_more: v.boolean(),
   cursor: v.optional(text),
 })
 
 export const metaSchema = v.strictObject({
-  runId: text,
-  durationMs: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  run_id: text,
+  duration_ms: v.pipe(v.number(), v.integer(), v.minValue(0)),
   accounts: v.optional(v.array(text)),
   skipped: v.optional(v.array(v.strictObject({ account: text, why: text }))),
   truncated: v.optional(v.boolean()),
@@ -82,8 +82,8 @@ export const defineFieldRules = (input: unknown): FieldRule[] =>
 export const FIELD_RULES: FieldRule[] = defineFieldRules([
   { id: "envelope", rule: "every JSON answer is one object: a list `{items, page, …}`, one thing `{item, …}`" },
   { id: "time", rule: "a time is an ISO 8601 string with a zone, never epoch milliseconds" },
-  { id: "duration", rule: "a length of time is a number of milliseconds in a field ending in `Ms`" },
+  { id: "duration", rule: "a length of time is a number of milliseconds in a key ending in `_ms`" },
   { id: "ref", rule: "a stored thing is named by `ref`; a message's `ref` value is its locator" },
-  { id: "camel-case", rule: "keys are camelCase words, no abbreviations a reader has to decode" },
+  { id: "snake-case", rule: "keys are snake_case words, no abbreviations a reader has to decode" },
   { id: "one-meaning", rule: "a key has one meaning and one type in every answer of every CLI" },
 ])
