@@ -130,6 +130,10 @@ const verbs: [string, string][] = [
   ["backup", "copy a file somewhere safe"],
   ["restore", "put a backup back in its place"],
   ["repair", "bring a file's tables to this build's shape without deleting anything"],
+  [
+    "rebuild",
+    "compute again, from what the store already holds, what the tool derives from it, keeping the owner's decisions",
+  ],
   ["link", "record that two identities are one person"],
   ["unlink", "undo a link"],
   ["lookup", "ask the messenger who is behind a phone number"],

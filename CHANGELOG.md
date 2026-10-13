@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The verb `rebuild`**: compute again, from what the store already holds, what the tool derives from it, keeping
+  the owner's decisions. cli-messaging's `mentions rebuild` (phones, e-mail and links found in stored text) is
+  the first command to use it.
+
 ## 0.26.0 — 13.10.2026
 
 ### Changed — may break callers
