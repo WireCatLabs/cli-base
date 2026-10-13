@@ -10,6 +10,7 @@ import {
   defineVocabulary,
   errorObjectSchema,
   FIELD_RULES,
+  isContentKey,
   itemEnvelopeSchema,
   jsonSchemaOf,
   LINT_RULES,
@@ -19,6 +20,7 @@ import {
   RegistryError,
   STEPS,
   stepOf,
+  traceIdOf,
   VOCABULARY,
   vocabularySchema,
 } from "./index.js"
@@ -213,6 +215,30 @@ describe("log registry", () => {
     expect(v.is(logRecordSchema, record)).toBe(true)
     expect(v.is(logRecordSchema, { ...record, time: 1760346000000 })).toBe(false)
     expect(v.is(logRecordSchema, { ...record, severity: "notice" })).toBe(false)
+  })
+
+  it("tells a key that names content from one that names an id or a code", () => {
+    for (const key of ["messageId", "operationId", "providerError", "errorCode", "messages", "durationMs"])
+      expect(isContentKey(key), key).toBe(false)
+    for (const key of ["text", "errorMessage", "chatTitle", "accessToken", "phone", "phoneNumber", "first_name"])
+      expect(isContentKey(key), key).toBe(true)
+  })
+
+  it("takes the trace id from a traceparent, and nothing from one the W3C spec says to ignore", () => {
+    const id = "4bf92f3577b34da6a3ce929d0e0e4736"
+    expect(traceIdOf(`00-${id}-00f067aa0ba902b7-01`)).toBe(id)
+    expect(traceIdOf(`01-${id}-00f067aa0ba902b7-01-later`)).toBe(id)
+    for (const ignored of [
+      `ff-${id}-00f067aa0ba902b7-01`,
+      `00-${"0".repeat(32)}-00f067aa0ba902b7-01`,
+      `00-${id}-${"0".repeat(16)}-01`,
+      `00-${id.toUpperCase()}-00f067aa0ba902b7-01`,
+      `00-${id}-00f067aa0ba902b7-01-extra`,
+      "garbage",
+      42,
+      undefined,
+    ])
+      expect(traceIdOf(ignored)).toBeUndefined()
   })
 })
 

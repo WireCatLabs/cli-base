@@ -50,7 +50,7 @@ streams.stderr // []
 | `paths` | config, state and cache in the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`) and the `AppData` one on Windows, each overridable by environment variable; `migrateLegacyMacPaths` moves an older release's `~/Library` folders once |
 | `config` | JSON config loading that names the bad field, and an atomic write that locks the directory down |
 | `credentials` | environment → keyring → file, warning once and falling through when the keyring refuses |
-| `logging` | `createRecordLog`: one `LogRecord` per JSON line (OpenTelemetry field names, flat), secrets redacted by field name at any depth; a file that cannot be written is reported to `onError`, never thrown |
+| `logging` | `createRecordLog`: one `LogRecord` per JSON line (OpenTelemetry field names, flat), secrets and content-naming keys redacted at any depth, top-level keys off the allow-list (`LOG_ATTRIBUTE_KEYS` + `allow`) written without their value; `logRecordOf` builds the same record for a writer of its own; a file that cannot be written is reported to `onError`, never thrown |
 | `retry` | full-jitter backoff, and the distinction between "no answer came" and "safe to repeat" |
 | `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock` |
 | `/commands` | the command registry: `describeProgram`, `annotate`, `flatten`, `refuseJoinedPath`, and `commandsDocument` — the one `commands --json` shape, with its schema — see below |
@@ -339,7 +339,9 @@ Every option needs a role from the vocabulary (`paging`, `output`, `sort`, `mode
 named after a field of its entity (`--kind`, `--since-time`, `--before-id`), except a `scope` flag such as
 `--account`; `list-without-query` a `list` with an `output` entity and no query; `query-example` a field example
 or default term that does not run. `--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
-keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed.
+keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed. Its entry
+`log_attributes` (`logAttributesJsonSchema(allow)`) is the CLI's log allow-list instead: `log-attribute-key` fails a
+key that names message text, a token or a phone number.
 
 `--rules` names a module exporting `CHANGELOG` and `docsRules(root)`; `--program` one exporting
 `createProgram`; `--untested` one exporting `UNTESTED`. A TypeScript module loads on Node 24 as it is.

@@ -5,7 +5,7 @@ import { exampleProblems } from "../query/registry.js"
 import { queryAstSchema, queryNodeSchema } from "../query/types.js"
 import { errorObjectSchema } from "../standards/errors.js"
 import { LINT_RULES, type LintRule, type Override } from "../standards/lint.js"
-import { logRecordSchema } from "../standards/log.js"
+import { isContentKey, logAttributesJsonSchema, logRecordSchema } from "../standards/log.js"
 import { itemEnvelopeSchema, listEnvelopeSchema } from "../standards/output.js"
 import { jsonSchemaOf, SNAKE_CASE } from "../standards/registry.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
@@ -44,9 +44,15 @@ const label = (command: CommandInfo): string => command.path.join(" ")
 export interface LintContext {
   /** The commands document as the CLI printed it; parsing drops keys it does not know, so casing is checked here. */
   raw?: unknown
-  /** The CLI's own JSON Schemas by name — entities, envelopes — checked by `key-casing` beside cli-base's. */
+  /**
+   * The CLI's own JSON Schemas by name — entities, envelopes — checked by `key-casing` beside cli-base's.
+   * `log_attributes` (`logAttributesJsonSchema(allow)`) is the CLI's log allow-list, for `log-attribute-key`.
+   */
   schemas?: Readonly<Record<string, unknown>>
 }
+
+/** The `--schemas` entry holding the CLI's log allow-list; its keys are camelCase, so `key-casing` skips it. */
+const LOG_ATTRIBUTES = "log_attributes"
 
 type Check = (document: CommandsDocument, vocabulary: Vocabulary, context: LintContext) => Omit<Violation, "rule">[]
 
@@ -317,7 +323,8 @@ const CHECKS: Record<string, Check> = {
         .map((argument) => ({ target: `${label(command)} <${argument.name}>`, message: "argument not described" })),
     ),
   "key-casing": (document, _vocabulary, context) => {
-    const schemas = { ...baseSchemas(), ...context.schemas }
+    const { [LOG_ATTRIBUTES]: _camelCase, ...own } = context.schemas ?? {}
+    const schemas = { ...baseSchemas(), ...own }
     return [
       ...Object.entries(schemas).flatMap(([name, schema]) =>
         schemaKeys(schema, "").map(([key, path]) => ({ key, target: `schema ${name}: ${path}` })),
@@ -385,6 +392,15 @@ const CHECKS: Record<string, Check> = {
         .map((option) => ({ target: `${label(command)} ${longName(option.flags)}`, message: "option not described" })),
     ),
   ],
+  "log-attribute-key": (_document, _vocabulary, context) => {
+    const schema = context.schemas?.[LOG_ATTRIBUTES] ?? logAttributesJsonSchema()
+    return schemaKeys(schema, "")
+      .filter(([key]) => isContentKey(key))
+      .map(([key, path]) => ({
+        target: `schema ${LOG_ATTRIBUTES}: ${path}`,
+        message: `"${key}" names content or a secret, which no log may carry`,
+      }))
+  },
 }
 
 export const lintRuleIds = (): string[] => Object.keys(CHECKS)

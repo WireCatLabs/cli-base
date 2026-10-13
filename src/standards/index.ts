@@ -21,7 +21,16 @@ export {
   overridesProblems,
   overridesSchema,
 } from "./lint.js"
-export { LOG_SEVERITIES, type LogRecord, type LogSeverity, logRecordSchema } from "./log.js"
+export {
+  isContentKey,
+  LOG_ATTRIBUTE_KEYS,
+  LOG_SEVERITIES,
+  type LogRecord,
+  type LogSeverity,
+  logAttributesJsonSchema,
+  logRecordSchema,
+  traceIdOf,
+} from "./log.js"
 export {
   defineFieldRules,
   FIELD_RULES,

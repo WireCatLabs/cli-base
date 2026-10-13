@@ -1,6 +1,6 @@
 import { appendFileSync } from "node:fs"
 import type { Logger } from "./logger.js"
-import type { LogRecord, LogSeverity } from "./standards/log.js"
+import { isContentKey, LOG_ATTRIBUTE_KEYS, type LogRecord, type LogSeverity } from "./standards/log.js"
 
 /**
  * Field names whose value must never reach a log file. This is the **second** line of defence, not
@@ -33,12 +33,68 @@ export interface RecordLogOptions {
   traceId?: string
   /** Added to `REDACTED_FIELDS` — the names only this program knows about. */
   redact?: string[]
+  /** Attribute keys this program logs beyond `LOG_ATTRIBUTE_KEYS`. Any other top-level key is written as `[not allowed]`. */
+  allow?: readonly string[]
   /**
    * Told once when the file cannot be written; every record after that is dropped. Without it the
    * failure is silent, so a host that promised a log should say it is gone.
    */
   onError?: (error: Error) => void
   now?: () => Date
+}
+
+export const NOT_ALLOWED = "[not allowed]"
+
+export interface RecordInput {
+  severity: LogSeverity
+  /** The attributes; its `event` names the record when there is no `message`. */
+  event: object
+  message?: string
+  time: string
+  runId: string
+  traceId?: string
+  command: string
+  resource: LogRecord["resource"]
+  allow?: readonly string[]
+  redact?: readonly string[]
+}
+
+/**
+ * The one place a record is built, for `createRecordLog` and for a writer that appends its own lines.
+ * A top-level key off the allow-list keeps its name and loses its value; a key that names content
+ * (`isContentKey`) or a secret is redacted at any depth.
+ */
+export const logRecordOf = ({
+  severity,
+  event,
+  message,
+  time,
+  runId,
+  traceId,
+  command,
+  resource,
+  allow = [],
+  redact = [],
+}: RecordInput): LogRecord => {
+  const allowed = new Set<string>([...LOG_ATTRIBUTE_KEYS, ...allow])
+  const hidden = new Set([...REDACTED_FIELDS, ...redact])
+  const attributes = Object.fromEntries(
+    Object.entries(redacted(event, hidden) as Record<string, unknown>).map(([key, value]) => [
+      key,
+      allowed.has(key) ? value : NOT_ALLOWED,
+    ]),
+  )
+  const name = typeof attributes.event === "string" ? attributes.event : ""
+  return {
+    time,
+    severity,
+    body: message ?? name,
+    run_id: runId,
+    ...(traceId === undefined ? {} : { trace_id: traceId }),
+    command,
+    attributes,
+    resource,
+  }
 }
 
 /**
@@ -55,12 +111,12 @@ export const createRecordLog = ({
   resource,
   traceId,
   redact = [],
+  allow = [],
   onError = () => {},
   now = () => new Date(),
 }: RecordLogOptions): Logger => {
   if (to === undefined) return silent
 
-  const hidden = new Set([...REDACTED_FIELDS, ...redact])
   let broken = false
   const write =
     typeof to === "string"
@@ -78,18 +134,18 @@ export const createRecordLog = ({
   const at =
     (severity: LogSeverity) =>
     (event: object, message?: string): void => {
-      const attributes = redacted(event, hidden) as Record<string, unknown>
-      const name = typeof attributes.event === "string" ? attributes.event : ""
-      const record: LogRecord = {
-        time: now().toISOString(),
+      const record = logRecordOf({
         severity,
-        body: message ?? name,
-        run_id: runId,
-        ...(traceId === undefined ? {} : { trace_id: traceId }),
+        event,
+        ...(message === undefined ? {} : { message }),
+        time: now().toISOString(),
+        runId,
+        ...(traceId === undefined ? {} : { traceId }),
         command,
-        attributes,
         resource,
-      }
+        allow,
+        redact,
+      })
       write(`${JSON.stringify(record)}\n`)
     }
 
@@ -104,7 +160,10 @@ const redacted = (value: unknown, hidden: Set<string>): unknown => {
   if (Array.isArray(plain)) return plain.map((item) => redacted(item, hidden))
   if (plain === null || typeof plain !== "object") return plain
   return Object.fromEntries(
-    Object.entries(plain).map(([key, item]) => [key, hidden.has(key) ? "[redacted]" : redacted(item, hidden)]),
+    Object.entries(plain).map(([key, item]) => [
+      key,
+      hidden.has(key) || isContentKey(key) ? "[redacted]" : redacted(item, hidden),
+    ]),
   )
 }
 

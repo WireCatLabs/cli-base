@@ -7,6 +7,7 @@ import { commandsDocument } from "../commands/document.js"
 import { annotate } from "../commands/index.js"
 import type { QueryRegistry } from "../query/fields.js"
 import { LINT_RULES } from "../standards/lint.js"
+import { logAttributesJsonSchema } from "../standards/log.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
 import { type DevIo, main } from "./main.js"
@@ -113,7 +114,45 @@ const failing: Record<string, (root: Command) => void> = {
 describe("lint rules", () => {
   it("has a check for every rule in the registry, and a failing fixture for each", () => {
     expect(lintRuleIds().sort()).toEqual(LINT_RULES.map((rule) => rule.id).sort())
-    expect(Object.keys(failing).sort()).toEqual(lintRuleIds().sort())
+    expect(Object.keys(failing).sort()).toEqual(
+      lintRuleIds()
+        .filter((id) => id !== "log-attribute-key")
+        .sort(),
+    )
+  })
+
+  it("fails log-attribute-key for an allow-list naming content, and passes cli-base's own", () => {
+    const document = commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 })
+    const of = (schemas?: Record<string, unknown>) =>
+      lintCommands(document, VOCABULARY, LINT_RULES, schemas ? { schemas } : {}).filter(
+        (one) => one.rule === "log-attribute-key",
+      )
+    expect(of()).toEqual([])
+    expect(
+      of({
+        log_attributes: logAttributesJsonSchema([
+          "messageId",
+          "operationId",
+          "providerError",
+          "text",
+          "errorMessage",
+          "chatTitle",
+          "accessToken",
+          "phoneNumber",
+        ]),
+      }).map((one) => one.target),
+    ).toEqual([
+      "schema log_attributes: accessToken",
+      "schema log_attributes: chatTitle",
+      "schema log_attributes: errorMessage",
+      "schema log_attributes: phoneNumber",
+      "schema log_attributes: text",
+    ])
+    expect(
+      lintCommands(document, VOCABULARY, LINT_RULES, {
+        schemas: { log_attributes: logAttributesJsonSchema(["messageId"]) },
+      }).filter((one) => one.rule === "key-casing"),
+    ).toEqual([])
   })
 
   it("passes a tree that follows the standard, generated commands keeping the API's names", () => {
