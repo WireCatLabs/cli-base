@@ -2,10 +2,13 @@
  * `cli-dev`: the development scripts every CLI on cli-base used to carry a copy of. Each command
  * reads and writes under `cwd` and reports through `out` and `err`; `main` returns the exit code.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { isAbsolute, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { parseArgs } from "node:util"
+import spawn from "cross-spawn"
+import * as v from "valibot"
+import { parseCommandsDocument } from "../commands/document.js"
 import {
   type ChangelogRules,
   changelogProblems,
@@ -16,6 +19,18 @@ import {
   structureProblems,
   versionScript,
 } from "../release/index.js"
+import {
+  baselineProblems,
+  baselineSchema,
+  LINT_RULES,
+  OVERRIDE_BUDGET,
+  type Override,
+  overridesProblems,
+  overridesSchema,
+} from "../standards/lint.js"
+import { issuesOf } from "../standards/registry.js"
+import { VOCABULARY } from "../standards/vocabulary.js"
+import { baselineOf, judge, lintCommands } from "./lint.js"
 import { nextVersion } from "./next-version.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
 import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested } from "./test-matrix.js"
@@ -36,7 +51,12 @@ const USAGE = `usage: cli-dev <command> [options]
                                        links, anchors and the changelog's shape; --pages also
                                        docs/ against docs/meta.json, the docs portal's structure
   test-matrix --program <module> --untested <module> --name <cli> [--page <path>] [--check]
-                                       docs/dev/test-matrix.md from coverage/argv.jsonl`
+                                       docs/dev/test-matrix.md from coverage/argv.jsonl
+  lint (--cli <bin> | --commands <file>) [--baseline <dir>] [--overrides <file>] [--budget <n>]
+       [--write-baseline]              the command tree against the standard's rules; fails on a
+                                       new violation, a stale baseline entry or override, or more
+                                       overrides than the budget (10). --write-baseline rewrites
+                                       lint/baseline/<rule>.json to today's violations`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -125,6 +145,125 @@ const testMatrix = async (args: string[], io: DevIo) => {
   return failed ? 1 : 0
 }
 
+const readJson = (path: string): unknown => {
+  try {
+    return JSON.parse(readFileSync(path, "utf8"))
+  } catch (error) {
+    throw new Error(`${path}: ${(error as Error).message}`)
+  }
+}
+
+const commandsJson = (io: DevIo, cli: string | undefined, file: string | undefined): unknown => {
+  if (file) return readJson(isAbsolute(file) ? file : join(io.cwd, file))
+  const bin = cli ?? ""
+  const script = /\.[cm]?js$/.test(bin)
+  const run = spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), "commands", "--json"], {
+    cwd: io.cwd,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  if (run.error || run.status !== 0)
+    throw new Error(`${bin} commands --json failed: ${run.error?.message ?? String(run.stderr).trim().split("\n")[0]}`)
+  return JSON.parse(String(run.stdout))
+}
+
+const lint = (args: string[], io: DevIo) => {
+  try {
+    return lintRun(args, io)
+  } catch (error) {
+    io.err((error as Error).message)
+    return 2
+  }
+}
+
+const lintRun = (args: string[], io: DevIo) => {
+  const { values } = parseArgs({
+    args,
+    options: {
+      cli: { type: "string" },
+      commands: { type: "string" },
+      baseline: { type: "string", default: "lint/baseline" },
+      overrides: { type: "string", default: "lint/overrides.json" },
+      budget: { type: "string", default: String(OVERRIDE_BUDGET) },
+      "write-baseline": { type: "boolean", default: false },
+    },
+  })
+  if (Boolean(values.cli) === Boolean(values.commands)) {
+    io.err("lint needs one of --cli <bin> or --commands <file>")
+    return 2
+  }
+  const budget = Number(values.budget)
+  if (!Number.isInteger(budget) || budget < 0) {
+    io.err(`--budget takes a whole number, not "${values.budget}"`)
+    return 2
+  }
+
+  let raw: unknown
+  try {
+    raw = commandsJson(io, values.cli, values.commands)
+  } catch (error) {
+    io.err((error as Error).message)
+    return 2
+  }
+  const parsed = parseCommandsDocument(raw)
+  if (!parsed.document) {
+    io.err("the commands document is not the shape cli-base's commandsDocument() writes:")
+    for (const problem of parsed.problems.slice(0, 20)) io.err(`  ${problem}`)
+    if (parsed.problems.length > 20) io.err(`  … and ${parsed.problems.length - 20} more`)
+    return 2
+  }
+
+  const problems: string[] = []
+  const overridesPath = join(io.cwd, values.overrides)
+  let overrides: Override[] = []
+  if (existsSync(overridesPath)) {
+    const read = v.safeParse(overridesSchema, readJson(overridesPath))
+    const found = read.success ? overridesProblems(read.output) : issuesOf(read.issues)
+    if (read.success) overrides = read.output
+    problems.push(...found.map((issue) => `${values.overrides}: ${issue}`))
+  }
+  const baselineDir = join(io.cwd, values.baseline)
+  const baseline: Record<string, string[]> = {}
+  if (existsSync(baselineDir))
+    for (const file of readdirSync(baselineDir).filter((name) => name.endsWith(".json"))) {
+      const read = v.safeParse(baselineSchema, readJson(join(baselineDir, file)))
+      const found = read.success ? baselineProblems(read.output) : issuesOf(read.issues)
+      if (read.success) baseline[file.slice(0, -".json".length)] = read.output
+      problems.push(...found.map((issue) => `${values.baseline}/${file}: ${issue}`))
+    }
+
+  const violations = lintCommands(parsed.document, VOCABULARY)
+  const severity = new Map(LINT_RULES.map((rule) => [rule.id, rule.severity]))
+
+  if (values["write-baseline"]) {
+    mkdirSync(baselineDir, { recursive: true })
+    for (const [rule, targets] of Object.entries(baselineOf(violations, overrides))) {
+      const path = join(baselineDir, `${rule}.json`)
+      if (targets.length > 0) writeFileSync(path, `${JSON.stringify(targets, null, 2)}\n`)
+      else rmSync(path, { force: true })
+      baseline[rule] = targets
+    }
+  }
+
+  const verdict = judge(violations, baseline, overrides, budget)
+  for (const id of verdict.unknownRules)
+    problems.push(`no lint rule "${id}" (named in ${values.baseline} or ${values.overrides})`)
+  for (const found of verdict.fresh)
+    problems.push(`${severity.get(found.rule) ?? "?"}  ${found.rule}  ${found.target}: ${found.message}`)
+  for (const entry of verdict.stale)
+    problems.push(
+      entry.in === "baseline"
+        ? `stale baseline entry, fixed or overridden — remove it: ${values.baseline}/${entry.rule}.json "${entry.target}"`
+        : `stale override, no such violation — remove it: ${entry.rule} "${entry.target}"`,
+    )
+  if (verdict.overBudget) problems.push(`${overrides.length} overrides; the budget is ${budget}`)
+
+  io.err(
+    `lint: ${violations.length} violations — ${verdict.baselined} in the baseline, ${verdict.overridden} overridden (budget ${budget}), ${verdict.fresh.length} new`,
+  )
+  return report(io, problems, "lint: ok")
+}
+
 export const main = async (argv: readonly string[], io: DevIo): Promise<number> => {
   const [command, ...args] = argv
   switch (command) {
@@ -158,6 +297,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       return docsCheck(args, io)
     case "test-matrix":
       return testMatrix(args, io)
+    case "lint":
+      return lint(args, io)
     case "help":
     case "--help":
     case "-h":

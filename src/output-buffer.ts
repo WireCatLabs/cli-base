@@ -1,4 +1,4 @@
-import { CliError } from "./errors.js"
+import { CliError, isCliError } from "./errors.js"
 import type { RenderFormat } from "./renderer.js"
 import { fieldsOf, projectFields } from "./result-fields.js"
 
@@ -50,7 +50,7 @@ export const createOutputBuffer = ({
                   .join("\n")
               : project(text) + (text.endsWith("\n") ? "\n" : "")
         } catch (error) {
-          if (error instanceof CliError) throw error
+          if (isCliError(error)) throw error
           throw new CliError("invalid_response", "field projection requires complete JSON values or JSONL lines", {
             reason: "projection_unavailable",
             retryable: false,

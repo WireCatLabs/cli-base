@@ -1,4 +1,4 @@
-import { CliError } from "./errors.js"
+import { CliError, isCliError } from "./errors.js"
 import { realSleep, type SleepLike } from "./time.js"
 
 export interface DeadlineOptions {
@@ -26,7 +26,7 @@ export const createDeadline = ({ timeoutMs, signal, sleep = realSleep }: Deadlin
     signal?.removeEventListener("abort", onAbort)
   }
   const onAbort = () =>
-    abort(signal?.reason instanceof CliError ? signal.reason : new CliError("cancelled", "command cancelled"))
+    abort(isCliError(signal?.reason) ? signal.reason : new CliError("cancelled", "command cancelled"))
   if (signal?.aborted) onAbort()
   else signal?.addEventListener("abort", onAbort, { once: true })
   const expire = () =>
@@ -78,7 +78,7 @@ export const createDeadline = ({ timeoutMs, signal, sleep = realSleep }: Deadlin
           await running.catch((reason: unknown) => {
             settled = reason
           })
-          if (settled instanceof CliError && settled.code === "outcome_unknown") throw settled
+          if (isCliError(settled) && settled.code === "outcome_unknown") throw settled
           throw controller.signal.reason
         }
         throw error

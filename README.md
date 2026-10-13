@@ -49,13 +49,14 @@ streams.stderr // []
 | `logging` | a Pino adapter writing JSON lines with secrets redacted by field name; a file that cannot be written is reported to `onError`, never thrown |
 | `retry` | full-jitter backoff, and the distinction between "no answer came" and "safe to repeat" |
 | `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock` |
-| `/commands` | the command registry: `describeProgram`, `annotate`, `flatten`, `refuseJoinedPath` — see below |
+| `/commands` | the command registry: `describeProgram`, `annotate`, `flatten`, `refuseJoinedPath`, and `commandsDocument` — the one `commands --json` shape, with its schema — see below |
 | `/completion` | shell completion over the registry: `suggest`, `formatSuggestions` — see below |
 | `/update` | keeping an install current: `installerOf`, `updateCommand`, `latestVersion`, `mayNotify`, `updateNotice`, `runUpdate` — see below |
 | `/codegen` | build time: an official API description → types, Valibot schemas, an operation manifest and a coverage page — see below |
 | `/release` | release time: `releaseCheck` and the checks it runs — changelog shape, links, package contents, version in step — see below |
 | `/skill` | the CLI's SKILL.md for coding agents: `skillCommand` (`show`, `install`), `skillHint`, `skillResource` — see below |
 | `/mcp` | local stdio MCP setup for Codex and Claude Code, plus a read-only handshake and tool-list probe |
+| `/standards` | the registries the standard is made of — vocabulary, output envelope, error object and reasons, next steps, log record, lint rules — as Valibot schemas that also emit JSON Schema 2020-12 |
 
 **Nothing in the root export is HTTP.** Status classification, `Retry-After` parsing and the fetch
 seam live in `@wirecat/cli-base/http`, so a CLI that speaks a socket never depends on a stack it
@@ -308,6 +309,14 @@ extends:
 | `scripts/version.ts` | `cli-dev version [--sync] [--file src/version.ts]` |
 | `scripts/docs-check.ts` | `cli-dev docs-check --rules scripts/release/checks.ts`, or `--ids CLI,MAX` with the English defaults |
 | `scripts/test-matrix.ts` | `cli-dev test-matrix --program dist/program.js --untested scripts/test-matrix-untested.ts --name max [--check]` |
+
+| — | `cli-dev lint --cli dist/bin.js` (or `--commands <file>`): the command tree against the standard |
+
+`cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and
+judges it by `LINT_RULES` and `VOCABULARY` from `/standards`. Known violations live in
+`lint/baseline/<rule-id>.json`, one file per rule, and may only shrink: an entry with no violation left
+fails the run. `--write-baseline` rewrites those files to today's violations. Permanent exceptions go in
+`lint/overrides.json` — `[{ "rule", "target", "reason" }]` — and more than `--budget` (10) of them fails.
 
 `--rules` names a module exporting `CHANGELOG` and `docsRules(root)`; `--program` one exporting
 `createProgram`; `--untested` one exporting `UNTESTED`. A TypeScript module loads on Node 24 as it is.

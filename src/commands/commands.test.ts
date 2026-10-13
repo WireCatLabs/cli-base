@@ -3,11 +3,14 @@ import { describe, expect, it } from "vitest"
 import {
   annotate,
   COMMANDS_PAGE_LABELS,
+  commandsDocument,
+  commandsDocumentJsonSchema,
   commandsPage,
   describeOptions,
   describeProgram,
   flatten,
   metaOf,
+  parseCommandsDocument,
   refuseJoinedPath,
 } from "./index.js"
 
@@ -242,5 +245,39 @@ describe("refuseJoinedPath", () => {
     expect(check("messages", "list", "--help")).not.toThrow()
     expect(check("messages", "send", "42", "hello there")).not.toThrow()
     expect(check("work chats", "list")).not.toThrow()
+  })
+})
+
+describe("commands document", () => {
+  const about = { cli: "tool", version: "1.2.3", contract: 0 }
+
+  it("writes the one shape every CLI prints for commands --json, and reads it back", () => {
+    const document = commandsDocument(program(), about)
+
+    expect(Object.keys(document)).toEqual([
+      "cli",
+      "version",
+      "contract",
+      "description",
+      "globalOptions",
+      "commands",
+      "exitCodes",
+    ])
+    expect(document.exitCodes).toMatchObject({ ok: 0, generic_failure: 1, validation_error: 2 })
+    expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
+  })
+
+  it("refuses a document with keys of its own or without a version", () => {
+    const { version: _, ...unversioned } = commandsDocument(program(), about)
+    const { problems } = parseCommandsDocument({ ...unversioned, items: [] })
+
+    expect(problems).toEqual([expect.stringMatching(/^version:/), expect.stringMatching(/^items:/)])
+  })
+
+  it("has a JSON Schema with the command tree under $defs", () => {
+    const schema = commandsDocumentJsonSchema() as { $schema: string; $defs: Record<string, unknown> }
+
+    expect(schema.$schema).toBe("https://json-schema.org/draft/2020-12/schema")
+    expect(Object.keys(schema.$defs)).toEqual(["command"])
   })
 })

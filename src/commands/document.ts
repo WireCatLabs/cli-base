@@ -1,0 +1,98 @@
+import type { Command } from "commander"
+import * as v from "valibot"
+import { EXIT_CODES, GENERIC_FAILURE } from "../exit-codes.js"
+import { issuesOf, jsonSchemaOf } from "../standards/registry.js"
+import { type CommandInfo, describeOptions, describeProgram, type OptionInfo } from "./index.js"
+
+const argumentInfoSchema = v.object({
+  name: v.string(),
+  required: v.boolean(),
+  variadic: v.boolean(),
+  description: v.string(),
+  choices: v.optional(v.array(v.string())),
+  default: v.optional(v.unknown()),
+})
+
+const optionInfoSchema = v.object({
+  flags: v.string(),
+  description: v.string(),
+  takesValue: v.boolean(),
+  mandatory: v.boolean(),
+  choices: v.optional(v.array(v.string())),
+  default: v.optional(v.unknown()),
+  env: v.optional(v.string()),
+  conflicts: v.optional(v.array(v.string())),
+  implies: v.optional(v.record(v.string(), v.unknown())),
+})
+
+const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
+  path: v.array(v.string()),
+  name: v.string(),
+  summary: v.optional(v.string()),
+  description: v.string(),
+  usage: v.string(),
+  origin: v.picklist(["handwritten", "generated"]),
+  operationId: v.optional(v.string()),
+  mutates: v.optional(v.boolean()),
+  local: v.optional(v.boolean()),
+  state: v.optional(v.picklist(["beta", "deprecated"])),
+  examples: v.optional(v.array(v.string())),
+  arguments: v.array(argumentInfoSchema),
+  options: v.array(optionInfoSchema),
+  commands: v.array(v.lazy(() => commandInfoSchema)),
+})
+
+/**
+ * What `<cli> commands --json` prints, in every CLI on cli-base. `scope` and `inheritedOptions` are
+ * there only when one command path was asked for. Nothing else at the top: `cli-dev lint` refuses it.
+ */
+export const commandsDocumentSchema = v.strictObject({
+  cli: v.pipe(v.string(), v.nonEmpty()),
+  version: v.pipe(v.string(), v.nonEmpty()),
+  /** The major version of the JSON the CLI's commands print. */
+  contract: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  description: v.string(),
+  globalOptions: v.array(optionInfoSchema),
+  scope: v.optional(v.array(v.string())),
+  inheritedOptions: v.optional(v.array(v.object({ path: v.array(v.string()), options: v.array(optionInfoSchema) }))),
+  commands: v.array(commandInfoSchema),
+  exitCodes: v.record(v.string(), v.pipe(v.number(), v.integer())),
+})
+
+export interface CommandsDocument {
+  cli: string
+  version: string
+  contract: number
+  description: string
+  globalOptions: OptionInfo[]
+  scope?: string[]
+  inheritedOptions?: { path: string[]; options: OptionInfo[] }[]
+  commands: CommandInfo[]
+  exitCodes: Record<string, number>
+}
+
+export const commandsDocumentJsonSchema = () => jsonSchemaOf(commandsDocumentSchema, { command: commandInfoSchema })
+
+export const parseCommandsDocument = (
+  value: unknown,
+): { document: CommandsDocument; problems?: undefined } | { document?: undefined; problems: string[] } => {
+  const parsed = v.safeParse(commandsDocumentSchema, value)
+  return parsed.success ? { document: parsed.output as CommandsDocument } : { problems: issuesOf(parsed.issues) }
+}
+
+export interface CommandsDocumentAbout {
+  cli: string
+  version: string
+  contract: number
+}
+
+/** The whole tree; a CLI that answers `commands <path>` adds `scope` and `inheritedOptions` itself. */
+export const commandsDocument = (root: Command, about: CommandsDocumentAbout): CommandsDocument => ({
+  cli: about.cli,
+  version: about.version,
+  contract: about.contract,
+  description: root.description(),
+  globalOptions: describeOptions(root),
+  commands: describeProgram(root),
+  exitCodes: { ok: 0, generic_failure: GENERIC_FAILURE, ...EXIT_CODES },
+})
