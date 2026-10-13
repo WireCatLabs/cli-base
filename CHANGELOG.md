@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`refuseJoinedPath` in `/commands` refuses a command path given as one argument.** `tool "projects add" --help` —
+  what a zsh loop over `$c` passes — made Commander print the root help, and an agent read it as a missing
+  command. Called on the words before `parseAsync`, it throws a `validation_error` naming the words to type. A
+  CLI adopts it at its next bump; memo has the same check of its own until then.
+
 ## 0.21.0 — 11.10.2026
 
 ### Changed — may break callers
