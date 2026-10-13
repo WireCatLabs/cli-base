@@ -110,8 +110,8 @@ check("error carries its code", error.code === "rate_limited")
 check("exit code is stable", exitCodeFor("cancelled") === 130)
 
 const keyring = memoryKeyring()
-keyring.set("cli-core-smoke", "default", "secret")
-check("keyring round-trips", keyring.get("cli-core-smoke", "default") === "secret")
+keyring.set("cli-base-smoke", "default", "secret")
+check("keyring round-trips", keyring.get("cli-base-smoke", "default") === "secret")
 
 const time = fakeClock()
 await time.sleep(250, undefined, "retry")
@@ -127,10 +127,10 @@ const keyringModule = await import("@napi-rs/keyring").then(
 )
 check(`native keyring module loads (saw: ${keyringModule})`, keyringModule === "function")
 
-const paths = resolvePaths({ appName: "cli-core-smoke", env: { CLI_CORE_SMOKE_CONFIG_DIR: "/tmp/smoke" } })
+const paths = resolvePaths({ appName: "cli-base-smoke", env: { CLI_BASE_SMOKE_CONFIG_DIR: "/tmp/smoke" } })
 check("paths honour the environment override", paths.config === "/tmp/smoke")
 
-const dir = mkdtempSync(join(tmpdir(), "cli-core-smoke-"))
+const dir = mkdtempSync(join(tmpdir(), "cli-base-smoke-"))
 const configPath = join(dir, "config.json")
 saveConfigFile(configPath, { version: 1 })
 const Schema = v.object({ version: v.literal(1) })
@@ -138,7 +138,7 @@ check("config round-trips", loadConfigFile(configPath, Schema, () => ({ version:
 
 const credentials = new Credentials({
   configDir: dir,
-  service: "cli-core-smoke",
+  service: "cli-base-smoke",
   keyring: memoryKeyring(),
   env: {},
   warn: () => {},
@@ -191,9 +191,9 @@ check(
 )
 
 if (failures.length > 0) {
-  console.error(`cli-core smoke FAILED under ${runtime}:`)
+  console.error(`cli-base smoke FAILED under ${runtime}:`)
   for (const failure of failures) console.error(`  - ${failure}`)
   process.exit(1)
 }
 
-console.log(`cli-core smoke passed under ${runtime}`)
+console.log(`cli-base smoke passed under ${runtime}`)

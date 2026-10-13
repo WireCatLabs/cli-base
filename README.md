@@ -13,6 +13,10 @@ Published on npm and used by `max-cli`, `cli-messaging`, `tg-cli` and `brazecli`
 each version is in [`CHANGELOG.md`](CHANGELOG.md); how the package is put together and released is in
 [`docs/dev/`](docs/dev/ARCHITECTURE.md).
 
+Up to version 0.20.0 (October 2026) this package was `@wirecat/cli-core`, in the repository `WireCatLabs/cli-core`.
+That name now passes to the shared messaging library (today `@wirecat/cli-messaging`): in older changelogs, plans and
+issues, "cli-core" means this package.
+
 ## The rule this package exists to keep
 
 **In a machine mode, stdout carries data and nothing else.** No spinner, no `✓`, no warning, no

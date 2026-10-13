@@ -7,7 +7,7 @@ import { loadConfigFile, saveConfigFile, writeSecurely } from "./config.js"
 
 const Schema = v.object({ version: v.literal(1), profiles: v.optional(v.record(v.string(), v.object({}))) })
 const empty = () => ({ version: 1 as const })
-const dir = () => mkdtempSync(join(tmpdir(), "cli-core-"))
+const dir = () => mkdtempSync(join(tmpdir(), "cli-base-"))
 
 describe("loadConfigFile", () => {
   it("treats a missing file as unconfigured, not as broken", () => {
