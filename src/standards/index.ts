@@ -1,4 +1,16 @@
 export {
+  AUDIT_BLOCKS,
+  AUDIT_RULES,
+  type AuditRule,
+  defineAuditRules,
+  defineParityGroups,
+  defineRequiredRoots,
+  PARITY_GROUPS,
+  type ParityGroup,
+  REQUIRED_ROOTS,
+  type RequiredRoot,
+} from "./audit.js"
+export {
   BASE_REASONS,
   COMMON_DETAILS,
   CRASH_CODE,

@@ -328,6 +328,7 @@ extends:
 | `scripts/test-matrix.ts` | `cli-dev test-matrix --program dist/program.js --untested scripts/test-matrix-untested.ts --name max [--check]` |
 
 | — | `cli-dev lint --cli dist/bin.js` (or `--commands <file>`): the command tree against the standard |
+| — | `cli-dev audit --cli <bin> --cli <bin> …`: several CLIs against the standard and against each other |
 
 `cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and
 judges it by `LINT_RULES` and `VOCABULARY` from `/standards`. Known violations live in
@@ -342,6 +343,23 @@ or default term that does not run. `--schemas <file>` names a JSON object of the
 keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed. Its entry
 `log_attributes` (`logAttributesJsonSchema(allow)`) is the CLI's log allow-list instead: `log-attribute-key` fails a
 key that names message text, a token or a phone number.
+
+`cli-dev audit` reads two or more commands documents (`--cli <bin>` or `--commands <file>`, repeated) and prints a
+scorecard: per CLI and rule, what it found, what the baseline holds, what is overridden, what is new and what was
+fixed; `--json` prints it as the list envelope. Every lint rule judges each CLI alone; `AUDIT_RULES` in `/standards`
+compare them: `required-root` (`REQUIRED_ROOTS`: `commands`, `doctor`, `skill show|install`, `mcp`, `upgrade`),
+`same-path-contract` (a path two CLIs of a parity group share has the same options, value names, output and summary;
+a group covering the whole tree has the same paths), `same-flag-meaning`, `same-entity-schema` (from `--schemas
+<cli>=<file>`) and `same-error-reason` (from `--reasons <cli>=<file>`, a JSON list of `defineReasons` entries). The two
+last rules print `n/a` for a CLI that gave no such file. `PARITY_GROUPS` names who is compared where — `messengers`
+(tg, max) over the whole tree, `all` over the shared roots — and each group's declared `differences`, each with a reason,
+at most 10. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
+(`max+tg chats list --limit`, `tg: chats grab` for a lint violation); `--write-baseline` rewrites them. `--lint
+<cli>=<dir>` judges that CLI's lint rules by its own `lint/` folder instead. A new finding fails the run — only one
+naming `--for <cli>` when given — and a fixed one is reported, not failed. `AUDIT_BLOCKS` decides whether a new
+cross-CLI divergence fails the run (`"new"`) or only shows (`"never"`); a new lint violation always fails. A document
+from a cli-base before 0.26, with camelCase keys, is read too, and `key-casing` reports it. The weekly `Weekly CLI
+audit` workflow runs it over the five latest published CLIs and rewrites the pinned issue labelled `cli-audit`.
 
 `--rules` names a module exporting `CHANGELOG` and `docsRules(root)`; `--program` one exporting
 `createProgram`; `--untested` one exporting `UNTESTED`. A TypeScript module loads on Node 24 as it is.
