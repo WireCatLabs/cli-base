@@ -12,6 +12,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **The shared vocabulary names an offline source catalog.** `catalog` is a stored file/folder metadata resource, `tree` its hierarchy view, and `--depth <n>` a traversal budget. Consumers can expose offline browsing without provider-specific naming exceptions; list filters still use the shared query language.
+
 - The `passage` view names a cited transcript anchor with bounded surrounding lines. Evidence budgets `--bytes` / `--max-read-bytes` and `--expected-fingerprint` are registered; the existing `--before-n` / `--after-n` counts also describe transcript lines.
 
 - **The verb `rebuild`**: compute again, from what the store already holds, what the tool derives from it, keeping

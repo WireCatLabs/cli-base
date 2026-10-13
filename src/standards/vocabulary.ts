@@ -221,6 +221,7 @@ const singulars: [string, string][] = [
   ["config", "a profile's settings"],
   ["server", "the long-running process of a profile"],
   ["store", "the local SQLite database the tools share"],
+  ["catalog", "stored source file and folder metadata and parent relationships"],
   ["skill", "the agent skill file of this tool"],
   ["cache", "max's per-profile cache"],
   ["flood", "what the messenger told this profile to hold off on"],
@@ -229,6 +230,7 @@ const singulars: [string, string][] = [
 ]
 
 const views: [string, string][] = [
+  ["tree", "the parent and child hierarchy of stored sources"],
   ["logs", "the log of a running process"],
   ["events", "what happened in a thing over time"],
   ["scheduled", "what is scheduled to happen"],
@@ -281,6 +283,14 @@ const flags: Vocabulary["flags"] = [
     role: "target",
     type: "string",
     meaning: "require the selected evidence anchor to match this previously read fingerprint",
+  },
+  {
+    name: "--depth",
+    value: "<n>",
+    role: "budget",
+    type: "count",
+    meaning: "maximum descendant depth in a hierarchy",
+    unit: "levels",
   },
   { name: "--limit", value: "<n>", role: "paging", type: "count", meaning: "how many items", unit: "items" },
   {
