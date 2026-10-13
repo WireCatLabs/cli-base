@@ -303,6 +303,27 @@ const flags: Vocabulary["flags"] = [
     unit: "messages",
   },
   { name: "--timeout", value: "<duration>", role: "budget", type: "duration", meaning: "give up after this long" },
+  {
+    name: "--account",
+    value: "<account>",
+    role: "scope",
+    type: "string",
+    meaning: "the account to use; never assumed",
+  },
+  {
+    name: "--provider",
+    value: "<provider>",
+    role: "scope",
+    type: "choice",
+    meaning: "read every account of this provider",
+  },
+  {
+    name: "--source",
+    value: "<accounts>",
+    role: "scope",
+    type: "list",
+    meaning: "what to read: provider:account, a provider, a kind or group:<name>; comma-separated",
+  },
   { name: "--dry-run", role: "mode", type: "switch", meaning: "judge and plan; do nothing" },
   {
     name: "--debug",
