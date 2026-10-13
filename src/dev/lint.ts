@@ -1,6 +1,7 @@
 import * as v from "valibot"
 import { type CommandsDocument, commandsDocumentJsonSchema } from "../commands/document.js"
 import type { CommandInfo, OptionInfo } from "../commands/index.js"
+import { exampleProblems } from "../query/registry.js"
 import { errorObjectSchema } from "../standards/errors.js"
 import { LINT_RULES, type LintRule, type Override } from "../standards/lint.js"
 import { logRecordSchema } from "../standards/log.js"
@@ -186,6 +187,34 @@ const withAncestors = (commands: readonly CommandInfo[], above: readonly Command
     ...withAncestors(one.commands, [...above, one]),
   ])
 
+/** `--since-time` → a time window, `--before-id` → `id`, `--kind` → `kind`: what a flag would filter by. */
+const filteredBy = (flag: string): { field?: string; window?: "time" | "id" } => {
+  const bare = flag.replace(/^--/, "").replace(/^(before|after|since|until)-/, "")
+  if (bare === "time") return { window: "time" }
+  if (bare === "id") return { window: "id" }
+  return { field: bare.replace(/-(time|id|n)$/, "").replaceAll("-", "_") }
+}
+
+/** An entity's fields: the query's, then its registered schema's properties; `time` for a date-time. */
+const entityFields = (command: CommandInfo, context: LintContext): Map<string, string> => {
+  const fields = new Map<string, string>((command.query?.fields ?? []).map((field) => [field.name, field.type]))
+  const entity = command.output?.entity ?? command.query?.entity
+  const schema = entity === undefined ? undefined : context.schemas?.[entity]
+  const properties = isObject(schema) && isObject(schema.properties) ? schema.properties : {}
+  for (const [name, property] of Object.entries(properties))
+    if (!fields.has(name)) fields.set(name, isObject(property) && property.format === "date-time" ? "time" : "other")
+  return fields
+}
+
+const optionsOf = (document: CommandsDocument) => [
+  ...document.global_options.map((option) => ({ option, target: longName(option.flags) })),
+  ...walk(document.commands)
+    .filter((command) => command.origin === "handwritten")
+    .flatMap((command) =>
+      command.options.map((option) => ({ option, target: `${label(command)} ${longName(option.flags)}` })),
+    ),
+]
+
 const CHECKS: Record<string, Check> = {
   "unknown-verb": (document, vocabulary) => {
     const allowed = new Set([
@@ -296,6 +325,54 @@ const CHECKS: Record<string, Check> = {
       .filter(({ key }) => !SNAKE_CASE.test(key))
       .map(({ key, target }) => ({ target, message: `"${key}" is not snake_case` }))
   },
+  "filter-flag": (document, vocabulary, context) => {
+    const roles = new Map(vocabulary.flags.map((flag) => [flag.name, flag.role]))
+    return walk(document.commands)
+      .filter((command) => command.origin === "handwritten" && !command.mutates && (command.query || command.output))
+      .flatMap((command) => {
+        const fields = entityFields(command, context)
+        return command.options
+          .filter((option) => roles.get(longName(option.flags)) !== "scope")
+          .flatMap((option) => {
+            const { field, window } = filteredBy(longName(option.flags))
+            const hit =
+              window === "time"
+                ? [...fields].find(([, type]) => type === "time")?.[0]
+                : window === "id"
+                  ? fields.has("id")
+                    ? "id"
+                    : undefined
+                  : field !== undefined && fields.has(field)
+                    ? field
+                    : undefined
+            return hit === undefined
+              ? []
+              : [{ target: `${label(command)} ${longName(option.flags)}`, message: `filters by ${hit}; use the query` }]
+          })
+      })
+  },
+  "option-role": (document, vocabulary) => {
+    const roles = new Set(vocabulary.flags.map((flag) => flag.name))
+    return optionsOf(document)
+      .filter(({ option }) => !roles.has(longName(option.flags)))
+      .map(({ target, option }) => ({ target, message: `${longName(option.flags)} has no role in the vocabulary` }))
+  },
+  "list-without-query": (document) =>
+    handwrittenLeaves(document)
+      .filter((command) => command.name === "list" && command.output !== undefined && command.query === undefined)
+      .map((command) => ({
+        target: label(command),
+        message: `answers with ${command.output?.entity} but takes no query`,
+      })),
+  "query-example": (document) =>
+    walk(document.commands).flatMap((command) =>
+      command.query
+        ? exampleProblems(command.query).map(({ field, problem }) => ({
+            target: `${label(command)} ${field}`,
+            message: problem,
+          }))
+        : [],
+    ),
   "missing-option-help": (document) => [
     ...document.global_options
       .filter((option) => option.description.trim() === "")

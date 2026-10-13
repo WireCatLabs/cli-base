@@ -17,7 +17,8 @@
     "dist",
     "config",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES"
   ],
   "bin": {
     "cli-dev": "dist/dev/bin.js"
@@ -66,6 +67,10 @@
     "./mcp": {
       "types": "./dist/mcp/index.d.ts",
       "default": "./dist/mcp/index.js"
+    },
+    "./query": {
+      "types": "./dist/query/index.d.ts",
+      "default": "./dist/query/index.js"
     },
     "./standards": {
       "types": "./dist/standards/index.d.ts",

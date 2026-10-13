@@ -40,12 +40,15 @@ export {
   nextStepSchema,
   type Page,
   pageSchema,
+  reference,
 } from "./output.js"
 export { fill, jsonSchemaOf, RegistryError } from "./registry.js"
 export { defineSteps, SAME_COMMAND, STEPS, type StepDefinition, type StepInput, stepOf } from "./steps.js"
 export {
   defineVocabulary,
+  FLAG_ROLES,
   FLAG_TYPES,
+  type FlagRole,
   type FlagType,
   VOCABULARY,
   type Vocabulary,

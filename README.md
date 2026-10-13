@@ -56,6 +56,7 @@ streams.stderr // []
 | `/release` | release time: `releaseCheck` and the checks it runs — changelog shape, links, package contents, version in step — see below |
 | `/skill` | the CLI's SKILL.md for coding agents: `skillCommand` (`show`, `install`), `skillHint`, `skillResource` — see below |
 | `/mcp` | local stdio MCP setup for Codex and Claude Code, plus a read-only handshake and tool-list probe |
+| `/query` | one query language for every list: the Lucene 9.12.3 parser port, fields from an entity schema, validation, the Fields help and `evaluate` as a test oracle — see below |
 | `/standards` | the registries the standard is made of — vocabulary, output envelope, error object and reasons, next steps, log record, lint rules — as Valibot schemas that also emit JSON Schema 2020-12 |
 
 **Nothing in the root export is HTTP.** Status classification, `Retry-After` parsing and the fetch
@@ -113,6 +114,17 @@ Each option says whether it `takes_value` and, separately, whether it is `mandat
 Commander's `required`, which means "takes a value when given" — plus its choices, default,
 environment variable, the options it `conflicts` with and the values it `implies`, keyed by long flag.
 Every key of the document is snake_case.
+
+**A list filters with one query, `@wirecat/cli-base/query`** — `tasks list state:open priority>1`, the
+query positional and last, `[query...]`, over the entity's own snake_case keys. `queryFieldsOf(schema, annotations)`
+reads the fields from the entity's Valibot schema (string → `kw`, a list of choices → `enum`, number → `num`, `isoTime` →
+`time`, boolean → `bool`, `reference` → `ref`); annotations add the exceptions: words (`text`), relations,
+`is:` states, examples, the fields a provider filters natively. `parseLucene(text, { defaultField: "none",
+command })` refuses a bare word (`query.bare-word`); `validateQuery` checks names, operators, values and
+placement and names every field when one is unknown; `fieldsHelp` prints the help's Fields section;
+`QUERY_REASONS` registers the errors. A list filters where its data lives — its store or the provider — and
+never in memory: `evaluate` exists to test those compilers against. `annotate(list, { output: { entity },
+query })` puts both in `commands --json`, where `cli-dev lint` reads them.
 
 `refuseJoinedPath(program, args)` throws a `validation_error` when a command path arrived as one
 argument (`"projects add" --help`, what a zsh loop over `$c` passes), naming the words to type.
@@ -318,7 +330,11 @@ judges it by `LINT_RULES` and `VOCABULARY` from `/standards`. Known violations l
 `lint/baseline/<rule-id>.json`, one file per rule, and may only shrink: an entry with no violation left
 fails the run. `--write-baseline` rewrites those files to today's violations. Permanent exceptions go in
 `lint/overrides.json` — `[{ "rule", "target", "reason" }]` — and more than `--budget` (10) of them fails.
-`--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
+Every option needs a role from the vocabulary (`paging`, `output`, `sort`, `mode`, `action`, `budget`, `scope`,
+`target`, `value`, `query`) — there is no filter role. `filter-flag` reports an option of a read-only command
+named after a field of its entity (`--kind`, `--since-time`, `--before-id`), except a `scope` flag such as
+`--account`; `list-without-query` a `list` with an `output` entity and no query; `query-example` a field example
+or default term that does not run. `--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
 keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed.
 
 `--rules` names a module exporting `CHANGELOG` and `docsRules(root)`; `--program` one exporting

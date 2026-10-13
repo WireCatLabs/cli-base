@@ -68,7 +68,9 @@ describe("vocabulary registry", () => {
     ).toMatch(/^verbs\.0\.word: a lower-case word/)
     expect(
       problemsOf(() =>
-        defineVocabulary(vocabulary({ flags: [{ name: "--all", value: "<n>", type: "switch", meaning: "every" }] })),
+        defineVocabulary(
+          vocabulary({ flags: [{ name: "--all", value: "<n>", type: "switch", role: "mode", meaning: "every" }] }),
+        ),
       ),
     ).toEqual(["flags: --all — a switch has no value name; every other type has one"])
   })

@@ -22,9 +22,26 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   or `defineReasons` and `defineSteps` throw at start-up; `annotate` takes `operation_id`; `projectFields` keeps
   `operation_id` and `send_id`. Bump your `contract`.
 - **The field rule `camel-case` is now `snake-case`**, and a duration key ends in `_ms`.
+- **Every vocabulary flag has a `role`**, one of `FLAG_ROLES`, and `defineVocabulary` refuses a flag without one.
+  There is no filter role: a filter is a query field.
+- **Query error messages start with the command that ran**, `chats list: query.unknown-field at position 8`, in
+  place of `search:`; the guide link is in `details.guide` only when the caller passes one. The `~` hints no
+  longer name `--language legacy`, a messages-search option.
 
 ### Added
 
+- **One query language for every list: `@wirecat/cli-base/query`.** The Lucene 9.12.3 parser port moves here
+  from cli-messaging with its date handling. `queryFieldsOf` derives a list's fields from its entity schema,
+  `validateQuery` checks a query against them, `fieldsHelp` prints the Fields section, `defineQuery` refuses a
+  field whose example does not run, and `QUERY_REASONS` registers the shared `query.*` errors, with
+  `query.bare-word`, `query.invalid-number` and `query.unsupported-placement` new. `evaluate` judges one item
+  against a query, for tests: a list filters in its store or at the provider, never in memory.
+- **`annotate` takes `output: { entity, view? }` and `query`, and `commands --json` carries both**, so an agent
+  sees what a list answers with and which fields it filters by.
+- **`reference` joins `isoTime` in `/standards`**: the schema of a typed name such as `note:42`.
+- **Four lint rules for lists.** `filter-flag` (an option of a read-only command named after a field of its
+  entity, scope flags exempt), `option-role` (an option with no role in the vocabulary), `list-without-query` and
+  `query-example`. Today's violations go to your baseline with `--write-baseline`.
 - **`cli-dev lint` checks key casing.** The new rule `key-casing` fails on a key that is not snake_case in
   cli-base's schemas, the commands document as the CLI printed it, and the schemas given with
   `--schemas <file>`. A CLI with camelCase keys left baselines them with `--write-baseline`.

@@ -11,6 +11,8 @@
  */
 import type { Argument, Command, Option } from "commander"
 import { CliError } from "../errors.js"
+import type { QueryRegistry } from "../query/fields.js"
+import { describeQuery, type QueryInfo } from "../query/registry.js"
 
 export type Origin = "handwritten" | "generated"
 export type CommandState = "beta" | "deprecated"
@@ -25,6 +27,15 @@ export interface CommandMeta {
   local?: boolean
   state?: CommandState
   examples?: readonly string[]
+  /** The entity the command answers with, or one of its views. */
+  output?: CommandOutput
+  /** A list's query fields; the list takes them as its last argument, `[query...]`. */
+  query?: QueryRegistry
+}
+
+export interface CommandOutput {
+  entity: string
+  view?: string
 }
 
 export interface ArgumentInfo {
@@ -68,6 +79,8 @@ export interface CommandInfo {
   local?: boolean
   state?: CommandState
   examples?: readonly string[]
+  output?: CommandOutput
+  query?: QueryInfo
   arguments: readonly ArgumentInfo[]
   options: readonly OptionInfo[]
   commands: readonly CommandInfo[]
@@ -96,7 +109,7 @@ const describe = (command: Command, cli: string, parents: readonly string[]): Co
   const path = [...parents, command.name()]
   const args = command.registeredArguments.map(describeArgument)
   const options = describeOptions(command)
-  const { origin = "handwritten", ...meta } = metaOf(command)
+  const { origin = "handwritten", query, ...meta } = metaOf(command)
 
   const usage = [
     cli,
@@ -115,6 +128,7 @@ const describe = (command: Command, cli: string, parents: readonly string[]): Co
     usage,
     origin,
     ...meta,
+    ...(query ? { query: describeQuery(query) } : {}),
     arguments: args,
     options,
     commands: visible(command).map((child) => describe(child, cli, path)),

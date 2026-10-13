@@ -267,6 +267,35 @@ describe("commands document", () => {
     expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
   })
 
+  it("carries a list's output entity and its query fields, without the fields' own checks", () => {
+    const root = new Command("tool")
+    annotate(root.command("tasks").command("list").argument("[query...]", "field:value terms"), {
+      output: { entity: "task" },
+      query: {
+        entity: "task",
+        backend: "sql",
+        fields: [
+          {
+            name: "state",
+            type: "enum",
+            operators: ["term"],
+            values: ["open"],
+            example: "state:open",
+            validate: () => {},
+          },
+        ],
+      },
+    })
+    const document = commandsDocument(root, about)
+    const [list] = document.commands[0]?.commands ?? []
+    expect(list).toMatchObject({
+      output: { entity: "task" },
+      query: { entity: "task", backend: "sql", fields: [{ name: "state", example: "state:open" }] },
+    })
+    expect(list?.query?.fields[0]).not.toHaveProperty("validate")
+    expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
+  })
+
   it("refuses a document with keys of its own or without a version", () => {
     const { version: _, ...unversioned } = commandsDocument(program(), about)
     const { problems } = parseCommandsDocument({ ...unversioned, items: [] })
