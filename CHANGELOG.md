@@ -8,6 +8,25 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`createRecordLog` writes the standard log record.** Each call appends one `LogRecord` as a flat JSON line —
+  `time`, `severity`, `body`, `runId`, `traceId`, `command`, `attributes`, `resource` — to a file (mode 0600) or
+  hands it to a function, so a log written to stderr gets the same record. The event becomes `attributes`;
+  `body` is the message when given, else the event's `event` name. Lines are appended synchronously, so an exit
+  never drops the tail.
+
+### Changed — may break callers
+
+- **Redaction applies at every depth, arrays included.** It used to stop two levels down.
+
+### Removed
+
+- **`createFileLogger`, `FileLogger` and `FileLoggerOptions`, and the `pino` dependency.** Use `createRecordLog`
+  with a `runId`, `command` and `resource`; there is no `close()` to await any more.
+
 ## 0.22.0 — 13.10.2026
 
 ### Added

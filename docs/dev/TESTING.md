@@ -49,8 +49,7 @@ passes `env` explicitly.
 ## No test waits for real
 
 The suite takes about half a second. Waits go through an injected `SleepLike`, and `fakeClock()`
-from `/testing` records them without waiting. The longest real waits are 20 ms in
-`src/logging.test.ts` (a Pino destination reporting its open error) and the child process that
+from `/testing` records them without waiting. The longest real wait is the child process that
 `runUpdate`'s test starts. A new wait gets the injected sleep, never a longer test timeout.
 
 ## Coverage has a floor

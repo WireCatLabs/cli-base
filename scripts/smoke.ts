@@ -22,8 +22,8 @@ import {
   Credentials,
   captureStreams,
   createDeadline,
-  createFileLogger,
   createOutputBuffer,
+  createRecordLog,
   createRenderer,
   DEFAULT_RETRY,
   exitCodeFor,
@@ -146,12 +146,13 @@ const credentials = new Credentials({
 credentials.write("default", "s3cret")
 check("credentials round-trip through the keyring seam", credentials.read("default")?.secret === "s3cret")
 
-// Pino is the dependency most likely to behave differently on a second runtime, and redaction is
-// the one behaviour that must not silently stop working.
+// Redaction is the one log behaviour that must not silently stop working on a second runtime.
 const logPath = join(dir, "events.jsonl")
-const logger = createFileLogger({ path: logPath })
-logger.info({ event: "smoke", token: "t0ken", nested: { password: "hunter2" } })
-await logger.close()
+createRecordLog({ to: logPath, runId: "smoke", command: "smoke", resource: { service: "smoke", version: "0" } }).info({
+  event: "smoke",
+  token: "t0ken",
+  nested: { password: "hunter2" },
+})
 const logged = readFileSync(logPath, "utf8")
 check("the log file is written", logged.includes("smoke"))
 check("secrets are redacted in the log", !logged.includes("t0ken") && !logged.includes("hunter2"))
