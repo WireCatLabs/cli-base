@@ -86,7 +86,7 @@ describe("validateQuery", () => {
     try {
       parse("unread:1")
     } catch (error) {
-      expect((error as CliError).message).toBe('tasks list: query.unknown-field at position 8 — no field "unread"')
+      expect((error as CliError).message).toBe('tasks list: query.unknown-field at position 1 — no field "unread"')
       expect((error as CliError).details.fields).toEqual(fields.map((field) => field.name))
     }
   })
@@ -98,6 +98,11 @@ describe("validateQuery", () => {
       fields: queryFieldsOf(task, { native: ["state", "created_at"] }),
     }
     expect(reasonOf(() => parse("state:open", native))).toBeUndefined()
+    expect(defineQuery(native)).toBe(native)
+    expect(fieldsHelp(native).split("\n").slice(1, 3)).toEqual([
+      "  state       enum: open|done    state:open",
+      "  created_at  time: term, range  created_at>=7d",
+    ])
     try {
       parse("urgent:true", native)
       expect.unreachable()

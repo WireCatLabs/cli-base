@@ -196,10 +196,13 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
     let modifier: Clause["modifier"]
     if (["+", "-", "NOT", "!"].includes(peek().kind)) modifier = take().kind === "+" ? "must" : "mustNot"
     let field = inherited
+    // An error about `field:value` points at the field, where the comparison form already starts.
+    let start: number | undefined
     let implicit = inheritedImplicit
     if (peek().kind === "term" && [":", "=", "<", ">", "<=", ">="].includes(tokens[at + 1]?.kind ?? "")) {
       const token = take()
       field = decodeEscapes(token.raw, token.span, fail)
+      start = token.span.start
       implicit = false
       let operator = take()
       if (operator.kind === ":" && ["<", ">", "<=", ">="].includes(peek().kind)) operator = take()
@@ -246,7 +249,7 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
         upper: decode(upper),
         lowerInclusive: opening.kind === "[",
         upperInclusive: closing.kind === "]",
-        span: { start: opening.span.start, end: closing.span.end },
+        span: { start: start ?? opening.span.start, end: closing.span.end },
       })
     } else {
       const token = take()
@@ -260,7 +263,7 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
         operator:
           token.kind === "regex" ? "regex" : token.kind === "quoted" ? "phrase" : wildcard ? "wildcard" : "term",
         value: token.kind === "regex" || wildcard ? raw : decodeEscapes(raw, token.span, fail),
-        span: token.span,
+        span: { start: start ?? token.span.start, end: token.span.end },
         ...(implicit ? { implicit: true as const } : {}),
       })
     }

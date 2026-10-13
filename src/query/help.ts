@@ -6,9 +6,13 @@ export const QUERY_SYNTAX = 'field:value · "a phrase" · word* · AND OR NOT ·
 const kindOf = (field: FieldInfo): string =>
   field.values ? `${field.type}: ${field.values.join("|")}` : `${field.type}: ${field.operators.join(", ")}`
 
-/** The Fields section of a list's help: one line per field, its defaults, the syntax and the guide. */
-export const fieldsHelp = (registry: Pick<QueryRegistry, "fields" | "defaults">, guide?: string): string => {
-  const rows = registry.fields.map((field) => [field.name, kindOf(field), field.example])
+/** The Fields section of a list's help: one line per field it filters by, its defaults, the syntax and the guide. */
+export const fieldsHelp = (
+  registry: Pick<QueryRegistry, "fields" | "defaults"> & Partial<Pick<QueryRegistry, "backend">>,
+  guide?: string,
+): string => {
+  const shown = registry.backend === "native" ? registry.fields.filter((field) => field.native) : registry.fields
+  const rows = shown.map((field) => [field.name, kindOf(field), field.example])
   const widths = [0, 1].map((at) => Math.max(...rows.map((row) => (row[at] ?? "").length)))
   return [
     "Fields:",

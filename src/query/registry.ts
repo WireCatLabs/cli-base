@@ -21,9 +21,11 @@ export const describeQuery = (registry: QueryRegistry): QueryInfo => ({
 
 /** Why an example or default term would not run against these fields, per field name; empty when every one runs. */
 export const exampleProblems = (registry: QueryRegistry): { field: string; problem: string }[] => {
+  // An example proves syntax and type; whether a provider filters the field is the list's answer at run time.
+  const syntaxOnly: QueryRegistry = { ...registry, backend: "sql" }
   const problem = (text: string, field: string): string | undefined => {
     try {
-      const named = walkQuery(validateQuery(parseLucene(text, { defaultField: "none" }), registry).root)
+      const named = walkQuery(validateQuery(parseLucene(text, { defaultField: "none" }), syntaxOnly).root)
       return named.every((node) => node.field === field) ? undefined : `"${text}" does not name ${field}`
     } catch (failure) {
       if (!isCliError(failure)) throw failure

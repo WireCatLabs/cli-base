@@ -13,7 +13,8 @@ const inContext = (context: QueryContext, run: () => void) => {
   try {
     run()
   } catch (failure) {
-    if (!isCliError(failure) || typeof failure.details.reason !== "string") throw failure
+    if (!isCliError(failure) || typeof failure.details.reason !== "string" || failure.details.span === undefined)
+      throw failure
     const { reason, span, alternative } = failure.details as {
       reason: string
       span: Predicate["span"]
