@@ -4,7 +4,7 @@
 streams, the renderer, the error model and exit codes, the keyring and credentials, config and
 paths, clocks, retry, and — behind their own entry points — HTTP, the command registry, completion,
 self-update and code generation. What each export does is the table in the
-[README](../../README.md#what-is-in-it); this page is about the seams and how a change travels.
+[README](../REFERENCE.md#entry-points); this page is about the seams and how a change travels.
 
 ## Entry points
 

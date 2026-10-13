@@ -393,7 +393,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **Shared settings for checking docs**: `@wirecat/cli-core/cspell` (spelling in English, British
   English and Russian, with the shared word list; code and links are not checked),
   `config/rumdl.toml` (Markdown form) and `config/vale/` (prose: filler words and long sentences in
-  both languages, and tg's tone). A repository installs the tools itself â€” [README](README.md#shared-tooling).
+  both languages, and tg's tone). A repository installs the tools itself â€” [README](docs/TOOLING.md).
 - **`cli-dev docs-check --pages`** also checks `docs/` against `docs/meta.json`, the docs portal's
   page structure.
 
@@ -431,7 +431,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   tests and `scripts/`), `/biome` (formatter, linter, the `scripts/` console rule) and
   `config/lefthook.yml` (the git hooks). Paths, file lists and import rules stay in each repository.
   What to watch for: in lefthook, the extended file overrides your own `lefthook.yml`, not the other
-  way round. How to adopt each: [README](README.md#shared-tooling).
+  way round. How to adopt each: [README](docs/TOOLING.md).
 - **`cli-dev`, a command for the development scripts every CLI carried a copy of:** `slow-tests`,
   `next-version`, `version`, `docs-check` and `test-matrix`. Each prints what the script it replaces
   printed; the test matrix page names `cli-dev` in its first line, so a repository regenerates and
