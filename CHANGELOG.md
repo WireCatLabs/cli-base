@@ -30,6 +30,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`--account`, `--provider` and `--source` in the vocabulary** with role `scope`: they choose the accounts a
+  command reads, so `filter-flag` and `option-role` no longer report them.
 - **One query language for every list: `@wirecat/cli-base/query`.** The Lucene 9.12.3 parser port moves here
   from cli-messaging with its date handling. `queryFieldsOf` derives a list's fields from its entity schema,
   `validateQuery` checks a query against them, `fieldsHelp` prints the Fields section, `defineQuery` refuses a
