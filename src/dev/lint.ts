@@ -11,6 +11,11 @@ export interface Violation {
 }
 
 const SUMMARY_LIMIT = 80
+const EXAMPLES_MIN = 1
+const EXAMPLES_MAX = 3
+/** STANDARD's search hierarchy: `search <resource>`, and `search all` for every resource. */
+const SEARCH_ROOT = "search"
+const SEARCH_EVERYTHING = "all"
 
 const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 
@@ -31,6 +36,100 @@ const label = (command: CommandInfo): string => command.path.join(" ")
 
 type Check = (document: CommandsDocument, vocabulary: Vocabulary) => Omit<Violation, "rule">[]
 
+const handwrittenLeaves = (document: CommandsDocument): CommandInfo[] =>
+  walk(document.commands).filter((command) => command.commands.length === 0 && command.origin === "handwritten")
+
+/** Splits an example the way a shell would for the quoting examples use: '…', "…" and a backslash. */
+export const exampleWords = (line: string): string[] =>
+  [...line.matchAll(/(?:'[^']*'|"(?:\\.|[^"\\])*"|\\.|[^\s'"\\])+/g)].map(([word]) =>
+    word.replace(
+      /'([^']*)'|"((?:\\.|[^"\\])*)"|\\(.)/g,
+      (_, single, double, escaped) => single ?? escaped ?? (double as string).replace(/\\(.)/g, "$1"),
+    ),
+  )
+
+const BUILT_IN = ["-h", "--help"]
+
+const optionNames = (option: OptionInfo): string[] =>
+  option.flags.split(/[ ,|]+/).filter((part) => part.startsWith("-"))
+
+/** Why an example would not parse against the command it is listed under, or undefined when it would. */
+const faultOf = (
+  example: string,
+  command: CommandInfo,
+  ancestors: readonly CommandInfo[],
+  document: CommandsDocument,
+) => {
+  const words = exampleWords(example)
+  if (words[0] !== document.cli) return `does not start with "${document.cli}"`
+  const known = [document.globalOptions, ...ancestors.map((one) => one.options), command.options].flat()
+  const find = (word: string) => known.find((option) => optionNames(option).includes(word))
+
+  const option = (at: number): number | string => {
+    const word = words[at] ?? ""
+    const [name = word, inline] = word.startsWith("--") ? word.split(/=(.*)/s) : [word]
+    if (BUILT_IN.includes(name)) return at + 1
+    const found = find(name)
+    if (!found) return `${command.path.join(" ")} has no option ${name}`
+    if (!found.takesValue || inline !== undefined) return at + 1
+    const optional = /\[[^\]]*\]/.test(found.flags)
+    if (/\.\.\.[>\]]/.test(found.flags)) {
+      let next = at + 1
+      while (next < words.length && !words[next]?.startsWith("-")) next += 1
+      return next
+    }
+    if (optional) return words[at + 1] === undefined || words[at + 1]?.startsWith("-") ? at + 1 : at + 2
+    return words[at + 1] === undefined ? `${name} needs a value` : at + 2
+  }
+
+  let at = 1
+  let profile = false
+  while (words[at] !== command.path[0]) {
+    if (at >= words.length) return `does not run ${command.path.join(" ")}`
+    if (words[at]?.startsWith("-")) {
+      const next = option(at)
+      if (typeof next === "string") return next
+      at = next
+    } else if (!profile) {
+      profile = true
+      at += 1
+    } else return `does not run ${command.path.join(" ")}`
+  }
+  for (const segment of command.path) {
+    if (words[at] !== segment) return `does not run ${command.path.join(" ")}`
+    at += 1
+  }
+  let positional = 0
+  let rest = false
+  while (at < words.length) {
+    const word = words[at] ?? ""
+    if (!rest && word === "--") {
+      rest = true
+      at += 1
+    } else if (!rest && word.startsWith("-") && word.length > 1) {
+      const next = option(at)
+      if (typeof next === "string") return next
+      at = next
+    } else {
+      positional += 1
+      at += 1
+    }
+  }
+  const required = command.arguments.filter((argument) => argument.required).length
+  const variadic = command.arguments.some((argument) => argument.variadic)
+  if (positional < required)
+    return `${command.path.join(" ")} needs ${required} argument(s); the example gives ${positional}`
+  if (!variadic && positional > command.arguments.length)
+    return `${command.path.join(" ")} takes ${command.arguments.length} argument(s); the example gives ${positional}`
+  return undefined
+}
+
+const withAncestors = (commands: readonly CommandInfo[], above: readonly CommandInfo[] = []) =>
+  commands.flatMap((one): [CommandInfo, readonly CommandInfo[]][] => [
+    [one, above],
+    ...withAncestors(one.commands, [...above, one]),
+  ])
+
 const CHECKS: Record<string, Check> = {
   "unknown-verb": (document, vocabulary) => {
     const allowed = new Set([
@@ -38,9 +137,11 @@ const CHECKS: Record<string, Check> = {
       ...vocabulary.views.map((entry) => entry.word),
     ])
     const roots = new Set(vocabulary.roots.map((entry) => entry.word))
-    return walk(document.commands)
-      .filter((command) => command.commands.length === 0 && command.origin === "handwritten")
+    const searchable = new Set([...vocabulary.nouns.map((entry) => entry.word), SEARCH_EVERYTHING])
+    const searchLeaf = (command: CommandInfo) => command.path.at(-2) === SEARCH_ROOT && searchable.has(command.name)
+    return handwrittenLeaves(document)
       .filter((command) => !allowed.has(command.name) && !(command.path.length === 1 && roots.has(command.name)))
+      .filter((command) => !searchLeaf(command))
       .map((command) => ({
         target: label(command),
         message: `"${command.name}" is not a verb or view noun in the vocabulary`,
@@ -103,6 +204,25 @@ const CHECKS: Record<string, Check> = {
         target: label(command),
         message: `summary is ${summaryOf(command).length} characters; at most ${SUMMARY_LIMIT}`,
       })),
+  "command-example-count": (document) =>
+    handwrittenLeaves(document)
+      .filter((command) => {
+        const count = command.examples?.length ?? 0
+        return count < EXAMPLES_MIN || count > EXAMPLES_MAX
+      })
+      .map((command) => ({
+        target: label(command),
+        message: `${command.examples?.length ?? 0} examples; give ${EXAMPLES_MIN} to ${EXAMPLES_MAX}`,
+      })),
+  "faulty-help-example-parameters": (document) =>
+    withAncestors(document.commands)
+      .filter(([command]) => command.commands.length === 0 && command.origin === "handwritten")
+      .flatMap(([command, ancestors]) =>
+        (command.examples ?? []).flatMap((example) => {
+          const fault = faultOf(example, command, ancestors, document)
+          return fault === undefined ? [] : [{ target: `${label(command)}: ${example}`, message: fault }]
+        }),
+      ),
   "missing-argument-help": (document) =>
     walk(document.commands).flatMap((command) =>
       command.arguments
