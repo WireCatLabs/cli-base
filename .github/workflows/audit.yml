@@ -81,7 +81,8 @@ jobs:
           if [ -z "$number" ]; then
             url=$(gh issue create --title "CLI audit scorecard" --label cli-audit --body-file "$RUNNER_TEMP/body.md")
             number=${url##*/}
-            gh issue pin "$number"
           else
             gh issue edit "$number" --body-file "$RUNNER_TEMP/body.md"
           fi
+          pinned=$(gh issue view "$number" --json isPinned --jq .isPinned)
+          [ "$pinned" = true ] || gh issue pin "$number"
