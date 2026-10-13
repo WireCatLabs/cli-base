@@ -3,17 +3,25 @@ import { errorCodes } from "../errors.js"
 import { MAX_NEXT_STEPS, nextStepSchema } from "./output.js"
 import { dottedId, duplicates, parseRegistry, placeholders, text } from "./registry.js"
 
+/**
+ * What a failure that is not a `CliError` reports: a bug, not a refusal. Outside `errorCodes` on purpose,
+ * so no command can raise it; it exits with `GENERIC_FAILURE`.
+ */
+export const CRASH_CODE = "internal_error"
+export const CRASH_REASON = "command.crashed"
+
 /** The one error object, on stderr in machine mode and as MCP's `isError` content alike. */
 export const errorObjectSchema = v.strictObject({
   error: v.strictObject({
-    code: v.picklist(errorCodes),
+    code: v.picklist([...errorCodes, CRASH_CODE]),
     reason: dottedId,
     message: text,
     /** The option or argument at fault. */
     param: v.optional(text),
     details: v.optional(v.record(v.string(), v.unknown())),
     next: v.optional(v.pipe(v.array(nextStepSchema), v.maxLength(MAX_NEXT_STEPS))),
-    runId: text,
+    /** Optional until every CLI keeps a run for each failure. */
+    runId: v.optional(text),
   }),
 })
 
@@ -21,7 +29,7 @@ export type ErrorObject = v.InferOutput<typeof errorObjectSchema>
 
 const reasonSchema = v.strictObject({
   reason: dottedId,
-  code: v.picklist(errorCodes),
+  code: v.picklist([...errorCodes, CRASH_CODE]),
   /** `{name}` placeholders, each one of `details`. */
   message: v.pipe(text, v.maxLength(120)),
   details: v.array(v.pipe(v.string(), v.regex(/^[a-z][a-zA-Z0-9]*$/, "a camelCase key"))),
@@ -40,3 +48,35 @@ export const defineReasons = (input: unknown): ErrorReason[] =>
         .map((name) => `${entry.reason}: the message names {${name}}, which is not one of its details`),
     ),
   ])
+
+/** Keys any reason's `details` may carry; the handler drops every other key it was not told about. */
+export const COMMON_DETAILS = ["retryable", "retryAfterMs", "attempts", "status", "requestId", "operation"] as const
+
+/** One reason per code, used when the code site named none, plus the crash. */
+export const BASE_REASONS: ErrorReason[] = defineReasons([
+  { reason: "input.invalid", code: "validation_error", message: "the input is not valid", details: [] },
+  { reason: "config.invalid", code: "configuration_error", message: "the configuration is not valid", details: [] },
+  { reason: "auth.failed", code: "authentication_error", message: "the sign-in did not work", details: [] },
+  { reason: "access.denied", code: "permission_error", message: "this account may not do that", details: [] },
+  { reason: "item.not-found", code: "not_found", message: "nothing found by that name", details: [] },
+  {
+    reason: "confirmation.required",
+    code: "confirmation_required",
+    message: "this changes something; confirm it",
+    details: [],
+  },
+  { reason: "provider.rate-limited", code: "rate_limited", message: "too many requests; wait", details: [] },
+  { reason: "command.timed-out", code: "timeout", message: "the command took too long", details: [] },
+  { reason: "network.failed", code: "network_error", message: "the network did not answer", details: [] },
+  { reason: "provider.refused", code: "provider_error", message: "the provider refused", details: [] },
+  { reason: "provider.unavailable", code: "provider_unavailable", message: "the provider is down", details: [] },
+  {
+    reason: "provider.invalid-response",
+    code: "invalid_response",
+    message: "the answer could not be read",
+    details: [],
+  },
+  { reason: "outcome.unknown", code: "outcome_unknown", message: "it is not known whether it worked", details: [] },
+  { reason: "command.cancelled", code: "cancelled", message: "the command was cancelled", details: [] },
+  { reason: CRASH_REASON, code: CRASH_CODE, message: "the command failed; this is a bug", details: [] },
+])

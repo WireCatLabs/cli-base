@@ -40,6 +40,10 @@ export interface CliErrorDetails {
   readonly runId?: string
   readonly retryAfterMs?: number
   readonly operation?: string
+  /** A registered reason, `store.locked`; recovery is chosen by it and the code, never by the message. */
+  readonly reason?: string
+  /** The option or argument at fault. */
+  readonly param?: string
   readonly [key: string]: unknown
 }
 

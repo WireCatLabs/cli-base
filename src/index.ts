@@ -4,6 +4,19 @@ export { CREDENTIAL_STORAGE, Credentials, keyringService } from "./credentials.j
 export { createDeadline, type Deadline, type DeadlineOptions } from "./deadline.js"
 export { CliError, type CliErrorDetails, type ErrorCode, errorCodes, isCliError } from "./errors.js"
 export { EXIT_CODES, exitCodeFor, GENERIC_FAILURE } from "./exit-codes.js"
+export {
+  type CatchCrashesOptions,
+  catchCrashes,
+  type ErrorRecord,
+  type ErrorRecordOptions,
+  errorObjectOf,
+  errorRecordOf,
+  exitCodeOfError,
+  type FailureContext,
+  mcpErrorResult,
+  type RenderErrorOptions,
+  renderError,
+} from "./failure.js"
 export { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "./keyring.js"
 export {
   type LegacyMove,

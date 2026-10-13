@@ -1,4 +1,13 @@
-export { defineReasons, type ErrorObject, type ErrorReason, errorObjectSchema } from "./errors.js"
+export {
+  BASE_REASONS,
+  COMMON_DETAILS,
+  CRASH_CODE,
+  CRASH_REASON,
+  defineReasons,
+  type ErrorObject,
+  type ErrorReason,
+  errorObjectSchema,
+} from "./errors.js"
 export {
   baselineProblems,
   baselineSchema,
