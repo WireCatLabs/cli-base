@@ -14,7 +14,7 @@ review guidelines for module size. The entry-point map below applies it to this 
 | Import | Owns | Depends on |
 |---|---|---|
 | `@wirecat/cli-base` | streams, renderer, pretty, errors, exit codes, keyring, credentials, config, paths, logging, retry, time, sanitize, field projection, output buffering, deadlines | `cli-table3`, `picocolors`; `@napi-rs/keyring` loaded on first use |
-| `/http` | status → error code, `Retry-After` and rate-limit parsing, the `fetch` seam | the root's `ErrorCode` and `WallClock` types |
+| `/http` | status → error code, `Retry-After` and rate-limit parsing, bounded UTF-8 JSON response reads, the `fetch` seam | the error model and `WallClock` type |
 | `/commands` | the command tree as data (`describeProgram`, `annotate`, `flatten`), the `commands --json` document and its schema (`commandsDocument`), and the reference page written from it (`commandsPage`) | Commander, as a type only; `valibot` |
 | `/completion` | shell completion over that tree | `/commands` types |
 | `/update` | which installer put the CLI there, the daily notice, running the update | `config` (the state file), `/http`'s `FetchLike` |

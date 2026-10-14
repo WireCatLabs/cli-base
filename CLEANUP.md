@@ -28,3 +28,5 @@
 - /home/leemour/Projects/AI/cli-base-wt-v2-logs — worktree for the v2 registry batch PR (registered log events); remove after merge — 2026-10-14
 - /home/leemour/Projects/AI/cli-base-wt-v2-followup — worktree for the v2 batch follow-up (step targets, operation_id detail, audit baseline, changelog); remove after merge — 2026-10-14
 - /home/leemour/Projects/AI/cli-base/.worktrees/release-0.28.0 — worktree for the 0.28.0 bump and its date fix, merged — 2026-10-14
+
+- 2026-10-14: retain `.worktrees/bounded-http-json` until owner-approved cleanup; shared HTTP response budget work.
