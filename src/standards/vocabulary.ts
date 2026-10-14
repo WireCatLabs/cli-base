@@ -262,6 +262,14 @@ const roots: [string, string][] = [
 
 const flags: Vocabulary["flags"] = [
   {
+    name: "--scan-limit",
+    value: "<n>",
+    role: "budget",
+    type: "count",
+    meaning: "at most this many stored candidates inspected for one bounded read",
+    unit: "items",
+  },
+  {
     name: "--bytes",
     value: "<bytes>",
     role: "budget",
