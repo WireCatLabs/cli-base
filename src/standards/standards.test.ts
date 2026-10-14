@@ -86,6 +86,13 @@ describe("vocabulary registry", () => {
     ).toEqual(["flags: --all — a switch has no value name; every other type has one"])
   })
 
+  it("takes the value names commands already show: key=level, hh:mm and a repeatable ref...", () => {
+    const flag = (value: string) => ({ name: "--x", value, type: "string", role: "value", meaning: "x" })
+    for (const value of ["<key=level>", "<hh:mm>", "<ref...>"])
+      expect(problemsOf(() => defineVocabulary(vocabulary({ flags: [flag(value)] })))).toEqual([])
+    expect(problemsOf(() => defineVocabulary(vocabulary({ flags: [flag("<a.b>")] })))[0]).toMatch(/a value name/)
+  })
+
   it("refuses a verb that replaces another listed verb", () => {
     expect(
       problemsOf(() =>
@@ -107,6 +114,8 @@ describe("vocabulary registry", () => {
       "--count",
       "--take",
       "--max-results",
+      "--lines",
+      "--limit-groups",
     ])
     expect(
       problemsOf(() =>

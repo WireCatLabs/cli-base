@@ -8,6 +8,22 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **The shared vocabulary registers 158 more flags with a role, and names 20 more flags as synonyms.** These are the
+  options tg, max, memo, drive and zm already use, such as `--chat`, `--model`, `--title`, `--sync-time` and
+  `--max-bytes`. A filter is still not registered: it belongs in the list's query. On 2026-10-14 this clears 226 of
+  tg's 287 `option-role` baseline entries, 216 of max's 281, 114 of memo's 146, 39 of drive's 53 and 78 of zm's 92.
+  A CLI that moves to this version must remove those entries from its baseline, because a stale entry fails. It
+  also gets new findings to fix:
+  - `flag-synonym`: for example `--refresh` is `--sync-first`, `--budget` is `--max-pages`, `--estimate` is
+    `--dry-run`, `--offset` is `--cursor` and `--destination` is `--output-dir`.
+  - `flag-two-meanings`: a use whose value name differs from the registered one, such as zm's
+    `--title <text>`, which is `--title <title>` in the vocabulary.
+- **A flag's value name may contain `=` or `:`, and may end in `...`.** So `<key=level>`, `<hh:mm>` and `<ref...>`,
+  which commands already show, can be registered.
 ## 0.30.1 — 14.10.2026
 
 ### Fixed
