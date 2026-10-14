@@ -16,7 +16,7 @@ and why it is built this way.
 | `createDeadline` | cooperative command cancellation with injected sleep and a parent abort signal |
 | `time` | monotonic and wall clocks, and the one sleep that both timeouts and backoff use |
 | `logger` | the four-method interface a host adapts Pino to — this package logs nothing itself |
-| `paths` | config, state and cache in the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`) and the `AppData` one on Windows, each overridable by environment variable; `migrateLegacyMacPaths` moves an older release's `~/Library` folders once |
+| `paths` | config, state and cache in the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`) and the `AppData` one on Windows, each overridable by environment variable |
 | `config` | JSON config loading that names the bad field, and an atomic write that locks the directory down |
 | `credentials` | environment → keyring → file, warning once and falling through when the keyring refuses |
 | `logging` | `createRecordLog`: one `LogRecord` per JSON line (OpenTelemetry field names, flat), secrets and content-naming keys redacted at any depth, top-level keys off the allow-list (`LOG_ATTRIBUTE_KEYS` + `allow`) written without their value; `logRecordOf` builds the same record for a writer of its own; a file that cannot be written is reported to `onError`, never thrown |
@@ -177,8 +177,9 @@ which package manager put the CLI there — pnpm, npm or bun, measured on real i
 `updateCommand` gives the argv that updates it; a checkout or `npx` gets none. `latestVersion` asks
 npm with a timeout and answers `undefined` on any failure. `mayNotify` says whether a person is at a
 terminal to be told: never in JSON, a pipe, `--quiet`, `CI` or with `NO_UPDATE_NOTIFIER`.
-`updateNotice` is the whole daily line: it stays silent when `update` or `complete` is anywhere on
-the command line, asks npm at most once a day through a state file the CLI names, and returns the
+`updateNotice` is the whole daily line: it stays silent while the upgrade (`upgradeCommand`, default
+`upgrade`) or `complete` runs — one of the first two words that are not options — and names that
+command in the line; it asks npm at most once a day through a state file the CLI names, and returns the
 sentence or `undefined` — it never throws. `runUpdate` starts the package manager with its output on
 stderr (`spawnPlan` is the Windows `.cmd` rule). Nothing here updates or prints by itself — a CLI
 holding somebody's credentials must not change itself unasked.

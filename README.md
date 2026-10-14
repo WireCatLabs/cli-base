@@ -144,7 +144,7 @@ unless you pass `isolated: true`; and a locked Linux keyring can block on a prom
 ### Files on disk
 
 - **Paths:** the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`), `AppData` on Windows,
-  each overridable by environment variable. Folders an older release kept in `~/Library` move once.
+  each overridable by environment variable.
 - **Config** that names the bad field, and an atomic write that locks the directory down.
 - **Logs** as one JSON record per line with OpenTelemetry field names; secrets are redacted by field name at any
   depth.

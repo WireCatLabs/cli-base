@@ -171,11 +171,13 @@ export const runUpdate = (argv: readonly string[]): number => {
 }
 
 export interface NoticeRequest extends NotifyContext {
-  /** The words the CLI was run with, to leave `update` and `complete` alone. */
+  /** The words the CLI was run with, to leave the upgrade itself and `complete` alone. */
   argv: readonly string[]
   packageName: string
   /** The command a person types: `braze`, `max`. */
   command: string
+  /** The root command that installs a newer version; `upgrade` is the standard's required root. */
+  upgradeCommand?: string
   version: string
   /** Where the last answer from npm is kept — the CLI's state directory. */
   statePath: string
@@ -191,6 +193,7 @@ export const updateNotice = async ({
   argv,
   packageName,
   command,
+  upgradeCommand = "upgrade",
   version,
   statePath,
   fetch,
@@ -198,9 +201,10 @@ export const updateNotice = async ({
   ...context
 }: NoticeRequest): Promise<string | undefined> => {
   try {
-    // Anywhere, not the first word: that can be a profile (`braze prod update`) or an option's value,
-    // and a notice after `update` names the version just installed as the one to get.
-    if (argv.includes("complete") || argv.includes("update")) return undefined
+    // The root command may follow a profile (`braze prod upgrade`), so the first two words are its place;
+    // a notice after the upgrade names the version just installed as the one to get.
+    const path = commandWords(argv).slice(0, 2)
+    if (path.includes("complete") || path.includes(upgradeCommand)) return undefined
     if (!mayNotify(context)) return undefined
 
     const at = now()
@@ -213,9 +217,14 @@ export const updateNotice = async ({
     }
 
     return state?.latest && isNewer(state.latest, version)
-      ? `${command} ${state.latest} is out — you have ${version}. \`${command} update\` installs it.`
+      ? `${command} ${state.latest} is out — you have ${version}. \`${command} ${upgradeCommand}\` installs it.`
       : undefined
   } catch {
     return undefined
   }
+}
+
+const commandWords = (argv: readonly string[]): string[] => {
+  const end = argv.indexOf("--")
+  return argv.slice(0, end < 0 ? undefined : end).filter((word) => !word.startsWith("-"))
 }

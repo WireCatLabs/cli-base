@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { Command, Option } from "commander"
+import { annotate } from "../commands/index.js"
 import { CliError } from "../errors.js"
 import type { Renderer } from "../renderer.js"
 import type { Streams } from "../streams.js"
@@ -136,11 +137,9 @@ export const skillCommand = (
   }
 
   const named = Object.keys(more)
-  const show = command
-    .command("show")
-    .description(
-      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it`,
-    )
+  const show = annotate(command.command("show"), { effects: { remote: "none", local: "read" } }).description(
+    `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it`,
+  )
   if (named.length > 0) show.argument("[name]", `one of the skills shipped for a task: ${named.join(", ")}`)
   show.action(function (this: Command, given: unknown) {
     // Without a declared argument Commander passes the options here, not a name.
@@ -160,8 +159,7 @@ export const skillCommand = (
     else streams.data(content)
   })
 
-  command
-    .command("install")
+  annotate(command.command("install"), { effects: { remote: "none", local: "write" } })
     .description(
       `write SKILL.md to ~/.claude/skills/${app.appName}/ (Claude Code) and ~/.agents/skills/${app.appName}/ (Codex, Gemini CLI)`,
     )
