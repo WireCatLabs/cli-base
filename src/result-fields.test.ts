@@ -36,6 +36,14 @@ describe("portable result projection", () => {
     const source = Object.freeze({ title: "Example", url: null })
     expect(projectFields({ sources: [source] }, ["sources.title", "sources"])).toEqual({ sources: [source] })
   })
+  it("projects unsealed item bodies before execution metadata is added", () => {
+    const body = { item: { rows: [{ ref: "cue", text: "Example", hash: "large" }] }, next: [{ cursor: "next" }] }
+    expect(projectFields(body, ["rows.ref", "rows.text"])).toEqual({
+      ...body,
+      item: { rows: [{ ref: "cue", text: "Example" }] },
+    })
+    expect(projectFields({ item: { id: 1 }, title: "Payload" }, ["title"])).toEqual({ title: "Payload" })
+  })
   it("keeps page and operation metadata while selecting nested item data", () => {
     const input = {
       items: [{ id: 1, speaker: { id: 2, name: "Alice Example" }, text: "Example" }],

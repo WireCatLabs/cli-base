@@ -56,7 +56,11 @@ const select = (value: unknown, paths: readonly string[]): unknown => {
 
 const project = (value: unknown, fields: readonly string[]): unknown => {
   if (Array.isArray(value)) return value.map((item) => select(item, itemPaths(fields)))
-  if (object(value) && Object.hasOwn(value, "item") && Object.hasOwn(value, "meta"))
+  if (
+    object(value) &&
+    Object.hasOwn(value, "item") &&
+    (Object.hasOwn(value, "meta") || Object.keys(value).every((key) => ["item", "next", "missing"].includes(key)))
+  )
     return { ...value, item: project(value.item, fields) }
   if (object(value) && Array.isArray(value.items))
     return { ...value, items: value.items.map((item) => select(item, itemPaths(fields))) }
