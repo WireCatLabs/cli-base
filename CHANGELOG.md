@@ -20,14 +20,17 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   failed command's `effects` (new `FailureContext.effects`) and the new `sent` detail: a transient failure (`timeout`,
   `rate_limited`, `network_error`, `provider_unavailable`, `provider_error` with `retryable: true`) of a command that
   writes nothing, or of a write with `sent: false`, is safe; `outcome_unknown` never is. `retryable` and
-  `retry_after_ms` are read into `retry` and no longer copied into `details`.
+  `retry_after_ms` are read into `retry` and no longer copied into `details`. `operation_id`, one write attempt, is a
+  common detail now, so an unknown outcome names the attempt to look up before trying again.
 - **A next step has `kind` and `safe_to_auto_execute`.** `kind: "command"` keeps `command` and `args`;
   `kind: "user_action"` (defined with `{ id, kind: "user_action", why }`) has neither and is never safe. A command
   step is safe only when its target is known to write nothing. At most two steps per answer (`MAX_NEXT_STEPS`, was
   three): the one to take, then one alternative.
 - **`stepOf` checks that a step binds.** Argument values must be scalars, or lists of them, on one line — a paragraph
   read out of a message never becomes a step. With `targets` (`stepTargets(program)` from `/commands`, or
-  `FailureContext.targets`), the command must exist and take every argument named, the `*` step included.
+  `FailureContext.targets`), the command must exist and take every argument named, the `*` step included; a
+  command takes its own options, its groups' and the root's, each named by its long flag (`--no-input` is
+  `no_input`).
 - **`meta.complete` and `meta.issues` replace `meta.skipped`.** `complete` is required on every envelope: `false` when
   a source failed or was skipped, with `issues: [{ code, reason?, source }]` (`code` is an error code, so a skipped
   account is `authentication_error`, not free text). `truncated` (a size cap cut the answer) and `page.has_more`
@@ -51,6 +54,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ### Added
 
+- **`Streams.drain(signal?)`.** A caller that wrote a lot of output can wait until stdout and stderr have flushed, or
+  give up when the signal aborts. Optional on `Streams`; `processStreams` implements it.
+
+
 - **JSON lines with an end line:** `jsonlOf(envelope)` prints `{"type":"item","data":…}` per item, then
   `{"type":"end","complete":…,"issues"?:…,"page":…}`, so a reader tells a finished stream from a cut one;
   `jsonlItemSchema` and `jsonlEndSchema` describe them, and `key-casing` checks both.
@@ -69,6 +76,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   (`command.failed`). `logEventProblems(record, events)` names an unknown event or a missing key, and
   `expectRegisteredEvents(lines, events)` from `/testing` throws on either, so a test fails on an event nobody
   registered.
+
+### Fixed
+
+- **A config file that exists but cannot be read is an error, not an empty config.** Only a missing file falls back
+  to defaults; a directory, a file used as a parent folder, or an I/O failure reports the filesystem error, so a bad
+  path no longer silently resets every setting.
 
 ## 0.27.2 — 14.10.2026
 
@@ -127,17 +140,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 - **`identities` now means every way to reach a person or an organization** — an account in a messenger or mailbox,
   an e-mail address, a phone — not only messenger and mailbox accounts. Only the description changes; no rule does.
-||||||| parent of 8f70f02 (fix: report config read errors and support output backpressure)
-### Fixed
-
-- **A config file that exists but cannot be read is an error, not an empty config.** Only a missing file falls back
-  to defaults; a directory, a file used as a parent folder, or an I/O failure reports the filesystem error, so a bad
-  path no longer silently resets every setting.
-
-### Added
-
-- **`Streams.drain(signal?)`.** A caller that wrote a lot of output can wait until stdout and stderr have flushed, or
-  give up when the signal aborts. Optional on `Streams`; `processStreams` implements it.
 
 ## 0.26.0 — 13.10.2026
 

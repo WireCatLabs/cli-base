@@ -115,19 +115,19 @@ const snake = (name: string) => name.replace(/[A-Z]/g, (letter) => `_${letter.to
  */
 export const stepTargets = (root: Command): ((command: string) => StepTarget | undefined) => {
   const found = new Map<string, StepTarget>()
-  const visit = (command: Command, parents: readonly string[]) => {
+  // From the long flag, so `--no-input` is `no_input`: the name a step's args render back into the same flag.
+  const optionName = (option: Option) => snake((option.long ?? option.attributeName()).replace(/^--/, ""))
+  const visit = (command: Command, parents: readonly string[], above: readonly Option[]) => {
     const path = [...parents, command.name()]
+    const options = [...above, ...command.options]
     const { effects } = metaOf(command)
     found.set(path.join(" "), {
       ...(effects ? { effects } : {}),
-      names: [
-        ...command.registeredArguments.map((argument) => snake(argument.name())),
-        ...[...command.options, ...root.options].map((option) => snake(option.attributeName())),
-      ],
+      names: [...command.registeredArguments.map((argument) => snake(argument.name())), ...options.map(optionName)],
     })
-    for (const child of command.commands) visit(child, path)
+    for (const child of command.commands) visit(child, path, options)
   }
-  for (const child of root.commands) visit(child, [])
+  for (const child of root.commands) visit(child, [], root.options)
   return (command) => found.get(command)
 }
 

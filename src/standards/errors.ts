@@ -58,7 +58,7 @@ export const defineReasons = (input: unknown): ErrorReason[] =>
  * Keys any reason's `details` may carry; the handler drops every other key it was not told about. `retryable`,
  * `retry_after_ms` and `sent` are read into `retry`, not repeated here.
  */
-export const COMMON_DETAILS = ["attempts", "status", "request_id", "operation"] as const
+export const COMMON_DETAILS = ["attempts", "status", "request_id", "operation", "operation_id"] as const
 
 /** One reason per code, used when the code site named none, the crash, and the reasons cli-base raises itself. */
 export const BASE_REASONS: ErrorReason[] = defineReasons([
