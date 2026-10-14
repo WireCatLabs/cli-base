@@ -377,12 +377,17 @@ describe("lint rules", () => {
 
   it("lists every kind a two-meaning flag takes", () => {
     const root = clean()
-    root.command("tasks").description("tasks").command("add").description("add").option("--check <when>", "review then")
-    root.command("upgrade").description("install a newer one").option("--check", "only say")
+    root
+      .command("tasks")
+      .description("tasks")
+      .command("add")
+      .description("add")
+      .option("--review <when>", "review then")
+    root.command("upgrade").description("install a newer one").option("--review", "only say")
     expect(lintOf(root).find((found) => found.rule === "flag-two-meanings")).toEqual({
       rule: "flag-two-meanings",
-      target: "--check",
-      message: "--check has 2 meanings: <when> in tasks add; a switch in upgrade",
+      target: "--review",
+      message: "--review has 2 meanings: <when> in tasks add; a switch in upgrade",
     })
   })
 })
