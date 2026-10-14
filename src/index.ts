@@ -20,13 +20,7 @@ export {
   retryOf,
 } from "./failure.js"
 export { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "./keyring.js"
-export {
-  type LegacyMove,
-  legacyMacPaths,
-  type MigrateLegacyPathsOptions,
-  migrateLegacyMacPaths,
-} from "./legacy-paths.js"
-export { type Logger, noopLogger } from "./logger.js"
+export type { Logger } from "./logger.js"
 export {
   createRecordLog,
   logRecordOf,
@@ -46,7 +40,7 @@ export {
   type RenderFormat,
 } from "./renderer.js"
 export { fieldsOf, projectFields } from "./result-fields.js"
-export { backoffMs, DEFAULT_RETRY, isTransportFailure, type RetryConfig } from "./retry.js"
+export { backoffMs, DEFAULT_RETRY, type RetryConfig } from "./retry.js"
 export { singleLine, visibleControls } from "./sanitize.js"
 export { captureStreams, processStreams, type Streams } from "./streams.js"
 export {

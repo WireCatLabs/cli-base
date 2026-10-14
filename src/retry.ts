@@ -1,5 +1,3 @@
-import type { ErrorCode } from "./errors.js"
-
 export interface RetryConfig {
   /** Attempts after the first. One means two attempts in total. */
   retries: number
@@ -27,13 +25,3 @@ export const backoffMs = (attempt: number, config: RetryConfig, random: () => nu
   const ceiling = Math.min(config.maxDelayMs, config.baseDelayMs * 2 ** (attempt - 1))
   return Math.round(random() * ceiling)
 }
-
-/**
- * The three outcomes where nothing came back, and so there is nothing to classify.
- *
- * **This says the attempt failed without an answer — never that the operation is safe to repeat.**
- * A request that died after leaving may well have been carried out, which is why a write gets
- * `outcome_unknown` rather than a retry.
- */
-export const isTransportFailure = (code: ErrorCode): boolean =>
-  code === "timeout" || code === "network_error" || code === "cancelled"

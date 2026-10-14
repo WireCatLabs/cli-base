@@ -8,10 +8,3 @@ export interface Logger {
   warn(event: object, message?: string): void
   error(event: object, message?: string): void
 }
-
-export const noopLogger: Logger = {
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-}

@@ -8,6 +8,26 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`updateNotice` names `upgrade`, and stays silent only when the upgrade is the command being run.** The line said
+  `` `<cli> update` installs it `` while every CLI's command is `upgrade`, the standard's required root, and it went
+  silent whenever the word `update` appeared anywhere, so `tasks update` never saw a notice. The word is now
+  `upgradeCommand`, default `"upgrade"`, and the notice skips only when it or `complete` is one of the first two words
+  that are not options (a profile may come first). A CLI that patched the line with `.replace(...)` or skipped on
+  `argv.includes("upgrade")` itself can drop both.
+- **`skill show` and `skill install` carry their effects.** `show` reads this machine, `install` writes to it, and
+  neither touches the service; before, they had none and counted as writes. A host that annotated them itself can stop.
+
+### Removed
+
+- **`legacyMacPaths` and `migrateLegacyMacPaths` are gone, with the `LegacyMove` and `MigrateLegacyPathsOptions`
+  types.** Every machine that ran a release with `~/Library` folders has moved them. A CLI that calls the migration at
+  start drops the call.
+- **`noopLogger` and `isTransportFailure` are gone.** Nothing used them.
+
 ## 0.28.2 — 14.10.2026
 
 ### Added

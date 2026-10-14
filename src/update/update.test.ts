@@ -197,18 +197,32 @@ describe("updateNotice", () => {
   })
 
   it("tells a person a newer version is out, and how to get it", async () => {
-    expect(await updateNotice(request())).toBe("tool 1.1.0 is out — you have 1.0.0. `tool update` installs it.")
+    expect(await updateNotice(request())).toBe("tool 1.1.0 is out — you have 1.0.0. `tool upgrade` installs it.")
+  })
+
+  it("names the CLI's own upgrade command", async () => {
+    expect(await updateNotice(request({ upgradeCommand: "self-update" }))).toBe(
+      "tool 1.1.0 is out — you have 1.0.0. `tool self-update` installs it.",
+    )
   })
 
   it.each([
-    ["after a profile name", ["prod", "update"]],
-    ["after an option's value", ["--profile", "prod", "update"]],
+    ["the upgrade itself", ["upgrade"]],
+    ["after a profile name", ["prod", "upgrade"]],
+    ["after an option's value", ["--profile", "prod", "upgrade"]],
     ["during completion", ["complete", "--", "camp"]],
-  ])("says nothing about update or complete, wherever the word is — %s", async (_name, argv) => {
+  ])("says nothing during the upgrade or completion — %s", async (_name, argv) => {
     const calls: string[] = []
 
     expect(await updateNotice(request({ argv, fetch: npm("1.1.0", calls) }))).toBeUndefined()
     expect(calls).toEqual([])
+  })
+
+  it.each([
+    ["a command named update", ["tasks", "update", "42"]],
+    ["the word as an argument", ["notes", "add", "--", "upgrade"]],
+  ])("still tells a person when the word is not the upgrade command — %s", async (_name, argv) => {
+    expect(await updateNotice(request({ argv }))).toMatch(/`tool upgrade` installs it/)
   })
 
   it("says nothing when npm cannot be reached, or has nothing newer", async () => {

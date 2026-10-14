@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Command } from "commander"
 import { beforeEach, describe, expect, it } from "vitest"
+import { metaOf } from "../commands/index.js"
 import { CliError } from "../errors.js"
 import { createRenderer } from "../renderer.js"
 import { captureStreams, fakeClock } from "../testing/index.js"
@@ -83,6 +84,19 @@ describe("withVersion", () => {
 describe("skillVersion", () => {
   it("still reads the top-level version a pre-release build wrote", () => {
     expect(skillVersion("---\nname: tg-cli\nversion: 1.1.0\n---\n")).toBe("1.1.0")
+  })
+})
+
+describe("skill effects", () => {
+  it("reads the machine to show, writes it to install, and never touches the service", () => {
+    const command = skillCommand(app, skill, () => {
+      throw new Error("not run")
+    })
+    const effects = Object.fromEntries(command.commands.map((sub) => [sub.name(), metaOf(sub).effects]))
+    expect(effects).toEqual({
+      show: { remote: "none", local: "read" },
+      install: { remote: "none", local: "write" },
+    })
   })
 })
 
