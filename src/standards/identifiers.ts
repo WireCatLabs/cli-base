@@ -24,7 +24,7 @@ export const IDENTIFIERS: Identifier[] = defineIdentifiers([
     meaning: "one invocation of a command, what `runs show` opens",
     replaces: ["execution_id", "invocation_id", "log_id", "diagnostic_id"],
   },
-  { key: "operation_id", meaning: "one logical write attempt; a retry of it reuses the id" },
+  { key: "operation_id", meaning: "one logical write attempt; a retry of it reuses the id", replaces: ["send_id"] },
   { key: "request_id", meaning: "the provider's own reference for one request, as it sent it" },
   { key: "trace_id", meaning: "the distributed trace a run belongs to, from `traceparent`" },
 ])
