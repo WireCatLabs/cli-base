@@ -166,11 +166,11 @@ const aborted = await realSleep(10_000, AbortSignal.abort()).then(
 check("an aborted sleep rejects with AbortError", aborted === "AbortError")
 
 const tool = new Command("tool")
-annotate(tool.command("send").argument("<chat>"), { mutates: true })
+annotate(tool.command("send").argument("<chat>"), { effects: { remote: "write", local: "none" } })
 const described = flatten(describeProgram(tool))
 check(
   "the registry sees a command and its label",
-  described[0]?.usage === "tool send <chat>" && described[0]?.mutates === true,
+  described[0]?.usage === "tool send <chat>" && described[0]?.effects?.remote === "write",
 )
 
 check("completion suggests a command", suggest({ commands: describeProgram(tool), words: ["se"] })[0]?.value === "send")

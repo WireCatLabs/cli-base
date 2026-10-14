@@ -1,21 +1,33 @@
 import * as v from "valibot"
 import { dottedId, duplicates, parseRegistry, text, word } from "./registry.js"
 
-/** At most three next steps per answer, the most useful first. */
-export const MAX_NEXT_STEPS = 3
+/** At most two next steps per answer: the one to take, then one alternative. */
+export const MAX_NEXT_STEPS = 2
 
 export const isoTime = v.pipe(v.string(), v.isoTimestamp("an ISO 8601 time with a zone"))
 
 /** The typed name of a stored thing, `msg:telegram/1/2/3` or `note:42`: what every other command takes. */
 export const reference = v.pipe(v.string(), v.regex(/^[a-z]+:\S+$/, "a reference such as `note:42`"))
 
-export const nextStepSchema = v.strictObject({
-  step: dottedId,
-  /** The command path as one string, `messages list` — what the MCP router tools take as `command`. */
-  command: text,
-  args: v.record(v.string(), v.unknown()),
-  why: text,
-})
+export const nextStepSchema = v.variant("kind", [
+  v.strictObject({
+    kind: v.literal("command"),
+    step: dottedId,
+    /** The command path as one string, `messages list` — what the MCP router tools take as `command`. */
+    command: text,
+    args: v.record(v.string(), v.unknown()),
+    why: text,
+    /** True only when the target command is known to write nothing, here or at the provider. */
+    safe_to_auto_execute: v.boolean(),
+  }),
+  /** Something only the person can do — sign in on the phone, approve a device. */
+  v.strictObject({
+    kind: v.literal("user_action"),
+    step: dottedId,
+    why: text,
+    safe_to_auto_execute: v.literal(false),
+  }),
+])
 
 export const missingSchema = v.strictObject({
   field: text,

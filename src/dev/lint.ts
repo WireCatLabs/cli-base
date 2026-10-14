@@ -215,6 +215,9 @@ const entityFields = (command: CommandInfo, context: LintContext): Map<string, s
   return fields
 }
 
+// Only a declared write is exempt: a read nobody annotated is still a read here.
+const declaredWrite = ({ effects }: CommandInfo) => effects?.remote === "write" || effects?.local === "write"
+
 const optionsOf = (document: CommandsDocument) => [
   ...document.global_options.map((option) => ({ option, target: longName(option.flags) })),
   ...walk(document.commands)
@@ -338,7 +341,9 @@ const CHECKS: Record<string, Check> = {
   "filter-flag": (document, vocabulary, context) => {
     const roles = new Map(vocabulary.flags.map((flag) => [flag.name, flag.role]))
     return walk(document.commands)
-      .filter((command) => command.origin === "handwritten" && !command.mutates && (command.query || command.output))
+      .filter(
+        (command) => command.origin === "handwritten" && !declaredWrite(command) && (command.query || command.output),
+      )
       .flatMap((command) => {
         const fields = entityFields(command, context)
         return command.options

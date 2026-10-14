@@ -77,11 +77,16 @@ is a type here, not a runtime dependency — an optional peer, 15 or newer.
 ```ts
 import { annotate, describeProgram } from "@wirecat/cli-base/commands"
 
-annotate(program.command("send"), { mutates: true, examples: ["max messages send 42 hi"] })
+annotate(program.command("send"), { effects: { remote: "write", local: "none" }, examples: ["max messages send 42 hi"] })
 annotate(generated, { origin: "generated", operation_id: "campaigns.list" })
 
-describeProgram(program) // [{ path: ["send"], usage, origin, mutates, options: [...], commands: [...] }]
+describeProgram(program) // [{ path: ["send"], usage, origin, effects, options: [...], commands: [...] }]
 ```
+
+`effects` says what a command touches, `remote` (the service) and `local` (this machine), each `none`, `read` or
+`write`. A command without it counts as a write: the error handler never marks its failure safe to retry
+(`error.retry.safe`), and a next step that runs it is never `safe_to_auto_execute`. `stepTargets(program)` gives
+`stepOf` and `errorObjectOf` each command's effects and the names it takes, so a step that would not bind is dropped.
 
 Each option says whether it `takes_value` and, separately, whether it is `mandatory` — not
 Commander's `required`, which means "takes a value when given" — plus its choices, default,

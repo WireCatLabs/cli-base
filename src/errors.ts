@@ -40,6 +40,11 @@ export interface CliErrorDetails {
   readonly request_id?: string
   readonly run_id?: string
   readonly retry_after_ms?: number
+  /**
+   * False when the failure came before the request left this machine, so a write cannot have landed. Left out, it
+   * may have.
+   */
+  readonly sent?: boolean
   readonly operation?: string
   /** A registered reason, `store.locked`; recovery is chosen by it and the code, never by the message. */
   readonly reason?: string

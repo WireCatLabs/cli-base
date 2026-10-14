@@ -20,6 +20,11 @@ export const errorObjectSchema = v.strictObject({
     param: v.optional(text),
     details: v.optional(v.record(v.string(), v.unknown())),
     next: v.optional(v.pipe(v.array(nextStepSchema), v.maxLength(MAX_NEXT_STEPS))),
+    /** Whether running the same command again may work and cannot do harm; never for a write that may have landed. */
+    retry: v.strictObject({
+      safe: v.boolean(),
+      after_ms: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
+    }),
     /** Optional until every CLI keeps a run for each failure. */
     run_id: v.optional(text),
   }),
@@ -49,8 +54,11 @@ export const defineReasons = (input: unknown): ErrorReason[] =>
     ),
   ])
 
-/** Keys any reason's `details` may carry; the handler drops every other key it was not told about. */
-export const COMMON_DETAILS = ["retryable", "retry_after_ms", "attempts", "status", "request_id", "operation"] as const
+/**
+ * Keys any reason's `details` may carry; the handler drops every other key it was not told about. `retryable`,
+ * `retry_after_ms` and `sent` are read into `retry`, not repeated here.
+ */
+export const COMMON_DETAILS = ["attempts", "status", "request_id", "operation"] as const
 
 /** One reason per code, used when the code site named none, the crash, and the reasons cli-base raises itself. */
 export const BASE_REASONS: ErrorReason[] = defineReasons([

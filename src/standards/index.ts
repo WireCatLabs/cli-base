@@ -10,6 +10,7 @@ export {
   REQUIRED_ROOTS,
   type RequiredRoot,
 } from "./audit.js"
+export { EFFECT_LEVELS, type EffectLevel, type Effects, effectsSchema, writes } from "./effects.js"
 export {
   BASE_REASONS,
   COMMON_DETAILS,
@@ -64,7 +65,15 @@ export {
   reference,
 } from "./output.js"
 export { fill, jsonSchemaOf, RegistryError } from "./registry.js"
-export { defineSteps, SAME_COMMAND, STEPS, type StepDefinition, type StepInput, stepOf } from "./steps.js"
+export {
+  defineSteps,
+  SAME_COMMAND,
+  STEPS,
+  type StepDefinition,
+  type StepInput,
+  type StepTarget,
+  stepOf,
+} from "./steps.js"
 export {
   defineVocabulary,
   FLAG_ROLES,
