@@ -221,6 +221,13 @@ describe("errorObjectOf", () => {
     })
   })
 
+  it("keeps the write attempt's operation_id, so an unknown outcome can be looked up before a retry", () => {
+    const object = errorObjectOf(new CliError("outcome_unknown", "sent?", { operation_id: "op-7", sent: true }), {
+      effects: { remote: "write", local: "none" },
+    })
+    expect(object.error).toMatchObject({ details: { operation_id: "op-7" }, retry: { safe: false } })
+  })
+
   it("keeps the package-wide detail keys, still never the cause", () => {
     const failure = new CliError("validation_error", "which chat?", { candidates: ["a", "b"], cause: "raw" })
     expect(errorObjectOf(failure, { details: ["candidates", "cause"] }).error.details).toEqual({

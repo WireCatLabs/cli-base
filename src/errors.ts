@@ -38,6 +38,8 @@ export interface CliErrorDetails {
   readonly retryable?: boolean
   readonly attempts?: number
   readonly request_id?: string
+  /** One logical write attempt; after `outcome_unknown`, what to look up before trying again. */
+  readonly operation_id?: string
   readonly run_id?: string
   readonly retry_after_ms?: number
   /**

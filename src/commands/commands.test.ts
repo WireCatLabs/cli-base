@@ -140,6 +140,13 @@ describe("stepTargets", () => {
     expect(targets("messages list")).not.toHaveProperty("effects")
     expect(targets("messages forward")).toBeUndefined()
   })
+
+  it("names a group's options on the commands under it, and a negated option by its flag", () => {
+    const root = new Command("tool").option("--no-input", "never prompt")
+    const chats = root.command("chats").option("--account <name>", "which account")
+    chats.command("list").option("--no-backup", "skip the backup")
+    expect(stepTargets(root)("chats list")?.names).toEqual(["no_input", "account", "no_backup"])
+  })
 })
 
 describe("hidden commands", () => {
