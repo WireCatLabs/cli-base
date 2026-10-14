@@ -6,7 +6,7 @@ import { queryAstSchema, queryNodeSchema } from "../query/types.js"
 import { errorObjectSchema } from "../standards/errors.js"
 import { LINT_RULES, type LintRule, type Override } from "../standards/lint.js"
 import { isContentKey, logAttributesJsonSchema, logRecordSchema } from "../standards/log.js"
-import { itemEnvelopeSchema, listEnvelopeSchema } from "../standards/output.js"
+import { itemEnvelopeSchema, jsonlEndSchema, jsonlItemSchema, listEnvelopeSchema } from "../standards/output.js"
 import { jsonSchemaOf, SNAKE_CASE } from "../standards/registry.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
 
@@ -61,6 +61,8 @@ type Check = (document: CommandsDocument, vocabulary: Vocabulary, context: LintC
 export const baseSchemas = (): Record<string, unknown> => ({
   list_envelope: jsonSchemaOf(listEnvelopeSchema(v.unknown())),
   item_envelope: jsonSchemaOf(itemEnvelopeSchema(v.unknown())),
+  jsonl_item: jsonSchemaOf(jsonlItemSchema(v.unknown())),
+  jsonl_end: jsonSchemaOf(jsonlEndSchema),
   error_object: jsonSchemaOf(errorObjectSchema),
   log_record: jsonSchemaOf(logRecordSchema),
   commands_document: commandsDocumentJsonSchema(),
@@ -70,13 +72,22 @@ export const baseSchemas = (): Record<string, unknown> => ({
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
+const typesOf = (schema: unknown): string[] => {
+  if (!isObject(schema)) return []
+  const own = Array.isArray(schema.type) ? schema.type : typeof schema.type === "string" ? [schema.type] : []
+  const alternatives = [schema.anyOf, schema.oneOf].flatMap((list) => (Array.isArray(list) ? list : []))
+  return [...own.map(String), ...alternatives.flatMap(typesOf)]
+}
+
+type SchemaKey = [key: string, path: string, schema: unknown]
+
 /** Property names a JSON Schema declares, by path. A record's keys are data (`additionalProperties`), not checked. */
-const schemaKeys = (schema: unknown, path: string): [string, string][] => {
+const schemaKeys = (schema: unknown, path: string): SchemaKey[] => {
   if (Array.isArray(schema)) return schema.flatMap((one) => schemaKeys(one, path))
   if (!isObject(schema)) return []
   const own = isObject(schema.properties)
-    ? Object.entries(schema.properties).flatMap(([key, value]): [string, string][] => [
-        [key, path ? `${path}.${key}` : key],
+    ? Object.entries(schema.properties).flatMap(([key, value]): SchemaKey[] => [
+        [key, path ? `${path}.${key}` : key, value],
         ...schemaKeys(value, path ? `${path}.${key}` : key),
       ])
     : []
@@ -398,6 +409,14 @@ const CHECKS: Record<string, Check> = {
         .map((option) => ({ target: `${label(command)} ${longName(option.flags)}`, message: "option not described" })),
     ),
   ],
+  "nullable-list": (_document, _vocabulary, context) =>
+    Object.entries({ ...baseSchemas(), ...context.schemas })
+      .flatMap(([name, schema]) => schemaKeys(schema, "").map(([key, path, at]) => ({ key, name, path, at })))
+      .filter(({ at }) => typesOf(at).includes("array") && typesOf(at).includes("null"))
+      .map(({ key, name, path }) => ({
+        target: `schema ${name}: ${path}`,
+        message: `"${key}" is a list that may be null; known empty is [], not known is absent`,
+      })),
   "log-attribute-key": (_document, _vocabulary, context) => {
     const schema = context.schemas?.[LOG_ATTRIBUTES] ?? logAttributesJsonSchema()
     return schemaKeys(schema, "")

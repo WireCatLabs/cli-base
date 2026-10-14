@@ -11,6 +11,7 @@ export {
   type ErrorRecordOptions,
   errorObjectOf,
   errorRecordOf,
+  exitCodeOfAnswer,
   exitCodeOfError,
   type FailureContext,
   mcpErrorResult,

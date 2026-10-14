@@ -2,12 +2,14 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { Command } from "commander"
+import * as v from "valibot"
 import { beforeEach, describe, expect, it } from "vitest"
 import { commandsDocument } from "../commands/document.js"
 import { annotate } from "../commands/index.js"
 import type { QueryRegistry } from "../query/fields.js"
 import { LINT_RULES } from "../standards/lint.js"
 import { logAttributesJsonSchema } from "../standards/log.js"
+import { jsonSchemaOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
 import { type DevIo, main } from "./main.js"
@@ -116,9 +118,30 @@ describe("lint rules", () => {
     expect(lintRuleIds().sort()).toEqual(LINT_RULES.map((rule) => rule.id).sort())
     expect(Object.keys(failing).sort()).toEqual(
       lintRuleIds()
-        .filter((id) => id !== "log-attribute-key")
+        .filter((id) => id !== "log-attribute-key" && id !== "nullable-list")
         .sort(),
     )
+  })
+
+  it("fails nullable-list for a list that may be null, and passes cli-base's own schemas", () => {
+    const of = (schemas?: Record<string, unknown>) =>
+      lintOf(clean(), schemas ? { schemas } : {}).filter((one) => one.rule === "nullable-list")
+    expect(of()).toEqual([])
+    expect(
+      of({
+        chat: jsonSchemaOf(
+          v.object({
+            members: v.nullable(v.array(v.string())),
+            tags: v.optional(v.array(v.string())),
+            topic: v.nullable(v.string()),
+          }),
+        ),
+        message: { type: "object", properties: { reactions: { type: ["array", "null"] } } },
+      }),
+    ).toEqual([
+      expect.objectContaining({ target: "schema chat: members" }),
+      expect.objectContaining({ target: "schema message: reactions" }),
+    ])
   })
 
   it("fails log-attribute-key for an allow-list naming content, and passes cli-base's own", () => {

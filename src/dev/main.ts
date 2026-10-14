@@ -408,8 +408,8 @@ const auditRun = (args: string[], io: DevIo) => {
     io.out(
       JSON.stringify({
         items: result.rows,
-        page: { limit: Math.max(result.rows.length, 1), has_more: false },
-        meta: { run_id: randomUUID(), duration_ms: Date.now() - started },
+        page: { mode: "page", limit: Math.max(result.rows.length, 1), has_more: false },
+        meta: { run_id: randomUUID(), duration_ms: Date.now() - started, complete: true },
       }),
     )
   else io.out(scorecardTable(result.rows))

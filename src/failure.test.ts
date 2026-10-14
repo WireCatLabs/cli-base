@@ -6,6 +6,7 @@ import {
   catchCrashes,
   errorObjectOf,
   errorRecordOf,
+  exitCodeOfAnswer,
   exitCodeOfError,
   mcpErrorResult,
   renderError,
@@ -336,5 +337,15 @@ describe("catchCrashes", () => {
     expect(exits).toEqual([1, 5])
     release()
     expect(listeners.size).toBe(0)
+  })
+})
+
+describe("exitCodeOfAnswer", () => {
+  it("exits 0 for a partial answer only when the command allows one, else with its first issue's code", () => {
+    const partial = { complete: false, issues: [{ code: "authentication_error" as const, source: "work" }] }
+    expect(exitCodeOfAnswer({ complete: true })).toBe(0)
+    expect(exitCodeOfAnswer(partial, true)).toBe(0)
+    expect(exitCodeOfAnswer(partial)).toBe(exitCodeOfError(errorObjectOf(new CliError("authentication_error", "x"))))
+    expect(exitCodeOfAnswer({ complete: false })).toBe(1)
   })
 })

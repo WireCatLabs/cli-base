@@ -26,6 +26,8 @@ export interface CommandMeta {
   /** What running it touches. Left out, it counts as a write: never retried, never run as a next step on its own. */
   effects?: Effects
   state?: CommandState
+  /** The command may answer with `meta.complete: false` and still exit 0; without it a partial answer fails. */
+  partial?: boolean
   examples?: readonly string[]
   /** The entity the command answers with, or one of its views. */
   output?: CommandOutput
@@ -77,6 +79,7 @@ export interface CommandInfo {
   operation_id?: string
   effects?: Effects
   state?: CommandState
+  partial?: boolean
   examples?: readonly string[]
   output?: CommandOutput
   query?: QueryInfo

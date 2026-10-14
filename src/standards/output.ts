@@ -1,4 +1,5 @@
 import * as v from "valibot"
+import { errorCodes } from "../errors.js"
 import { dottedId, duplicates, parseRegistry, text, word } from "./registry.js"
 
 /** At most two next steps per answer: the one to take, then one alternative. */
@@ -32,20 +33,41 @@ export const nextStepSchema = v.variant("kind", [
 export const missingSchema = v.strictObject({
   field: text,
   why: text,
-  step: dottedId,
+  /** Left out when there is nothing to run that would fill the field. */
+  step: v.optional(dottedId),
 })
 
-export const pageSchema = v.strictObject({
-  limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  has_more: v.boolean(),
-  cursor: v.optional(text),
+const limit = v.pipe(v.number(), v.integer(), v.minValue(1))
+
+/** `has_more`: another page exists. A cursor source never pretends to have page numbers. */
+export const pageSchema = v.variant("mode", [
+  v.strictObject({
+    mode: v.literal("page"),
+    limit,
+    has_more: v.boolean(),
+    next_page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(2))),
+  }),
+  v.strictObject({ mode: v.literal("cursor"), limit, has_more: v.boolean(), next_cursor: v.optional(text) }),
+])
+
+/** A source that failed or was skipped: the answer holds what the others gave. */
+export const issueSchema = v.strictObject({
+  code: v.picklist(errorCodes),
+  reason: v.optional(dottedId),
+  /** The account, provider or source that is missing from the answer. */
+  source: text,
 })
 
+/**
+ * `complete: false` (with `issues`): some source failed or was skipped. `truncated`: a size cap cut the answer.
+ * Neither is `page.has_more`.
+ */
 export const metaSchema = v.strictObject({
   run_id: text,
   duration_ms: v.pipe(v.number(), v.integer(), v.minValue(0)),
   accounts: v.optional(v.array(text)),
-  skipped: v.optional(v.array(v.strictObject({ account: text, why: text }))),
+  complete: v.boolean(),
+  issues: v.optional(v.array(issueSchema)),
   truncated: v.optional(v.boolean()),
 })
 
@@ -71,6 +93,7 @@ export const itemEnvelopeSchema = <T extends v.GenericSchema>(item: T) =>
 export type NextStep = v.InferOutput<typeof nextStepSchema>
 export type Missing = v.InferOutput<typeof missingSchema>
 export type Page = v.InferOutput<typeof pageSchema>
+export type Issue = v.InferOutput<typeof issueSchema>
 export type Meta = v.InferOutput<typeof metaSchema>
 export interface ListEnvelope<T> {
   items: T[]
@@ -101,4 +124,26 @@ export const FIELD_RULES: FieldRule[] = defineFieldRules([
   { id: "ref", rule: "a stored thing is named by `ref`; a message's `ref` value is its locator" },
   { id: "snake-case", rule: "keys are snake_case words, no abbreviations a reader has to decode" },
   { id: "one-meaning", rule: "a key has one meaning and one type in every answer of every CLI" },
+  {
+    id: "absent-null",
+    rule: "absent: not asked for or not known; `null`: known to have no value; `[]`: known to be empty, never `null`; `0`: measured, never a stand-in for unknown",
+  },
 ])
+
+/** `--jsonl`: one item per line, then one end line, so a reader tells a finished stream from a cut one. */
+export const jsonlItemSchema = <T extends v.GenericSchema>(item: T) =>
+  v.strictObject({ type: v.literal("item"), data: item })
+
+export const jsonlEndSchema = v.strictObject({
+  type: v.literal("end"),
+  complete: v.boolean(),
+  issues: v.optional(v.array(issueSchema)),
+  page: pageSchema,
+})
+
+/** A list answer as JSON lines, the end line last. */
+export const jsonlOf = <T>({ items, page, meta }: ListEnvelope<T>): string =>
+  [
+    ...items.map((data) => JSON.stringify({ type: "item", data })),
+    JSON.stringify({ type: "end", complete: meta.complete, ...(meta.issues ? { issues: meta.issues } : {}), page }),
+  ].join("\n")
