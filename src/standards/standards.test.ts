@@ -6,6 +6,7 @@ import {
   defineFieldRules,
   defineIdentifiers,
   defineLintRules,
+  defineLogEvents,
   defineReasons,
   defineSteps,
   defineVocabulary,
@@ -19,6 +20,7 @@ import {
   jsonlOf,
   jsonSchemaOf,
   LINT_RULES,
+  LOG_EVENTS,
   listEnvelopeSchema,
   logRecordSchema,
   overridesProblems,
@@ -423,6 +425,21 @@ describe("lint registry", () => {
         ]),
       ),
     ).toEqual(['"trace_id" is listed twice', '"trace_id" is both a key and replaced'])
+  })
+})
+
+describe("log events registry", () => {
+  it("registers dotted event ids with their keys, once each", () => {
+    expect(LOG_EVENTS.map((event) => event.id)).toContain("command.failed")
+    expect(
+      problemsOf(() =>
+        defineLogEvents([
+          { id: "sync.done", meaning: "a sync ended", keys: ["count", "count"] },
+          { id: "sync.done", meaning: "again", keys: [] },
+        ]),
+      ),
+    ).toEqual(['"sync.done" is listed twice', 'sync.done: key "count" is listed twice'])
+    expect(problemsOf(() => defineLogEvents([{ id: "request", meaning: "a request", keys: [] }]))[0]).toMatch(/^0\.id:/)
   })
 })
 
