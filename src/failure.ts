@@ -1,6 +1,7 @@
 import { type CliErrorDetails, type ErrorCode, errorCodes, isCliError } from "./errors.js"
 import { EXIT_CODES, GENERIC_FAILURE } from "./exit-codes.js"
 import { visibleControls } from "./sanitize.js"
+import { type Effects, writes } from "./standards/effects.js"
 import {
   BASE_REASONS,
   COMMON_DETAILS,
@@ -11,7 +12,7 @@ import {
 } from "./standards/errors.js"
 import type { LogRecord } from "./standards/log.js"
 import type { NextStep } from "./standards/output.js"
-import { type StepDefinition, stepOf } from "./standards/steps.js"
+import { type StepDefinition, type StepInput, stepOf } from "./standards/steps.js"
 
 export interface FailureContext {
   /** The package's own reasons; the base ones are always known. */
@@ -20,6 +21,10 @@ export interface FailureContext {
   details?: readonly string[]
   steps?: readonly StepDefinition[]
   runId?: string
+  /** The effects of the command that failed; left out, it counts as a write and no retry is safe. */
+  effects?: Effects
+  /** For the error's next step: what its command takes and whether it writes (`stepTargets` in `/commands`). */
+  targets?: StepInput["targets"]
 }
 
 interface Recognised {
@@ -47,18 +52,45 @@ const reasonFor = (code: ErrorObject["error"]["code"], named: unknown, reasons: 
   // The first base reason for each code is its fallback.
   (BASE_REASONS.find((entry) => entry.code === code) as ErrorReason)
 
-const nextFor = (reason: ErrorReason, details: CliErrorDetails, steps: readonly StepDefinition[]): NextStep[] => {
-  const definition = reason.step ? steps.find((step) => step.id === reason.step) : undefined
+const nextFor = (reason: ErrorReason, details: CliErrorDetails, context: FailureContext): NextStep[] => {
+  const definition = reason.step ? context.steps?.find((step) => step.id === reason.step) : undefined
   if (!definition) return []
-  const known = new Set(definition.args.map((arg) => arg.name))
+  const known = new Set(definition.kind === "command" ? definition.args.map((arg) => arg.name) : [])
   const args = Object.fromEntries(
     Object.entries(details).filter(([key, value]) => known.has(key) && value !== undefined),
   )
   try {
-    return [stepOf(definition, { args })]
+    return [stepOf(definition, { args, ...(context.targets ? { targets: context.targets } : {}) })]
   } catch {
     return []
   }
+}
+
+/** Failures that may pass by themselves; `provider_error` only when the thrower said so. */
+const TRANSIENT: readonly ErrorObject["error"]["code"][] = [
+  "rate_limited",
+  "timeout",
+  "network_error",
+  "provider_unavailable",
+]
+
+/**
+ * Safe means the same command may work next time and cannot do harm: a transient failure of a command that writes
+ * nothing, or of a write that never left this machine. `outcome_unknown` is never safe.
+ */
+export const retryOf = (
+  code: ErrorObject["error"]["code"],
+  details: CliErrorDetails,
+  effects: Effects | undefined,
+): ErrorObject["error"]["retry"] => {
+  const transient =
+    details.retryable !== false &&
+    (TRANSIENT.includes(code) || (code === "provider_error" && details.retryable === true))
+  const safe = code !== "outcome_unknown" && transient && (!writes(effects) || details.sent === false)
+  const after = details.retry_after_ms
+  return safe && typeof after === "number" && Number.isInteger(after) && after >= 0
+    ? { safe, after_ms: after }
+    : { safe }
 }
 
 /** Any thrown value as the one error object. Only registered detail keys survive; `cause` never does. */
@@ -72,6 +104,7 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
         code: CRASH_CODE,
         reason: reason.reason,
         message: reason.message,
+        retry: { safe: false },
         ...(context.runId ? { run_id: context.runId } : {}),
       },
     }
@@ -83,7 +116,7 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
   const kept = Object.fromEntries(
     Object.entries(details).filter(([key, value]) => allowed.has(key) && value !== undefined),
   )
-  const next = nextFor(reason, details, context.steps ?? [])
+  const next = nextFor(reason, details, context)
   const runId = context.runId ?? (typeof details.run_id === "string" ? details.run_id : undefined)
   return {
     error: {
@@ -93,6 +126,7 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
       ...(typeof details.param === "string" ? { param: details.param } : {}),
       ...(Object.keys(kept).length > 0 ? { details: kept } : {}),
       ...(next.length > 0 ? { next } : {}),
+      retry: retryOf(code, details, context.effects),
       ...(runId ? { run_id: runId } : {}),
     },
   }
@@ -103,7 +137,7 @@ export const exitCodeOfError = ({ error }: ErrorObject): number =>
 
 const kebab = (name: string) => name.replaceAll("_", "-")
 
-const commandLine = (cli: string, step: NextStep): string =>
+const commandLine = (cli: string, step: Extract<NextStep, { kind: "command" }>): string =>
   [
     cli,
     step.command,
@@ -171,7 +205,11 @@ export const renderError = (object: ErrorObject, options: RenderErrorOptions): s
   const step = next?.[0]
   return [
     `✗ ${visibleControls(message)}`,
-    ...(step ? [`→ ${visibleControls(step.why)}: ${visibleControls(commandLine(options.cli, step))}`] : []),
+    ...(step?.kind === "command"
+      ? [`→ ${visibleControls(step.why)}: ${visibleControls(commandLine(options.cli, step))}`]
+      : step
+        ? [`→ ${visibleControls(step.why)}`]
+        : []),
     ...(options.record
       ? [JSON.stringify(options.record, null, 2)]
       : runId

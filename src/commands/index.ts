@@ -13,6 +13,8 @@ import type { Argument, Command, Option } from "commander"
 import { CliError } from "../errors.js"
 import type { QueryRegistry } from "../query/fields.js"
 import { describeQuery, type QueryInfo } from "../query/registry.js"
+import type { Effects } from "../standards/effects.js"
+import type { StepTarget } from "../standards/steps.js"
 
 export type Origin = "handwritten" | "generated"
 export type CommandState = "beta" | "deprecated"
@@ -21,10 +23,8 @@ export interface CommandMeta {
   origin?: Origin
   /** The catalog operation a generated command was made from. */
   operation_id?: string
-  /** True when running the command changes something: a write, wherever it lands. */
-  mutates?: boolean
-  /** With `mutates`: what it changes is only on this machine — a file, the keyring — never the service. */
-  local?: boolean
+  /** What running it touches. Left out, it counts as a write: never retried, never run as a next step on its own. */
+  effects?: Effects
   state?: CommandState
   examples?: readonly string[]
   /** The entity the command answers with, or one of its views. */
@@ -75,8 +75,7 @@ export interface CommandInfo {
   usage: string
   origin: Origin
   operation_id?: string
-  mutates?: boolean
-  local?: boolean
+  effects?: Effects
   state?: CommandState
   examples?: readonly string[]
   output?: CommandOutput
@@ -104,6 +103,30 @@ export const describeOptions = (command: Command): OptionInfo[] =>
 
 export const flatten = (commands: readonly CommandInfo[]): CommandInfo[] =>
   commands.flatMap((command) => [command, ...flatten(command.commands)])
+
+const snake = (name: string) => name.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`).replaceAll("-", "_")
+
+/**
+ * What a next step may name, by command path (`messages list`): its effects, and the arguments and options it takes
+ * in snake_case. Hand it to `stepOf` and `errorObjectOf` as `targets`.
+ */
+export const stepTargets = (root: Command): ((command: string) => StepTarget | undefined) => {
+  const found = new Map<string, StepTarget>()
+  const visit = (command: Command, parents: readonly string[]) => {
+    const path = [...parents, command.name()]
+    const { effects } = metaOf(command)
+    found.set(path.join(" "), {
+      ...(effects ? { effects } : {}),
+      names: [
+        ...command.registeredArguments.map((argument) => snake(argument.name())),
+        ...[...command.options, ...root.options].map((option) => snake(option.attributeName())),
+      ],
+    })
+    for (const child of command.commands) visit(child, path)
+  }
+  for (const child of root.commands) visit(child, [])
+  return (command) => found.get(command)
+}
 
 const describe = (command: Command, cli: string, parents: readonly string[]): CommandInfo => {
   const path = [...parents, command.name()]

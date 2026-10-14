@@ -61,7 +61,7 @@ export type CommandsPageText = {
   globalIntro: string
   /** Shown under a command that changes something outside this machine. */
   mutates: string
-  /** Shown instead under a command marked `local`, which changes only this machine; without it, nothing is. */
+  /** Shown instead under a command that writes only on this machine; without it, nothing is. */
   mutatesLocal?: string
   exitHeading: string
   exitIntro: string
@@ -113,7 +113,12 @@ export const commandsPage = ({ cli, commands, options, labels, text }: CommandsP
 
   const body = (command: CommandInfo): string[] => {
     const parts = [cell(command.description), ""]
-    const label = command.mutates ? (command.local ? text.mutatesLocal : text.mutates) : undefined
+    const label =
+      command.effects?.remote === "write"
+        ? text.mutates
+        : command.effects?.local === "write"
+          ? text.mutatesLocal
+          : undefined
     if (label) parts.push(label, "")
     parts.push("```sh", command.usage, "```")
     if (command.arguments.length > 0)

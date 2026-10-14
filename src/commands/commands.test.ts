@@ -12,7 +12,10 @@ import {
   metaOf,
   parseCommandsDocument,
   refuseJoinedPath,
+  stepTargets,
 } from "./index.js"
+
+const SEND = { remote: "write", local: "none" } as const
 
 const program = (): Command => {
   const root = new Command("tool").description("a tool").option("--json", "print JSON")
@@ -30,7 +33,7 @@ const program = (): Command => {
     .addOption(new Option("--online", "always ask the server").implies({ refresh: true }))
     .addOption(new Option("--debug-wire", "dump frames").hideHelp())
   annotate(messages.command("send").argument("<chat>").argument("[text...]"), {
-    mutates: true,
+    effects: SEND,
     examples: ["tool messages send 42 hello"],
   })
 
@@ -76,14 +79,14 @@ describe("describeProgram", () => {
     ])
   })
 
-  it("carries the labels: mutates, state, examples, summary", () => {
+  it("carries the labels: effects, state, examples, summary", () => {
     const commands = flatten(describeProgram(program()))
     const byName = (name: string) => commands.find((command) => command.name === name)
 
-    expect(byName("send")).toMatchObject({ mutates: true, examples: ["tool messages send 42 hello"] })
+    expect(byName("send")).toMatchObject({ effects: SEND, examples: ["tool messages send 42 hello"] })
     expect(byName("legacy")?.state).toBe("deprecated")
     expect(byName("list")?.summary).toBe("list messages")
-    expect(byName("list")).not.toHaveProperty("mutates")
+    expect(byName("list")).not.toHaveProperty("effects")
   })
 })
 
@@ -117,13 +120,25 @@ describe("options", () => {
 describe("annotate", () => {
   it("merges repeated labels and returns the command for chaining", () => {
     const command = new Command("x")
-    expect(annotate(command, { mutates: true })).toBe(command)
+    expect(annotate(command, { effects: SEND })).toBe(command)
     annotate(command, { state: "beta" })
-    expect(metaOf(command)).toEqual({ mutates: true, state: "beta" })
+    expect(metaOf(command)).toEqual({ effects: SEND, state: "beta" })
   })
 
   it("answers an empty label for a command nobody annotated", () => {
     expect(metaOf(new Command("y"))).toEqual({})
+  })
+})
+
+describe("stepTargets", () => {
+  it("names each command's effects and the snake_case names it takes, root options included", () => {
+    const targets = stepTargets(program())
+    expect(targets("messages send")).toEqual({ effects: SEND, names: ["chat", "text", "json"] })
+    expect(targets("messages list")?.names).toEqual(
+      expect.arrayContaining(["chat", "limit", "sort", "debug_wire", "json"]),
+    )
+    expect(targets("messages list")).not.toHaveProperty("effects")
+    expect(targets("messages forward")).toBeUndefined()
   })
 })
 
@@ -184,8 +199,8 @@ describe("commandsPage", () => {
 
   it("labels a write that changes only this machine with its own line, or none", () => {
     const root = new Command("tool")
-    annotate(root.command("send").description("send"), { mutates: true })
-    annotate(root.command("save").description("save"), { mutates: true, local: true })
+    annotate(root.command("send").description("send"), { effects: SEND })
+    annotate(root.command("save").description("save"), { effects: { remote: "none", local: "write" } })
     const text = (mutatesLocal?: string) =>
       commandsPage({
         cli: "tool",
@@ -198,7 +213,7 @@ describe("commandsPage", () => {
     expect(text("**Changes this machine only.**")).toContain("## `tool send`\n\nsend\n\n**Changes the service.**")
     expect(text("**Changes this machine only.**")).toContain("## `tool save`\n\nsave\n\n**Changes this machine only.**")
     expect(text()).toContain("## `tool save`\n\nsave\n\n```sh")
-    expect(describeProgram(root)[1]).toMatchObject({ mutates: true, local: true })
+    expect(describeProgram(root)[1]).toMatchObject({ effects: { remote: "none", local: "write" } })
   })
 
   it("keeps a pipe or a tilde from breaking its row, and lists the allowed values", () => {

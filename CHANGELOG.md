@@ -8,6 +8,27 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`effects` replaces `mutates` and `local` on commands.** `annotate(command, { effects: { remote, local } })`, each
+  `none | read | write`; `commands --json` prints `effects`. `mutates: true` is `remote: "write"`, `mutates + local` is
+  `local: "write"`. A command without `effects` counts as a write, so annotate every read command, or its failures are
+  never safe to retry and steps to it are never safe to run unasked. MCP's `readOnlyHint` is `!writes(effects)`.
+- **The error object carries `retry: { safe, after_ms? }`, always.** `errorObjectOf` derives it from the code, the
+  failed command's `effects` (new `FailureContext.effects`) and the new `sent` detail: a transient failure (`timeout`,
+  `rate_limited`, `network_error`, `provider_unavailable`, `provider_error` with `retryable: true`) of a command that
+  writes nothing, or of a write with `sent: false`, is safe; `outcome_unknown` never is. `retryable` and
+  `retry_after_ms` are read into `retry` and no longer copied into `details`.
+- **A next step has `kind` and `safe_to_auto_execute`.** `kind: "command"` keeps `command` and `args`;
+  `kind: "user_action"` (defined with `{ id, kind: "user_action", why }`) has neither and is never safe. A command
+  step is safe only when its target is known to write nothing. At most two steps per answer (`MAX_NEXT_STEPS`, was
+  three): the one to take, then one alternative.
+- **`stepOf` checks that a step binds.** Argument values must be scalars, or lists of them, on one line — a paragraph
+  read out of a message never becomes a step. With `targets` (`stepTargets(program)` from `/commands`, or
+  `FailureContext.targets`), the command must exist and take every argument named, the `*` step included.
+
 ## 0.27.2 — 14.10.2026
 
 ### Added

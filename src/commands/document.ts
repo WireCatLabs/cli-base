@@ -2,6 +2,7 @@ import type { Command } from "commander"
 import * as v from "valibot"
 import { EXIT_CODES, GENERIC_FAILURE } from "../exit-codes.js"
 import { FIELD_TYPES, QUERY_BACKENDS } from "../query/fields.js"
+import { effectsSchema } from "../standards/effects.js"
 import { issuesOf, jsonSchemaOf } from "../standards/registry.js"
 import { type CommandInfo, describeOptions, describeProgram, type OptionInfo } from "./index.js"
 
@@ -45,8 +46,7 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   usage: v.string(),
   origin: v.picklist(["handwritten", "generated"]),
   operation_id: v.optional(v.string()),
-  mutates: v.optional(v.boolean()),
-  local: v.optional(v.boolean()),
+  effects: v.optional(effectsSchema),
   state: v.optional(v.picklist(["beta", "deprecated"])),
   examples: v.optional(v.array(v.string())),
   output: v.optional(v.object({ entity: v.string(), view: v.optional(v.string()) })),
