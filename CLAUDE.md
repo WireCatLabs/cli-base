@@ -1,12 +1,17 @@
 # cli-base — working rules
 
-The shared layer under max-cli, cli-messaging, tg-cli and brazecli. **A change here reaches four
+The shared layer under max-cli, cli-core, tg-cli and brazecli. **A change here reaches four
 tools at their next bump**, so read [`docs/dev/ARCHITECTURE.md`](docs/dev/ARCHITECTURE.md) before
 touching a signature — it says who imports what and how a release is picked up.
 
 Then the one reference that covers what you are about to do:
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md) for code, documents and the changelog, and
 [`docs/dev/TESTING.md`](docs/dev/TESTING.md) for the checks and the sandbox.
+
+Security audits of this repository follow the shared
+[security method](https://github.com/WireCatLabs/cli-testing/tree/main/docs/security) in cli-testing;
+vulnerabilities are reported as the
+[security policy](https://github.com/WireCatLabs/.github/blob/main/SECURITY.md) says.
 
 ## The constraints that shape everything
 
@@ -35,6 +40,7 @@ A change a caller can see gets a `CHANGELOG.md` entry under `## Unreleased`. Rel
 Local commits check only staged lint and secrets. There is no pre-push check.
 Config integrity, repository lint, Markdown, and secret detection run in PR CI.
 The bounded `ci:quick` step adds typechecking for CLI packages or synthetic unit tests for the docs site.
-Full tests, coverage, builds, parity, browser and platform suites run for releases,
-explicit manual validation, and monthly nonpublishing validation. See the
+Full tests, coverage and builds also run once on each merge to `main` (Linux only, no publishing).
+Browser and platform suites run for releases, explicit manual validation, and monthly nonpublishing
+validation. See the
 [shared policy](https://github.com/WireCatLabs/community/blob/main/standards/README.md#ci-and-hooks).
