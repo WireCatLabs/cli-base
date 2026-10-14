@@ -44,7 +44,7 @@ function gate(...reports: object[]) {
   for (const [index, report] of reports.entries()) {
     writeFileSync(join(sarifDir, `${index}.sarif`), JSON.stringify(report))
   }
-  return spawnSync("python3", ["-I", "-", sarifDir], { input: gateScript(), encoding: "utf8" })
+  return spawnSync("python3", ["-I", "-", "sarif"], { cwd: dir, input: gateScript(), encoding: "utf8" })
 }
 
 // The shape CodeQL 2.27 writes: driver.rules empty, every rule in an extension, results point at it.
