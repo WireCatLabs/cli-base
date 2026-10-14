@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.31.0 — 15.10.2026
 
 ### Changed — may break callers
 
@@ -24,16 +24,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
     `--title <text>`, which is `--title <title>` in the vocabulary.
 - **A flag's value name may contain `=` or `:`, and may end in `...`.** So `<key=level>`, `<hh:mm>` and `<ref...>`,
   which commands already show, can be registered.
-## 0.30.1 — 14.10.2026
-
-### Fixed
-
-- **The shared `release-checks.yml` gate now blocks critical CodeQL findings.** CodeQL 2.27 lists its
-  rules under `tool.extensions`, not `tool.driver`, so every finding scored 0 and the gate always
-  passed. Rules are now resolved through each result's `rule.toolComponent`, and a finding whose rule
-  is not in the report fails the gate instead of passing it. Callers get this when they bump their pin.
-
-### Changed — may break callers
 
 - **`node-ci.yml` no longer leaves the job token in the checkout.** Its `check`, `bun` and `secrets` jobs check out
   with `persist-credentials: false`, so nothing a dependency runs in those jobs can read the token from `.git/config`.
@@ -42,6 +32,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `security-events: write`; the dependency audit reads the lockfile without `pnpm install`, so no
   lifecycle script runs; the secret scan no longer keeps the checkout token. Callers granting
   `contents: read`, `actions: read` and `security-events: write` need no change.
+
+### Fixed
+
+- **The shared `release-checks.yml` gate now blocks critical CodeQL findings.** CodeQL 2.27 lists its
+  rules under `tool.extensions`, not `tool.driver`, so every finding scored 0 and the gate always
+  passed. Rules are now resolved through each result's `rule.toolComponent`, and a finding whose rule
+  is not in the report fails the gate instead of passing it. Callers get this when they bump their pin.
 
 ## 0.30.0 — 14.10.2026
 
