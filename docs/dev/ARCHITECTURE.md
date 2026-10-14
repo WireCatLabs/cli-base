@@ -88,7 +88,7 @@ in `finally`; timers and listeners do not belong to the store or a messenger exe
 Each consumer's pin is in its `package.json`; a caret on `0.x` does not cross a minor, so every pin is
 exact in effect. **A release reaches nobody until each consumer bumps its pin.**
 
-⚠ **cli-core takes cli-base as a peer dependency** with a range (`>=0.26.0 <0.27.0` today), so a CLI installs
+⚠ **cli-core takes cli-base as a peer dependency** with the range declared in its `package.json`, so a CLI installs
 one copy that both use. A new minor version of cli-base reaches the CLIs only after cli-core widens its range.
 `isCliError()` checks a `Symbol.for` brand, so copies from 0.22.0 on recognise each other if two are ever
 installed; an older copy has no brand, which is why `errorObjectOf` also accepts a `CliError` by name and code.
