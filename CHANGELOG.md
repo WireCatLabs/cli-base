@@ -8,6 +8,22 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The shared `release-checks.yml` gate now blocks critical CodeQL findings.** CodeQL 2.27 lists its
+  rules under `tool.extensions`, not `tool.driver`, so every finding scored 0 and the gate always
+  passed. Rules are now resolved through each result's `rule.toolComponent`, and a finding whose rule
+  is not in the report fails the gate instead of passing it. Callers get this when they bump their pin.
+
+### Changed
+
+- **`release-checks.yml` asks for less.** Only the `source` job requests `actions: read` and
+  `security-events: write`; the dependency audit reads the lockfile without `pnpm install`, so no
+  lifecycle script runs; the secret scan no longer keeps the checkout token. Callers granting
+  `contents: read`, `actions: read` and `security-events: write` need no change.
+
 ## 0.30.0 — 14.10.2026
 
 ### Fixed

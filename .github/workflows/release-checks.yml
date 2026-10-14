@@ -23,8 +23,6 @@ on:
 
 permissions:
   contents: read
-  actions: read
-  security-events: write
 
 jobs:
   dependencies:
@@ -39,7 +37,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version || '24' }}
           package-manager-cache: false
-      - run: pnpm install --frozen-lockfile
+      # The audit reads only the lockfile; installing would run dependency lifecycle scripts for nothing.
       - run: pnpm audit --prod --audit-level critical
 
   workflows:
@@ -66,6 +64,7 @@ jobs:
         with:
           # The whole history: a secret removed in a later commit is still a leaked secret.
           fetch-depth: 0
+          persist-credentials: false
       - name: gitleaks
         env:
           GITLEAKS_VERSION: 8.30.1
@@ -81,6 +80,10 @@ jobs:
 
   source:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -105,20 +108,59 @@ jobs:
           sarif_file: sarif
           category: release/${{ matrix.language }}
       - name: critical source findings
+        # Inline because a called workflow checks out the caller, not cli-base; -I keeps the
+        # caller's files off sys.path. scripts/release-checks.test.ts runs this block.
         run: |
-          python3 - <<'PYCODE'
-          import json, pathlib
-          reports = list(pathlib.Path("sarif").glob("*.sarif"))
+          python3 -I - sarif <<'PYCODE'
+          import json, pathlib, sys
+
+          def fail(message):
+              print(f"CodeQL gate: {message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          def at(items, index):
+              if isinstance(index, int) and 0 <= index < len(items):
+                  return items[index]
+              return None
+
+          def resolve(result, driver, extensions):
+              # CodeQL 2.27 leaves driver.rules empty and puts every rule in an extension (query pack).
+              ref = result.get("rule") or {}
+              component = ref.get("toolComponent")
+              if isinstance(component, dict) and "index" in component:
+                  rule = at((at(extensions, component["index"]) or {}).get("rules", []), ref.get("index"))
+              else:
+                  rule = at(driver.get("rules", []), ref.get("index", result.get("ruleIndex")))
+              if rule is not None:
+                  return rule
+              rule_id = result.get("ruleId") or ref.get("id")
+              matches = [r for c in [driver, *extensions] for r in c.get("rules", []) if r.get("id") == rule_id]
+              return max(matches, key=severity, default=None)
+
+          def severity(rule):
+              # Quality queries carry no security-severity; they are not security findings.
+              return float(rule.get("properties", {}).get("security-severity", 0))
+
+          def count(path):
+              critical = 0
+              for run in json.loads(path.read_text())["runs"]:
+                  tool = run["tool"]
+                  for result in run.get("results", []):
+                      rule = resolve(result, tool["driver"], tool.get("extensions", []))
+                      if rule is None:
+                          fail(f"{path.name}: rule {result.get('ruleId')!r} is not in the report, so its severity is unknown")
+                      critical += severity(rule) >= 9
+              return critical
+
+          reports = sorted(pathlib.Path(sys.argv[1]).glob("*.sarif"))
           if not reports:
-              raise SystemExit("CodeQL produced no SARIF report")
+              fail("CodeQL produced no SARIF report")
           critical = 0
           for path in reports:
-              for run in json.loads(path.read_text())["runs"]:
-                  rules = {rule["id"]: rule for rule in run["tool"]["driver"].get("rules", [])}
-                  for result in run.get("results", []):
-                      rule = rules.get(result.get("ruleId"), {})
-                      score = float(rule.get("properties", {}).get("security-severity", 0))
-                      critical += score >= 9
+              try:
+                  critical += count(path)
+              except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                  fail(f"{path.name} is not SARIF this gate can read ({error!r})")
           print(f"CodeQL: {critical} critical findings; other findings require owner review")
           raise SystemExit(1 if critical else 0)
           PYCODE
