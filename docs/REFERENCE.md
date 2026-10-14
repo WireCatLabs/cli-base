@@ -37,8 +37,13 @@ seam live in `@wirecat/cli-base/http`, so a CLI that speaks a socket never depen
 does not call:
 
 ```ts
-import { providerWaitMs, statusToCode } from "@wirecat/cli-base/http"
+import { providerWaitMs, readJsonResponse, statusToCode } from "@wirecat/cli-base/http"
 ```
+
+`readJsonResponse(response, { maxBytes, signal })` reads an existing response within an explicit
+positive byte budget, then decodes strict UTF-8 JSON. It bounds declared length and actual body
+bytes, cancels on rejection/interruption and releases its own reader. It never fetches or interprets
+HTTP status, provider fields or credentials. A caller still owns those policies and its deadline.
 
 **Portable command control stays independent of provider and store lifetimes.**
 `fieldsOf("id,speaker.id")` parses up to 128 field paths; `projectFields(value, paths)` selects data

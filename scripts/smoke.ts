@@ -16,6 +16,7 @@ import * as v from "valibot"
 import { annotate, describeProgram, flatten } from "../src/commands/index.js"
 import { suggest } from "../src/completion/index.js"
 import { main as cliDev } from "../src/dev/main.js"
+import { readJsonResponse } from "../src/http/index.js"
 import {
   backoffMs,
   CliError,
@@ -189,6 +190,17 @@ check(
     err: () => {},
   })) === 0 && dev[0] === "1.3.0",
 )
+
+check(
+  "HTTP JSON respects an exact byte budget",
+  JSON.stringify(await readJsonResponse(new Response('{"ok":true}'), { maxBytes: 11 })) === '{"ok":true}',
+)
+try {
+  await readJsonResponse(new Response("[]"), { maxBytes: 1 })
+  failures.push("HTTP JSON accepted an oversized body")
+} catch (error) {
+  check("HTTP JSON reports its byte limit", error instanceof CliError && error.code === "invalid_response")
+}
 
 if (failures.length > 0) {
   console.error(`cli-base smoke FAILED under ${runtime}:`)

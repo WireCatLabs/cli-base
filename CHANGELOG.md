@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`readJsonResponse` reads UTF-8 JSON within an explicit byte budget.** HTTP adapters can reject
+  oversized or malformed bodies before parsing, even without a trustworthy Content-Length. The
+  `/http` helper supports cancellation and releases its reader; callers still own status handling
+  and provider validation. It adds no HTTP dependency to the root export.
+
 ## 0.28.1 — 14.10.2026
 
 ### Changed — may break callers
