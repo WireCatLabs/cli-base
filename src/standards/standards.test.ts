@@ -4,12 +4,14 @@ import {
   baselineProblems,
   baselineSchema,
   defineFieldRules,
+  defineIdentifiers,
   defineLintRules,
   defineReasons,
   defineSteps,
   defineVocabulary,
   errorObjectSchema,
   FIELD_RULES,
+  IDENTIFIERS,
   isContentKey,
   itemEnvelopeSchema,
   jsonlEndSchema,
@@ -19,8 +21,10 @@ import {
   LINT_RULES,
   listEnvelopeSchema,
   logRecordSchema,
+  overridesProblems,
   overridesSchema,
   RegistryError,
+  rulesForReview,
   STEPS,
   stepOf,
   traceIdOf,
@@ -93,6 +97,34 @@ describe("vocabulary registry", () => {
         ),
       ),
     ).toEqual(['verbs: "list" replaces "show", which is itself a verb'])
+  })
+
+  it("refuses a flag synonym that is itself a flag, and lists --limit's", () => {
+    expect(VOCABULARY.flags.find((flag) => flag.name === "--limit")?.replaces).toEqual([
+      "--max",
+      "--count",
+      "--take",
+      "--max-results",
+    ])
+    expect(
+      problemsOf(() =>
+        defineVocabulary(
+          vocabulary({
+            flags: [
+              {
+                name: "--limit",
+                value: "<n>",
+                type: "count",
+                role: "paging",
+                meaning: "how many",
+                replaces: ["--max"],
+              },
+              { name: "--max", value: "<n>", type: "count", role: "paging", meaning: "how many" },
+            ],
+          }),
+        ),
+      ),
+    ).toEqual(["flags: --limit replaces --max, which is itself a flag"])
   })
 })
 
@@ -349,12 +381,48 @@ describe("lint registry", () => {
     ).toMatch(/^0\.severity:/)
   })
 
-  it("refuses a baseline that lists a target twice and an override with no reason", () => {
+  it("refuses a baseline that lists a target twice, and an override with no reason, owner or review date", () => {
     expect(baselineProblems(["chats list", "chats list"])).toEqual(['"chats list" is listed twice'])
-    expect(v.is(overridesSchema, [{ rule: "unknown-verb", target: "bot api", reason: "" }])).toBe(false)
+    const kept = { rule: "unknown-verb", target: "bot api", reason: "mirrors the official Bot API" }
+    const owned = { ...kept, owner: "@leemour", review_after: "2027-01-01" }
+    expect(v.is(overridesSchema, [{ ...owned, reason: "" }])).toBe(false)
+    expect(v.is(overridesSchema, [kept])).toBe(false)
+    expect(v.is(overridesSchema, [{ ...owned, review_after: "soon" }])).toBe(false)
+    expect(v.is(overridesSchema, [{ ...owned, owner: "leemour" }])).toBe(false)
+    expect(v.is(overridesSchema, [owned, { ...owned, owner: "@WireCatLabs/cli" }])).toBe(true)
+    expect(overridesProblems([owned], "2027-01-01")).toEqual([])
+    expect(overridesProblems([owned], "2027-01-02")).toEqual([
+      '"unknown-verb bot api" was due for review on 2027-01-01; ask @leemour',
+    ])
+  })
+
+  it("flags a rule overridden more than three times across the CLIs for review", () => {
+    const one = (rule: string, target: string) => ({
+      rule,
+      target,
+      reason: "kept on purpose",
+      owner: "@a",
+      review_after: "2027-01-01",
+    })
     expect(
-      v.is(overridesSchema, [{ rule: "unknown-verb", target: "bot api", reason: "mirrors the official Bot API" }]),
-    ).toBe(true)
+      rulesForReview([
+        [one("unknown-verb", "a"), one("unknown-verb", "b"), one("option-role", "x")],
+        [one("unknown-verb", "c"), one("unknown-verb", "d")],
+      ]),
+    ).toEqual([{ rule: "unknown-verb", overrides: 4 }])
+    expect(rulesForReview([[one("unknown-verb", "a"), one("unknown-verb", "b"), one("unknown-verb", "c")]])).toEqual([])
+  })
+
+  it("keeps one name per identifier, and refuses a replaced name that is itself a key", () => {
+    expect(IDENTIFIERS.map((entry) => entry.key)).toEqual(["run_id", "operation_id", "request_id", "trace_id"])
+    expect(
+      problemsOf(() =>
+        defineIdentifiers([
+          { key: "run_id", meaning: "one run", replaces: ["trace_id"] },
+          { key: "trace_id", meaning: "a trace" },
+        ]),
+      ),
+    ).toEqual(['"trace_id" is listed twice', '"trace_id" is both a key and replaced'])
   })
 })
 

@@ -4,6 +4,7 @@ import type { CommandInfo, OptionInfo } from "../commands/index.js"
 import { exampleProblems } from "../query/registry.js"
 import { queryAstSchema, queryNodeSchema } from "../query/types.js"
 import { errorObjectSchema } from "../standards/errors.js"
+import { IDENTIFIERS } from "../standards/identifiers.js"
 import { LINT_RULES, type LintRule, type Override } from "../standards/lint.js"
 import { isContentKey, logAttributesJsonSchema, logRecordSchema } from "../standards/log.js"
 import { itemEnvelopeSchema, jsonlEndSchema, jsonlItemSchema, listEnvelopeSchema } from "../standards/output.js"
@@ -378,7 +379,8 @@ const CHECKS: Record<string, Check> = {
       })
   },
   "option-role": (document, vocabulary) => {
-    const roles = new Set(vocabulary.flags.map((flag) => flag.name))
+    // A synonym is flag-synonym's to report, with the name to use.
+    const roles = new Set(vocabulary.flags.flatMap((flag) => [flag.name, ...(flag.replaces ?? [])]))
     return optionsOf(document)
       .filter(({ option }) => !roles.has(longName(option.flags)))
       .map(({ target, option }) => ({ target, message: `${longName(option.flags)} has no role in the vocabulary` }))
@@ -417,6 +419,26 @@ const CHECKS: Record<string, Check> = {
         target: `schema ${name}: ${path}`,
         message: `"${key}" is a list that may be null; known empty is [], not known is absent`,
       })),
+  "flag-synonym": (document, vocabulary) => {
+    const instead = new Map(vocabulary.flags.flatMap((flag) => (flag.replaces ?? []).map((old) => [old, flag.name])))
+    return optionsOf(document).flatMap(({ option, target }) => {
+      const name = instead.get(longName(option.flags))
+      return name === undefined ? [] : [{ target, message: `${longName(option.flags)} is ${name}; use ${name}` }]
+    })
+  },
+  "identifier-name": (document, _vocabulary, context) => {
+    const instead = new Map(IDENTIFIERS.flatMap((entry) => (entry.replaces ?? []).map((old) => [old, entry.key])))
+    const { [LOG_ATTRIBUTES]: _allowList, ...own } = context.schemas ?? {}
+    return [
+      ...Object.entries({ ...baseSchemas(), ...own }).flatMap(([name, schema]) =>
+        schemaKeys(schema, "").map(([key, path]) => ({ key, target: `schema ${name}: ${path}` })),
+      ),
+      ...documentKeys(context.raw ?? document, "").map(([key, path]) => ({ key, target: `commands --json: ${path}` })),
+    ].flatMap(({ key, target }) => {
+      const name = instead.get(key)
+      return name === undefined ? [] : [{ target, message: `"${key}" is ${name}; name it ${name}` }]
+    })
+  },
   "log-attribute-key": (_document, _vocabulary, context) => {
     const schema = context.schemas?.[LOG_ATTRIBUTES] ?? logAttributesJsonSchema()
     return schemaKeys(schema, "")

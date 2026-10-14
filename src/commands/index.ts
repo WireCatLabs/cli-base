@@ -21,8 +21,8 @@ export type CommandState = "beta" | "deprecated"
 
 export interface CommandMeta {
   origin?: Origin
-  /** The catalog operation a generated command was made from. */
-  operation_id?: string
+  /** The catalog operation a generated command was made from; not `operation_id`, which is one write attempt. */
+  api_operation?: string
   /** What running it touches. Left out, it counts as a write: never retried, never run as a next step on its own. */
   effects?: Effects
   state?: CommandState
@@ -76,7 +76,7 @@ export interface CommandInfo {
   description: string
   usage: string
   origin: Origin
-  operation_id?: string
+  api_operation?: string
   effects?: Effects
   state?: CommandState
   partial?: boolean
