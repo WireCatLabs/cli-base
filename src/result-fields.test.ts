@@ -72,6 +72,9 @@ describe("portable result projection", () => {
     expect(projectFields(null, ["id"])).toBeNull()
     expect(projectFields(3, ["id"])).toBe(3)
     expect(projectFields(Object.create({ id: 3 }), ["id"])).toEqual({})
+    expect(projectFields(Object.assign(Object.create({ type: "item" }), { data: { id: 1 }, id: 2 }), ["id"])).toEqual({
+      id: 2,
+    })
     expect(projectFields({ items: null, id: 1 }, ["id"])).toEqual({ id: 1 })
   })
   it("rejects unsafe, empty or excessive paths even when supplied directly", () => {

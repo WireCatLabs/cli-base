@@ -58,6 +58,22 @@ const project = (value: unknown, fields: readonly string[]): unknown => {
   if (Array.isArray(value)) return value.map((item) => select(item, itemPaths(fields)))
   if (
     object(value) &&
+    Object.hasOwn(value, "type") &&
+    value.type === "item" &&
+    Object.hasOwn(value, "data") &&
+    Object.keys(value).every((key) => ["type", "data"].includes(key))
+  )
+    return { ...value, data: project(value.data, fields) }
+  if (
+    object(value) &&
+    Object.hasOwn(value, "type") &&
+    value.type === "end" &&
+    Object.hasOwn(value, "complete") &&
+    typeof value.complete === "boolean"
+  )
+    return value
+  if (
+    object(value) &&
     Object.hasOwn(value, "item") &&
     (Object.hasOwn(value, "meta") || Object.keys(value).every((key) => ["item", "next", "missing"].includes(key)))
   )
