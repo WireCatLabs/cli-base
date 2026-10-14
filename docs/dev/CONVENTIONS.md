@@ -42,3 +42,8 @@ dates it as `## <version> — DD.MM.YYYY`. Headings, each at most once per versi
 Every entry answers, in this order: **what changed, as a caller sees it** — the bold lead, a whole
 sentence; **why**, unless it is obvious; **what to watch for** — who is affected and what to do. No
 backlog or decision ids, no internal names a caller cannot see. `pnpm docs:check` checks the shape.
+
+Two rules are checked on every pull request by the shared
+[changelog guard](../../.github/workflows/changelog-guard.yml): a title marked breaking (`feat!:`,
+`fix(scope)!:`) adds a line under `## Unreleased` (`## Не выпущено` in max-cli), and a section whose
+`v<version>` tag exists is never edited. A dated section without a tag is still open to fixes.
