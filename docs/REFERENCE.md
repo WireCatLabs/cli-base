@@ -42,7 +42,7 @@ import { providerWaitMs, statusToCode } from "@wirecat/cli-base/http"
 
 **Portable command control stays independent of provider and store lifetimes.**
 `fieldsOf("id,speaker.id")` parses up to 128 field paths; `projectFields(value, paths)` selects data
-from objects or list items while preserving the list envelope and `operation_id` / `send_id`.
+from objects or list items while preserving the list envelope and `operation_id`.
 `items.id` also works for bare objects and JSONL items. Unknown fields are omitted; parent selections
 win over their children. Unsafe prototype paths are refused, including when paths are passed directly.
 

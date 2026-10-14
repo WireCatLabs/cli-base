@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Changed â€” may break callers
+
+- **`--operation-id` replaces `--send-id`, and `operation_id` replaces `send_id`.** One id per meaning: the flag
+  that repeats a write after an unknown outcome names the same attempt as the answer's `operation_id`. The flag row
+  lists `--send-id` in `replaces`, so `flag-synonym` reports a CLI that still takes it, and `identifier-name` reports
+  a `send_id` key. `projectFields` keeps only `operation_id` beside the projected fields.
+
 ### Added
 
 - **Vocabulary rows for `--all`, `--as-owner` and `--problems`.** `--all` (paging): every item at once, instead of one

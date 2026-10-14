@@ -20,9 +20,10 @@ describe("portable result projection", () => {
     expect(projectFields(input.items[0], ["items.id"])).toEqual({ id: 1 })
   })
   it("keeps operation identifiers, null values and parent selections", () => {
-    expect(
-      projectFields({ id: 1, operation_id: "example", send_id: "example-send", missing: null }, ["missing", "unknown"]),
-    ).toEqual({ missing: null, operation_id: "example", send_id: "example-send" })
+    expect(projectFields({ id: 1, operation_id: "example", missing: null }, ["missing", "unknown"])).toEqual({
+      missing: null,
+      operation_id: "example",
+    })
     const speaker = { id: 1, name: "Alice Example" }
     expect(projectFields({ speaker }, ["speaker.id", "speaker"])).toEqual({ speaker })
     expect(projectFields({ speaker: null }, ["speaker.id"])).toEqual({})

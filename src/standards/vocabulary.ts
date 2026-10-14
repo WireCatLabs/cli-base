@@ -576,6 +576,14 @@ const flags: Vocabulary["flags"] = [
   { name: "--no-registries", role: "mode", type: "switch", meaning: "do not ask the public ban lists" },
   { name: "--notify", role: "mode", type: "switch", meaning: "tell the chat's members about it" },
   { name: "--offline", role: "mode", type: "switch", meaning: "answer from what was recorded and never connect" },
+  {
+    name: "--operation-id",
+    value: "<id>",
+    role: "mode",
+    type: "id",
+    meaning: "the write attempt this repeats, from an unknown outcome; a retry with it cannot write twice",
+    replaces: ["--send-id"],
+  },
   { name: "--port", value: "<port>", role: "mode", type: "number", meaning: "the local port for --http" },
   {
     name: "--public-url",
@@ -591,13 +599,6 @@ const flags: Vocabulary["flags"] = [
     meaning: "keep this run under runs: ids and timings, never content",
   },
   { name: "--regex", role: "mode", type: "switch", meaning: "the words are one regular expression" },
-  {
-    name: "--send-id",
-    value: "<id>",
-    role: "mode",
-    type: "id",
-    meaning: "identify a send attempt, so a retry reuses it",
-  },
   { name: "--silent", role: "mode", type: "switch", meaning: "deliver without a notification" },
   { name: "--thread", role: "mode", type: "switch", meaning: "the stored reply chain instead of time neighbours" },
   {
