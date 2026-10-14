@@ -14,6 +14,14 @@ describe("loadConfigFile", () => {
     expect(loadConfigFile(join(dir(), "config.json"), Schema, empty)).toEqual({ version: 1 })
   })
 
+  it("does not hide a directory or an invalid parent path as missing config", () => {
+    const directory = dir()
+    expect(() => loadConfigFile(directory, Schema, empty)).toThrow()
+    const file = join(directory, "parent")
+    writeFileSync(file, "data")
+    expect(() => loadConfigFile(join(file, "config.json"), Schema, empty)).toThrow()
+  })
+
   it("names the file when the JSON itself is malformed", () => {
     const path = join(dir(), "config.json")
     writeSecurely(path, "{ not json", 0o644)

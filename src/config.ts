@@ -42,7 +42,8 @@ export const loadConfigFile = <TSchema extends v.GenericSchema>(
   let text: string
   try {
     text = readFileSync(path, "utf8")
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
     return fallback()
   }
 
