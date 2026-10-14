@@ -1,41 +1,12 @@
-# Called from each repository's own workflow on pull_request (types: opened, edited, synchronize, reopened):
-#
-#   jobs:
-#     changelog:
-#       uses: WireCatLabs/cli-base/.github/workflows/changelog-guard.yml@<tag or sha>
-#
-# The rules are in scripts/changelog-guard.ts.
 name: Changelog guard
 
 on:
-  workflow_call:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
 
 permissions:
   contents: read
 
 jobs:
-  guard:
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: false
-      # The script comes from the same cli-base commit the caller pinned, not from the caller's tree.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
-          path: .changelog-guard
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-      - name: changelog rules
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node .changelog-guard/scripts/changelog-guard.ts "$TITLE" "$BASE_SHA" "$HEAD_SHA"
+  changelog:
+    uses: ./.github/workflows/changelog-guard.yml
