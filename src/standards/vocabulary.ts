@@ -99,6 +99,7 @@ const verbs: [string, string][] = [
   ["list", "show many"],
   ["show", "show one"],
   ["search", "find by text; the description says where it looks"],
+  ["prepare", "assemble bounded cited context for a selected upcoming activity without applying findings"],
   ["related", "what is nearest in meaning to one thing, without a query"],
   ["info", "facts about a singular thing itself: where it is, its size, its version, its schema"],
   ["status", "how a thing stands right now"],
@@ -267,6 +268,43 @@ const roots: [string, string][] = [
 ]
 
 const flags: Vocabulary["flags"] = [
+  {
+    name: "--meetings",
+    value: "<n>",
+    role: "budget",
+    type: "count",
+    meaning: "at most this many stored meeting occurrences in context",
+    unit: "meetings",
+  },
+  {
+    name: "--cues",
+    value: "<n>",
+    role: "budget",
+    type: "count",
+    meaning: "at most this many transcript cues per selected occurrence",
+    unit: "cues",
+  },
+  {
+    name: "--context-limit",
+    value: "<n>",
+    role: "budget",
+    type: "count",
+    meaning: "at most this many entries per context category",
+    unit: "items",
+  },
+  {
+    name: "--history-since-time",
+    value: "<time>",
+    role: "target",
+    type: "time",
+    meaning: "inclusive start of the stored history window used for preparation",
+  },
+  {
+    name: "--meeting-preparation",
+    role: "mode",
+    type: "switch",
+    meaning: "expose meeting preparation tools, including their remote schedule reads",
+  },
   {
     name: "--scan-limit",
     value: "<n>",

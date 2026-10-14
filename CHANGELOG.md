@@ -8,6 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+## 0.30.0 — 14.10.2026
+
+### Added
+
+- The shared command vocabulary defines `prepare` as bounded cited context assembly and classifies
+  `--meetings`, `--cues` and `--context-limit` as work budgets, `--history-since-time` as a target
+  history window and `--meeting-preparation` as opt-in tool exposure. Preparation commands reuse
+  `--since-time` and `--before-time` for an inclusive start and exclusive end. Command lint can
+  check these workflows without new baseline entries or per-tool overrides.
+
 ## 0.29.0 — 14.10.2026
 
 ### Changed — may break callers
