@@ -33,7 +33,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   passed. Rules are now resolved through each result's `rule.toolComponent`, and a finding whose rule
   is not in the report fails the gate instead of passing it. Callers get this when they bump their pin.
 
-### Changed
+### Changed â€” may break callers
 
 - **`node-ci.yml` no longer leaves the job token in the checkout.** Its `check`, `bun` and `secrets` jobs check out
   with `persist-credentials: false`, so nothing a dependency runs in those jobs can read the token from `.git/config`.
