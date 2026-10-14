@@ -92,6 +92,12 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     summary: "every query field's example, and every default term, parses and validates",
   },
   {
+    id: "nullable-list",
+    severity: "medium",
+    scope: "key",
+    summary: "a list in a registered JSON Schema is never null: known empty is `[]`, not known is absent",
+  },
+  {
     id: "log-attribute-key",
     severity: "high",
     scope: "key",

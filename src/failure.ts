@@ -11,7 +11,7 @@ import {
   type ErrorReason,
 } from "./standards/errors.js"
 import type { LogRecord } from "./standards/log.js"
-import type { NextStep } from "./standards/output.js"
+import type { Meta, NextStep } from "./standards/output.js"
 import { type StepDefinition, type StepInput, stepOf } from "./standards/steps.js"
 
 export interface FailureContext {
@@ -134,6 +134,16 @@ export const errorObjectOf = (failure: unknown, context: FailureContext = {}): E
 
 export const exitCodeOfError = ({ error }: ErrorObject): number =>
   error.code === CRASH_CODE ? GENERIC_FAILURE : EXIT_CODES[error.code]
+
+/**
+ * 0 for a complete answer, and for a partial one when the command declares `partial`; otherwise the code of its
+ * first issue. The answer is printed either way, so what was read is never lost.
+ */
+export const exitCodeOfAnswer = (meta: Pick<Meta, "complete" | "issues">, partial = false): number => {
+  if (meta.complete || partial) return 0
+  const code = meta.issues?.[0]?.code
+  return code === undefined ? GENERIC_FAILURE : EXIT_CODES[code]
+}
 
 const kebab = (name: string) => name.replaceAll("_", "-")
 

@@ -28,6 +28,24 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 - **`stepOf` checks that a step binds.** Argument values must be scalars, or lists of them, on one line — a paragraph
   read out of a message never becomes a step. With `targets` (`stepTargets(program)` from `/commands`, or
   `FailureContext.targets`), the command must exist and take every argument named, the `*` step included.
+- **`meta.complete` and `meta.issues` replace `meta.skipped`.** `complete` is required on every envelope: `false` when
+  a source failed or was skipped, with `issues: [{ code, reason?, source }]` (`code` is an error code, so a skipped
+  account is `authentication_error`, not free text). `truncated` (a size cap cut the answer) and `page.has_more`
+  (another page exists) keep their own meanings. A command that may answer partially declares
+  `annotate(command, { partial: true })`, shown in `commands --json`; `exitCodeOfAnswer(meta, partial)` exits 0
+  only then, else with the first issue's code.
+- **`page` says how the source pages.** `{ mode: "page", limit, has_more, next_page? }` or
+  `{ mode: "cursor", limit, has_more, next_cursor? }`; `cursor` is gone. A cursor source never shows page numbers.
+
+### Added
+
+- **JSON lines with an end line:** `jsonlOf(envelope)` prints `{"type":"item","data":…}` per item, then
+  `{"type":"end","complete":…,"issues"?:…,"page":…}`, so a reader tells a finished stream from a cut one;
+  `jsonlItemSchema` and `jsonlEndSchema` describe them, and `key-casing` checks both.
+- **`missing` entries may have no `step`**, for a field nothing can fill.
+- **The `absent-null` field rule and the `nullable-list` lint rule** (medium): absent is not asked or not known,
+  `null` is known to have no value, `[]` is known empty, `0` is measured. The lint fails a list in a registered
+  JSON Schema that may be `null`. Run `cli-dev lint --write-baseline` once to record today's.
 
 ## 0.27.2 — 14.10.2026
 

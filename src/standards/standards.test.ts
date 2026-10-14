@@ -12,6 +12,9 @@ import {
   FIELD_RULES,
   isContentKey,
   itemEnvelopeSchema,
+  jsonlEndSchema,
+  jsonlItemSchema,
+  jsonlOf,
   jsonSchemaOf,
   LINT_RULES,
   listEnvelopeSchema,
@@ -94,7 +97,7 @@ describe("vocabulary registry", () => {
 })
 
 describe("output registry", () => {
-  const meta = { run_id: "r1", duration_ms: 12 }
+  const meta = { run_id: "r1", duration_ms: 12, complete: true }
 
   it("accepts a list and a single answer, and refuses a bare array or a third next step", () => {
     const list = listEnvelopeSchema(v.object({ ref: v.string() }))
@@ -106,11 +109,13 @@ describe("output registry", () => {
       why: "20 shown, more exist",
       safe_to_auto_execute: true,
     }
-    expect(v.is(list, { items: [{ ref: "chat:1" }], page: { limit: 20, has_more: true }, next: [next], meta })).toBe(
-      true,
-    )
+    expect(
+      v.is(list, { items: [{ ref: "chat:1" }], page: { mode: "page", limit: 20, has_more: true }, next: [next], meta }),
+    ).toBe(true)
     expect(v.is(list, [{ ref: "chat:1" }])).toBe(false)
-    expect(v.is(list, { items: [], page: { limit: 20, has_more: false }, next: [next, next, next], meta })).toBe(false)
+    expect(
+      v.is(list, { items: [], page: { mode: "page", limit: 20, has_more: false }, next: [next, next, next], meta }),
+    ).toBe(false)
     expect(
       v.is(itemEnvelopeSchema(v.string()), {
         item: "done",
@@ -120,10 +125,50 @@ describe("output registry", () => {
     ).toBe(true)
   })
 
-  it("refuses a missing entry with no step, and an unknown key", () => {
+  it("accepts a missing entry with no step, and refuses an unknown key", () => {
     const item = itemEnvelopeSchema(v.string())
-    expect(v.is(item, { item: "x", missing: [{ field: "text", why: "not read" }], meta })).toBe(false)
+    expect(v.is(item, { item: "x", missing: [{ field: "text", why: "not read" }], meta })).toBe(true)
     expect(v.is(item, { item: "x", meta, hits: [] })).toBe(false)
+  })
+
+  it("types a page by how the source pages: numbers, or an opaque cursor, never both", () => {
+    const list = listEnvelopeSchema(v.string())
+    const of = (page: unknown) => v.is(list, { items: [], page, meta })
+    expect(of({ mode: "page", limit: 20, has_more: true, next_page: 3 })).toBe(true)
+    expect(of({ mode: "cursor", limit: 20, has_more: true, next_cursor: "eyJ0IjoxfQ" })).toBe(true)
+    expect(of({ mode: "cursor", limit: 20, has_more: true, next_page: 2 })).toBe(false)
+    expect(of({ limit: 20, has_more: false })).toBe(false)
+  })
+
+  it("says a partial answer is partial, with the sources it is missing, instead of skipped", () => {
+    const list = listEnvelopeSchema(v.string())
+    const page = { mode: "page", limit: 20, has_more: false }
+    const partial = {
+      ...meta,
+      complete: false,
+      issues: [{ code: "authentication_error", reason: "auth.failed", source: "work" }],
+    }
+    expect(v.is(list, { items: ["a"], page, meta: partial })).toBe(true)
+    expect(v.is(list, { items: ["a"], page, meta: { run_id: "r1", duration_ms: 1 } })).toBe(false)
+    expect(v.is(list, { items: [], page, meta: { ...meta, skipped: [{ account: "work", why: "x" }] } })).toBe(false)
+    expect(v.is(list, { items: [], page, meta: { ...partial, issues: [{ code: "skipped", source: "work" }] } })).toBe(
+      false,
+    )
+  })
+
+  it("writes a list as JSON lines that end with a line saying whether it is whole", () => {
+    const page = { mode: "cursor" as const, limit: 2, has_more: true, next_cursor: "c2" }
+    const issues = [{ code: "timeout" as const, source: "personal" }]
+    const lines = jsonlOf({ items: [{ ref: "a" }, { ref: "b" }], page, meta: { ...meta, complete: false, issues } })
+      .split("\n")
+      .map((line) => JSON.parse(line))
+    expect(lines).toEqual([
+      { type: "item", data: { ref: "a" } },
+      { type: "item", data: { ref: "b" } },
+      { type: "end", complete: false, issues, page },
+    ])
+    expect(v.is(jsonlItemSchema(v.object({ ref: v.string() })), lines[0])).toBe(true)
+    expect(v.is(jsonlEndSchema, lines[2])).toBe(true)
   })
 
   it("keeps field rules unique", () => {
