@@ -19,6 +19,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed
 
+- **`node-ci.yml` no longer leaves the job token in the checkout.** Its `check`, `bun` and `secrets` jobs check out
+  with `persist-credentials: false`, so nothing a dependency runs in those jobs can read the token from `.git/config`.
+  A caller whose `checks` lines push or call `git` against the remote with that token needs its own job for it.
 - **`release-checks.yml` asks for less.** Only the `source` job requests `actions: read` and
   `security-events: write`; the dependency audit reads the lockfile without `pnpm install`, so no
   lifecycle script runs; the secret scan no longer keeps the checkout token. Callers granting
