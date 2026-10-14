@@ -13,7 +13,7 @@ import {
   retryOf,
 } from "./failure.js"
 import { createOutputBuffer } from "./output-buffer.js"
-import { BASE_REASONS, defineReasons, defineSteps, errorObjectSchema } from "./standards/index.js"
+import { BASE_REASONS, defineReasons, defineSteps, errorObjectSchema, logEventProblems } from "./standards/index.js"
 
 const reasons = defineReasons([
   {
@@ -297,9 +297,11 @@ describe("renderError", () => {
       version: "1.0.0",
       time: new Date("2026-10-13T10:00:00Z"),
     })
+    expect(logEventProblems(record, [])).toEqual([])
     expect(record).toMatchObject({
       time: "2026-10-13T10:00:00.000Z",
       severity: "error",
+      body: "command.failed",
       run_id: "r1",
       command: "messages list",
       attributes: { code: "configuration_error", reason: "store.locked", cause: "SQLITE_BUSY" },

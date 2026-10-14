@@ -1,6 +1,6 @@
 import * as v from "valibot"
 import { isoTime } from "./output.js"
-import { text } from "./registry.js"
+import { dottedId, duplicates, parseRegistry, text } from "./registry.js"
 
 /** Upper-cased, these are OpenTelemetry's SeverityText values. */
 export const LOG_SEVERITIES = ["trace", "debug", "info", "warn", "error", "fatal"] as const
@@ -13,6 +13,7 @@ export const LOG_SEVERITIES = ["trace", "debug", "info", "warn", "error", "fatal
 export const logRecordSchema = v.strictObject({
   time: isoTime,
   severity: v.picklist(LOG_SEVERITIES),
+  /** The registered event id, `provider.request.failed`: never a sentence, so never content. */
   body: v.string(),
   run_id: text,
   /** From an MCP caller's `_meta.traceparent`, when it sent one. */
@@ -23,6 +24,36 @@ export const logRecordSchema = v.strictObject({
 })
 
 export type LogRecord = v.InferOutput<typeof logRecordSchema>
+
+const logEventSchema = v.strictObject({
+  id: dottedId,
+  meaning: text,
+  /** Attribute keys every record of this event carries. */
+  keys: v.array(v.string()),
+})
+
+export type LogEvent = v.InferOutput<typeof logEventSchema>
+
+/** Events live where they are logged; each package defines its own list with this. */
+export const defineLogEvents = (input: unknown): LogEvent[] =>
+  parseRegistry("log events", v.array(logEventSchema), input, (events) => [
+    ...duplicates(events.map((event) => event.id)).map((id) => `"${id}" is listed twice`),
+    ...events.flatMap((event) => duplicates(event.keys).map((key) => `${event.id}: key "${key}" is listed twice`)),
+  ])
+
+/** The events cli-base logs itself. */
+export const LOG_EVENTS: LogEvent[] = defineLogEvents([
+  { id: "command.failed", meaning: "a command ended with an error", keys: ["code", "reason"] },
+])
+
+/** Why a record is not one of `events` (cli-base's are always known): an unknown `body`, or a required key missing. */
+export const logEventProblems = (record: Pick<LogRecord, "body" | "attributes">, events: readonly LogEvent[]) => {
+  const event = [...LOG_EVENTS, ...events].find((one) => one.id === record.body)
+  if (!event) return [`"${record.body}" is not a registered log event`]
+  return event.keys
+    .filter((key) => record.attributes[key] === undefined)
+    .map((key) => `${event.id}: no "${key}" attribute`)
+}
 export type LogSeverity = (typeof LOG_SEVERITIES)[number]
 
 /** Attribute keys every program may log; a program adds its own with `allow`. Keys are camelCase until §3.9 reaches logs. */

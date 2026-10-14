@@ -44,6 +44,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`api_operation` replaces `operation_id` on commands.** `annotate(generated, { api_operation })` and the commands
   document key: the catalog operation a generated command was made from. `operation_id` now means one write attempt
   only, as `IDENTIFIERS` says.
+- **A log record's `body` is its event id, never a sentence.** `createRecordLog` and `logRecordOf` write the
+  `event` attribute as `body` and drop the message passed beside it (`log.error({ event }, "text")`), which could
+  quote content. `errorRecordOf` names its record `command.failed` and moves the message into `attributes.message`.
+  Give every record a registered dotted `event`, or its `body` is empty.
 
 ### Added
 
@@ -60,6 +64,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   write attempt), `request_id` (the provider's reference), `trace_id` (tracing). The `identifier-name` lint rule
   (high) reports `execution_id`, `invocation_id`, `log_id` and `diagnostic_id` in a registered schema or the commands
   document.
+- **Registered log events.** `defineLogEvents([{ id, meaning, keys }])` â€” a dotted id such as
+  `provider.request.failed` and the attribute keys each record carries; `LOG_EVENTS` holds cli-base's own
+  (`command.failed`). `logEventProblems(record, events)` names an unknown event or a missing key, and
+  `expectRegisteredEvents(lines, events)` from `/testing` throws on either, so a test fails on an event nobody
+  registered.
 
 ## 0.27.2 â€” 14.10.2026
 

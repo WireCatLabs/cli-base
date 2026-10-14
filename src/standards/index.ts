@@ -38,12 +38,16 @@ export {
   rulesForReview,
 } from "./lint.js"
 export {
+  defineLogEvents,
   isContentKey,
   LOG_ATTRIBUTE_KEYS,
+  LOG_EVENTS,
   LOG_SEVERITIES,
+  type LogEvent,
   type LogRecord,
   type LogSeverity,
   logAttributesJsonSchema,
+  logEventProblems,
   logRecordSchema,
   traceIdOf,
 } from "./log.js"

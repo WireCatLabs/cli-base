@@ -47,9 +47,8 @@ export const NOT_ALLOWED = "[not allowed]"
 
 export interface RecordInput {
   severity: LogSeverity
-  /** The attributes; its `event` names the record when there is no `message`. */
+  /** The attributes; its `event`, a registered event id, is the record's `body`. */
   event: object
-  message?: string
   time: string
   runId: string
   traceId?: string
@@ -67,7 +66,6 @@ export interface RecordInput {
 export const logRecordOf = ({
   severity,
   event,
-  message,
   time,
   runId,
   traceId,
@@ -88,7 +86,7 @@ export const logRecordOf = ({
   return {
     time,
     severity,
-    body: message ?? name,
+    body: name,
     run_id: runId,
     ...(traceId === undefined ? {} : { trace_id: traceId }),
     command,
@@ -99,8 +97,8 @@ export const logRecordOf = ({
 
 /**
  * One `LogRecord` per line, flat — never OTLP's nested export format.
- * The event becomes `attributes`; `body` is the message when one is given, else the event's own
- * `event` name, so it never needs content to say what happened.
+ * The event becomes `attributes` and its `event` name the `body`; a message passed beside it is not
+ * written, so a record never needs content to say what happened.
  *
  * Appended synchronously: a log exists to explain the exit that would have dropped a buffered tail.
  */
@@ -133,11 +131,11 @@ export const createRecordLog = ({
 
   const at =
     (severity: LogSeverity) =>
-    (event: object, message?: string): void => {
+    // A message is a sentence, and a sentence can quote content; the record names its event instead.
+    (event: object, _message?: string): void => {
       const record = logRecordOf({
         severity,
         event,
-        ...(message === undefined ? {} : { message }),
         time: now().toISOString(),
         runId,
         ...(traceId === undefined ? {} : { traceId }),

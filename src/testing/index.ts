@@ -6,6 +6,14 @@
 export { brokenKeyring, memoryKeyring } from "../keyring.js"
 export { captureStreams } from "../streams.js"
 
+import { type LogEvent, logEventProblems } from "../standards/log.js"
+
+/** Throws, naming each, when a written log line is not a registered event with its keys. */
+export const expectRegisteredEvents = (lines: readonly string[], events: readonly LogEvent[]): void => {
+  const problems = lines.flatMap((line) => logEventProblems(JSON.parse(line), events))
+  if (problems.length > 0) throw new Error(`unregistered log events:\n${problems.join("\n")}`)
+}
+
 import type { MonotonicClock, SleepLike, WallClock } from "../time.js"
 
 export interface FakeClock {

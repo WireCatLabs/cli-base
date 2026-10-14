@@ -5,7 +5,8 @@ import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import type { Logger } from "./logger.js"
 import { createRecordLog, NOT_ALLOWED, type RecordLogOptions } from "./logging.js"
-import { logRecordSchema } from "./standards/log.js"
+import { defineLogEvents, logRecordSchema } from "./standards/log.js"
+import { expectRegisteredEvents } from "./testing/index.js"
 
 const logFile = () => join(mkdtempSync(join(tmpdir(), "cli-base-log-")), "events.jsonl")
 
@@ -49,7 +50,8 @@ describe("createRecordLog", () => {
       resource: { service: "tg", version: "1.2.3" },
     })
     expect(lines.map((line) => (line as { severity: string }).severity)).toEqual(["info", "warn", "error"])
-    expect((lines[2] as { body: string }).body).toBe("crashed")
+    expect((lines[2] as { body: string }).body).toBe("crash")
+    expect(text).not.toContain("crashed")
   })
 
   it("carries a trace id when one was handed in", () => {
@@ -111,7 +113,22 @@ describe("createRecordLog", () => {
     const lines: string[] = []
     createRecordLog({ ...base, to: (line) => lines.push(line) }).warn({ event: "warning" }, "a rule failed")
     expect(lines).toHaveLength(1)
-    expect(v.parse(logRecordSchema, JSON.parse(lines[0] as string))).toMatchObject({ body: "a rule failed" })
+    expect(v.parse(logRecordSchema, JSON.parse(lines[0] as string))).toMatchObject({ body: "warning" })
+  })
+
+  it("names each record by a registered event, and fails a test that logs one it does not know", () => {
+    const events = defineLogEvents([
+      { id: "provider.request.failed", meaning: "the provider refused a request", keys: ["status"] },
+    ])
+    const lines: string[] = []
+    const log = createRecordLog({ ...base, to: (line) => lines.push(line) })
+    log.warn({ event: "provider.request.failed", status: 503 })
+    expect(() => expectRegisteredEvents(lines, events)).not.toThrow()
+    log.warn({ event: "provider.request.failed" })
+    log.info({ event: "request" })
+    expect(() => expectRegisteredEvents(lines, events)).toThrow(
+      'provider.request.failed: no "status" attribute\n"request" is not a registered log event',
+    )
   })
 
   it("writes nowhere at all when given no destination", () => {

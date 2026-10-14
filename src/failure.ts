@@ -180,12 +180,13 @@ export const errorRecordOf = (failure: unknown, object: ErrorObject, options: Er
   return {
     time: (options.time ?? new Date()).toISOString(),
     severity: "error",
-    body: object.error.message,
+    body: "command.failed",
     ...(object.error.run_id ? { run_id: object.error.run_id } : {}),
     command: options.command,
     attributes: {
       code: object.error.code,
       reason: object.error.reason,
+      message: object.error.message,
       ...(Object.keys(details).length > 0 ? { details } : {}),
       ...(thrown
         ? { name: thrown.name, thrown_message: visibleControls(thrown.message) }
