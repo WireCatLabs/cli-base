@@ -331,6 +331,12 @@ const flags: Vocabulary["flags"] = [
     unit: "items",
   },
   {
+    name: "--all",
+    role: "paging",
+    type: "switch",
+    meaning: "every item at once, instead of one page or one target",
+  },
+  {
     name: "--cursor",
     value: "<cursor>",
     role: "paging",
@@ -445,6 +451,12 @@ const flags: Vocabulary["flags"] = [
     type: "path",
     meaning: "the folder to write into, created if missing",
   },
+  {
+    name: "--problems",
+    role: "output",
+    type: "switch",
+    meaning: "only what went wrong: failures, warnings and crashes",
+  },
   { name: "--quiet", role: "output", type: "switch", meaning: "no diagnostics on stderr" },
   { name: "--show-phone", role: "output", type: "switch", meaning: "print the whole phone number" },
   {
@@ -481,6 +493,12 @@ const flags: Vocabulary["flags"] = [
     meaning: "the ranking component weights, all of them",
   },
   { name: "--accept-terms", role: "mode", type: "switch", meaning: "accept the model's licence terms" },
+  {
+    name: "--as-owner",
+    role: "mode",
+    type: "switch",
+    meaning: "record the action as the owner's although an agent's terminal runs the tool",
+  },
   {
     name: "--allow-any-file",
     role: "mode",
