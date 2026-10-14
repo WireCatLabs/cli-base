@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--scan-limit <n>` is a shared read-budget option.** Commands can bound candidate inspection separately from returned matches and byte reads. Adopting consumers remove any now-stale lint baseline entries for this option.
+
 ## 0.27.1 — 14.10.2026
 
 ### Added
