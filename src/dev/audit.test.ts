@@ -117,7 +117,7 @@ describe("audit rules", () => {
     ])
   })
 
-  it("reports a path one member of a whole-tree group lacks, and not one outside a group's roots", () => {
+  it("reports a path one member of a whole-tree group lacks, and not one outside a group's roots or members", () => {
     const chats = (root: Command) => {
       annotate(root.command("chats").description("chats").command("list").description("list chats"), {
         examples: [`${root.name()} chats list`],
@@ -135,6 +135,7 @@ describe("audit rules", () => {
     expect(
       cross([inputOf(tool("a", summaries("one"))), inputOf(tool("c", summaries("two")))], "same-path-contract"),
     ).toEqual([])
+    expect(cross([inputOf(tool("a")), inputOf(tool("b")), inputOf(tool("c", chats))], "same-path-contract")).toEqual([])
   })
 
   it("compares a flag's kind of value across CLIs, globals included", () => {

@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## 0.30.0 â€” 14.10.2026
 
+### Fixed
+
+- **`cli-dev audit` no longer reports a command as missing from a whole-tree pair when neither member has it.** A
+  path only another CLI has (memo's `catalog`, `mail`, `meetings projects`) came out as `max+tg catalog: presence:
+  only in ` with nobody named, 21 false findings on 2026-10-14. A path counts as missing only when at least one
+  member of the group has it.
+
 ### Added
 
 - The shared command vocabulary defines `prepare` as bounded cited context assembly and classifies

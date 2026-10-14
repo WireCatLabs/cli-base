@@ -116,7 +116,7 @@ const samePathContract = (inputs: readonly AuditInput[], groups: readonly Parity
     for (const group of covering.filter((one) => one.covers === "tree")) {
       const present = group.members.filter((cli) => trees.has(cli))
       const having = present.filter((cli) => trees.get(cli)?.has(path))
-      if (present.length >= 2 && having.length < present.length)
+      if (present.length >= 2 && having.length > 0 && having.length < present.length)
         found.push({
           rule: "same-path-contract",
           clis: [...present].sort(byText),
