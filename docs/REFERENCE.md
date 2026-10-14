@@ -78,7 +78,7 @@ is a type here, not a runtime dependency — an optional peer, 15 or newer.
 import { annotate, describeProgram } from "@wirecat/cli-base/commands"
 
 annotate(program.command("send"), { effects: { remote: "write", local: "none" }, examples: ["max messages send 42 hi"] })
-annotate(generated, { origin: "generated", operation_id: "campaigns.list" })
+annotate(generated, { origin: "generated", api_operation: "campaigns.list" })
 
 describeProgram(program) // [{ path: ["send"], usage, origin, effects, options: [...], commands: [...] }]
 ```

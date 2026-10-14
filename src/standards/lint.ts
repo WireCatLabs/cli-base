@@ -98,6 +98,18 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     summary: "a list in a registered JSON Schema is never null: known empty is `[]`, not known is absent",
   },
   {
+    id: "flag-synonym",
+    severity: "medium",
+    scope: "option",
+    summary: "an option is not another name for a vocabulary flag: `--max` and `--take` are `--limit`",
+  },
+  {
+    id: "identifier-name",
+    severity: "high",
+    scope: "key",
+    summary: "an identifier key is one from the glossary: `run_id`, never `execution_id` or `log_id`",
+  },
+  {
     id: "log-attribute-key",
     severity: "high",
     scope: "key",
@@ -108,9 +120,16 @@ export const LINT_RULES: LintRule[] = defineLintRules([
 /** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */
 export const baselineSchema = v.array(text)
 
-/** `lint/overrides.json`: permanent exceptions, each with its reason, counted against a budget. */
+/** `lint/overrides.json`: exceptions, each with its reason, who keeps it and when to look again; counted against a budget. */
 export const overridesSchema = v.array(
-  v.strictObject({ rule: word, target: text, reason: v.pipe(text, v.minLength(10, "say why, in a sentence")) }),
+  v.strictObject({
+    rule: word,
+    target: text,
+    reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
+    /** A GitHub handle or a team, `@leemour`. */
+    owner: v.pipe(v.string(), v.regex(/^@[\w.-]+(\/[\w.-]+)?$/, "a GitHub handle or team, such as @leemour")),
+    review_after: v.pipe(v.string(), v.isoDate("a date, YYYY-MM-DD")),
+  }),
 )
 
 export type Override = v.InferOutput<typeof overridesSchema>[number]
@@ -119,7 +138,25 @@ export type Override = v.InferOutput<typeof overridesSchema>[number]
 export const baselineProblems = (targets: readonly string[]): string[] =>
   duplicates(targets).map((target) => `"${target}" is listed twice`)
 
-export const overridesProblems = (entries: readonly Override[]): string[] =>
-  duplicates(entries.map((entry) => `${entry.rule} ${entry.target}`)).map((both) => `"${both}" is listed twice`)
+/** No entry twice, and none past its `review_after` on `today` (YYYY-MM-DD, the caller's clock). */
+export const overridesProblems = (entries: readonly Override[], today: string): string[] => [
+  ...duplicates(entries.map((entry) => `${entry.rule} ${entry.target}`)).map((both) => `"${both}" is listed twice`),
+  ...entries
+    .filter((entry) => entry.review_after < today)
+    .map((entry) => `"${entry.rule} ${entry.target}" was due for review on ${entry.review_after}; ask ${entry.owner}`),
+]
 
 export const OVERRIDE_BUDGET = 10
+
+/** More overrides of one rule than this, across every CLI, and the rule itself is due for review. */
+export const OVERRIDE_RULE_REVIEW = 3
+
+/** Rules overridden more than `OVERRIDE_RULE_REVIEW` times across the CLIs given, most first. */
+export const rulesForReview = (lists: readonly (readonly Override[])[]): { rule: string; overrides: number }[] => {
+  const counts = new Map<string, number>()
+  for (const entry of lists.flat()) counts.set(entry.rule, (counts.get(entry.rule) ?? 0) + 1)
+  return [...counts]
+    .filter(([, count]) => count > OVERRIDE_RULE_REVIEW)
+    .map(([rule, overrides]) => ({ rule, overrides }))
+    .sort((a, b) => b.overrides - a.overrides || (a.rule < b.rule ? -1 : 1))
+}

@@ -45,7 +45,7 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   description: v.string(),
   usage: v.string(),
   origin: v.picklist(["handwritten", "generated"]),
-  operation_id: v.optional(v.string()),
+  api_operation: v.optional(v.string()),
   effects: v.optional(effectsSchema),
   state: v.optional(v.picklist(["beta", "deprecated"])),
   partial: v.optional(v.boolean()),

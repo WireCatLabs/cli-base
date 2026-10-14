@@ -50,6 +50,8 @@ const messageQuery: QueryRegistry = {
   defaults: ["-kind:dialog"],
 }
 
+const KEPT = { owner: "@leemour", review_after: "2099-01-01" }
+
 const chatsOf = (root: Command): Command => root.commands.find((one) => one.name() === "chats") ?? root
 
 const failing: Record<string, (root: Command) => void> = {
@@ -93,6 +95,10 @@ const failing: Record<string, (root: Command) => void> = {
         .option("--since-time <time>", "since when"),
       { examples: ["tool messages list --since-time 2h"], output: { entity: "message" }, query: messageQuery },
     ),
+  "flag-synonym": (root) =>
+    annotate(chatsOf(root).command("search").description("search chats").option("--take <n>", "how many"), {
+      examples: ["tool chats search --take 5"],
+    }),
   "option-role": (root) =>
     annotate(chatsOf(root).command("pin").description("pin a chat").option("--unread", "only unread"), {
       examples: ["tool chats pin --unread"],
@@ -118,7 +124,7 @@ describe("lint rules", () => {
     expect(lintRuleIds().sort()).toEqual(LINT_RULES.map((rule) => rule.id).sort())
     expect(Object.keys(failing).sort()).toEqual(
       lintRuleIds()
-        .filter((id) => id !== "log-attribute-key" && id !== "nullable-list")
+        .filter((id) => !["log-attribute-key", "nullable-list", "identifier-name"].includes(id))
         .sort(),
     )
   })
@@ -141,6 +147,21 @@ describe("lint rules", () => {
     ).toEqual([
       expect.objectContaining({ target: "schema chat: members" }),
       expect.objectContaining({ target: "schema message: reactions" }),
+    ])
+  })
+
+  it("fails identifier-name for a key the glossary names another way, in a schema or the document", () => {
+    const of = (schemas?: Record<string, unknown>) =>
+      lintOf(clean(), schemas ? { schemas } : {}).filter((one) => one.rule === "identifier-name")
+    expect(of()).toEqual([])
+    expect(
+      of({ run: { type: "object", properties: { execution_id: { type: "string" }, run_id: { type: "string" } } } }),
+    ).toEqual([
+      {
+        rule: "identifier-name",
+        target: "schema run: execution_id",
+        message: '"execution_id" is run_id; name it run_id',
+      },
     ])
   })
 
@@ -376,7 +397,7 @@ describe("judge", () => {
     const verdict = judge(
       violations,
       { "unknown-verb": ["chats grab"] },
-      [{ rule: "unknown-verb", target: "bot api", reason: "mirrors the official API" }],
+      [{ rule: "unknown-verb", target: "bot api", reason: "mirrors the official API", ...KEPT }],
       10,
     )
     expect(verdict).toMatchObject({
@@ -394,8 +415,8 @@ describe("judge", () => {
       violations.slice(0, 1),
       { "unknown-verb": ["chats grab", "chats gone"], "unknown-resource": ["bot"] },
       [
-        { rule: "unknown-verb", target: "chats grab", reason: "kept on purpose for now" },
-        { rule: "unknown-verb", target: "chats fled", reason: "kept on purpose for now" },
+        { rule: "unknown-verb", target: "chats grab", reason: "kept on purpose for now", ...KEPT },
+        { rule: "unknown-verb", target: "chats fled", reason: "kept on purpose for now", ...KEPT },
       ],
       10,
     )
@@ -411,7 +432,7 @@ describe("judge", () => {
     const verdict = judge(
       violations,
       { "no-such-rule": [] },
-      [{ rule: "unknown-verb", target: "bot api", reason: "mirrors the official API" }],
+      [{ rule: "unknown-verb", target: "bot api", reason: "mirrors the official API", ...KEPT }],
       0,
     )
     expect(verdict).toMatchObject({ unknownRules: ["no-such-rule"], overBudget: true })
@@ -472,12 +493,40 @@ describe("cli-dev lint", () => {
     document(broken())
     writeFileSync(
       join(root, "overrides.json"),
-      JSON.stringify([{ rule: "unknown-verb", target: "chats grab", reason: "the messenger's own word for it" }]),
+      JSON.stringify([
+        { rule: "unknown-verb", target: "chats grab", reason: "the messenger's own word for it", ...KEPT },
+      ]),
     )
     expect(await lint("--overrides", "overrides.json", "--write-baseline")).toBe(0)
     expect(existsSync(join(root, "lint/baseline/unknown-verb.json"))).toBe(false)
     expect(await lint("--overrides", "overrides.json", "--budget", "0")).toBe(1)
     expect(err).toContain("1 overrides; the budget is 0")
+  })
+
+  it("fails an override past its review date, naming who keeps it", async () => {
+    const tree = clean()
+    failing["unknown-verb"]?.(tree)
+    document(tree)
+    writeFileSync(
+      join(root, "overrides.json"),
+      JSON.stringify([
+        {
+          rule: "unknown-verb",
+          target: "chats grab",
+          reason: "the messenger's own word",
+          owner: "@kai",
+          review_after: "2026-10-01",
+        },
+      ]),
+    )
+    io.now = () => new Date("2026-10-14T12:00:00Z")
+    expect(await lint("--overrides", "overrides.json")).toBe(1)
+    expect(err).toContain('overrides.json: "unknown-verb chats grab" was due for review on 2026-10-01; ask @kai')
+    io.now = () => new Date("2026-09-30T12:00:00Z")
+    err.length = 0
+    await lint("--overrides", "overrides.json")
+    expect(err.join("\n")).not.toContain("due for review")
+    expect(err).toContain("lint: 2 violations — 0 in the baseline, 1 overridden (budget 10), 1 new")
   })
 
   it("fails a baseline file named after no rule", async () => {

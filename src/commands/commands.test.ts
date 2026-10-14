@@ -39,7 +39,7 @@ const program = (): Command => {
 
   const catalog = root.command("campaigns").description("generated from the catalog")
   for (const id of ["campaigns.list", "campaigns.details"]) {
-    annotate(catalog.command(id.split(".")[1] as string), { origin: "generated", operation_id: id })
+    annotate(catalog.command(id.split(".")[1] as string), { origin: "generated", api_operation: id })
   }
 
   annotate(root.command("legacy"), { state: "deprecated" })
@@ -65,9 +65,9 @@ describe("describeProgram", () => {
     const list = commands.find(({ path }) => path.join(" ") === "campaigns list")
     const handwritten = commands.find(({ path }) => path.join(" ") === "messages list")
 
-    expect(list).toMatchObject({ origin: "generated", operation_id: "campaigns.list", usage: "tool campaigns list" })
+    expect(list).toMatchObject({ origin: "generated", api_operation: "campaigns.list", usage: "tool campaigns list" })
     expect(handwritten?.origin).toBe("handwritten")
-    expect(handwritten).not.toHaveProperty("operation_id")
+    expect(handwritten).not.toHaveProperty("api_operation")
   })
 
   it("builds the usage line from the arguments", () => {

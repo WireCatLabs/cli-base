@@ -21,6 +21,7 @@ export {
   type ErrorReason,
   errorObjectSchema,
 } from "./errors.js"
+export { defineIdentifiers, IDENTIFIERS, type Identifier } from "./identifiers.js"
 export {
   baselineProblems,
   baselineSchema,
@@ -30,9 +31,11 @@ export {
   type LintRule,
   type LintSeverity,
   OVERRIDE_BUDGET,
+  OVERRIDE_RULE_REVIEW,
   type Override,
   overridesProblems,
   overridesSchema,
+  rulesForReview,
 } from "./lint.js"
 export {
   isContentKey,

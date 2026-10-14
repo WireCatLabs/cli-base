@@ -36,6 +36,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   only then, else with the first issue's code.
 - **`page` says how the source pages.** `{ mode: "page", limit, has_more, next_page? }` or
   `{ mode: "cursor", limit, has_more, next_cursor? }`; `cursor` is gone. A cursor source never shows page numbers.
+- **An override names its owner and a review date.** Each `lint/overrides.json` entry needs `owner` (a GitHub handle
+  or team, `@leemour`) and `review_after` (`YYYY-MM-DD`); `cli-dev lint` and `cli-dev audit` fail one past its date.
+  `overridesProblems(entries, today)` takes the date. `cli-dev audit` names a rule overridden more than three times
+  across the CLIs it reads (`rulesForReview`, `OVERRIDE_RULE_REVIEW`), without failing; the per-repo budget of 10
+  stays.
+- **`api_operation` replaces `operation_id` on commands.** `annotate(generated, { api_operation })` and the commands
+  document key: the catalog operation a generated command was made from. `operation_id` now means one write attempt
+  only, as `IDENTIFIERS` says.
 
 ### Added
 
@@ -46,6 +54,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **The `absent-null` field rule and the `nullable-list` lint rule** (medium): absent is not asked or not known,
   `null` is known to have no value, `[]` is known empty, `0` is measured. The lint fails a list in a registered
   JSON Schema that may be `null`. Run `cli-dev lint --write-baseline` once to record today's.
+- **Flag synonyms.** A vocabulary flag lists its other names in `replaces` (`--limit`: `--max`, `--count`, `--take`,
+  `--max-results`); the `flag-synonym` lint rule (medium) reports them, and `option-role` leaves them to it.
+- **The identifiers glossary**, `IDENTIFIERS` and `defineIdentifiers`: `run_id` (one invocation), `operation_id` (one
+  write attempt), `request_id` (the provider's reference), `trace_id` (tracing). The `identifier-name` lint rule
+  (high) reports `execution_id`, `invocation_id`, `log_id` and `diagnostic_id` in a registered schema or the commands
+  document.
 
 ## 0.27.2 â€” 14.10.2026
 

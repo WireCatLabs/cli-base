@@ -27,9 +27,11 @@ import {
   baselineSchema,
   LINT_RULES,
   OVERRIDE_BUDGET,
+  OVERRIDE_RULE_REVIEW,
   type Override,
   overridesProblems,
   overridesSchema,
+  rulesForReview,
 } from "../standards/lint.js"
 import { issuesOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
@@ -41,6 +43,8 @@ import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested }
 
 export interface DevIo {
   cwd: string
+  /** The clock an override's `review_after` is judged by. */
+  now?: () => Date
   out: (text: string) => void
   err: (text: string) => void
 }
@@ -203,6 +207,8 @@ const lint = (args: string[], io: DevIo) => {
   }
 }
 
+const today = (io: DevIo) => (io.now?.() ?? new Date()).toISOString().slice(0, 10)
+
 const lintRun = (args: string[], io: DevIo) => {
   const { values } = parseArgs({
     args,
@@ -246,7 +252,7 @@ const lintRun = (args: string[], io: DevIo) => {
   let overrides: Override[] = []
   if (existsSync(overridesPath)) {
     const read = v.safeParse(overridesSchema, readJson(overridesPath))
-    const found = read.success ? overridesProblems(read.output) : issuesOf(read.issues)
+    const found = read.success ? overridesProblems(read.output, today(io)) : issuesOf(read.issues)
     if (read.success) overrides = read.output
     problems.push(...found.map((issue) => `${values.overrides}: ${issue}`))
   }
@@ -359,8 +365,9 @@ const auditRun = (args: string[], io: DevIo) => {
       let overrides: Override[] = []
       if (existsSync(overridesPath)) {
         const read = v.safeParse(overridesSchema, readJson(overridesPath))
+        const found = read.success ? overridesProblems(read.output, today(io)) : issuesOf(read.issues)
         if (read.success) overrides = read.output
-        else problems.push(...issuesOf(read.issues).map((issue) => `${dir}/overrides.json: ${issue}`))
+        problems.push(...found.map((issue) => `${dir}/overrides.json: ${issue}`))
       }
       input.lint = {
         baseline: readBaseline(join(at(dir), "baseline"), `${dir}/baseline`, problems),
@@ -370,6 +377,8 @@ const auditRun = (args: string[], io: DevIo) => {
     }
     return input
   })
+  for (const { rule, overrides } of rulesForReview(inputs.map((input) => input.lint?.overrides ?? [])))
+    io.err(`review the rule ${rule}: ${overrides} overrides across these CLIs, more than ${OVERRIDE_RULE_REVIEW}`)
   const given = new Set(inputs.map((input) => input.document.cli))
   for (const [flag, map] of [
     ["--schemas", schemas],
