@@ -8,6 +8,9 @@ self-update and code generation. What each export does is the table in the
 
 ## Entry points
 
+The shared [modularity standard](MODULARITY.md) defines responsibility, dependency direction and
+review guidelines for module size. The entry-point map below applies it to this package.
+
 | Import | Owns | Depends on |
 |---|---|---|
 | `@wirecat/cli-base` | streams, renderer, pretty, errors, exit codes, keyring, credentials, config, paths, logging, retry, time, sanitize, field projection, output buffering, deadlines | `cli-table3`, `picocolors`; `@napi-rs/keyring` loaded on first use |
