@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Vocabulary rows for `--all`, `--as-owner` and `--problems`.** `--all` (paging): every item at once, instead of one
+  page or one target. `--as-owner` (mode): record an action as the owner's when an agent's terminal runs the tool.
+  `--problems` (output): only failures, warnings and crashes (`runs show`). cli-core already ships all three, so apps'
+  `cli-dev lint` stopped reporting them as unknown flags.
+
 ## 0.28.0 — 14.10.2026
 
 ### Changed — may break callers
