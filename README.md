@@ -145,9 +145,11 @@ unless you pass `isolated: true`; and a locked Linux keyring can block on a prom
 
 - **Paths:** the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`), `AppData` on Windows,
   each overridable by environment variable.
-- **Config** that names the bad field, and an atomic write that locks the directory down.
-- **Logs** as one JSON record per line with OpenTelemetry field names; secrets are redacted by field name at any
-  depth.
+- **Config** that names the bad field, and an atomic write with the file's own mode. A directory it creates gets
+  `0700`; a directory that already exists keeps its mode.
+- **Logs** as one JSON record per line with OpenTelemetry field names. A top-level key outside the allow-list is
+  written as `[not allowed]`. At any depth, a field named exactly as in `REDACTED_FIELDS` or the program's `redact`
+  list (case-sensitive) and a field whose name marks message content are written as `[redacted]`.
 
 ### Generated API clients that never guess
 

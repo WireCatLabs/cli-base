@@ -4,11 +4,10 @@ import { dirname, join } from "node:path"
 import * as v from "valibot"
 
 /**
- * Atomic, and the directory is locked down before the first write.
+ * Atomic, and a directory it creates is `0o700`; a directory that already exists keeps its mode.
  *
  * Atomic because a partial credential file loses **every** profile's secret, not just the one
- * being written, and the window for that is exactly a Ctrl+C mid-write. The directory mode matters
- * as much as the file's: `0o600` on a file inside a world-readable directory is worth little.
+ * being written, and the window for that is exactly a Ctrl+C mid-write.
  * ⚠ Both modes are ignored on Windows.
  */
 export const writeSecurely = (path: string, contents: string, mode: number): void => {
