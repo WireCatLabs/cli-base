@@ -49,6 +49,8 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   effects: v.optional(effectsSchema),
   state: v.optional(v.picklist(["beta", "deprecated"])),
   partial: v.optional(v.boolean()),
+  lifetime: v.optional(v.picklist(["persistent", "interactive"])),
+  cooperative: v.optional(v.boolean()),
   examples: v.optional(v.array(v.string())),
   output: v.optional(v.object({ entity: v.string(), view: v.optional(v.string()) })),
   query: v.optional(

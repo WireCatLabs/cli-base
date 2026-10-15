@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A command says how long it runs**: `CommandMeta.lifetime` (`persistent` until stopped, `interactive` until a person
+  answers; unset is bounded by the default timeout) and `cooperative` (stops at its own pace when aborted from outside),
+  set with `annotate` and printed in `commands --json`. A runner reads them with `metaOf` instead of matching command
+  names.
+
 ## 0.37.0 — 16.10.2026
 
 ### Added
