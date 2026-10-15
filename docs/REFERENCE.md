@@ -103,6 +103,11 @@ describeProgram(program) // [{ path: ["send"], usage, origin, effects, options: 
 (`error.retry.safe`), and a next step that runs it is never `safe_to_auto_execute`. `stepTargets(program)` gives
 `stepOf` and `errorObjectOf` each command's effects and the names it takes, so a step that would not bind is dropped.
 
+`lifetime` says how long a command runs: `persistent` until it is stopped (a server, a watch), `interactive` until a
+person answers (a login); unset, the runner bounds it with its default timeout. `cooperative` marks a long command that
+stops at its own pace when the run is aborted from outside, keeping what it already did. A runner reads both with
+`metaOf(command)` rather than matching command names.
+
 Each option says whether it `takes_value` and, separately, whether it is `mandatory` — not
 Commander's `required`, which means "takes a value when given" — plus its choices, default,
 environment variable, the options it `conflicts` with and the values it `implies`, keyed by long flag.

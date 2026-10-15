@@ -289,6 +289,22 @@ describe("commands document", () => {
     expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
   })
 
+  it("says how long a command runs, and reads it back", () => {
+    const root = new Command("tool")
+    annotate(root.command("watch").description("until stopped"), { lifetime: "persistent" })
+    annotate(root.command("login").description("asks a person"), { lifetime: "interactive" })
+    annotate(root.command("sync").description("a long fetch"), { cooperative: true })
+    root.command("show").description("bounded")
+    const document = commandsDocument(root, about)
+    const byName = (name: string) => document.commands.find((command) => command.name === name)
+
+    expect(byName("watch")?.lifetime).toBe("persistent")
+    expect(byName("login")?.lifetime).toBe("interactive")
+    expect(byName("sync")?.cooperative).toBe(true)
+    expect(byName("show")).not.toHaveProperty("lifetime")
+    expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
+  })
+
   it("carries a list's output entity and its query fields, without the fields' own checks", () => {
     const root = new Command("tool")
     annotate(root.command("tasks").command("list").argument("[query...]", "field:value terms"), {

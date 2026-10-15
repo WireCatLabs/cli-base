@@ -18,6 +18,11 @@ import type { StepTarget } from "../standards/steps.js"
 
 export type Origin = "handwritten" | "generated"
 export type CommandState = "beta" | "deprecated"
+/**
+ * How long a command runs: `persistent` until it is stopped (a server, a watch), `interactive` until a person answers
+ * (a login). Unset, it is bounded by the default timeout.
+ */
+export type CommandLifetime = "persistent" | "interactive"
 
 export interface CommandMeta {
   origin?: Origin
@@ -28,6 +33,9 @@ export interface CommandMeta {
   state?: CommandState
   /** The command may answer with `meta.complete: false` and still exit 0; without it a partial answer fails. */
   partial?: boolean
+  lifetime?: CommandLifetime
+  /** Stops at its own pace when the run is aborted from outside, keeping what it already did — a long fetch. */
+  cooperative?: boolean
   examples?: readonly string[]
   /** The entity the command answers with, or one of its views. */
   output?: CommandOutput
@@ -80,6 +88,8 @@ export interface CommandInfo {
   effects?: Effects
   state?: CommandState
   partial?: boolean
+  lifetime?: CommandLifetime
+  cooperative?: boolean
   examples?: readonly string[]
   output?: CommandOutput
   query?: QueryInfo
