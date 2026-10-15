@@ -25,6 +25,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   after #1327). With no unreleased section on top, the fold now merges the dated section's repeats and prints
   `merged repeated headings in <version>`.
 
+- **The vocabulary registers `apply`, and `inspect` covers a mailbox.** `apply` runs the owner's saved rules over
+  what is already stored and changes what they match, saying only what would change unless `--yes` (memo's
+  `mail rules apply`); `test` stays the read-only twin that never changes anything. `inspect` now means looking at
+  a source before taking anything from it â€” a chat link without joining, a mailbox without importing (memo's
+  `mail probe` becomes `mail inspect`). Both were `unknown-verb` findings in memo's command lint baseline.
+
 ### Fixed
 
 - **The fold no longer leaves a blank line inside a merged list.** When a section already repeated a heading, the
