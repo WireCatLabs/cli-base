@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **The shared vocabulary registers the words of cli-core's task, mention and picture commands.** Verbs `claim`,
+  `release`, `merge`, `unmerge`, `defer` and `embed`; views `agenda`, `categories` and `domains`; resources `images`
+  and `duplicates`; flags `--into <id>`, `--all-in-chat`, `--due-within <duration>`, `--unanswered <duration>`,
+  `--waiting <duration>`, `--category <name>`, `--holder <name>` and `--lease <duration>`. `tasks plan` stays
+  unregistered: `plan` is a synonym of `update`. A filter is still not registered, so `tasks agenda --tag`,
+  `--claimed` and `tasks duplicates --unsure` keep their `option-role` finding. A CLI that moves to this version
+  must remove the baseline entries these clear, because a stale entry fails: on tg, for example, `unknown-verb`
+  `tasks claim`, `option-role` `tasks agenda --holder` and `unknown-resource` `images`.
+
 ## 0.32.0 — 15.10.2026
 
 ### Added
