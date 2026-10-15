@@ -184,6 +184,7 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "path",
     meaning: "write the login QR code to this PNG instead of drawing it",
   },
+  { name: "--all-versions", role: "output", type: "switch", meaning: "also the earlier versions a newer one replaced" },
   { name: "--measure", value: "<name>", role: "sort", type: "choice", meaning: "the metric a ranking is ordered by" },
   { name: "--newest", role: "sort", type: "switch", meaning: "newest first instead of best first" },
   {
@@ -492,6 +493,20 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "duration",
     meaning: "the window after an event that counts",
   },
+  {
+    name: "--grant",
+    value: "<scopes>",
+    role: "mode",
+    type: "list",
+    meaning: "also ask for these permissions at sign-in, comma-separated; the command lists them",
+  },
+  {
+    name: "--min-similarity",
+    value: "<n>",
+    role: "mode",
+    type: "number",
+    meaning: "how alike two names must be to count as a match, from 0 to 1",
+  },
   { name: "--analyze", role: "action", type: "switch", meaning: "also analyze with the configured provider" },
   {
     name: "--catch-up",
@@ -558,6 +573,18 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "switch",
     meaning: "first bring what it reads up to date from the source",
     replaces: ["--refresh", "--refresh-metadata"],
+  },
+  {
+    name: "--domain-age",
+    role: "action",
+    type: "switch",
+    meaning: "also ask each domain's registry when it was registered; the registry learns the domain",
+  },
+  {
+    name: "--retry-attachments",
+    role: "action",
+    type: "switch",
+    meaning: "also reread the stored attachments whose text was not read before",
   },
   {
     name: "--meetings",
