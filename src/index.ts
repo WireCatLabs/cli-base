@@ -1,3 +1,16 @@
+export {
+  BATCH_LIMITS,
+  type BatchContext,
+  type BatchHandler,
+  type BatchOperation,
+  type BatchReport,
+  type BatchResult,
+  type PreparedBatchRequest,
+  prepareBatch,
+  projectBatchAnswers,
+  readBatchInput,
+  runBatch,
+} from "./batch.js"
 export { loadConfigFile, saveConfigFile, writeSecurely } from "./config.js"
 export type { CredentialSource, CredentialStorage, CredentialsOptions, StoredCredential } from "./credentials.js"
 export { CREDENTIAL_STORAGE, Credentials, keyringService } from "./credentials.js"

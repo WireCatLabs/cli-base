@@ -65,6 +65,10 @@ an entire subtree, and missing descendants never invent values. Consumers call t
 without unwrapping item answers. A host chooses rendering and JSONL framing; projection never selects
 a messenger profile.
 
+`batch` owns bounded JSON input, pure registered-handler preparation and serial correlated execution.
+It has no Commander, account, store or shell dependency. Domain handlers reserve conservative read ceilings;
+the host supplies those handlers and retains authorization, cancellation, envelope framing and final output limits.
+
 `output-buffer` holds raw rendered chunks until the host has completed its operation and closed
 resources. The byte limit applies after optional complete-value JSON/JSONL projection, including
 caller-supplied delimiters. It is a one-use buffer; flush consumes all chunks even on a writer failure.
