@@ -101,6 +101,33 @@ describe("version", () => {
   })
 })
 
+describe("changelog fold", () => {
+  const dated = "# Changelog\n\n## 0.9.0 — 14.10.2026\n\n### Fixed\n\n- Older fix.\n"
+  const stacked = dated.replace("## 0.9.0", "## Unreleased\n\n### Fixed\n\n- Newer fix.\n\n## 0.9.0")
+  const fold = (...args: string[]) => main(["changelog", "fold", ...args], io)
+
+  it("rewrites CHANGELOG.md for package.json's version and says so", async () => {
+    write("package.json", JSON.stringify({ version: "0.9.0" }))
+    write("CHANGELOG.md", stacked)
+    expect(await fold()).toBe(0)
+    expect(readFileSync(join(root, "CHANGELOG.md"), "utf8")).toBe(dated.replace("- Older", "- Newer fix.\n- Older"))
+    expect(out).toEqual(["folded Unreleased into 0.9.0"])
+  })
+
+  it("leaves the file and prints nothing when the section below is another version", async () => {
+    write("CHANGELOG.md", stacked)
+    expect(await fold("--version", "0.10.0")).toBe(0)
+    expect(readFileSync(join(root, "CHANGELOG.md"), "utf8")).toBe(stacked)
+    expect(out).toEqual([])
+  })
+
+  it("fails on text under the unreleased section that has no heading", async () => {
+    write("CHANGELOG.md", stacked.replace("## Unreleased\n", "## Unreleased\n\nStray.\n"))
+    expect(await fold("--version", "0.9.0")).toBe(1)
+    expect(err[0]).toContain("before its first ### heading")
+  })
+})
+
 describe("docs-check", () => {
   const changelog = "# Changelog\n\n## Unreleased\n\n### Fixed\n\n- **A fix.** Text.\n"
 

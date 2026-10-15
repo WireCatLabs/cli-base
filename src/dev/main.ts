@@ -15,8 +15,10 @@ import {
   changelogProblems,
   type DocsRules,
   docsProblems,
+  foldUnreleased,
   JOURNAL_IDS,
   markdownFiles,
+  packageVersion,
   structureProblems,
   versionScript,
 } from "../release/index.js"
@@ -55,6 +57,11 @@ const USAGE = `usage: cli-dev <command> [options]
   next-version <wanted> <latest> <versions-json>
                                        the version bin/release publishes, given npm's answers
   version [--sync] [--file <path>]     package.json's version against src/version.ts
+  changelog fold [--version <x.y.z>] [--unreleased <title>] [--file <path>]
+                                       folds the unreleased section (Unreleased) into the dated
+                                       section below it when that is --version (package.json's);
+                                       prints a line when it folded, nothing otherwise. Run it only
+                                       while that version is not on npm
   docs-check [--rules <module>] [--ids <A,B>] [--pages]
                                        links, anchors and the changelog's shape; --pages also
                                        docs/ against docs/meta.json, the docs portal's structure
@@ -118,6 +125,35 @@ const docsCheck = async (args: string[], io: DevIo) => {
     ],
     "docs: ok",
   )
+}
+
+const changelog = (args: string[], io: DevIo) => {
+  const [action, ...rest] = args
+  if (action !== "fold") {
+    io.err(`cli-dev changelog: no action "${action ?? ""}" — the one there is: fold`)
+    return 2
+  }
+  const { values } = parseArgs({
+    args: rest,
+    options: {
+      version: { type: "string" },
+      unreleased: { type: "string", default: "Unreleased" },
+      file: { type: "string", default: "CHANGELOG.md" },
+    },
+  })
+  const file = isAbsolute(values.file) ? values.file : join(io.cwd, values.file)
+  const version = values.version ?? packageVersion(io.cwd)
+  let folded: string | undefined
+  try {
+    folded = foldUnreleased(readFileSync(file, "utf8"), version, values.unreleased)
+  } catch (error) {
+    io.err(`${values.file}: ${(error as Error).message}`)
+    return 1
+  }
+  if (folded === undefined) return 0
+  writeFileSync(file, folded)
+  io.out(`folded ${values.unreleased} into ${version}`)
+  return 0
 }
 
 const testMatrix = async (args: string[], io: DevIo) => {
@@ -461,6 +497,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       else io.err(message)
       return code
     }
+    case "changelog":
+      return changelog(args, io)
     case "docs-check":
       return docsCheck(args, io)
     case "test-matrix":

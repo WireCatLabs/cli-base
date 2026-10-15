@@ -8,6 +8,20 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`cli-dev changelog fold` folds `## Unreleased` into the dated section below it.** One session dates the version
+  and sets package.json; before anyone publishes, another merges a new `## Unreleased` above it, and the release
+  refuses until someone folds by hand (cli-core#1300 fixed it for cli-core alone). The command rewrites CHANGELOG.md
+  when the section below the unreleased one is `## <version> — ` (`--version`, package.json's by default): same-named
+  `###` headings merge, the unreleased entries first, the date stays. It prints `folded Unreleased into <version>`
+  when it folded and nothing otherwise, and fails on text under the unreleased section before its first `###`
+  rather than lose it. `--unreleased «Не выпущено»` names another title. It does not ask npm: run it in
+  bin/release only while the version is not published, or it adds entries to released notes. `foldUnreleased` is
+  exported from `@wirecat/cli-base/release` for the same job in code.
+
 ## 0.33.0 — 15.10.2026
 
 ### Changed — may break callers
