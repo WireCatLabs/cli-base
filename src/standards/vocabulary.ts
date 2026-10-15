@@ -166,6 +166,12 @@ const verbs: [string, string][] = [
   ["move", "move a file in the source"],
   ["copy", "copy a file in the source"],
   ["run", "run a saved job once, now, as its timer would"],
+  ["claim", "take a thing for a while so no other agent works it at once; the claim lapses by itself"],
+  ["release", "give back what claim took, before it lapses"],
+  ["merge", "fold a duplicate into the thing that stays; nothing is deleted"],
+  ["unmerge", "undo a merge"],
+  ["defer", "leave a decision undecided, for the owner"],
+  ["embed", "compute the vectors a meaning search reads, for what is stored and has none"],
 ]
 
 const replaces: Record<string, string[]> = {
@@ -222,6 +228,8 @@ const collections: [string, string][] = [
   ["actions", "what an agent proposes to do; the owner confirms or rejects each"],
   ["aliases", "other names of one thing"],
   ["mentions", "phones, e-mail addresses, links and documents found in stored text, each where it was written"],
+  ["images", "pictures in stored messages, searched by what they show"],
+  ["duplicates", "pairs of things that may be one, each waiting for a decision"],
 ]
 
 const singulars: [string, string][] = [
@@ -252,6 +260,9 @@ const views: [string, string][] = [
   ["transcript", "the text of speech: a voice message or a meeting recording"],
   ["evidence", "the stored messages or lines a result or a reference rests on"],
   ["passage", "a cited transcript line with bounded surrounding lines from the same revision"],
+  ["agenda", "what needs a look today"],
+  ["categories", "the categories a thing takes, with what each means"],
+  ["domains", "the internet domains links point to, most linked first"],
 ]
 
 const roots: [string, string][] = [
