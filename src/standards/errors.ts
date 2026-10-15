@@ -62,6 +62,7 @@ export const COMMON_DETAILS = ["attempts", "status", "request_id", "operation", 
 
 /** One reason per code, used when the code site named none, the crash, and the reasons cli-base raises itself. */
 export const BASE_REASONS: ErrorReason[] = defineReasons([
+  { reason: "input.invalid", code: "validation_error", message: "the input is not valid", details: [] },
   {
     reason: "batch.read-budget",
     code: "validation_error",
@@ -69,7 +70,6 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
     details: [],
   },
   { reason: "batch.output-budget", code: "validation_error", message: "batch output budget exhausted", details: [] },
-  { reason: "input.invalid", code: "validation_error", message: "the input is not valid", details: [] },
   { reason: "config.invalid", code: "configuration_error", message: "the configuration is not valid", details: [] },
   { reason: "auth.failed", code: "authentication_error", message: "the sign-in did not work", details: [] },
   { reason: "access.denied", code: "permission_error", message: "this account may not do that", details: [] },

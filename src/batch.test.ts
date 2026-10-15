@@ -41,6 +41,20 @@ describe("bounded batches", () => {
       expect(() => prepareBatch(value, handlers)).toThrow(CliError)
   })
 
+  it("keeps ordinary validation failures distinct from batch budget refusals", async () => {
+    const report = await runBatch(
+      prepareBatch(
+        input([]),
+        handler(() => ({
+          run: async () => {
+            throw new CliError("validation_error", "stale reference", { reason: "an-unregistered-reason" })
+          },
+        })),
+      ),
+    )
+    expect(report.items[0]).toMatchObject({ status: "error", error: { reason: "input.invalid" } })
+  })
+
   it("keeps order, duplicates, independent failures and continuations", async () => {
     const calls: string[] = []
     const requests = prepareBatch(
