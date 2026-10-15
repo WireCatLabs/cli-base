@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.37.0 — 16.10.2026
+
+### Added
+
+- **The vocabulary registers `apply`, and `inspect` covers a mailbox.** `apply` runs the owner's saved rules over
+  what is already stored and changes what they match, saying only what would change unless `--yes` (memo's
+  `mail rules apply`); `test` stays the read-only twin that never changes anything. `inspect` now means looking at
+  a source before taking anything from it — a chat link without joining, a mailbox without importing (memo's
+  `mail probe` becomes `mail inspect`). Both were `unknown-verb` findings in memo's command lint baseline.
+
 ## 0.36.0 — 16.10.2026
 
 ### Added
@@ -24,12 +34,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   hunk under the dated heading beside the section's own copy, and docs:check refuses "Added twice" (cli-core 0.294.0
   after #1327). With no unreleased section on top, the fold now merges the dated section's repeats and prints
   `merged repeated headings in <version>`.
-
-- **The vocabulary registers `apply`, and `inspect` covers a mailbox.** `apply` runs the owner's saved rules over
-  what is already stored and changes what they match, saying only what would change unless `--yes` (memo's
-  `mail rules apply`); `test` stays the read-only twin that never changes anything. `inspect` now means looking at
-  a source before taking anything from it — a chat link without joining, a mailbox without importing (memo's
-  `mail probe` becomes `mail inspect`). Both were `unknown-verb` findings in memo's command lint baseline.
 
 ### Fixed
 
