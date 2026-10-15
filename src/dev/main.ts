@@ -15,7 +15,6 @@ import {
   changelogProblems,
   type DocsRules,
   docsProblems,
-  foldUnreleased,
   JOURNAL_IDS,
   markdownFiles,
   packageVersion,
@@ -38,6 +37,7 @@ import {
 import { issuesOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
+import { changelogChange, landFold, processShell } from "./land.js"
 import { baselineOf, judge, lintCommands } from "./lint.js"
 import { nextVersion } from "./next-version.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
@@ -57,11 +57,13 @@ const USAGE = `usage: cli-dev <command> [options]
   next-version <wanted> <latest> <versions-json>
                                        the version bin/release publishes, given npm's answers
   version [--sync] [--file <path>]     package.json's version against src/version.ts
-  changelog fold [--version <x.y.z>] [--unreleased <title>] [--file <path>]
+  changelog fold [--version <x.y.z>] [--unreleased <title>] [--file <path>] [--land]
                                        folds the unreleased section (Unreleased) into the dated
-                                       section below it when that is --version (package.json's);
-                                       prints a line when it folded, nothing otherwise. Run it only
-                                       while that version is not on npm
+                                       section below it when that is --version (package.json's), and
+                                       merges a ### heading that section repeats; prints a line when
+                                       it changed the file, nothing otherwise. --land lands it on main
+                                       through a pull request, folding again on the new main once if
+                                       main moved under it. Run it only while that version is not on npm
   docs-check [--rules <module>] [--ids <A,B>] [--pages]
                                        links, anchors and the changelog's shape; --pages also
                                        docs/ against docs/meta.json, the docs portal's structure
@@ -139,21 +141,32 @@ const changelog = (args: string[], io: DevIo) => {
       version: { type: "string" },
       unreleased: { type: "string", default: "Unreleased" },
       file: { type: "string", default: "CHANGELOG.md" },
+      land: { type: "boolean", default: false },
     },
   })
   const file = isAbsolute(values.file) ? values.file : join(io.cwd, values.file)
   const version = values.version ?? packageVersion(io.cwd)
-  let folded: string | undefined
   try {
-    folded = foldUnreleased(readFileSync(file, "utf8"), version, values.unreleased)
+    if (values.land) {
+      const landed = landFold({
+        file,
+        version,
+        unreleased: values.unreleased,
+        shell: processShell(io.cwd),
+        log: io.err,
+      })
+      if (landed) io.out(landed)
+      return 0
+    }
+    const change = changelogChange(readFileSync(file, "utf8"), version, values.unreleased)
+    if (!change) return 0
+    writeFileSync(file, change.text)
+    io.out(change.line)
+    return 0
   } catch (error) {
     io.err(`${values.file}: ${(error as Error).message}`)
     return 1
   }
-  if (folded === undefined) return 0
-  writeFileSync(file, folded)
-  io.out(`folded ${values.unreleased} into ${version}`)
-  return 0
 }
 
 const testMatrix = async (args: string[], io: DevIo) => {

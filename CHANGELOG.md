@@ -8,6 +8,29 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.36.0 — 16.10.2026
+
+### Added
+
+- **`cli-dev changelog fold --land` lands the fold through a pull request and redoes it once when main moves.**
+  bin/release used to fold, open the pull request and wait on its checks; a session that merged a change to
+  CHANGELOG.md meanwhile left the pull request unmergeable and the release stopped (cli-core#1335). With
+  `--land` the fold is made on a fresh `origin/main`; a pull request that conflicts — found before waiting on checks,
+  since a conflicting one gets none, or when the merge is refused — is closed and the fold made again on the new
+  main, once. It prints the line and the pull request when it landed, nothing when there was nothing to fold (another
+  session already did), and fails after a second conflict or on failed checks. It needs `gh` and a clean `main`.
+- **`mergeRepeatedHeadings` (`@wirecat/cli-base/release`) and `cli-dev changelog fold` merge a `###` heading the
+  dated section repeats.** A pull request branched before a fold adds under the unreleased heading; git applies the
+  hunk under the dated heading beside the section's own copy, and docs:check refuses "Added twice" (cli-core 0.294.0
+  after #1327). With no unreleased section on top, the fold now merges the dated section's repeats and prints
+  `merged repeated headings in <version>`.
+
+### Fixed
+
+- **The fold no longer leaves a blank line inside a merged list.** When a section already repeated a heading, the
+  blank line before its second copy ended up between the merged entries. Headings that differ only by trailing
+  spaces now merge too.
+
 ## 0.35.0 — 15.10.2026
 
 ### Added
