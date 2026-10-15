@@ -41,8 +41,8 @@ if ! published; then
   folded=$(pnpm build >/dev/null && node dist/dev/bin.js changelog fold --version "$version")
   if [ -n "$folded" ]; then
     echo "$folded"
-    git commit -q -am "chore(release): fold Unreleased into $version" \
-      -m "bin/release: $version is dated but not on npm, and Unreleased sat above it. Only CHANGELOG.md changes."
+    git commit -q -am "chore(release): $folded" \
+      -m "bin/release: $version is dated but not on npm. Only CHANGELOG.md changes."
     git push -q origin main || {
       git reset -q --hard HEAD~1
       echo "main moved on origin while folding the changelog — run bin/release again" >&2

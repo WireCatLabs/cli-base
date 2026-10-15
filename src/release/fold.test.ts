@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { foldUnreleased } from "./fold.js"
+import { foldUnreleased, mergeRepeatedHeadings } from "./fold.js"
 
 const changelog = `# Changelog
 
@@ -75,5 +75,85 @@ Intro.
   it("refuses text under Unreleased that has no heading, rather than losing it", () => {
     const loose = changelog.replace("## Unreleased\n", "## Unreleased\n\nA stray line.\n")
     expect(() => foldUnreleased(loose, "0.9.0")).toThrow(/before its first ### heading/)
+  })
+
+  it("merges a heading the dated section already repeats", () => {
+    const repeated = changelog.replace(
+      "### Fixed\n\n- Older fix.",
+      "### Fixed\n\n- Older fix.\n\n### Fixed\n\n- Oldest fix.",
+    )
+    expect(foldUnreleased(repeated, "0.9.0")).toContain(
+      "### Fixed\n\n- Newer fix.\n- Older fix.\n- Oldest fix.\n\n## 0.8.0",
+    )
+  })
+
+  it("merges headings that differ only by trailing spaces", () => {
+    expect(foldUnreleased(changelog.replace("### Fixed\n\n- Older", "### Fixed  \n\n- Older"), "0.9.0")).toBe(
+      foldUnreleased(changelog, "0.9.0"),
+    )
+  })
+})
+
+describe("mergeRepeatedHeadings", () => {
+  // cli-core 0.294.0 after #1327 (branched before the fold) merged: its Unreleased hunk landed under the date.
+  const landed = `# Changelog
+
+## 0.294.0 — 15.10.2026
+
+### Added
+
+- **A message draws the poll it carries**.
+
+### Fixed
+
+- Model requests needing verbatim source evidence can set \`allowSourceQuotes: true\`.
+
+### Added
+
+- **Native archive writer leases in \`@wirecat/cli-core/files\`.**
+- **Search finds a letter by a whole tracking link and by a part of a link.**
+
+### Changed — may break callers
+
+- **The personal MCP catalogue is no longer exported**.
+
+## 0.293.0 — 15.10.2026
+
+### Added
+
+- Older.
+`
+
+  it("leaves one Added in the dated section, entries in their order", () => {
+    expect(mergeRepeatedHeadings(landed, "0.294.0")).toBe(`# Changelog
+
+## 0.294.0 — 15.10.2026
+
+### Added
+
+- **A message draws the poll it carries**.
+- **Native archive writer leases in \`@wirecat/cli-core/files\`.**
+- **Search finds a letter by a whole tracking link and by a part of a link.**
+
+### Fixed
+
+- Model requests needing verbatim source evidence can set \`allowSourceQuotes: true\`.
+
+### Changed — may break callers
+
+- **The personal MCP catalogue is no longer exported**.
+
+## 0.293.0 — 15.10.2026
+
+### Added
+
+- Older.
+`)
+  })
+
+  it("leaves a section without repeats, another version, and an unreleased top alone", () => {
+    expect(mergeRepeatedHeadings(mergeRepeatedHeadings(landed, "0.294.0") ?? "", "0.294.0")).toBeUndefined()
+    expect(mergeRepeatedHeadings(landed, "0.295.0")).toBeUndefined()
+    expect(mergeRepeatedHeadings(changelog, "0.9.0")).toBeUndefined()
   })
 })
