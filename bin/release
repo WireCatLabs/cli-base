@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 # Publishes the version in package.json and tags it. Run on a clean `main`. When npm already has that
 # version, or a higher one, it commits the next free version to `main`, with the CHANGELOG heading
-# renamed to match, and publishes that.
+# renamed to match, and publishes that. An Unreleased section left above the dated, unpublished version is
+# folded into it first.
 #
 #   bin/release           # publishes from GitHub Actions (.github/workflows/release.yml)
 #   bin/release --local   # publishes from this machine with the npm token from the keyring
@@ -31,16 +32,30 @@ git merge -q --ff-only origin/main
 lock="${XDG_RUNTIME_DIR:-/tmp}/leemour-release.lock"; exec 9>"$lock"; flock -n 9 || { echo "another release is running: $(cat "$lock.who" 2>/dev/null)" >&2; exit 1; }; echo "$(basename "$PWD") pid $$ since $(date -u +%H:%M)" > "$lock.who"
 
 version=$(node -p 'require("./package.json").version')
+# `npm view` rather than the registry document, which a CDN serves stale for minutes.
+published() {
+  npm view "@wirecat/cli-base@$version" version --prefer-online >/dev/null 2>&1
+}
+# A session that merges after the version was dated, but before it was published, adds Unreleased above it.
+if ! published; then
+  folded=$(pnpm build >/dev/null && node dist/dev/bin.js changelog fold --version "$version")
+  if [ -n "$folded" ]; then
+    echo "$folded"
+    git commit -q -am "chore(release): fold Unreleased into $version" \
+      -m "bin/release: $version is dated but not on npm, and Unreleased sat above it. Only CHANGELOG.md changes."
+    git push -q origin main || {
+      git reset -q --hard HEAD~1
+      echo "main moved on origin while folding the changelog — run bin/release again" >&2
+      exit 1
+    }
+  fi
+fi
 # Only the top section: the rename below must never touch one that is already published.
 top=$(grep -m1 '^## ' CHANGELOG.md || true)
 case "$top" in
   "## $version — "*) ;;
   *) echo "CHANGELOG.md's top section is \"$top\" — date it as $version first" >&2; exit 1 ;;
 esac
-# `npm view` rather than the registry document, which a CDN serves stale for minutes.
-published() {
-  npm view "@wirecat/cli-base@$version" version --prefer-online >/dev/null 2>&1
-}
 
 # Two sessions preparing the same number is normal; the second takes the next free one (2026-09-29).
 latest=$(npm view @wirecat/cli-base version --prefer-online 2>/dev/null || true)
