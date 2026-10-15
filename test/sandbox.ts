@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { afterAll } from "vitest"
 
 /**
- * **Every test file runs with `TMPDIR` in a directory of its own, and the real keychain out of reach.**
+ * **Every test file owns its temporary directory, and the real keychain stays out of reach.**
  *
  * The config, credential, logging and update tests make their directories with
  * `mkdtempSync(join(tmpdir(), …))` and leave them — max-cli found fifteen thousand of those in
@@ -18,7 +18,9 @@ import { afterAll } from "vitest"
  * `vi.mock` does not intercept, so the stand-in goes into the CommonJS require cache instead.
  */
 const sandbox = mkdtempSync(join(tmpdir(), "cli-base-test-"))
-process.env.TMPDIR = sandbox
+const tempKeys = ["TMPDIR", "TMP", "TEMP"] as const
+const previous = tempKeys.map((key) => [key, process.env[key]] as const)
+for (const key of tempKeys) process.env[key] = sandbox
 
 export const REAL_KEYRING_REACHED = "a test reached the real OS keyring — pass memoryKeyring() instead"
 
@@ -36,4 +38,10 @@ require.cache[path] = {
   exports: { Entry },
 } as unknown as NodeJS.Module
 
-afterAll(() => rmSync(sandbox, { recursive: true, force: true }))
+afterAll(() => {
+  for (const [key, value] of previous) {
+    if (value === undefined) delete process.env[key]
+    else process.env[key] = value
+  }
+  rmSync(sandbox, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
+})

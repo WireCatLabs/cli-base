@@ -8,6 +8,7 @@ export default defineConfig({
     maxWorkers: 4,
     // Outside src/: src/testing is a published subpath, and everything under src/ ships in dist/.
     setupFiles: ["test/sandbox.ts"],
+    sequence: { hooks: "stack" },
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

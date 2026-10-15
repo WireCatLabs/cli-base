@@ -31,9 +31,11 @@ Checked on 2026-09-29 by putting a type error into a test and watching `pnpm typ
 [`test/sandbox.ts`](../../test/sandbox.ts) is a vitest `setupFiles` entry, so it holds for every test
 file, including the next one:
 
-- **`TMPDIR` points into a directory of its own, removed when the file is done.** The config,
+- **`TMPDIR`, `TMP` and `TEMP` point into a directory of its own, removed when the file is done.** The config,
   credential, logging and update tests make directories with `mkdtempSync(join(tmpdir(), …))` and
-  never removed them; one run left 34 in `/tmp`. Now it leaves none (checked 2026-09-29).
+  never removed them; one run left 34 in `/tmp`. The setup covers Unix and Windows temporary-path
+  selection and restores the inherited environment afterwards. Explicit stack ordering runs its
+  cleanup after the file's resource-closing hooks. An interrupted process may leave its root.
 - **`@napi-rs/keyring` is replaced by one that throws.** Every test passes `memoryKeyring()`, but
   `Credentials` without a `keyring` falls back to the real keychain — the owner's, where max-cli's
   token lives. `keyring.ts` loads the module through `createRequire`, which `vi.mock` does not reach,
@@ -46,9 +48,16 @@ file, including the next one:
 No `*_CONFIG_DIR` is set: cli-base has no app name of its own, and every test that resolves paths
 passes `env` explicitly.
 
+Consumer CLI suites should apply this per-file lifecycle too: place temporary-file setup in the
+runner's `setupFiles`, let subprocesses inherit it, close resources before removing the root, and
+restore all three temporary-path variables before the worker runs another file. Keep deliberate
+coverage and debug artifacts outside those roots, with bounded retention such as one previous
+command trace. Check the actual temporary parent after a full suite; mocking removal calls does
+not prove fixtures were removed. Never clean another session's scratch directory as test teardown.
+
 ## No test waits for real
 
-The suite takes about half a second. Waits go through an injected `SleepLike`, and `fakeClock()`
+Waits go through an injected `SleepLike`, and `fakeClock()`
 from `/testing` records them without waiting. The longest real wait is the child process that
 `runUpdate`'s test starts. A new wait gets the injected sleep, never a longer test timeout.
 
