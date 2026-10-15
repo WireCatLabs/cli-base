@@ -14,6 +14,17 @@ const BREAKING_TITLE = /^\w+(\([^)]*\))?!:/
 const UNRELEASED = /^## (Unreleased|Не выпущено)\s*$/i
 const DATED = /^## v?(\d+\.\d+\.\d+\S*) [—–-] \S/
 
+function duplicateHeading(text: string): string | undefined {
+  const seen = new Set<string>()
+  for (const line of text.split("\n")) {
+    const version = DATED.exec(line)?.[1] ?? (UNRELEASED.test(line) ? "unreleased" : undefined)
+    if (!version) continue
+    if (seen.has(version)) return version
+    seen.add(version)
+  }
+  return undefined
+}
+
 function sections(text: string): Sections {
   const found: Sections = new Map()
   let current: string[] | undefined
@@ -32,6 +43,8 @@ export function checkChangelog(input: {
   head: string
   tags: string[]
 }): string | undefined {
+  const repeated = duplicateHeading(input.head)
+  if (repeated) return `CHANGELOG.md: duplicate heading for ${repeated}; keep one section per version`
   const base = sections(input.base)
   const head = sections(input.head)
   const tagged = new Set(input.tags.map((tag) => tag.replace(/^v/, "")))

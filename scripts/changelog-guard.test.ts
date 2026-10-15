@@ -27,6 +27,25 @@ const run = (title: string, head: string, heading = "Unreleased", tags = ["v0.52
   checkChangelog({ title, base: base(heading), head, tags })
 
 describe("changelog guard", () => {
+  it("rejects a duplicate released heading that would hide new notes before the original body", () => {
+    const heading = "## 0.52.0 — 14.10.2026"
+    const head = base("Unreleased").replace(heading, `${heading}\n\n${entry}\n\n${heading}`)
+    expect(run("docs: merge notes", head)).toMatch(/duplicate heading for 0\.52\.0/)
+  })
+
+  it("recognizes the same unreleased version with a v prefix and different date", () => {
+    const head = base("Unreleased").replace(
+      "## Unreleased",
+      "## 0.53.0 — 15.10.2026\n\n- First.\n\n## v0.53.0 — 2026-10-16",
+    )
+    expect(run("chore(release): notes", head)).toMatch(/duplicate heading for 0\.53\.0/)
+  })
+
+  it.each(["Unreleased", "unreleased", "Не выпущено"])("rejects a second pending section named %s", (heading) => {
+    const head = base("Unreleased").replace("### Fixed", `## ${heading}\n\n### Fixed`)
+    expect(run("docs: pending notes", head)).toMatch(/duplicate heading for unreleased/)
+  })
+
   it("fails a breaking title with no changelog change", () => {
     expect(run("refactor!: drop the flag", base("Unreleased"))).toMatch(/breaking title.*unreleased heading/)
     expect(run("fix(watch)!: line shape", base("Unreleased"))).toMatch(/breaking title/)
