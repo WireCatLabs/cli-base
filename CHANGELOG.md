@@ -8,7 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.32.0 — 15.10.2026
+
+### Added
+
+- **The shared vocabulary registers 13 more flags that apps carried without a role.** Rule fields `--sender`,
+  `--domain`, `--list-id` and `--do <actions>` (what a rule does, the same list tg and max's reply rules take);
+  `--clear`, `--ignore`, `--subfolder`, `--occurred-time`, `--grant <scopes>`, `--min-similarity`, `--domain-age`,
+  `--retry-attachments` and `--all-versions`. `--occurred` is now a synonym of `--occurred-time`, and
+  `--target-accounts` of `--source`. A CLI that moves to this version must drop the `option-role` baseline entries
+  these clear, because a stale entry fails, and rename the flags `flag-synonym` now names.
 
 ### Fixed
 

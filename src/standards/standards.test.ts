@@ -137,6 +137,13 @@ describe("vocabulary registry", () => {
       ),
     ).toEqual(["flags: --limit replaces --max, which is itself a flag"])
   })
+
+  it("names a rule's action --do, one list for every kind of rule, and routes --occurred to --occurred-time", () => {
+    const flag = (name: string) => VOCABULARY.flags.find((entry) => entry.name === name)
+    expect(flag("--do")).toMatchObject({ value: "<actions>", type: "list" })
+    expect(flag("--occurred-time")?.replaces).toEqual(["--occurred"])
+    expect(flag("--source")?.replaces).toEqual(["--target-accounts"])
+  })
 })
 
 describe("output registry", () => {
