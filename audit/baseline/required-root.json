@@ -1,10 +1,1 @@
-[
-  "drive doctor",
-  "drive skill install",
-  "drive skill show",
-  "drive upgrade",
-  "memo doctor",
-  "memo upgrade",
-  "zm mcp",
-  "zm upgrade"
-]
+["drive doctor", "drive skill install", "drive skill show", "drive upgrade", "zm mcp", "zm upgrade"]
