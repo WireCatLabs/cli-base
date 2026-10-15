@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.35.0 — 15.10.2026
+
+### Added
+
+- **Bounded batches share parsing, correlation and sequential execution.** `prepareBatch`, `readBatchInput` and
+  `runBatch` accept explicit registered handlers, cap input/count/read reservations and retained output, and keep
+  a result for every input on budget refusal. Failed reads never refund their reserved ceiling; it is not a byte
+  consumption measurement. Hosts retain account authorization, cancellation, final rendering and resource cleanup.
+  `projectBatchAnswers` selects nested answer fields while retaining ids, errors and completeness.
+
 ## 0.34.0 — 15.10.2026
 
 ### Added

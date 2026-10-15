@@ -266,6 +266,7 @@ const views: [string, string][] = [
 ]
 
 const roots: [string, string][] = [
+  ["batch", "run bounded explicitly registered reads with independent correlated answers"],
   ["inbox", "what waits across every chat"],
   ["review", "go through what needs the owner"],
   ["watch", "follow new events as they come"],

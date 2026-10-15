@@ -11,6 +11,7 @@ and why it is built this way.
 | `renderer` · `pretty` | `pretty` / `json` / `jsonl`; tables for lists, labelled lines for objects; `quiet` keeps only failures on stderr |
 | `errors` · `exit-codes` | 14 closed error codes, one exit number each, so a script can branch on `$?` |
 | `keyring` | `KeyringStore` with the system, memory and deliberately-broken implementations |
+| `prepareBatch` · `readBatchInput` · `runBatch` · `projectBatchAnswers` | bounded registered-handler batches with independent correlated answers |
 | `fieldsOf` · `projectFields` | validated field selection preserving list metadata and operation identifiers |
 | `createOutputBuffer` | bounded UTF-8 output held until successful completion and resource cleanup |
 | `createDeadline` | cooperative command cancellation with injected sleep and a parent abort signal |
@@ -50,6 +51,15 @@ HTTP status, provider fields or credentials. A caller still owns those policies 
 from objects or list items while preserving the list envelope and `operation_id`.
 `items.id` also works for bare objects and JSONL items. Unknown fields are omitted; parent selections
 win over their children. Unsafe prototype paths are refused, including when paths are passed directly.
+
+`prepareBatch(json, handlers)` validates 1–32 uniquely named requests before work begins. Each request
+names a registered command path and string argument array; handler preparation must be pure. `readBatchInput`
+reads at most 256 KiB of strict UTF-8 from an injected async source; the host owns cancelling a blocked source.
+`runBatch` runs the prepared operations sequentially. Operations reserve stored-read ceilings before reads,
+with a 64 MiB aggregate cap; reservations are never refunded or reported as measured consumption. A 4 MiB
+retained-result cap leaves room for correlated refusals. Errors stay with their input, while an aborted signal
+rejects the invocation. Hosts still enforce final rendered bytes, emit standard JSONL framing and close resources.
+`projectBatchAnswers` applies ordinary payload selectors to each answer while keeping result correlation/errors.
 
 `createOutputBuffer({ maxOutputBytes })` retains raw output chunks until `flush(write)` or `discard()`.
 Its default limit is 4 MiB; zero disables the limit. It counts actual UTF-8 bytes, including delimiters
