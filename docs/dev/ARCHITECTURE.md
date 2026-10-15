@@ -58,8 +58,12 @@ adapter and a renderer; what is written, and where, is the host's call.
 ## Portable command control
 
 `result-fields` preserves the existing messaging projection behavior without importing its runner.
-It validates both parsed and directly supplied paths, preserves page envelopes, and retains operation
-identifiers. A host chooses rendering and JSONL framing; projection never selects a messenger profile.
+It validates parsed and directly supplied paths, traverses nested objects and arrays, and preserves
+item/list envelopes, coverage, continuation, missing-data and execution metadata and operation identifiers.
+Paths are payload-relative; the `items.` shorthand addresses each list row. Parent selections retain
+an entire subtree, and missing descendants never invent values. Consumers call the same projector
+without unwrapping item answers. A host chooses rendering and JSONL framing; projection never selects
+a messenger profile.
 
 `output-buffer` holds raw rendered chunks until the host has completed its operation and closed
 resources. The byte limit applies after optional complete-value JSON/JSONL projection, including
@@ -84,7 +88,7 @@ in `finally`; timers and listeners do not belong to the store or a messenger exe
 Each consumer's pin is in its `package.json`; a caret on `0.x` does not cross a minor, so every pin is
 exact in effect. **A release reaches nobody until each consumer bumps its pin.**
 
-⚠ **cli-core takes cli-base as a peer dependency** with a range (`>=0.26.0 <0.27.0` today), so a CLI installs
+⚠ **cli-core takes cli-base as a peer dependency** with the range declared in its `package.json`, so a CLI installs
 one copy that both use. A new minor version of cli-base reaches the CLIs only after cli-core widens its range.
 `isCliError()` checks a `Symbol.for` brand, so copies from 0.22.0 on recognise each other if two are ever
 installed; an older copy has no brand, which is why `errorObjectOf` also accepts a `CliError` by name and code.

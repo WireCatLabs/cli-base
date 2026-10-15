@@ -55,6 +55,27 @@ describe("portable output buffering", () => {
     for (const format of [undefined, "pretty"] as const)
       expect(() => createOutputBuffer({ format, fields: "id" })).toThrow(/explicit JSON/)
   })
+  it("preserves typed JSONL framing and completion metadata while selecting payload paths", () => {
+    const item = { type: "item", data: { ref: "cue", rows: [{ text: "Example", hash: "large" }] } }
+    const end = {
+      type: "end",
+      complete: false,
+      page: { has_more: true, next_cursor: "next" },
+      issues: [{ code: "partial" }],
+    }
+    const buffer = createOutputBuffer({ format: "jsonl", fields: "ref,rows.text" })
+    buffer.data(`${JSON.stringify(item)}\n${JSON.stringify(end)}\n`)
+    const output: string[] = []
+    buffer.flush((text) => output.push(text))
+    expect(
+      output
+        .join("")
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line)),
+    ).toEqual([{ type: "item", data: { ref: "cue", rows: [{ text: "Example" }] } }, end])
+    expect(item.data.rows[0]?.hash).toBe("large")
+  })
   it("consumes a flush even when the writer throws, avoiding duplicate emission on retry", () => {
     const buffer = createOutputBuffer()
     buffer.data("Example")

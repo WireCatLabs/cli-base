@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.31.1 — 15.10.2026
+
+### Fixed
+
+- **Nested field selection traverses arrays and retains report coverage.** Item/list envelopes, continuation, missing data and operation identifiers are handled by one shared projector; consumers no longer need to unwrap item answers.
+
 ## 0.31.0 — 15.10.2026
 
 ### Changed — may break callers
