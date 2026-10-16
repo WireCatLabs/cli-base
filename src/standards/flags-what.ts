@@ -343,6 +343,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   { name: "--can", value: "<rights>", role: "value", type: "list", meaning: "what an admin may do, comma-separated" },
   { name: "--channel", role: "value", type: "switch", meaning: "a channel instead of a group" },
   {
+    name: "--certainty",
+    value: "<n>",
+    role: "value",
+    type: "number",
+    meaning: "how sure the agent is, from 0 to 1; kept with what it wrote",
+  },
+  {
     name: "--closed",
     value: "<on|off>",
     role: "value",

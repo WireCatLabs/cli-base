@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`--certainty <n>` is a known flag** (role `value`): how sure an agent is, 0 to 1, kept with what it wrote, as
+  `tasks close --certainty` in cli-core takes it. tg and max listed it in their `option-role` lint baselines; after
+  they update cli-base those lines are stale and go.
+
 ### Fixed
 
 - **`bin/release` restarts itself once when the release brings a newer `bin/release`**: folding the changelog and
