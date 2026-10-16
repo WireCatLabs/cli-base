@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **Release scripts report observed lock holders separately from stale release labels.** Shared
+  diagnostics no longer attribute a live lock to a previous run; wait for the holders to finish, then
+  retry.
+
 ## 0.38.0 — 16.10.2026
 
 ### Added
