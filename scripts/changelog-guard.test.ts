@@ -89,6 +89,22 @@ describe("changelog guard", () => {
     expect(run("docs(changelog): 0.52.0 carries more", head, "Unreleased", ["v0.51.0"])).toBeUndefined()
   })
 
+  it("rejects a second Fixed heading in the unreleased section", () => {
+    const head = base("Unreleased").replace("## Unreleased", `## Unreleased\n\n### Fixed\n\n${entry}`)
+    expect(run("perf(mail): faster", head)).toMatch(/"Fixed" twice in "Unreleased"/)
+  })
+
+  it("rejects a repeated heading in a dated section that is not tagged yet", () => {
+    const head = base("Unreleased").replace("## Unreleased", `## 0.53.0 — 15.10.2026\n\n### Fixed\n\n${entry}`)
+    expect(run("chore: release 0.53.0", head)).toMatch(/"Fixed" twice in "0\.53\.0 — 15\.10\.2026"/)
+  })
+
+  it("lets a pull request through when the base already had the repeat", () => {
+    const repeated = base("Unreleased").replace("## Unreleased", "## Unreleased\n\n### Fixed\n\n- **Old.** Repeat.")
+    const head = repeated.replace("- **Old.** Repeat.", `- **Old.** Repeat.\n${entry}`)
+    expect(checkChangelog({ title: "fix: x", base: repeated, head, tags: ["v0.52.0", "v0.51.0"] })).toBeUndefined()
+  })
+
   it("passes a release pull request that dates the unreleased heading", () => {
     const head = base("Unreleased").replace("## Unreleased", "## 0.53.0 — 15.10.2026")
     expect(run("chore(release): 0.53.0", head)).toBeUndefined()

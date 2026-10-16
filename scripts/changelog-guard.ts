@@ -6,6 +6,8 @@
 // 2. A section whose version is already tagged `v<version>` is not edited. A dated heading alone does
 //    not mean released: a release is dated in a pull request, merged, and tagged only after npm has it,
 //    and that window still takes changelog fixes.
+// 3. No `###` heading repeats inside a section the pull request leaves untagged: an entry belongs under the
+//    section's existing heading. Only a repeat the base did not have fails, so an old one does not block others.
 import { execFileSync } from "node:child_process"
 
 type Sections = Map<string, string[]>
@@ -23,6 +25,20 @@ function duplicateHeading(text: string): string | undefined {
     seen.add(version)
   }
   return undefined
+}
+
+function repeatedSubheadings(all: Sections, tagged: Set<string>): Set<string> {
+  const repeats = new Set<string>()
+  for (const [heading, body] of all) {
+    const version = DATED.exec(heading)?.[1]
+    if (version && tagged.has(version)) continue
+    const seen = new Set<string>()
+    for (const line of body.filter((line) => line.startsWith("### "))) {
+      if (seen.has(line)) repeats.add(`"${line.slice(4)}" twice in "${heading.slice(3)}"`)
+      seen.add(line)
+    }
+  }
+  return repeats
 }
 
 function sections(text: string): Sections {
@@ -56,10 +72,14 @@ export function checkChangelog(input: {
       return `CHANGELOG.md: "${heading}" is already released (tag v${version}); put the change under the unreleased heading`
   }
 
+  const before = repeatedSubheadings(base, tagged)
+  const repeat = [...repeatedSubheadings(head, tagged)].find((found) => !before.has(found))
+  if (repeat) return `CHANGELOG.md: ${repeat}; put the entry under the heading that is already there`
+
   if (!BREAKING_TITLE.test(input.title)) return undefined
   const unreleased = (all: Sections) => [...all].find(([heading]) => UNRELEASED.test(heading))?.[1] ?? []
-  const before = new Set(unreleased(base))
-  if (!unreleased(head).some((line) => line.trim() !== "" && !before.has(line)))
+  const old = new Set(unreleased(base))
+  if (!unreleased(head).some((line) => line.trim() !== "" && !old.has(line)))
     return `CHANGELOG.md: a breaking title ("${input.title}") needs an entry under the unreleased heading`
   return undefined
 }

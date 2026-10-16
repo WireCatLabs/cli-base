@@ -18,6 +18,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **The changelog guard refuses a pull request that repeats a `###` heading in a section not yet released**
+  (`### Fixed` twice under `## Unreleased`). Each app's shape check refuses it too, but only in full validation,
+  so it reached main and stopped cli-core's 0.307.0 release. A repeat already on the base does not fail the guard.
+  Each app moves its guard pin to take it.
+
 - **`bin/release` restarts itself once when the release brings a newer `bin/release`**: folding the changelog and
   raising the version both fast-forward `main`, and the shell went on reading the old script from the byte it had
   reached, so the rest of the run was a mix of old and new text. It now starts the new script over with the same
