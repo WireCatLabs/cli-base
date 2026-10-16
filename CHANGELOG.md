@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A query that fails on an unquoted value with an operator in it says to quote it.** `url:a.com/x?y=1` used to
+  fail with only `query.invalid-syntax at position 14`: `/`, `?`, `=` and `:` are query syntax. The error now ends
+  with `put the value in quotes: url:"a.com/x?y=1"`, also in `details.alternative`. A failure that already carries
+  an alternative keeps its own.
+
 ## 0.38.0 — 16.10.2026
 
 ### Added

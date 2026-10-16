@@ -84,6 +84,16 @@ describe("a list's query", () => {
     expect(failure(() => parseLucene('"open')).message).toMatch(/^query: /)
   })
 
+  it("tells to quote a value that holds an operator", () => {
+    expect(failure(() => parseLucene("link:click?id=1")).message).toBe(
+      'query: query.invalid-syntax at position 14 — put the value in quotes: link:"click?id=1"',
+    )
+    expect(failure(() => parseLucene("alpha url:a.com/x")).details.alternative).toBe(
+      'put the value in quotes: url:"a.com/x"',
+    )
+    expect(failure(() => parseLucene('"open')).details.alternative).toBeUndefined()
+  })
+
   it("reads the terms lists need: quoted values with a colon, comparisons, presence, relative dates", () => {
     expect(failure(() => parseLucene("subject:note:42", { defaultField: "none" })).details.reason).toBe(
       "query.invalid-syntax",
