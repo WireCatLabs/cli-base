@@ -11,6 +11,16 @@
 set -eu
 
 cd "$(dirname "$0")/.."
+self=$(git hash-object bin/release)
+# The fold and land() fast-forward main, and sh reads this file as it goes: a newer bin/release would run half old,
+# half new. Run the new one from the start instead: the second run finds the fold and the raise already on main.
+rerun_if_changed() {
+  [ "$(git hash-object bin/release)" != "$self" ] || return 0
+  [ -z "${WIRECAT_RELEASE_RERUN:-}" ] || { echo "bin/release changed again while releasing — run it again" >&2; exit 1; }
+  echo "bin/release changed on main — running the new one"
+  export WIRECAT_RELEASE_RERUN=1
+  exec ./bin/release "$@"
+}
 
 mode=ci
 case "${1:-}" in
@@ -43,6 +53,7 @@ if ! published; then
   folded=$(pnpm build >/dev/null && node dist/dev/bin.js changelog fold --land --version "$version")
   [ -z "$folded" ] || echo "$folded"
 fi
+rerun_if_changed "$@"
 # Only the top section: the rename below must never touch one that is already published.
 top=$(grep -m1 '^## ' CHANGELOG.md || true)
 case "$top" in
@@ -87,6 +98,7 @@ if [ "$next" != "$version" ]; then
     })
     swaps.forEach(([file, from, to], i) => fs.writeFileSync(file, texts[i].replace(from, to)))' "$version" "$next"
   land "release/$next" "chore(release): $next" "bin/release: $why. Only package.json and the CHANGELOG heading change."
+  rerun_if_changed "$@"
   version=$next
 fi
 if published; then

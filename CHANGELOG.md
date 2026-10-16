@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`bin/release` restarts itself once when the release brings a newer `bin/release`**: folding the changelog and
+  raising the version both fast-forward `main`, and the shell went on reading the old script from the byte it had
+  reached, so the rest of the run was a mix of old and new text. It now starts the new script over with the same
+  arguments; a second change during that run stops it with `run it again`. Only the repository's own release is
+  affected; the published package does not change.
+
 ## 0.40.0 — 16.10.2026
 
 ### Fixed
