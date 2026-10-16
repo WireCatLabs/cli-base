@@ -17,6 +17,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   reached, so the rest of the run was a mix of old and new text. It now starts the new script over with the same
   arguments; a second change during that run stops it with `run it again`. Only the repository's own release is
   affected; the published package does not change.
+- **`bin/release` restarts by its path in the repository after updating `main`**: it restarted as `$0` after
+  changing to the repository root, which pointed nowhere when the script was started from another folder by a relative
+  path. Only the repository's own release is affected.
 
 ## 0.40.0 â€” 16.10.2026
 
