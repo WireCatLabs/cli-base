@@ -10,7 +10,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ## 0.40.0 — 16.10.2026
 
-### Changed
+### Fixed
 
 - **An email address reads as one term, unquoted**: `from:alice@example.com` used to fail with
   `query.unsupported-operator — boost and minimum-should-match are not supported`, because `@` is Lucene's
