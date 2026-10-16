@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed
+
+- **An email address reads as one term, unquoted**: `from:alice@example.com` used to fail with
+  `query.unsupported-operator — boost and minimum-should-match are not supported`, because `@` is Lucene's
+  minimum-should-match operator. Inside a word, `@` followed by a name with a dot (`user@host.tld`) now stays part of
+  the word. `(a OR b)@2` and `word@2` still fail as before.
+
 ## 0.39.0 — 16.10.2026
 
 ### Added

@@ -94,6 +94,14 @@ describe("a list's query", () => {
     expect(failure(() => parseLucene('"open')).details.alternative).toBeUndefined()
   })
 
+  it("reads an email address as one term, unquoted", () => {
+    for (const address of ["alice@example.com", "bob.sample@mail.example.co.uk", "noreply@github.com"])
+      expect(parseLucene(`from:${address}`).root).toMatchObject({ operator: "term", value: address })
+    expect(parseLucene("from:alice@example.com to:bob@example.org").root).toMatchObject({ kind: "boolean" })
+    expect(reason(() => parseLucene("alpha@2"))).toBe("query.unsupported-operator")
+    expect(reason(() => parseLucene("(alpha OR beta)@2"))).toBe("query.unsupported-operator")
+  })
+
   it("reads the terms lists need: quoted values with a colon, comparisons, presence, relative dates", () => {
     expect(failure(() => parseLucene("subject:note:42", { defaultField: "none" })).details.reason).toBe(
       "query.invalid-syntax",
