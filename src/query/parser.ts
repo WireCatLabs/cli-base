@@ -133,8 +133,20 @@ export interface ParseOptions extends QueryContext {
   defaultField?: string
 }
 
+// A value written without quotes that holds an operator (`url:a.com/x?y=1`) fails at a character the reader does not
+// see as special; name the fix instead.
+const quoteHint = (text: string, at: number): string | undefined => {
+  for (const match of text.matchAll(/(?<=^|[\s(])([\p{L}\p{N}_.-]+):([^\s"()]+)/gu)) {
+    const [whole, field, value = ""] = match
+    if (at < match.index || at > match.index + whole.length) continue
+    return /[:=/?*~^@<>![\]{}\\]/u.test(value) ? `put the value in quotes: ${field}:"${value}"` : undefined
+  }
+  return undefined
+}
+
 export const parseLucene = (text: string, { defaultField = "text", ...context }: ParseOptions = {}): QueryAst => {
-  const fail: Fail = (reason, span, alternative) => queryError(reason, span, alternative, context)
+  const fail: Fail = (reason, span, alternative) =>
+    queryError(reason, span, alternative ?? quoteHint(text, span.start), context)
   if (text.length > QUERY_LIMITS.bytes || new TextEncoder().encode(text).length > QUERY_LIMITS.bytes)
     fail("query.too-large", { start: 0, end: text.length })
   const tokens = tokensOf(text, fail)
