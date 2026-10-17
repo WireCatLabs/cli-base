@@ -16,6 +16,16 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   columns or cells before an explicit position; `format` changes selected cell presentation
   without replacing values. Consumers can remove these dated vocabulary exceptions after adoption.
 
+## 0.40.2 — 17.10.2026
+
+### Fixed
+
+- **An upgrade through pnpm installs the newest version.** pnpm 11 installs only versions at least a day old
+  (`minimumReleaseAge` 1440), so `pnpm add -g <package>@latest` could install a day-old release — on 2026-10-17 an
+  older `tg` than the one installed — while the update notice named the newest. `updateCommand("pnpm", …)` now adds
+  `--config.minimumReleaseAgeExclude=<scope>/*` for the package's own scope; every other dependency keeps pnpm's wait.
+
+
 ## 0.40.1 — 17.10.2026
 
 ### Added

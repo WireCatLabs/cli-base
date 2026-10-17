@@ -36,7 +36,14 @@ describe("installerOf", () => {
 
 describe("updateCommand", () => {
   it("names the package manager's own global install of the latest version", () => {
-    expect(updateCommand("pnpm", "@wirecat/max-cli")).toEqual(["pnpm", "add", "-g", "@wirecat/max-cli@latest"])
+    expect(updateCommand("pnpm", "@wirecat/max-cli")).toEqual([
+      "pnpm",
+      "add",
+      "-g",
+      "@wirecat/max-cli@latest",
+      "--config.minimumReleaseAgeExclude=@wirecat/*",
+    ])
+    expect(updateCommand("pnpm", "plain-cli")).toContain("--config.minimumReleaseAgeExclude=plain-cli")
     expect(updateCommand("npm", "@wirecat/max-cli")).toEqual(["npm", "install", "-g", "@wirecat/max-cli@latest"])
     expect(updateCommand("bun", "@wirecat/max-cli")).toEqual(["bun", "add", "-g", "@wirecat/max-cli@latest"])
   })
