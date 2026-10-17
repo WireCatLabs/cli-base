@@ -20,8 +20,10 @@ whatsapp-cli is the worked example: it has every file below. Compare with it whe
    [WireCatLabs/community](https://github.com/WireCatLabs/community):
 
    ```sh
-   python3 scripts/adopt-standards.py ../<new-cli>
+   python3 scripts/adopt-standards.py ../whatsapp-cli
    ```
+
+   This is the command that was run for whatsapp-cli; use your new repository's folder instead.
 
    The installer copies the Biome base, the grit plugins, cspell, markdownlint, rumdl, lefthook and the release lock
    helper into `config/wirecat/`, pins the tool versions, records the file hashes and writes the `standards.yml`
@@ -60,8 +62,9 @@ whatsapp-cli is the worked example: it has every file below. Compare with it whe
    examples. Proved by: `cli-dev lint`. See [Commands](commands.md), [Output](output.md) and
    [Lifecycle](lifecycle.md).
 4. **Every write is gated by a permission.** See [Permissions](permissions.md).
-5. **Add the CLI to a parity group** in cli-base's `PARITY_GROUPS`: `all` for every CLI, and `messengers` for a
-   messenger. Proved by: `cli-dev audit`, rule `same-path-contract`. See [Testing](testing.md).
+5. **Add the CLI to the `all` parity group** in cli-base's `PARITY_GROUPS`. That group compares the shared root
+   commands. Proved by: `cli-dev audit`, rule `same-path-contract`. A messenger also joins cli-core's `parity.json`,
+   which `pnpm parity:check` reads. See [Testing](testing.md).
 
 ## Files to add
 

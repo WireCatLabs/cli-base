@@ -86,7 +86,8 @@ applies:
 - **Example:** before it publishes, `bin/release` asks npm. When npm already has the version, or a higher one, it
   takes the next free number at the same level (after `x.y.0` the next minor, else the next patch). It lands that
   number through a pull request and publishes it.
-- **Exceptions:** a pre-release version is chosen by hand.
+- **Exceptions:** a pre-release version is chosen by hand. drive's and zoom's `bin/release` do not renumber yet: they
+  refuse a version npm already has.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-6 · `package.json` holds the version, and the program reads a synced copy
@@ -95,7 +96,8 @@ applies:
 - **Enforced by:** review only.
 - **Example:** edit only `package.json`, then run `pnpm version:sync` to update `src/version.ts`. `pnpm version:check`
   fails when the two disagree.
-- **Exceptions:** a shared library that prints no version has no `src/version.ts`.
+- **Exceptions:** a shared library that prints no version has no `src/version.ts`. Today tg, max and wa have
+  `version:check`; memo, drive and zoom do not.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-7 · Versions are `x.y.z`; before 1.0.0 the changelog, not the number, marks a breaking change
@@ -174,7 +176,7 @@ applies:
 - **Enforced by:** review only.
 - **Example:** `bin/release --local` runs the same checks on this machine and reads the npm token from the keyring
   into the publish command's environment. Neither success nor an error prints it.
-- **Exceptions:** none.
+- **Exceptions:** none. drive's and zoom's `bin/release` have no `--local` yet.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-15 · Fold a late pending section into the unpublished version before publishing
@@ -193,5 +195,5 @@ applies:
 - **Enforced by:** review only.
 - **Example:** `package.json` `files` lists what ships. The CLI's `pnpm release:check` runs `packContents` from
   `@wirecat/cli-base/release` and fails on any other path in `npm pack --dry-run`.
-- **Exceptions:** none.
+- **Exceptions:** none. tg, max and wa run this check; memo, drive and zoom do not yet.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.

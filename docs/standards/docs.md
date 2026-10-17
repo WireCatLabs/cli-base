@@ -52,8 +52,8 @@ applies:
 - **Why:** the reader wants the current behaviour, not the history of a page or a journal number they cannot open.
 - **Enforced by:** review only.
 - **Example:** write "`--limit` defaults to 50", not "~~20~~ 50 (correction 2026-10-01, NEED-12)".
-- **Exceptions:** none. `cli-dev docs-check` checks this when the CLI's rules module sets `userPage` (max-cli and
-  whatsapp-cli do); cli-base's default check does not.
+- **Exceptions:** none. `cli-dev docs-check` checks this when the CLI's rules module sets `userPage`. tg, max, wa
+  and zoom set it; memo, drive and cli-base's default check do not.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-3 · Every document states current facts; rewrite a wrong sentence in place
@@ -70,8 +70,8 @@ applies:
 - **Why:** the next generation overwrites a hand edit, and the page then disagrees with the program until it does.
 - **Enforced by:** review only.
 - **Example:** `docs/commands.md` comes from the program. Change the command's help text, then run `pnpm generate`.
-- **Exceptions:** none. memo, drive and zoom check this with `pnpm generate:check`; tg, max and wa check it in
-  `pnpm release:check`.
+- **Exceptions:** none. memo, drive and zoom check this with `pnpm generate:check`. tg, max and wa check it in
+  `pnpm release:check`, which runs `pnpm generate` and then fails if the tree changed.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-5 · Every relative link and anchor resolves
@@ -90,14 +90,17 @@ applies:
 - **Example:** `docs/meta.json` lists every page once, in sidebar order. The folder has `index`, `installation`,
   `usage`, `commands`, `configuration`, `troubleshooting` and `security`. Each page has exactly one `#` heading.
 - **Exceptions:** `changelog` in `meta.json` comes from the root `CHANGELOG.md`. `cli-dev docs-check --pages` checks
-  this; max and wa run it, the other CLIs do not yet.
+  this. max and wa run it, and tg runs the same check in its own `scripts/docs-check.ts`. memo, drive and zoom do not
+  yet.
 - **Applies to:** every CLI in the docs portal. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-7 · `README.md` is the full introduction to the tool
 
 - **Why:** most readers open only the README; it must take them from "what is this" to a first result.
 - **Enforced by:** review only.
-- **Example:** follow max-cli's README section order: what it is, install, first command, then the guides.
+- **Example:** follow max-cli's README order: quick start, what you can do, for AI agents, why this tool, the main
+  features, sign-in and profiles, settings and permissions, limits, security, when it does not work, documentation,
+  development.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-500.
 
