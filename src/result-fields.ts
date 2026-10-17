@@ -28,6 +28,8 @@ const object = (value: unknown): value is Record<string, unknown> =>
 const retained = new Set(["operation_id", "page", "next", "missing", "meta", "coverage"])
 const itemPaths = (paths: readonly string[]): string[] =>
   paths.map((path) => (path.startsWith("items.") ? path.slice(6) : path))
+const onePaths = (paths: readonly string[]): string[] =>
+  paths.map((path) => (path.startsWith("item.") ? path.slice(5) : path))
 
 const select = (value: unknown, paths: readonly string[]): unknown => {
   if (Array.isArray(value)) return value.map((item) => select(item, paths))
@@ -77,7 +79,7 @@ const project = (value: unknown, fields: readonly string[]): unknown => {
     Object.hasOwn(value, "item") &&
     (Object.hasOwn(value, "meta") || Object.keys(value).every((key) => ["item", "next", "missing"].includes(key)))
   )
-    return { ...value, item: project(value.item, fields) }
+    return { ...value, item: project(value.item, onePaths(fields)) }
   if (object(value) && Array.isArray(value.items))
     return { ...value, items: value.items.map((item) => select(item, itemPaths(fields))) }
   return select(value, object(value) && !Object.hasOwn(value, "items") ? itemPaths(fields) : fields)
