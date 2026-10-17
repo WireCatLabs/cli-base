@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`scan` is a known verb**: read stored messages for what a rule finds, such as tasks, and list it; record
+  it only with `--yes`. For `tasks scan <chat>` in cli-core, the name the owner chose over `tasks apply`.
+
 ## 0.40.3 — 17.10.2026
 
 ### Added
