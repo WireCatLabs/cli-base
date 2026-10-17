@@ -56,7 +56,8 @@ describe("enterSandbox", () => {
     const vitest = fileURLToPath(new URL("../../node_modules/vitest/vitest.mjs", import.meta.url))
     const config = fileURLToPath(new URL("../../test/fixtures/sandbox-left/vitest.config.ts", import.meta.url))
     const run = spawnSync(process.execPath, [vitest, "run", "--reporter=verbose", "--config", config], {
-      env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent },
+      // CI sets FORCE_COLOR; colour codes would split the reporter's lines this test reads.
+      env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent, NO_COLOR: "1", FORCE_COLOR: "0" },
       encoding: "utf8",
     })
 
