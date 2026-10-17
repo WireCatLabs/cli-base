@@ -25,7 +25,7 @@ rules it keeps. A new CLI is ready for its first release when every check under 
 
 | Page | Area id | Rules | What it covers |
 |---|---|---:|---|
-| [Toolchain](toolchain.md) | `TOOL` | 19 | TypeScript, Biome, grit plugins, size caps, import cycles, spelling, Markdown |
+| [Toolchain](toolchain.md) | `TOOL` | 20 | TypeScript, Biome, grit plugins, size caps, import cycles, spelling, Markdown, Go |
 | [Layout](layout.md) | `LAY` | 9 | Repository layout, entry points, exports, file size, one job per file, splitting a unit |
 | [Commands](commands.md) | `CMD` | 28 | Paths, vocabulary, flags, arguments, effects, lifetime, query, help, external references |
 | [Output](output.md) | `OUT` | 23 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection |

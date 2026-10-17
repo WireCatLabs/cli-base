@@ -92,6 +92,7 @@ Rule ids on this page are `WC-LAY-<n>`. How to read a rule, how ids work and whi
   [WC-TOOL-13](toolchain.md#wc-tool-13--cap-every-file-at-1000-lines-with-biome).
 - **Exceptions:** generated code, declarative registries and cohesive test scenarios get their own judgment. Do not
   meet the number with a new barrel file, an operation scattered into trivial files or a class around each function.
+  The signals count handwritten code in any language, Go included; only the 1,000-line cap is TypeScript only.
 - **Applies to:** all CLIs and libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-LAY-8 · Give each module one reason to change

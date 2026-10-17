@@ -36,6 +36,14 @@ describe("portable result projection", () => {
     const source = Object.freeze({ title: "Example", url: null })
     expect(projectFields({ sources: [source] }, ["sources.title", "sources"])).toEqual({ sources: [source] })
   })
+  it("reads item. as the one answered thing, as items. is each listed one", () => {
+    const input = { item: { profile: "personal", linked: true, device: { id: 7, name: "Chrome" } }, meta: {} }
+    expect(projectFields(input, fieldsOf("item.profile,item.device.id"))).toEqual({
+      item: { profile: "personal", device: { id: 7 } },
+      meta: {},
+    })
+    expect(projectFields(input, ["profile"])).toEqual({ item: { profile: "personal" }, meta: {} })
+  })
   it("projects unsealed item bodies before execution metadata is added", () => {
     const body = { item: { rows: [{ ref: "cue", text: "Example", hash: "large" }] }, next: [{ cursor: "next" }] }
     expect(projectFields(body, ["rows.ref", "rows.text"])).toEqual({

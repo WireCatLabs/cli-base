@@ -35,7 +35,9 @@ formatting, so this page does not repeat it.
 - **Enforced by:** review only.
 - **Example:** `src/format-markdown.ts` and `src/format-markdown.test.ts`. A test that covers a behaviour across
   modules is named after that behaviour, such as `src/every-failure.test.ts`.
-- **Exceptions:** none.
+- **Exceptions:** a language whose toolchain reads meaning from a file name keeps that language's form. Go files are
+  lower case with underscores, because `go test` finds `_test.go` and the build picks `_unix.go` or `_windows.go`
+  by name: wa's `engine/cmd/wa-engine/lock_unix.go` and `convert_test.go`.
 - **Applies to:** all repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-STYLE-4 · Write functions in the small, and a class only where identity matters

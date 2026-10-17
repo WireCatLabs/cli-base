@@ -36,7 +36,10 @@ waits for a person, such as a login).
 - **Why:** a connection that listens for updates keeps the process busy after the answer.
 - **Enforced by:** review only.
 - **Example:** `chats list` connects, reads and closes. Only `watch` and `serve` open with updates on.
-- **Exceptions:** none.
+- **Exceptions:** a protocol with no connection that has updates off, such as WhatsApp, where the server delivers
+  queued messages on every connect. Then the one-shot command does not wait for updates, and whatever arrives is
+  either saved to the store or left unacknowledged, so the server delivers it again. It is never acknowledged and
+  dropped.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-LIFE-3 · Hand what you open to the runner, so a timeout or a signal closes it too

@@ -10,7 +10,7 @@ import * as v from "valibot"
  * being written, and the window for that is exactly a Ctrl+C mid-write.
  * ⚠ Both modes are ignored on Windows.
  */
-export const writeSecurely = (path: string, contents: string, mode: number): void => {
+export const writeSecurely = (path: string, contents: string | Uint8Array, mode: number): void => {
   const dir = dirname(path)
   mkdirSync(dir, { recursive: true, mode: 0o700 })
 

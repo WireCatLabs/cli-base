@@ -47,14 +47,17 @@ and which run after merge is in [CI](ci.md).
 - **Applies to:** all CLIs and the shared packages. cli-base uses the shared setup; the CLIs keep their own sandboxes
   for now. drive has none yet, and zoom's moves only the temporary directory. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-TEST-2 · No test reaches the real keyring
+### WC-TEST-2 · No test opens a real credential store
 
-- **Why:** the owner's tokens live in the real keychain, and one test that forgets an option would write there.
-- **Enforced by:** `src/keyring.test.ts`.
+- **Why:** the owner's tokens live in the real keychain, and a messenger's device keys in a file of their own; one
+  test that forgets an option would read or write the real one.
+- **Enforced by:** `src/keyring.test.ts` · `whatsapp-cli: src/testing/sandbox.test.ts`.
 - **Example:** every test passes `memoryKeyring()` from `@wirecat/cli-base/testing`. The shared setup
   (`@wirecat/cli-base/testing/setup`, [WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory))
   also replaces `@napi-rs/keyring` with a module that throws, so a forgotten option fails the test instead of
   reaching the keychain, and `src/keyring.test.ts` asserts that `systemKeyring` throws under it.
+  A credential store that is a file, such as WhatsApp's linked-device keys in `private.db`, resolves under the
+  sandbox's state directory, and a sandbox test asserts that its path is inside the temporary root, as wa's does.
 - **Exceptions:** none. Until a CLI adopts the shared setup, its sandbox does not replace `@napi-rs/keyring`; tg and
   max only scope the keyring entry through environment variables.
 - **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -220,7 +223,9 @@ and which run after merge is in [CI](ci.md).
 - **Example:** live scenarios run by hand, by the owner or with the owner's yes, on test profiles and test chats
   only. The cast lives in an ignored file, no profile is assumed, and the record keeps the shape of each answer,
   never its content. When a scenario is run again, the sentence it supports is updated.
-- **Exceptions:** none.
+- **Exceptions:** a messenger with no test accounts, such as WhatsApp, where a second account or a second linked
+  device would change the owner's real one, runs live scenarios on the owner's profile and only in the owner's own
+  chat (the chat with themselves). It never writes to another person, and still runs only with the owner's yes.
 - **Applies to:** all CLIs that talk to a real account. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Sources

@@ -136,7 +136,9 @@ on the [CI](ci.md) page.
 - **Enforced by:** `release.yml` · `release-checks.yml`.
 - **Example:** `release.yml` runs full validation and `release-checks.yml` (dependency audit, workflow analysis with
   zizmor, CodeQL). Validation packs the package once, and the `build` job checks that file's SHA-256 before it is
-  handed to `publish`.
+  handed to `publish`. A CLI that publishes several packages packs every one of them once, records each file's
+  SHA-256, and checks each before it is published: wa publishes its main package and six platform packages of its
+  Go engine.
 - **Exceptions:** none.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 

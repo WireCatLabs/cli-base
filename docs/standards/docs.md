@@ -16,8 +16,8 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 
 - **Why:** a user page is read to do a task; a developer page is read to change the code. Mixed pages serve neither.
 - **Enforced by:** review only.
-- **Example:** `README.md` and `docs/*.md` are user pages. `docs/dev/*.md`, `CLAUDE.md`, `AGENTS.md` and
-  `SECURITY.md` are developer pages.
+- **Example:** `README.md` and `docs/*.md` are user pages. `SECURITY.md` is a user page too: GitHub shows it to
+  whoever reports a vulnerability. `docs/dev/*.md`, `CLAUDE.md` and `AGENTS.md` are developer pages.
 - **Exceptions:** `CHANGELOG.md` is read by users and has its own rules (WC-DOC-14 to WC-DOC-20).
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 

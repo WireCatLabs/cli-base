@@ -81,9 +81,11 @@ Commands that look after the tool and its files, and never show a message, have 
 - **Why:** a profile that denies everything must still be able to fix its own config and log in.
 - **Enforced by:** review only.
 - **Example:** `config`, `session`, `doctor`, `commands`, `complete`, `upgrade`, `skill`, `models`, `server`,
-  `schedule`, `runs`, `sends`, `recipients`, `flood`, `mcp`, `replies`, and `store info|check|migrate|backup|restore|
-  repair|copies`. Under `bot`: `auth`, `list`, `sends`, `recipients`, `mcp`.
-- **Exceptions:** what a schedule or a reply rule does is checked by its own key when it runs (`replies.send`).
+  `schedule`, `runs`, `sends`, `recipients`, `flood`, `mcp`, `replies` where the messenger has replies, and
+  `store info|check|migrate|backup|restore|repair|copies`. Under `bot`: `auth`, `list`, `sends`, `recipients`, `mcp`.
+  wa has no `replies` group: its owner rules out automatic replies.
+- **Exceptions:** what a schedule does, or a reply rule where the messenger has replies, is checked by its own key
+  when it runs (`replies.send`).
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-PERM-6 · The built-in defaults ask only before what cannot be undone
@@ -103,8 +105,9 @@ A default is never made stricter without the owner's word.
 - **Why:** the tool should work without questions; only a deletion, a logout or an automatic reply needs one.
 - **Enforced by:** `cli-core: src/sends/permissions.test.ts`.
 - **Example:** a new profile sends at once, and asks before `messages delete`.
-- **Exceptions:** `replies.send` is `deny`: a reply rule writes to people with nobody typing a command, so it waits for
-  the owner's own `allow`.
+- **Exceptions:** where the messenger has replies, `replies.send` is `deny`: a reply rule writes to people with nobody
+  typing a command, so it waits for the owner's own `allow`. A messenger with no `replies` group, such as wa, has no
+  use for the key.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-568.
 
 ### WC-PERM-7 · A built-in default only ever tightens

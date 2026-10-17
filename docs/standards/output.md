@@ -112,7 +112,10 @@ JSON Schema 2020-12.
 - **Enforced by:** review only.
 - **Example:** `{ "item": { "operation_id": "…", … }, "meta": { … } }`, with the ids the write touched beside
   `operation_id`. The same id is in the send journal.
-- **Exceptions:** a bot account's send has no `--operation-id`, because no Bot API makes a repeat safe.
+- **Exceptions:** a bot account's send has no `--operation-id`, because no Bot API makes a repeat safe. Logging in
+  or linking a device, and logging out or unlinking it, answer without an `operation_id`: they are not in the send
+  journal, and the account's state already makes a repeat safe: `wa personal session start` on a linked profile
+  answers `already_linked: true`, and a second `session end` answers `ended: false`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-431.
 
 ### WC-OUT-11 · Give a shared command the same answer shape in every CLI of its group
@@ -228,9 +231,10 @@ JSON Schema 2020-12.
 
 - **Why:** an agent pays for every byte it reads, but it still needs to know the answer's limits.
 - **Enforced by:** review only.
-- **Example:** `tg chats list --json=items.id,items.title`. `source.title` picks a nested field. The keys `page`,
-  `next`, `missing`, `meta`, `coverage` and `operation_id` stay. A field that does not exist is left out. A bare
-  `--json` at a terminal lists the fields of a command that declares its answer, instead of printing them all.
+- **Example:** `tg chats list --json=items.id,items.title`. An answer about one thing takes `item.` the same way:
+  `--json=item.profile` keeps `profile` inside `item`. `source.title` picks a nested field. The keys `page`, `next`,
+  `missing`, `meta`, `coverage` and `operation_id` stay. A field that does not exist is left out. A bare `--json` at
+  a terminal lists the fields of a command that declares its answer, instead of printing them all.
 - **Exceptions:** numeric indexes and wildcards are not supported.
 - **Applies to:** CLIs that run on cli-core's `run()`; the projector itself (`projectFields`) is cli-base's.
   **Since:** cli-base 0.41.0. **Rulings:** NEED-761.

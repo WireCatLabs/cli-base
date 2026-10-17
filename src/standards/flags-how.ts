@@ -515,6 +515,13 @@ export const HOW_FLAGS: VocabularyFlag[] = [
   },
   { name: "--analyze", role: "action", type: "switch", meaning: "also analyze with the configured provider" },
   {
+    name: "--agent",
+    value: "<agent>",
+    role: "action",
+    type: "choice",
+    meaning: "also install the agent skill for this agent after logging in",
+  },
+  {
     name: "--catch-up",
     role: "action",
     type: "switch",

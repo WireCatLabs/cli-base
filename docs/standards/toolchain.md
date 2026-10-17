@@ -1,10 +1,12 @@
 # Toolchain
 
+<!-- cspell:ignore gofmt -->
+
 ## Scope
 
 How a repository is built and checked before review: the shared presets and `standards:check`, strict TypeScript,
 the shared Biome preset and its grit plugins, the file size cap, import cycles, layer boundaries as lint, the command
-lint, spelling and Markdown lint.
+lint, spelling, Markdown lint, and the checks for a Go part.
 
 Rule ids on this page are `WC-TOOL-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). What runs on which trigger is on the [CI page](ci.md).
@@ -156,7 +158,8 @@ cli-testing, cli-docs, plus community itself.
   in [WC-LAY-7](layout.md#wc-lay-7--treat-300-and-500-lines-as-review-signals).
 - **Exceptions:** a file that is one cohesive unit may get its own override, listed by path in `biome.json` (tg
   `src/telegram/adapter.ts`; four files in cli-core). A smaller cap is allowed: zoom uses 500. cli-base, cli-testing,
-  cli-docs and community have no cap yet.
+  cli-docs and community have no cap yet. Biome reads only JavaScript and TypeScript, so the cap does not cover
+  code in another language, such as wa's Go engine; the review signals of WC-LAY-7 still apply to it.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-14 · Turn on the import cycle rule
@@ -222,6 +225,18 @@ cli-testing, cli-docs, plus community itself.
   them.
 - **Exceptions:** memo, drive, cli-base and cli-core do not run `rumdl` yet.
 - **Applies to:** the CLIs and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-TOOL-20 · Build a Go part with the version in `go.mod`, and check it with gofmt, vet and its tests
+
+- **Why:** the TypeScript checks do not read Go, so a Go part with no checks of its own drifts without anyone seeing
+  it.
+- **Enforced by:** `whatsapp-cli: engine-pr.yml:engine` · `whatsapp-cli: ci.yml:engine`.
+- **Example:** every workflow that builds the Go part uses `actions/setup-go` with `go-version-file` pointing at its
+  `go.mod`, never a version written in the workflow. A path-scoped pull request job and full validation both run
+  `gofmt -l .` (any file listed fails), `go vet ./...` and `go test ./...` in the Go folder. wa's engine is the
+  example.
+- **Exceptions:** none.
+- **Applies to:** CLIs with a Go part (wa). **Since:** cli-base 0.44.0. **Rulings:** none.
 
 ## Sources
 
