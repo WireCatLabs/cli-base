@@ -1,13 +1,14 @@
 # Releases
 
-**Status: skeleton.** No rules are written here yet.
+<!-- cspell:ignore flock lslocks OIDC whatsapp zizmor -->
 
 ## Scope
 
 How a CLI is released: `bin/release`, the release lock, version numbers, the release report and trusted publishing.
 
 Rule ids on this page are `WC-REL-<n>`. How to read a rule, how ids work and which rule wins are in the
-[index](README.md).
+[index](README.md). The changelog a release dates is on the [Documents](docs.md) page. The checks a release runs are
+on the [CI](ci.md) page.
 
 ## Rule template
 
@@ -23,11 +24,174 @@ Rule ids on this page are `WC-REL-<n>`. How to read a rule, how ids work and whi
 
 ## Sources today
 
-Until the rules are written here, these documents hold them:
+The rules below replace the release rules in these files. Where a file disagrees with a rule here, the rule here
+applies:
 
-- [cli-base `RELEASING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/RELEASING.md)
-- [community standards](https://github.com/WireCatLabs/community/blob/main/standards/README.md)
+- [cli-base `RELEASING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/RELEASING.md), the step by step
+  for cli-base itself
+- [community standards, "Release locking"](https://github.com/WireCatLabs/community/blob/main/standards/README.md),
+  the how-to for installing the lock helper
+- each CLI's `bin/release` and its release skill, which carry out these rules
 
 ## Rules
 
-None assigned yet. Rules and their ids are added when this page is written.
+### WC-REL-1 · Release only with `bin/release`, from a clean `main` that matches `origin/main`
+
+- **Why:** the workflow publishes `origin/main`, so a local commit or a dirty tree would not ship what was checked.
+- **Enforced by:** review only.
+- **Example:** raise `version` in `package.json` and date the pending changelog section in a pull request. Merge it.
+  Then run `bin/release` on `main`. It refuses another branch, uncommitted changes and a `main` ahead of
+  `origin/main`.
+- **Exceptions:** none.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-2 · `main` changes only through a pull request, also during a release
+
+- **Why:** the repository ruleset requires it, and every change to `main` then passes the pull request checks.
+- **Enforced by:** review only.
+- **Example:** when `bin/release` renumbers the version or folds the changelog, it opens a pull request, waits for its
+  checks and merges it before it publishes.
+- **Exceptions:** none.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-3 · `bin/release` takes the machine release lock before it builds or publishes
+
+- **Why:** two sessions published at the same time on one machine; one release at a time, across every package.
+- **Enforced by:** review only.
+- **Example:**
+
+  ```sh
+  . ./config/wirecat/release-lock.sh
+  wirecat_release_lock
+  ```
+
+  The helper comes from the community presets (`adopt-standards.py --only release-lock`). It holds
+  `${XDG_RUNTIME_DIR:-/tmp}/leemour-release.lock` with `flock` on file descriptor 9 until the release ends.
+- **Exceptions:** none. cli-testing still opens the lock with its own `flock` line and moves to the helper.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-854.
+
+### WC-REL-4 · Never break the release lock; wait for the holder and try again
+
+- **Why:** a deleted lock file is a new file, so a second release can then run at the same time as the first.
+- **Enforced by:** review only.
+- **Example:** when the lock is held, the helper names the holder on stderr. Let that release finish, then run
+  `bin/release` again. Do not delete the lock file and do not kill the holder.
+- **Exceptions:** none. A missing `lslocks` or an old holder label does not allow a release; only `flock` decides.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-5 · One releaser per version: npm decides which number is free
+
+- **Why:** two sessions often prepare the same number; the second must not publish over the first or fail late.
+- **Enforced by:** review only.
+- **Example:** before it publishes, `bin/release` asks npm. When npm already has the version, or a higher one, it
+  takes the next free number at the same level (after `x.y.0` the next minor, else the next patch). It lands that
+  number through a pull request and publishes it.
+- **Exceptions:** a pre-release version is chosen by hand.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-6 · `package.json` holds the version, and the program reads a synced copy
+
+- **Why:** a bundled command has no `package.json` to read, so `--version` reads a source file that must not drift.
+- **Enforced by:** review only.
+- **Example:** edit only `package.json`, then run `pnpm version:sync` to update `src/version.ts`. `pnpm version:check`
+  fails when the two disagree.
+- **Exceptions:** a shared library that prints no version has no `src/version.ts`.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-7 · Versions are `x.y.z`; before 1.0.0 the changelog, not the number, marks a breaking change
+
+- **Why:** before 1.0.0 any release may change the API, so a caller reads "Changed — may break callers" before an
+  upgrade.
+- **Enforced by:** review only.
+- **Example:** raise the minor (`0.40.4` to `0.41.0`) for a release with new features, and the patch for one with only
+  fixes. A breaking change, in either kind of release, has an entry under "Changed — may break callers".
+- **Exceptions:** a pre-release version (`0.41.0-rc.1`) is chosen by hand.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-8 · A messenger CLI waits two hours between releases; a shared library does not wait
+
+- **Why:** a broken CLI release must be noticed before the next one lands on top of it. Every CLI waits for a library
+  release, so a gap there only delays them.
+- **Enforced by:** review only.
+- **Example:** tg-cli, max-cli and whatsapp-cli's `bin/release` refuse to start within two hours of the last version
+  on npm. cli-base and cli-core release one after another with no gap.
+- **Exceptions:** memo, drive and zoom have no gap in their `bin/release` today.
+- **Applies to:** messenger CLIs (gap); shared libraries (no gap). **Since:** cli-base 0.41.0. **Rulings:** NEED-854.
+
+### WC-REL-9 · A breaking change to a stable shared-library export ships at most once a week
+
+- **Why:** each such change makes every CLI change too; batching them keeps the CLIs on one version.
+- **Enforced by:** review only.
+- **Example:** gather breaking export changes into one release a week. Bump the library in every CLI that uses it on
+  the same day.
+- **Exceptions:** none.
+- **Applies to:** shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-473.
+
+### WC-REL-10 · A messenger CLI is released only with a release report the owner signed for that commit
+
+- **Why:** the judgement half of a release (changelog wording, docs against the change, live checks) has no other
+  record that it ran for this exact commit.
+- **Enforced by:** review only.
+- **Example:** max-cli's `bin/release` refuses unless the report has `Commit: <HEAD>` and `Signed off: <date>`. When
+  `bin/release` only renumbers or folds the changelog, it carries the report to the new commit. A fork passes its
+  own report with `bin/release --report <path>`.
+- **Exceptions:** none. Today only max-cli's `bin/release` checks the report. tg-cli and whatsapp-cli have the
+  release skill, but their `bin/release` does not check a report yet.
+- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-11 · Publish from GitHub Actions with npm trusted publishing
+
+- **Why:** no npm token is stored in GitHub, and npm attaches provenance to the package.
+- **Enforced by:** `release.yml:publish`.
+- **Example:** `bin/release` starts `release.yml` and follows it. Only the `publish` job has the OIDC permission (the
+  short-lived identity npm trusts), and it runs no project code: it only runs `npm publish` on the validated file.
+- **Exceptions:** npm trusts the workflow by file name: renaming `release.yml` stops publishing until npm's trusted
+  publisher settings are updated.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-12 · Publish only after full validation and the release security checks pass
+
+- **Why:** pull request checks are bounded; the full suite and the heavy scanners run before anything reaches npm.
+- **Enforced by:** `release.yml` · `release-checks.yml`.
+- **Example:** `release.yml` runs full validation and `release-checks.yml` (dependency audit, workflow analysis with
+  zizmor, CodeQL). Validation packs the package once, and the `build` job checks that file's SHA-256 before it is
+  handed to `publish`.
+- **Exceptions:** none.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-13 · Tag `v<version>` only after npm shows that version
+
+- **Why:** a tag for a version npm does not have yet marks a release that may still fail.
+- **Enforced by:** `release.yml:tag`.
+- **Example:** the `publish` job waits until npm serves the new version; only then does the `tag` job push
+  `v<version>`. In the CLIs, the workflow also creates the GitHub release from that version's changelog section.
+- **Exceptions:** none.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-14 · `bin/release --local` is the fallback, and it never prints the npm token
+
+- **Why:** a release must still be possible when GitHub Actions is down, without leaking the token.
+- **Enforced by:** review only.
+- **Example:** `bin/release --local` runs the same checks on this machine and reads the npm token from the keyring
+  into the publish command's environment. Neither success nor an error prints it.
+- **Exceptions:** none.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-15 · Fold a late pending section into the unpublished version before publishing
+
+- **Why:** a pull request merged after the version was dated adds a pending section above it, and that change must
+  ship in the version it lands in.
+- **Enforced by:** review only.
+- **Example:** `bin/release` runs `cli-dev changelog fold --land --version <x.y.z>` while npm does not have the version.
+  It folds the pending section into the dated one, and merges any repeated `###` heading, through a pull request.
+- **Exceptions:** none.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+### WC-REL-16 · The package ships only the files it names
+
+- **Why:** a stray file in the package can leak local data and grows every install.
+- **Enforced by:** review only.
+- **Example:** `package.json` `files` lists what ships. The CLI's `pnpm release:check` runs `packContents` from
+  `@wirecat/cli-base/release` and fails on any other path in `npm pack --dry-run`.
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
