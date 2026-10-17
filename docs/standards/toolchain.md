@@ -71,13 +71,15 @@ cli-testing, cli-docs, plus community itself.
   `tsconfig.scripts.json` yet.
 - **Applies to:** the CLIs, cli-core, cli-base and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-TOOL-6 · Support Node 22 and later, and Bun, and test both
+### WC-TOOL-6 · Support Node 22 and later, and Bun
 
 - **Why:** users install the CLIs with either runtime, so a break on one is a break for real users.
-- **Enforced by:** `node-ci.yml:check` · `node-ci.yml:bun`.
+- **Enforced by:** `node-ci.yml:bun`.
 - **Example:** `"engines": { "node": ">=22" }` in `package.json`. Full validation runs on Node 24, and the Bun job runs
-  the built command (`pnpm build && pnpm smoke:bun`).
-- **Exceptions:** cli-docs and community publish no runtime package.
+  the built command (`pnpm build && pnpm smoke:bun`). Node 22 runs in the Windows install matrix of tg, max and wa, in
+  zoom's full validation and in cli-core's old-Node job.
+- **Exceptions:** cli-docs and community publish no runtime package. memo, drive and cli-base do not run Node 22 in
+  any workflow yet.
 - **Applies to:** the CLIs, cli-core and cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-11.
 
 ### WC-TOOL-7 · Let Biome format the code, and do not format by hand

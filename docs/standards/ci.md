@@ -72,7 +72,8 @@ cli-testing, cli-docs, plus community itself.
 - **Example:** on a pull request, only the standards job, the changelog guard and small path-scoped jobs run. Coverage,
   contracts, the test matrix, `docs:check`, parity, Windows and macOS run in full validation (WC-CI-7).
 - **Exceptions:** a path-scoped job that tests one platform-specific file may run on pull requests, such as cli-base
-  `macos.yml` for the path code. Third-party security apps may post their own checks.
+  `macos.yml` for the path code. cli-docs and community run `security-pr.yml`, a new-commit secret scan. Third-party
+  security apps may post their own checks.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
@@ -134,10 +135,11 @@ cli-testing, cli-docs, plus community itself.
 ### WC-CI-11 · Pin each third-party action to a commit and give each workflow read-only defaults
 
 - **Why:** a moved tag or a write token in a workflow is how an outside change reaches a release.
-- **Enforced by:** `release-checks.yml:workflows`.
+- **Enforced by:** review only.
 - **Example:** `uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` with
   `persist-credentials: false`, and `permissions: contents: read` at the top of the workflow. A job that needs more
-  asks for it on that job only.
+  asks for it on that job only. The `zizmor` scan in `release-checks.yml` reports high findings at release, but does
+  not fail on them.
 - **Exceptions:** none.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
