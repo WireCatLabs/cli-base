@@ -108,3 +108,12 @@ formatting, so this page does not repeat it.
   changelog rules are on the [Documents page](docs.md).
 - **Exceptions:** none.
 - **Applies to:** all repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-base `CONVENTIONS.md`, "Code"](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/CONVENTIONS.md#code)
+- [tg-cli TypeScript standards](https://github.com/WireCatLabs/tg-cli/tree/main/agent-os/standards/typescript): no casts,
+  inference and optional fields

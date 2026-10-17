@@ -7,12 +7,8 @@ merge to `main`, and the monthly runs.
 
 Rule ids on this page are `WC-CI-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). What each tool checks is on the [Toolchain page](toolchain.md); the release workflow is on the
-[Releases page](releases.md).
-
-The procedures stay in their own homes: the
-[community check schedule](https://github.com/WireCatLabs/community/blob/main/standards/CHECKS.md) has the rough
-timings, and the [cli-testing CI folder](https://github.com/WireCatLabs/cli-testing/tree/main/docs/ci) has the
-cross-project timing table, the monthly runbook and the contract runner.
+[Releases page](releases.md); which scanners must exist and how workflows are hardened is on the
+[Security page](security.md).
 
 "The ten repositories" on this page means the six CLIs (tg, max, memo, drive, zoom, wa), cli-base, cli-core,
 cli-testing, cli-docs, plus community itself.
@@ -78,7 +74,7 @@ cli-testing, cli-docs, plus community itself.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
 
-- **Why:** a breaking change without a changelog line reaches callers with no warning.
+- **Why:** the guard is the only check that reads the changelog on a pull request.
 - **Enforced by:** `changelog-guard.yml:guard`.
 - **Example:** each repository's `changelog-guard.yml` calls
   `WireCatLabs/cli-base/.github/workflows/changelog-guard.yml` at a pinned commit, on `opened`, `edited`,
@@ -132,22 +128,15 @@ cli-testing, cli-docs, plus community itself.
 - **Exceptions:** none. Do not add a heavy scanner to an editor hook, a stop hook or an ordinary pull request job.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** sc:9.
 
-### WC-CI-11 · Pin each third-party action to a commit and give each workflow read-only defaults
-
-- **Why:** a moved tag or a write token in a workflow is how an outside change reaches a release.
-- **Enforced by:** review only.
-- **Example:** `uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` with
-  `persist-credentials: false`, and `permissions: contents: read` at the top of the workflow. A job that needs more
-  asks for it on that job only. The `zizmor` scan in `release-checks.yml` reports high findings at release, but does
-  not fail on them.
-- **Exceptions:** none.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+### WC-CI-11 · Moved to [WC-SECR-20](security.md#wc-secr-20--pin-each-third-party-action-to-a-commit-and-give-each-workflow-read-only-defaults)
 
 ### WC-CI-12 · Merge to `main` only through a pull request whose checks all passed
 
 - **Why:** a red merge breaks `main` for every parallel branch, and an admin merge skips the only gate there is.
 - **Enforced by:** review only.
-- **Example:** `gh pr checks <number>` shows every line as pass before `gh pr merge`. Never merge with `--admin`.
+- **Example:** `gh pr checks <number>` shows every line as pass before `gh pr merge`. Never merge with `--admin`. A
+  release changes `main` the same way
+  ([WC-REL-2](releases.md#wc-rel-2--main-changes-only-through-a-pull-request-also-during-a-release)).
 - **Exceptions:** none.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** NEED-381.
 
@@ -159,3 +148,12 @@ cli-testing, cli-docs, plus community itself.
   live-test procedure, on test accounts.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds. The procedures stay in their own homes.
+
+- [community check schedule](https://github.com/WireCatLabs/community/blob/main/standards/CHECKS.md): the rough timings
+- [cli-testing CI folder](https://github.com/WireCatLabs/cli-testing/tree/main/docs/ci): the cross-project timing
+  table, the monthly runbook and the contract runner

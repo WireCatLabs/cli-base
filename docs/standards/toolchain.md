@@ -11,7 +11,7 @@ Rule ids on this page are `WC-TOOL-<n>`. How to read a rule, how ids work and wh
 
 The [community standards](https://github.com/WireCatLabs/community/blob/main/standards/README.md) repository is the
 one source of the presets. Each repository holds a copy of them in `config/wirecat/`, installed by
-`adopt-standards.py`. The tool reference is [cli-base `TOOLING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/TOOLING.md).
+`adopt-standards.py`.
 
 "The ten repositories" on this page means the six CLIs (tg, max, memo, drive, zoom, wa), cli-base, cli-core,
 cli-testing, cli-docs, plus community itself.
@@ -62,24 +62,28 @@ cli-testing, cli-docs, plus community itself.
 
 ### WC-TOOL-5 · Typecheck every TypeScript file: source, tests and scripts
 
-- **Why:** a folder that no `tsconfig` covers breaks without a sign, and CI stays green.
-- **Enforced by:** `pnpm typecheck` · `pnpm ci:quick`.
-- **Example:** `tsconfig.test.json` extends `@wirecat/cli-base/tsconfig.test.json` and covers all of `src/`, tests
-  included. `tsconfig.scripts.json` extends `@wirecat/cli-base/tsconfig.scripts.json` and covers `scripts/`. The
-  `typecheck` script runs all three projects.
+- **Why:** a folder that no `tsconfig` covers breaks without a sign, and a test that compares against a constant that
+  does not exist passes for any input while CI stays green.
+- **Enforced by:** `pnpm typecheck` · `pnpm ci:quick` · `node-ci.yml:check`.
+- **Example:** `tsconfig.test.json` extends `@wirecat/cli-base/tsconfig.test.json`, covers all of `src/`, tests
+  included, checks them with `noEmit` and carries `"exclude": []`. Without that line it inherits the build's
+  `exclude`, checks no test file and still passes. `tsconfig.scripts.json` extends
+  `@wirecat/cli-base/tsconfig.scripts.json` and covers `scripts/`. The `typecheck` script runs all three projects.
 - **Exceptions:** a new folder of TypeScript goes into one of these projects in the same pull request. memo has no
   `tsconfig.scripts.json` yet.
 - **Applies to:** the CLIs, cli-core, cli-base and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-TOOL-6 · Support Node 22 and later, and Bun
+### WC-TOOL-6 · Support Node 22 and later, and Bun, and run the built exports under Bun
 
-- **Why:** users install the CLIs with either runtime, so a break on one is a break for real users.
-- **Enforced by:** `node-ci.yml:bun`.
-- **Example:** `"engines": { "node": ">=22" }` in `package.json`. Full validation runs on Node 24, and the Bun job runs
-  the built command (`pnpm build && pnpm smoke:bun`). Node 22 runs in the Windows install matrix of tg, max and wa, in
-  zoom's full validation and in cli-core's old-Node job.
+- **Why:** users install the CLIs with either runtime, and a static import of one runtime's module fails to load on
+  the other.
+- **Enforced by:** `pnpm smoke:bun` · `node-ci.yml:bun`.
+- **Example:** `"engines": { "node": ">=22" }` in `package.json`. Full validation runs on Node 24. `bun test` cannot
+  run the vitest suite, so `scripts/smoke.ts` runs the built exports with plain assertions, and the Bun job runs it
+  (`pnpm build && pnpm smoke:bun`). A new entry point gets a line there. Node 22 runs in the Windows install matrix of
+  tg, max and wa, in zoom's full validation and in cli-core's old-Node job.
 - **Exceptions:** cli-docs and community publish no runtime package. memo, drive and cli-base do not run Node 22 in
-  any workflow yet.
+  any workflow yet. memo has no Bun smoke test yet.
 - **Applies to:** the CLIs, cli-core and cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-11.
 
 ### WC-TOOL-7 · Let Biome format the code, and do not format by hand
@@ -107,7 +111,9 @@ cli-testing, cli-docs, plus community itself.
 - **Enforced by:** `pnpm lint` · `standards.yml:standards`.
 - **Example:** the preset sets noConsole to error and allows `error`. Command output goes through the renderer and the
   streams of cli-base.
-- **Exceptions:** files under `scripts/` may print, because they are development tools.
+- **Exceptions:** files under `scripts/` may print, because they are development tools. A shared package prints
+  nothing at all, not even with `console.error`
+  ([WC-ARCH-19](architecture.md#wc-arch-19--shared-packages-print-nothing-and-log-nothing-on-their-own)).
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-10 · Keep the secret lint on, and suppress a finding only with its reason
@@ -144,7 +150,7 @@ cli-testing, cli-docs, plus community itself.
 ### WC-TOOL-13 · Cap every file at 1,000 lines with Biome
 
 - **Why:** a file past 1,000 lines always holds more than one job; the cap stops it before review has to.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: biome noExcessiveLinesPerFile` · `cli-core: biome noExcessiveLinesPerFile`.
 - **Example:** `biome.json` sets the style rule noExcessiveLinesPerFile to error with `"maxLines": 1000`, and turns it
   off for `**/*.test.ts`, `test/**` and `**/generated/**`. Below the cap, the review signals at 300 and 500 lines are
   in [WC-LAY-7](layout.md#wc-lay-7--treat-300-and-500-lines-as-review-signals).
@@ -156,7 +162,7 @@ cli-testing, cli-docs, plus community itself.
 ### WC-TOOL-14 · Turn on the import cycle rule
 
 - **Why:** a cycle makes load order decide which value a module sees, and the failure shows only at run time.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: biome noImportCycles` · `cli-core: biome noImportCycles`.
 - **Example:** `biome.json` sets the suspicious rule noImportCycles to error.
 - **Exceptions:** cli-base, cli-testing, cli-docs and community do not have it yet.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -164,19 +170,20 @@ cli-testing, cli-docs, plus community itself.
 ### WC-TOOL-15 · Declare layer boundaries as restricted imports in `biome.json`
 
 - **Why:** a boundary that only a document states is crossed in the first busy week.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: biome noRestrictedImports` · `cli-testing: biome noRestrictedImports`.
 - **Example:** an override with `"includes": ["src/commands/**"]` sets the style rule noRestrictedImports with the
   folders that layer may not import, and a `message` that says why, such as "commands speak the domain model; only
   `src/client.ts` may reach the protocol". Which layers exist and which way they depend is on the
   [Architecture page](architecture.md).
-- **Exceptions:** cli-base and cli-docs have no layer overrides.
+- **Exceptions:** cli-base and cli-docs have no layer overrides. cli-core has them, but its last override replaces
+  the earlier ones today, so they catch nothing until it is fixed.
 - **Applies to:** the CLIs, cli-core and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-16 · Run the command lint on the built CLI, and let its baseline only shrink
 
 - **Why:** the command tree is what users and agents see; the lint holds it to the shared vocabulary on every pull
   request.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: pnpm lint:commands`.
 - **Example:** `"lint:commands": "cli-dev lint --cli dist/bin/max.js"`, run by `ci:quick` after the build. Known
   violations live in `lint/baseline/<rule-id>.json`; an entry with no violation left fails the run. A permanent
   exception goes in `lint/overrides.json` with `rule`, `target`, `reason`, `owner` and `review_after`. More than 10
@@ -208,9 +215,18 @@ cli-testing, cli-docs, plus community itself.
 ### WC-TOOL-19 · Check user pages with `rumdl` and the shared `rumdl.toml`
 
 - **Why:** user pages feed the docs site, so their Markdown form is checked more closely than developer notes.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: pnpm docs:check` · `max-cli: pnpm docs:check` · `whatsapp-cli: pnpm docs:check` ·
+  `zoom-cli: pnpm docs:check` · `cli-testing: pnpm docs:check`.
 - **Example:** `rumdl check --config config/wirecat/rumdl.toml README.md docs/*.md`, inside `docs:check`. The preset
   turns off line length (MD013), first-line heading (MD041) and relative links (MD057), because other checks cover
   them.
 - **Exceptions:** memo, drive, cli-base and cli-core do not run `rumdl` yet.
 - **Applies to:** the CLIs and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [community standards](https://github.com/WireCatLabs/community/blob/main/standards/README.md)
+- [cli-base `TOOLING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/TOOLING.md)

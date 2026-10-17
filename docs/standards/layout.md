@@ -3,14 +3,11 @@
 ## Scope
 
 Where things live in a CLI repository: the folders, the entry points, what the package exports, how large a file may
-grow, and one job per file.
+grow, one job per file, and how a large unit is split.
 
 Rule ids on this page are `WC-LAY-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). Which layer may import which, and what goes in cli-base, cli-core or the CLI, is on the
 [Architecture page](architecture.md). The hard file size cap is a lint rule on the [Toolchain page](toolchain.md).
-
-Background reading: [cli-base `MODULARITY.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/MODULARITY.md)
-and [cli-base `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/ARCHITECTURE.md).
 
 ## Rules
 
@@ -103,9 +100,15 @@ and [cli-base `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-base/blob/ma
 - **Enforced by:** review only.
 - **Example:** split when unrelated policies, different effects or separate consumers collect in one file. Keep
   validation, orchestration and output mapping apart when each has real logic. Do not write a catch-all `utils`
-  module, a boolean flag that selects unrelated workflows, or a command handler that also holds SQL.
-- **Exceptions:** none.
-- **Applies to:** all CLIs and libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+  module, a boolean flag that selects unrelated workflows, or a command handler that also holds SQL. Split a large
+  unit along a named seam, and dispatch by lookup, not by a branch per case:
+  - the tg adapter is a thin class over feature modules (folders, topics, groups, contacts, login, watch) that share a
+    small feature context;
+  - the cli-core store is a set of areas, each in its own file ([Store](store.md));
+  - the Lucene compiler has one compiler per field, picked from the field registry by name.
+- **Exceptions:** do not scatter one operation into trivial files, add a barrel or wrap each function in a class only
+  to meet a size limit.
+- **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-LAY-9 · Do not add a new job to a large file because it is already there
 
@@ -115,3 +118,11 @@ and [cli-base `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-base/blob/ma
   tests, and record other structural debt in the backlog instead of fixing it in the same pull request.
 - **Exceptions:** none.
 - **Applies to:** all CLIs and libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-base `MODULARITY.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/MODULARITY.md)
+- [cli-base `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/ARCHITECTURE.md)

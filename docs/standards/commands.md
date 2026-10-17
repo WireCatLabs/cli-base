@@ -47,7 +47,7 @@ catalogue and parity manifest stay in cli-core
 ### WC-CMD-3 · Give a group without a leaf only its help, never a hidden default action
 
 - **Why:** a group that runs something when its leaf is missing does work nobody asked for.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/program.test.ts`.
 - **Example:** `tg chats` prints the commands under `chats`. At a terminal the help goes to stderr and the exit code
   is 2. In machine mode the answer is a `validation_error` that names `--help`.
 - **Exceptions:** none.
@@ -167,7 +167,8 @@ catalogue and parity manifest stay in cli-core
 - **Example:** `--no-input`, `--json`, `--jsonl`, a `CI` variable or a stdout that is not a terminal each switch prompts
   and browser logins off. Data piped on stdin for an explicit command still works. Buffered stdin stops at
   `--max-input-bytes` (16 MiB by default).
-- **Exceptions:** none. `--yes` confirms a write; it never lifts a `deny`.
+- **Exceptions:** none. `--yes` confirms a write; it never lifts a `deny`
+  ([WC-PERM-10](permissions.md#wc-perm-10--a-flag-confirms-it-never-grants)).
 - **Applies to:** CLIs that run on cli-core's `run()`. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CMD-16 · Offer only ids in shell completion, with titles as their descriptions, from local data
@@ -187,7 +188,7 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 ### WC-CMD-17 · Declare `effects` on every command
 
 - **Why:** retries and unasked next steps are judged on effects, and a command without them counts as a write.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/effects.test.ts` · `cli-memo: src/effects.test.ts`.
 - **Example:** `annotate(send, { effects: { remote: "write", local: "write" } })`. Each side is `none`, `read` or
   `write`. A sync that reads the service and writes the local store is `{ remote: "read", local: "write" }`.
 - **Exceptions:** none. Without `effects`, the error handler never marks a failure safe to retry, and a next step
@@ -196,11 +197,13 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 
 ### WC-CMD-18 · Declare `lifetime` and `cooperative` instead of matching command names
 
-- **Why:** the runner reads the metadata, so a renamed command keeps its behaviour.
+- **Why:** the runner decides the deadline, the signal handling and the exit code from the metadata, never from the
+  name, so a renamed command keeps its behaviour.
 - **Enforced by:** review only.
 - **Example:** `annotate(serve, { lifetime: "persistent" })` for a command that runs until stopped,
-  `lifetime: "interactive"` for a login that waits for a person, `cooperative: true` for a long fetch that stops at
-  its own pace. What each does at run time is on the [lifecycle](lifecycle.md) page.
+  `annotate(login, { lifetime: "interactive" })` for a login that waits for a person, `cooperative: true` for a long
+  fetch that stops at its own pace. A runner reads them with `metaOf(command)`. What each does at run time is on the
+  [lifecycle](lifecycle.md) page.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -227,12 +230,12 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 ### WC-CMD-21 · Set `mcp: false` on a command or group that MCP servers must not offer
 
 - **Why:** the MCP tools are generated from the command tree, so the tree says what stays off it.
-- **Enforced by:** review only.
+- **Enforced by:** `src/commands/commands.test.ts`.
 - **Example:** `annotate(flood, { mcp: false })` keeps `flood` and every command under it off MCP servers. The CLI
   still runs it. `commands --json` shows `mcp: false` on that command and each one below, and leaves the key out
   everywhere else. Which commands get it is on the [MCP](mcp.md) page.
-- **Exceptions:** cli-base has the field on commands and groups only, not on options yet.
-- **Applies to:** all CLIs. **Since:** cli-base 0.40.4. **Rulings:** NEED-1411.
+- **Exceptions:** cli-base has had the field on commands and groups since 0.40.4; it has none on options yet.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1411.
 
 ## Help and discovery
 
@@ -283,15 +286,17 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 ### WC-CMD-27 · Refuse a command path that arrived as one word
 
 - **Why:** a shell loop that quotes `"projects add"` would otherwise get the root help and no reason.
-- **Enforced by:** review only.
+- **Enforced by:** `src/commands/commands.test.ts` · `cli-memo: src/program.test.ts`.
 - **Example:** call `refuseJoinedPath(program, args)` before `parseAsync`. It throws a `validation_error` that names
   the words to type.
-- **Exceptions:** none.
+- **Exceptions:** none. Only memo calls `refuseJoinedPath` today; cli-core and the other CLIs do not yet.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Sources
 
-These rules were gathered from cli-core
-[`docs/dev/STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md) (command names,
-agent execution contract, help text) and the cli-base [API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md). Where those documents
-disagree with this page, this page holds.
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-core `STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md): command names, agent
+  execution contract, help text
+- [cli-base API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md)

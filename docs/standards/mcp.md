@@ -17,34 +17,14 @@ This page has two parts:
 Rule ids on this page are `WC-MCP-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
 
-## Rule template
-
-```markdown
-### WC-MCP-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-These documents explain the rules below in more detail. Where one of them disagrees with this page, this page holds.
-
-- [cli-core `STANDARD.md`, "MCP"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#mcp)
-- [cli-core `STANDARD.md`, "Permissions"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#permissions)
-
-## Who follows these rules today
+### Who follows these rules today
 
 tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp`) and bot server (`<cli> <profile> bot mcp`).
-memo, drive and zoom have their own servers: memo has hand-written tools, drive builds its tools from its command tree
-and refuses level `ask`, and zoom's `serve --mcp` only reads. Those three are known gaps against these rules.
+memo, drive and zoom have their own servers: memo has hand-written tools, drive builds one tool per command from its
+command tree and skips commands through its own list, and zoom's `serve --mcp` only reads. Those three are known gaps
+against these rules.
 
-WC-MCP-2 and WC-MCP-8 need cli-core 0.321.0. On origin/main tg, max and memo pin 0.320.0 and wa pins 0.317.0. Until
-each one upgrades, its catalogue can still name commands that do not exist, and `mcp --permission` can still loosen a
-level.
+WC-MCP-2 and WC-MCP-8 need cli-core 0.321.0, which tg, max and wa pin.
 
 The limits that no permission level lifts, such as "an agent never deletes for everyone", are on the permissions page:
 [WC-PERM-11](permissions.md).
@@ -58,7 +38,7 @@ The personal server lists `<cli>_tools_search`, `<cli>_read` and `<cli>_write`. 
 each one's arguments and the shape of its answer. The list does not change during a connection.
 
 - **Why:** an agent reads a short list once and searches for the rest, instead of loading hundreds of tools.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts`.
 - **Example:** `max_tools_search { "query": "unread chats" }`, then `max_read { "command": "inbox", "arguments": {} }`.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-766, NEED-775.
@@ -70,7 +50,7 @@ command's key. A tool whose code name does not spell its command declares the co
 Every entry in the catalogue must be a command the CLI has.
 
 - **Why:** an agent that knows the CLI knows the server, and a `deny` on a command reaches its tool.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/mcp/vocabulary.test.ts`.
 - **Example:** `{ "command": "chats members list", "arguments": { "chat": "@team" } }`, checked against
   `chats.members.list`. For the bot server the path is the part under `bot`.
 - **Exceptions:** `status` (what the server is and which writes are on), `photo` and `conversations refresh` exist
@@ -91,7 +71,7 @@ Every command says whether it writes. `read` refuses a command that writes, and 
 Both declare the answer envelope (a list `{ items, page, … }` or one thing `{ item, … }`) as their `outputSchema`.
 
 - **Why:** an agent host can let `read` run freely and ask a person before `write`.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts` · `cli-core: src/mcp/output-schema.test.ts`.
 - **Example:** `max_read { "command": "messages send", … }` is refused.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -99,7 +79,7 @@ Both declare the answer envelope (a list `{ items, page, … }` or one thing `{ 
 ### WC-MCP-5 · Unknown arguments are refused before anything runs
 
 - **Why:** a retired field must never turn a scheduled write into an immediate one.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts`.
 - **Example:** `max_write { "command": "messages delete", "arguments": { "for_everyone": true } }` is refused as an
   unknown argument.
 - **Exceptions:** none.
@@ -113,7 +93,7 @@ server reads the permissions again on every call, so a stricter level refuses th
 after start-up appears only after a restart.
 
 - **Why:** an agent is not handed a tool that cannot work, and the owner narrows an agent without touching code.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts`.
 - **Example:** with `{ "messages.send": "deny" }`, `tools_search` does not list `messages send`.
 - **Exceptions:** the bot server reads the permissions once, at start-up; a change needs a restart.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-772.
@@ -124,10 +104,10 @@ A write whose level is `ask` goes ahead, built-in defaults included. The server 
 profile's permissions, the recipient list and the hourly limit decide.
 
 - **Why:** nobody is at a terminal to answer the question, and a form would only teach people to click yes.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts`.
 - **Example:** with the built-in `messages.delete: ask`, an agent's `messages delete` runs. To stop it, set
   `messages.delete: readonly`.
-- **Exceptions:** drive still refuses `ask` with `confirmation_required`; that is a gap.
+- **Exceptions:** none. drive's own server also lets an `ask` write go ahead.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-772, NEED-773, NEED-1421.
 
 ### WC-MCP-8 · No `mcp` flag grants access
@@ -138,11 +118,11 @@ stricter key under it, and lifting a built-in `ask`. `mcp setup --allow-writes` 
 the owner saw the profile offers writes.
 
 - **Why:** whoever writes the agent's MCP config must not get more than the profile allows.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/messenger/mcp-command-http.test.ts`.
 - **Example:** `max work mcp --permission messages=readonly` works. `max work mcp --permission messages.delete=allow`
   is refused, because the built-in level is `ask`.
-- **Exceptions:** `bot mcp` takes no `--permission` at all. drive's `--allow-writes` still permits writes, and
-  cli-base's flag registry still describes `--allow-writes` as "permit writing"; both are gaps.
+- **Exceptions:** `bot mcp` takes no `--permission` at all. cli-base's flag registry still describes `--allow-writes`
+  as "permit writing"; that wording is a gap.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1423.
 
 ### WC-MCP-9 · A server speaks for one named profile over one connection
@@ -164,8 +144,8 @@ For the same input, an MCP call and the command it names run the same service me
 - **Enforced by:** review only.
 - **Example:** `messages list` on the command line and `max_read { "command": "messages list" }` both answer the same
   list envelope.
-- **Exceptions:** each side parses its own input, so an error names `--since` on the command line and `since` over
-  MCP.
+- **Exceptions:** each side parses its own input, so the error names the option the way that side spells it
+  ([WC-ARCH-7](architecture.md#wc-arch-7--keep-policy-in-the-service-a-command-or-mcp-handler-only-parses-input-and-presents-the-result)).
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-MCP-11 · The server tells the agent that message text is data
@@ -217,4 +197,11 @@ What will change:
 - **The whole catalogue is pinned** in each CLI's `contracts/mcp-tools.json`, so a command that becomes visible to
   agents shows up as a diff in its pull request.
 - **Every surface moves**, in this order: drive, the bot servers, memo, zoom, then the tg and max personal servers.
-  drive then follows WC-MCP-7.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-core `STANDARD.md`, "MCP"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#mcp)
+- [cli-core `STANDARD.md`, "Permissions"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#permissions)

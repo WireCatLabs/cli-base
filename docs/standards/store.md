@@ -12,33 +12,13 @@ Related pages: which account a read covers, and how a read across accounts is as
 [Accounts](accounts.md); the general test sandbox is in [Testing](testing.md); where secrets live is in
 [Security](security.md).
 
-## Words used here
+### Words used here
 
 - **The store:** the one SQLite file that cli-core opens for every CLI, `wirecat.db`.
 - **Area:** one part of the store for one kind of record, such as `store.messages` or `store.chats`.
 - **Store version:** the number of the newest migration the file has run. It is the `version` field of `MANIFEST`
   in cli-core's `src/store/sqlite/manifest.ts`.
 - **Tombstone:** the mark a deleted message keeps in place of its content.
-
-## Rule template
-
-```markdown
-### WC-STORE-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-These documents explain the rules below in more detail. Where one of them disagrees with this page, this page holds.
-
-- [cli-core `ARCHITECTURE.md`, "The store"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md#the-store)
-- [cli-core `COORDINATION.md`, "Store migrations"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/COORDINATION.md#store-migrations)
-- [cli-core `TESTING.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/TESTING.md)
 
 ## Rules
 
@@ -56,7 +36,7 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-STORE-2 · Reach the data through its area, and add a new kind of record as a new area
 
 - **Why:** an area keeps one kind of record in one file, so the store does not grow back into one long interface.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: biome noExcessiveLinesPerFile`.
 - **Example:** `store.chats.saveChats(key, …)`, `store.messages.find(…)`, `store.tasks`, `store.mail`. Each area is a
   getter built on first use from its own file (`xStoreOver(context)`). `MessageStore` has no flat methods.
 - **Exceptions:** none. cli-core's `biome.json` caps `src/store/store.ts` at 438 lines so that it does not grow again.
@@ -66,7 +46,7 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-STORE-3 · A service of one account works through the store bound to that account
 
 - **Why:** when no call takes an account, a row of another account cannot be read or written by mistake.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/services/account-isolation.test.ts`.
 - **Example:** `accountStore(deps)` returns `store.forAccount(key)`; then `.messages.messages(chatId, …)` takes no
   account, and a row id of another account (an attachment, a mail thread, a meeting) is "not found". A read across
   accounts on purpose asks for the whole store with `crossAccount(deps, reason)`; see [Accounts](accounts.md).
@@ -81,8 +61,9 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Why:** the table modules are the SQL layer; a caller that imports them skips the transaction and the account
   binding.
 - **Enforced by:** review only.
-- **Example:** in cli-core, `biome.json` refuses an import of `src/store/sqlite/*` from `src/services/`,
-  `src/sends/`, `src/mcp/` and `src/cli/`. They import from `src/store/store.ts`, which re-exports what they need.
+- **Example:** in cli-core, `biome.json` is meant to refuse an import of `src/store/sqlite/*` from `src/services/`,
+  `src/sends/`, `src/mcp/` and `src/cli/`; today it does not, because a later override replaces that rule
+  ([WC-ARCH-1](architecture.md#wc-arch-1--call-only-the-layers-below-you-interface-then-service-then-port-then-adapter)). They import from `src/store/store.ts`, which re-exports what they need.
 - **Exceptions:** tests of a table module.
 - **Applies to:** cli-core. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -110,7 +91,7 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-STORE-7 · Migrations only go forward: add, never edit or rebuild
 
 - **Why:** a file that a newer build migrated must still open in the build already installed.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/store/sqlite/manifest.test.ts`.
 - **Example:** a change is a new column that is nullable or has a default, or a new table. Triggers, full-text tables
   and data fills go in a custom migration. A mistake in a released migration is fixed by the next version. cli-core's
   manifest tests refuse a rebuilt base table, a gap in the versions and a bundle that differs from what drizzle-kit
@@ -130,7 +111,7 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-STORE-9 · Ship each migration with its schema spec, an upgrade test and a changelog line
 
 - **Why:** the schema page, the code and the files already on disk must agree after every version.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: pnpm schema:check`.
 - **Example:** change `scripts/schema/spec.mjs` first, then `schema.ts` until `pnpm schema:check` passes, then
   `pnpm db:generate` and `pnpm db:bundle`. Add a `src/store/version-<n>.test.ts` that opens a file at version n−1 and
   reads what version n added. The changelog entry names the store version, as in "Chat members in the store (store
@@ -180,7 +161,17 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Enforced by:** review only.
 - **Example:** the vitest `setupFiles` sandbox points `MESSAGING_STORE`, `WIRECAT_STATE_DIR` and each app's own
   directory variables at a temporary directory before any test runs. A test that defines a new app prefix adds it to
-  the sandbox. A test that needs its own store makes a fresh directory and passes `MESSAGING_STORE`. The rest of the
-  sandbox is [WC-TEST-1](testing.md#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory).
+  the sandbox. A test that needs its own store is
+  [WC-TEST-9](testing.md#wc-test-9--give-each-test-its-own-profile-or-its-own-store). The rest of the sandbox is
+  [WC-TEST-1](testing.md#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory).
 - **Exceptions:** none.
 - **Applies to:** all CLIs that use the store, and cli-core. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-core `ARCHITECTURE.md`, "The store"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md#the-store)
+- [cli-core `COORDINATION.md`, "Store migrations"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/COORDINATION.md#store-migrations)
+- [cli-core `TESTING.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/TESTING.md)

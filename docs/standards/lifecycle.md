@@ -2,8 +2,9 @@
 
 ## Scope
 
-How a process starts and ends: a one-shot command exits, a long-running command says so, everything that was opened
-is closed before the answer is printed, and an exclusive connection is held by one process only.
+How a process starts and ends: nothing opens before it is needed, the code that opens a resource closes it, a
+one-shot command exits, everything that was opened is closed before the answer is printed, and an exclusive
+connection is held by one process only.
 
 Rule ids on this page are `WC-LIFE-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). How a command declares `lifetime` and `cooperative` is on the [commands](commands.md) page. The
@@ -15,14 +16,19 @@ waits for a person, such as a login).
 
 ## One-shot commands
 
-### WC-LIFE-1 · Make a one-shot command exit when it has answered
+### WC-LIFE-1 · The code that opens a resource closes it, so a one-shot command exits when it has answered
 
-- **Why:** a command that prints its answer and then hangs blocks every pipe and every agent that waits for it.
+- **Why:** a resource with no clear owner is closed twice or never, and a command that prints its answer and then
+  hangs blocks every pipe and every agent that waits for it.
 - **Enforced by:** review only.
 - **Example:** whatever opens a socket, a timer, a listener, a store or a child process closes it in a `finally`, or
-  in an equivalent wrapper, on every exit path: success, failure, timeout and cancel. A CLI's bin sets
-  `process.exitCode` and does not call `process.exit`, so one handle left open keeps the process alive.
-- **Exceptions:** `persistent` and `interactive` commands (WC-LIFE-5).
+  in an equivalent wrapper, on every exit path: success, failure, timeout and cancel. The command context opens the
+  services with `withServices` and closes what it opened. A service never closes a connection it was handed, and a
+  borrowed connection has a `close` that does nothing. A CLI's bin sets `process.exitCode` and does not call
+  `process.exit`, so one handle left open keeps the process alive.
+- **Exceptions:** a `persistent` or `interactive` command does not exit after one answer
+  ([WC-CMD-18](commands.md#wc-cmd-18--declare-lifetime-and-cooperative-instead-of-matching-command-names)), but it
+  still closes what it opened when it stops.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-LIFE-2 · Open a one-shot connection with updates off
@@ -56,7 +62,7 @@ waits for a person, such as a login).
 ### WC-LIFE-5 · Bound every one-shot command by a deadline
 
 - **Why:** a command that waits for ever on a dead connection never fails, so nobody learns why it hangs.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/program.test.ts`.
 - **Example:** the default is 30 seconds. `--timeout 2m` or the `<PREFIX>_TIMEOUT` variable changes it. Past the
   deadline the command fails with `timeout` (exit 9).
 - **Exceptions:** a `persistent` command has no deadline and ignores `--timeout`. An `interactive` command has none
@@ -65,29 +71,26 @@ waits for a person, such as a login).
 - **Applies to:** CLIs that run on cli-core's `run()`; other CLIs use cli-base's `createDeadline`. **Since:** cli-base
   0.41.0. **Rulings:** none.
 
-### WC-LIFE-6 · Start help, version, discovery and completion without opening a store, the keyring or the network
+### WC-LIFE-6 · Open nothing until an action needs it
 
-- **Why:** help must work on a machine with a broken config, and completion runs on every Tab.
+- **Why:** `commands --json`, help and completion must work with no account, database, keyring or network, on a
+  machine with a broken config; completion runs on every Tab.
 - **Enforced by:** review only.
-- **Example:** load the config and the source only when an action needs them. `zm --help` works with a corrupt config.
+- **Example:** importing a module opens nothing. A service is a factory over its dependencies, and the connection,
+  the store and the account open on first use. A read from the store never connects. Heavy engines (speech, charts,
+  PDF) load on first use. The config and the source load only when an action needs them, so `zm --help` works with a
+  corrupt config.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Long-running commands
 
-### WC-LIFE-7 · Declare a long-running command with `lifetime`, and let the runner read it
-
-- **Why:** the runner decides the deadline, the signal handling and the exit code from it, never from the name.
-- **Enforced by:** review only.
-- **Example:** `annotate(serve, { lifetime: "persistent" })`. `annotate(login, { lifetime: "interactive" })`. A runner
-  reads both with `metaOf(command)`.
-- **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+### WC-LIFE-7 · Merged into [WC-CMD-18](commands.md#wc-cmd-18--declare-lifetime-and-cooperative-instead-of-matching-command-names)
 
 ### WC-LIFE-8 · End a command on Ctrl-C or SIGTERM by aborting the run, and exit with the shell's code
 
 - **Why:** a signal is how a person or a service manager stops a command, and the exit code tells them how it ended.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/agent-contract.test.ts` · `src/exit-codes.test.ts`.
 - **Example:** the signal aborts the run's signal and closes tracked resources. A one-shot command exits 130 on
   Ctrl-C (SIGINT) and 143 on SIGTERM, with a `cancelled` error. A `persistent` command exits 0 on either: being
   stopped is how it ends. A closed pipe (`tg chats list --json | head`) ends quietly with exit 0 and no stack trace.
@@ -97,7 +100,7 @@ waits for a person, such as a login).
 ### WC-LIFE-9 · Never let an abort hide a write that was in flight
 
 - **Why:** a caller that sees "cancelled" might repeat a send that already went out.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/execution.test.ts`.
 - **Example:** when a timeout or a signal cuts a write that already left, the run fails with `outcome_unknown` and
   names the write's `operation_id`. It is never retried automatically.
 - **Exceptions:** none.
@@ -121,18 +124,20 @@ waits for a person, such as a login).
 - **Enforced by:** review only.
 - **Example:** the messenger sets `Messenger.connection: "exclusive"`. While `serve` holds the connection, a command
   that reaches the messenger is sent to `serve` over a private Unix socket and runs there on the held connection,
-  with the client's environment, so the permissions and the read-only lock still hold. With no live `serve`, the
-  command connects on its own. A `serve` that offers the socket but does not answer gives `provider_unavailable`,
-  never a second connection.
+  with the client's environment, so the permissions and the read-only lock still hold. Every command that connects,
+  a CLI's own commands included, connects through `connectFor`: a relayed run gets serve's own adapter, and a run for
+  another profile is refused. With no live `serve`, the command connects on its own. A `serve` that offers the socket
+  but does not answer gives `provider_unavailable`, never a second connection.
 - **Exceptions:** `serve`, `server`, `bot`, logins, `--offline`, `--dry-run` and `mcp --http` are not relayed.
 - **Applies to:** messenger CLIs with an exclusive connection (wa today). **Since:** cli-base 0.41.0.
   **Rulings:** NEED-1389.
 
 ## Sources
 
-These rules were gathered from cli-core
-[`docs/dev/ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md),
-[`docs/dev/STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md) (agent execution
-contract), the max-cli and tg-cli developer conventions, and the cli-base
-[API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md). Where those documents disagree
-with this page, this page holds.
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-core `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md)
+- [cli-core `STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md), "Agent execution
+  contract"
+- [cli-base API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md)
