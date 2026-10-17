@@ -2,6 +2,35 @@ import type { VocabularyFlag } from "./vocabulary.js"
 
 export const WHAT_FLAGS: VocabularyFlag[] = [
   {
+    name: "--context-source",
+    value: "<id=cursor>",
+    role: "scope",
+    type: "string",
+    meaning:
+      "explicitly selected communications source, optionally with its scoped continuation cursor; repeat for more sources",
+  },
+  {
+    name: "--context-query",
+    value: "<words>",
+    role: "query",
+    type: "string",
+    meaning: "literal words to find within the communications selected for preparation",
+  },
+  {
+    name: "--context-since-time",
+    value: "<time>",
+    role: "target",
+    type: "time",
+    meaning: "inclusive start of the selected communications window used for preparation",
+  },
+  {
+    name: "--context-before-time",
+    value: "<time>",
+    role: "target",
+    type: "time",
+    meaning: "exclusive end of the selected communications window used for preparation",
+  },
+  {
     name: "--account",
     value: "<account>",
     role: "scope",
