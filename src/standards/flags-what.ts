@@ -735,4 +735,11 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     type: "string",
     meaning: "a query every result must also match, beside the search's own words",
   },
+  {
+    name: "--values",
+    value: "<json>",
+    role: "value",
+    type: "string",
+    meaning: "cell values as JSON rows for an explicit range update or row append; not a list filter",
+  },
 ]
