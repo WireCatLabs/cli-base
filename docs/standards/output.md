@@ -38,9 +38,9 @@ JSON Schema 2020-12.
 
 - **Why:** a side task that breaks must not hide the answer, and a main task that breaks must not look like success.
 - **Enforced by:** review only.
-- **Example:** a send that fails exits non-zero. A version check that fails writes one line to stderr, and the command
-  still exits 0. Once a write is under way, a run log that cannot be written is a warning and never changes the exit
-  code.
+- **Example:** a send that fails exits non-zero. A side check nobody asked for that fails writes one line to stderr,
+  and the command keeps its own exit code. Once a write is under way, a run log that cannot be written is a warning
+  and never changes the exit code.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-97, NEED-133.
 
@@ -110,8 +110,8 @@ JSON Schema 2020-12.
 
 - **Why:** the id ties the answer to the send journal, and it is how a caller repeats the write safely.
 - **Enforced by:** review only.
-- **Example:** `{ "item": { "operation_id": "…", "message_id": "…" }, "meta": { … } }`. The same id is in the
-  journal.
+- **Example:** `{ "item": { "operation_id": "…", … }, "meta": { … } }`, with the ids the write touched beside
+  `operation_id`. The same id is in the send journal.
 - **Exceptions:** a bot account's send has no `--operation-id`, because no Bot API makes a repeat safe.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-431.
 
@@ -215,9 +215,11 @@ JSON Schema 2020-12.
 - **Why:** an agent repeats a failure marked safe, so a write that may have landed must never be marked safe.
 - **Enforced by:** review only.
 - **Example:** every error has `retry: { safe, after_ms? }`. A transient failure (`timeout`, `rate_limited`,
-  `network_error`, `provider_unavailable`) is safe for a command that writes nothing, or for a write that never left
-  (`sent: false`). `outcome_unknown` is never safe: repeat that write only with its `--operation-id`.
-- **Exceptions:** none.
+  `network_error`, `provider_unavailable`) is safe for a command that writes nothing on the service, or for a write
+  that never left (`sent: false`). A sync that only writes the local store is safe to repeat. `outcome_unknown` is
+  never safe: repeat that write only with its `--operation-id`.
+- **Exceptions:** cli-base's `retryOf`, used on its own, also counts a local write as a write, so it is stricter
+  than cli-core's runner.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Size and projection
