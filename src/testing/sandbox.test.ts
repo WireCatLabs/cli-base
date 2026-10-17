@@ -50,12 +50,12 @@ describe("enterSandbox", () => {
     sandbox.restore()
   })
 
-  it("removes the folder when a test file fails while loading or in its own afterAll", () => {
+  it("removes the folder when a file fails while loading or in its afterAll, and not when one imitates SIGTERM", () => {
     const parent = join(tmpdir(), "child-run")
     mkdirSync(parent)
     const vitest = fileURLToPath(new URL("../../node_modules/vitest/vitest.mjs", import.meta.url))
     const config = fileURLToPath(new URL("../../test/fixtures/sandbox-left/vitest.config.ts", import.meta.url))
-    const run = spawnSync(process.execPath, [vitest, "run", "--config", config], {
+    const run = spawnSync(process.execPath, [vitest, "run", "--reporter=verbose", "--config", config], {
       env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent },
       encoding: "utf8",
     })
@@ -63,6 +63,7 @@ describe("enterSandbox", () => {
     expect(run.status).toBe(1)
     expect(run.stdout + run.stderr).toMatch(/fails while loading/)
     expect(run.stdout + run.stderr).toMatch(/afterAll fails/)
+    expect(run.stdout + run.stderr).toMatch(/✓ emits-sigterm\.test\.ts > keeps its sandbox and its worker/)
     expect(readdirSync(parent).filter((name) => name.startsWith("wirecat-test-"))).toEqual([])
   }, 30_000)
 

@@ -19,7 +19,9 @@ const LEFT = Symbol.for("@wirecat/cli-base/testing/sandboxes")
 /**
  * vitest skips a file's afterAll when the file throws while loading or an earlier afterAll throws,
  * and then ends the worker with SIGTERM, which fires no `exit`. The signal is raised again once the
- * folders are gone, so the worker still ends the way it would have.
+ * folders are gone, so the worker still ends the way it would have. Only the OS passes the signal's
+ * name to the listener; a test imitating a signal with `process.emit("SIGTERM")` passes none and is
+ * left alone, sandbox and worker included.
  */
 const removeOnExit = (dir: string): (() => void) => {
   const holder = globalThis as { [LEFT]?: Set<string> }
@@ -31,10 +33,13 @@ const removeOnExit = (dir: string): (() => void) => {
       left.clear()
     }
     process.once("exit", removeLeft)
-    process.once("SIGTERM", () => {
+    const onSignal = (name?: string) => {
+      if (name !== "SIGTERM") return
+      process.off("SIGTERM", onSignal)
       removeLeft()
       process.kill(process.pid, "SIGTERM")
-    })
+    }
+    process.on("SIGTERM", onSignal)
   }
   const left = holder[LEFT]
   left.add(dir)
