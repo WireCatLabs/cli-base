@@ -12,6 +12,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- Release source checks support Go through its pinned toolchain and CodeQL autobuild. Callers
+  opt in with `go` in `languages` and set `go-version-file` for a nested module; interpreted
+  language checks retain their existing build mode and critical severity policy.
+
 - **Spreadsheet structure uses shared `insert` and `format` verbs.** `insert` adds bounded rows,
   columns or cells before an explicit position; `format` changes selected cell presentation
   without replacing values. Consumers can remove these dated vocabulary exceptions after adoption.

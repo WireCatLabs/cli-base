@@ -9,6 +9,9 @@ on:
       languages:
         type: string
         default: '["actions","javascript-typescript"]'
+      go-version-file:
+        type: string
+        default: "go.mod"
   workflow_call:
     inputs:
       node-version:
@@ -20,6 +23,9 @@ on:
       languages:
         type: string
         default: '["actions","javascript-typescript"]'
+      go-version-file:
+        type: string
+        default: "go.mod"
 
 permissions:
   contents: read
@@ -92,10 +98,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        if: matrix.language == 'go'
+        with:
+          go-version-file: ${{ inputs.go-version-file || 'go.mod' }}
+          cache: false
       - uses: github/codeql-action/init@f3c49fd1ef3281abc41069b3dd22807a60c963f6 # v4
         with:
           languages: ${{ matrix.language }}
-          build-mode: none
+          build-mode: ${{ matrix.language == 'go' && 'autobuild' || 'none' }}
+      - uses: github/codeql-action/autobuild@f3c49fd1ef3281abc41069b3dd22807a60c963f6 # v4
+        if: matrix.language == 'go'
       - uses: github/codeql-action/analyze@f3c49fd1ef3281abc41069b3dd22807a60c963f6 # v4
         with:
           output: sarif
