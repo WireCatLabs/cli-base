@@ -10,6 +10,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+## 0.43.3 â€” 17.10.2026
+
 ### Added
 
 - **`--plain-order` in the vocabulary**, a sort switch: search results best first by the words alone, without
