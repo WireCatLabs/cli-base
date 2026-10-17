@@ -2,6 +2,7 @@ import { Command, Option } from "commander"
 import { describe, expect, it } from "vitest"
 import {
   annotate,
+  annotateOption,
   COMMANDS_PAGE_LABELS,
   commandsDocument,
   commandsDocumentJsonSchema,
@@ -321,6 +322,23 @@ describe("commands document", () => {
     expect(at("tasks", "purge")?.mcp).toBe(false)
     expect(at("tasks")).not.toHaveProperty("mcp")
     expect(at("tasks", "list")).not.toHaveProperty("mcp")
+    expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
+  })
+
+  it("keeps an option off MCP tools when it says so, and only that option", () => {
+    const root = new Command("tool").addOption(annotateOption(new Option("--unsafe", "global"), { mcp: false }))
+    root
+      .command("delete")
+      .description("deletes")
+      .addOption(annotateOption(new Option("--for-everyone", "for both sides"), { mcp: false }))
+      .option("--yes", "skip the question")
+    const document = commandsDocument(root, about)
+    const [forEveryone, yes] = document.commands[0]?.options ?? []
+
+    expect(document.global_options[0]?.mcp).toBe(false)
+    expect(forEveryone?.mcp).toBe(false)
+    expect(yes).not.toHaveProperty("mcp")
+    expect(document.commands[0]).not.toHaveProperty("mcp")
     expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
   })
 

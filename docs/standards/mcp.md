@@ -188,7 +188,10 @@ What will change:
     `mcp: false` on each command it reaches.
   - **Not built today:** no MCP server reads it yet, so setting it hides nothing.
 - **`mcp: false` on an option** leaves that option out of the tool's input. The first use is
-  `messages delete --for-everyone`. This field does not exist yet in cli-base.
+  `messages delete --for-everyone`, because an agent never deletes for everyone ([WC-PERM-11](permissions.md)).
+  - **Built today:** cli-base's `annotateOption(option, { mcp: false })` sets it, and `commands --json` shows
+    `mcp: false` on that option alone.
+  - **Not built today:** no MCP server reads it yet, so setting it hides nothing.
 - **Never offered, by rule:** a command with a `lifetime` (`persistent`, such as `serve` and `watch`, or `interactive`,
   such as `session start`). An agent call must return.
 - **One server per subtree.** The personal server is built from the program without its `bot` group; the bot server

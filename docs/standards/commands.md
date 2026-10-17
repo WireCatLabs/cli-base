@@ -182,8 +182,8 @@ catalogue and parity manifest stay in cli-core
 
 ## What a command declares
 
-Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/commands` and appears in
-`commands --json`.
+Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/commands`, or
+`annotateOption(option, { … })` for an option, and appears in `commands --json`.
 
 ### WC-CMD-17 · Declare `effects` on every command
 
@@ -227,15 +227,16 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-CMD-21 · Set `mcp: false` on a command or group that MCP servers must not offer
+### WC-CMD-21 · Set `mcp: false` on a command, group or option that MCP servers must not offer
 
 - **Why:** the MCP tools are generated from the command tree, so the tree says what stays off it.
 - **Enforced by:** `src/commands/commands.test.ts`.
 - **Example:** `annotate(flood, { mcp: false })` keeps `flood` and every command under it off MCP servers. The CLI
   still runs it. `commands --json` shows `mcp: false` on that command and each one below, and leaves the key out
-  everywhere else. Which commands get it is on the [MCP](mcp.md) page.
-- **Exceptions:** cli-base has had the field on commands and groups since 0.40.4; it has none on options yet.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1411.
+  everywhere else. `annotateOption(forEveryone, { mcp: false })` leaves one option out of MCP tools' input, and only
+  that option shows `mcp: false`. Which commands and options get it is on the [MCP](mcp.md) page.
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1411, NEED-1423.
 
 ## Help and discovery
 

@@ -23,7 +23,7 @@ and why it is built this way.
 | `logging` | `createRecordLog`: one `LogRecord` per JSON line (OpenTelemetry field names, flat), secrets and content-naming keys redacted at any depth, top-level keys off the allow-list (`LOG_ATTRIBUTE_KEYS` + `allow`) written without their value; `logRecordOf` builds the same record for a writer of its own; a file that cannot be written is reported to `onError`, never thrown |
 | `retry` | full-jitter backoff, and the distinction between "no answer came" and "safe to repeat" |
 | `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock` |
-| `/commands` | the command registry: `describeProgram`, `annotate`, `flatten`, `refuseJoinedPath`, and `commandsDocument` — the one `commands --json` shape, with its schema — see below |
+| `/commands` | the command registry: `describeProgram`, `annotate`, `annotateOption`, `flatten`, `refuseJoinedPath`, and `commandsDocument` — the one `commands --json` shape, with its schema — see below |
 | `/completion` | shell completion over the registry: `suggest`, `formatSuggestions` — see below |
 | `/update` | keeping an install current: `installerOf`, `updateCommand`, `latestVersion`, `mayNotify`, `updateNotice`, `runUpdate` — see below |
 | `/codegen` | build time: an official API description → types, Valibot schemas, an operation manifest and a coverage page — see below |
@@ -110,11 +110,14 @@ stops at its own pace when the run is aborted from outside, keeping what it alre
 
 `mcp: false` keeps a command, and every command under it, off MCP servers; the CLI itself still runs it. The command
 description says `mcp: false` on that command and each one below it, and leaves the key out everywhere else, so an
-MCP server builds its tool list from `describeProgram` without walking the parents itself.
+MCP server builds its tool list from `describeProgram` without walking the parents itself. On one option,
+`annotateOption(new Option("--for-everyone", "…"), { mcp: false })` leaves it out of MCP tools' input, and that
+option alone says `mcp: false`; `optionMetaOf(option)` reads it back.
 
 Each option says whether it `takes_value` and, separately, whether it is `mandatory` — not
 Commander's `required`, which means "takes a value when given" — plus its choices, default,
-environment variable, the options it `conflicts` with and the values it `implies`, keyed by long flag.
+environment variable, the options it `conflicts` with, the values it `implies`, keyed by long flag, and `mcp: false`
+when it is kept off MCP tools.
 Every key of the document is snake_case.
 
 **A list filters with one query, `@wirecat/cli-base/query`** — `tasks list state:open priority>1`, the

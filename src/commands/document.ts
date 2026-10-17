@@ -25,6 +25,7 @@ const optionInfoSchema = v.object({
   env: v.optional(v.string()),
   conflicts: v.optional(v.array(v.string())),
   implies: v.optional(v.record(v.string(), v.unknown())),
+  mcp: v.optional(v.literal(false)),
 })
 
 const fieldInfoSchema = v.object({

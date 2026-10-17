@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`mcp: false` works on a single option**: `annotateOption(option, { mcp: false })` from
+  `@wirecat/cli-base/commands` marks it, and `commands --json` carries `mcp: false` on that option and nothing on the
+  rest, so an MCP tool can leave it out of its input while the command stays offered. The first use is
+  `messages delete --for-everyone`: agents never delete for everyone. No MCP server reads it yet.
+
 ## 0.41.0 — 17.10.2026
 
 ### Added

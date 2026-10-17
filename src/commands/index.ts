@@ -4,7 +4,7 @@
  * It walks the live Commander tree rather than a list written by hand, so a command built in a
  * loop from a catalog shows up exactly like one written in a file. What the tree cannot say — where
  * a command came from, whether it changes anything, whether it is on its way out — is attached with
- * `annotate`.
+ * `annotate`, and to an option with `annotateOption`.
  *
  * Behind its own entry point for the same reason `/http` is: Commander is only a type here, and the
  * root of this package stays free of any command-line framework.
@@ -45,6 +45,11 @@ export interface CommandMeta {
   query?: QueryRegistry
 }
 
+export interface OptionMeta {
+  /** `false` leaves the option out of MCP tools' input; agents using the CLI itself are not affected. */
+  mcp?: boolean
+}
+
 export interface CommandOutput {
   entity: string
   view?: string
@@ -76,6 +81,8 @@ export interface OptionInfo {
   conflicts?: readonly string[]
   /** Values this option sets on others when they are not given, by long flag. */
   implies?: Readonly<Record<string, unknown>>
+  /** Present only when the option is kept off MCP tools. */
+  mcp?: false
 }
 
 export interface CommandInfo {
@@ -111,6 +118,16 @@ export const annotate = <T extends Command>(command: T, meta: CommandMeta): T =>
 }
 
 export const metaOf = (command: Command): CommandMeta => labels.get(command) ?? {}
+
+const optionLabels = new WeakMap<Option, OptionMeta>()
+
+/** `annotate` for an option. Repeated calls merge; the option is returned for `addOption`. */
+export const annotateOption = <T extends Option>(option: T, meta: OptionMeta): T => {
+  optionLabels.set(option, { ...optionLabels.get(option), ...meta })
+  return option
+}
+
+export const optionMetaOf = (option: Option): OptionMeta => optionLabels.get(option) ?? {}
 
 export const describeProgram = (root: Command): CommandInfo[] =>
   visible(root).map((child) => describe(child, root.name(), [], false))
@@ -214,6 +231,7 @@ const describeOption = (option: Option): OptionInfo => {
     ...(option.envVar ? { env: option.envVar } : {}),
     ...(conflictsWith.length > 0 ? { conflicts: conflictsWith } : {}),
     ...(implied ? { implies: impliesOf(implied) } : {}),
+    ...(optionMetaOf(option).mcp === false ? { mcp: false as const } : {}),
   }
 }
 
