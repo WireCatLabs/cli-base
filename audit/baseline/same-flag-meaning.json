@@ -1,10 +1,17 @@
 [
   "drive+max+memo+tg --kind",
   "drive+max+memo+tg --provider",
+  "drive+max+memo+tg+wa --kind",
+  "drive+max+memo+tg+wa --provider",
+  "drive+max+memo+tg+wa+zm --limit",
+  "drive+max+memo+tg+wa+zm --type",
   "drive+max+memo+tg+zm --limit",
   "drive+max+memo+tg+zm --type",
+  "drive+max+tg+wa+zm --model",
   "drive+max+tg+zm --model",
+  "max+memo+tg+wa+zm --source",
   "max+tg --add",
+  "max+tg+wa --add",
   "max+tg+zm --topic",
   "memo+zm --project"
 ]

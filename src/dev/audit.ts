@@ -319,6 +319,8 @@ export const auditClis = (
   const baselined = new Set(
     Object.entries(options.baseline).flatMap(([rule, targets]) => targets.map((target) => `${rule} ${target}`)),
   )
+  // A cross-CLI entry names every CLI it compared; a run without one of them can neither see it nor fix it.
+  const judged = (target: string) => clisOf(target).every((cli) => clis.includes(cli))
   const ownLint = (cli: string, rule: string) =>
     lintIds.includes(rule) ? inputs.find((input) => input.document.cli === cli)?.lint : undefined
 
@@ -358,7 +360,10 @@ export const auditClis = (
           overridden: mine.length - open.length,
           new: fresh.length,
           fixed: (options.baseline[rule] ?? []).filter(
-            (target) => clisOf(target).includes(cli) && (!here.has(target) || declared.has(`${rule} ${target}`)),
+            (target) =>
+              clisOf(target).includes(cli) &&
+              judged(target) &&
+              (!here.has(target) || declared.has(`${rule} ${target}`)),
           ).length,
           new_targets: fresh.map((finding) => finding.target),
         }
@@ -372,7 +377,7 @@ export const auditClis = (
   const selfJudged = new Set(inputs.filter((input) => input.lint).map((input) => input.document.cli))
   const nextBaseline = Object.fromEntries(
     [...lintIds, ...rules.map((rule) => rule.id)].map((rule) => {
-      const kept = (options.baseline[rule] ?? []).filter((target) => !clisOf(target).some((cli) => clis.includes(cli)))
+      const kept = (options.baseline[rule] ?? []).filter((target) => !judged(target))
       const now = findings
         .filter((finding) => finding.rule === rule && !declared.has(`${rule} ${finding.target}`))
         .filter((finding) => !(lintIds.includes(rule) && selfJudged.has(finding.clis[0] ?? "")))

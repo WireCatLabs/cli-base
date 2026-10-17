@@ -204,6 +204,16 @@ describe("judging an audit", () => {
     expect(fixed.blocking).toEqual([])
   })
 
+  it("leaves a baseline entry naming a CLI not in this run unjudged: not fixed, and kept on rewrite", () => {
+    const wider = "a+b+c notes list --limit"
+    const result = auditClis(diverging().slice(0, 2), options({ baseline: { "same-path-contract": [wider, target] } }))
+    expect(result.rows.find((one) => one.cli === "a" && one.rule === "same-path-contract")).toMatchObject({
+      baseline: 1,
+      fixed: 0,
+    })
+    expect(result.nextBaseline["same-path-contract"]).toEqual([target, wider])
+  })
+
   it("does not block on a cross-CLI divergence when blocking is off, but still on a lint violation", () => {
     const inputs = [
       ...diverging(),
