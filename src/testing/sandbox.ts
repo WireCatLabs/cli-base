@@ -29,7 +29,7 @@ const removeOnExit = (dir: string): (() => void) => {
     const left = new Set<string>()
     holder[LEFT] = left
     const removeLeft = () => {
-      for (const path of left) rmSync(path, { recursive: true, force: true })
+      for (const path of left) removed(path, 3)
       left.clear()
     }
     process.once("exit", removeLeft)
@@ -91,9 +91,23 @@ export const enterSandbox = (
         if (value === undefined) delete env[key]
         else env[key] = value
       }
-      rmSync(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
-      forget()
+      // Windows will not delete a file a test left open; such a folder is retried at exit instead of failing the file.
+      if (removed(dir, 10)) forget()
     },
+  }
+}
+
+export const removed = (path: string, maxRetries: number, rm: typeof rmSync = rmSync): boolean => {
+  try {
+    rm(path, { recursive: true, force: true, maxRetries, retryDelay: 100 })
+    return true
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code !== "EPERM" && code !== "EBUSY" && code !== "ENOTEMPTY") throw error
+    process.stderr.write(
+      `test sandbox ${path} is still in use (${code}); left for the system's temporary-file cleanup\n`,
+    )
+    return false
   }
 }
 
