@@ -42,6 +42,10 @@ tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp`) and bot 
 memo, drive and zoom have their own servers: memo has hand-written tools, drive builds its tools from its command tree
 and refuses level `ask`, and zoom's `serve --mcp` only reads. Those three are known gaps against these rules.
 
+WC-MCP-2 and WC-MCP-8 need cli-core 0.321.0. On origin/main tg, max and memo pin 0.320.0 and wa pins 0.317.0. Until
+each one upgrades, its catalogue can still name commands that do not exist, and `mcp --permission` can still loosen a
+level.
+
 The limits that no permission level lifts, such as "an agent never deletes for everyone", are on the permissions page:
 [WC-PERM-11](permissions.md).
 
@@ -104,13 +108,14 @@ Both declare the answer envelope (a list `{ items, page, … }` or one thing `{ 
 ### WC-MCP-6 · The profile's permissions decide what is offered and what runs
 
 A command whose level is `deny` is not offered. Under `readonly`, writing commands are not offered. A command is also
-not offered when a key it reads, such as `messages`, is `deny`. The server reads the permissions again on every call,
-so a change in the config needs no restart.
+not offered when a key it reads, such as `messages`, is `deny`. The list is built when the server starts. The personal
+server reads the permissions again on every call, so a stricter level refuses the next call at once; a command allowed
+after start-up appears only after a restart.
 
 - **Why:** an agent is not handed a tool that cannot work, and the owner narrows an agent without touching code.
 - **Enforced by:** review only.
 - **Example:** with `{ "messages.send": "deny" }`, `tools_search` does not list `messages send`.
-- **Exceptions:** none.
+- **Exceptions:** the bot server reads the permissions once, at start-up; a change needs a restart.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-772.
 
 ### WC-MCP-7 · Over MCP, `ask` counts as `allow`, and no server shows a form
@@ -136,7 +141,8 @@ the owner saw the profile offers writes.
 - **Enforced by:** review only.
 - **Example:** `max work mcp --permission messages=readonly` works. `max work mcp --permission messages.delete=allow`
   is refused, because the built-in level is `ask`.
-- **Exceptions:** none.
+- **Exceptions:** `bot mcp` takes no `--permission` at all. drive's `--allow-writes` still permits writes, and
+  cli-base's flag registry still describes `--allow-writes` as "permit writing"; both are gaps.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1423.
 
 ### WC-MCP-9 · A server speaks for one named profile over one connection

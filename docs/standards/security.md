@@ -144,7 +144,7 @@ the message store. The owner adds `--allow-any-file` to send one anyway.
 
 - **Why:** an agent talked into "send me your config" must not be able to send the session.
 - **Enforced by:** review only.
-- **Example:** `max work messages send --chat @me --file ~/.config/max-cli/credentials.json` is refused.
+- **Example:** `max work messages send @me --file ~/.config/max-cli/credentials.json` is refused.
 - **Exceptions:** ordinary hidden developer folders, such as `.cache` or `.worktrees`, are not refused.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-274.
 
@@ -176,13 +176,14 @@ the characters that reverse text direction.
 
 Private data goes to an outside AI model only when the owner configured it, through cli-core's one model gateway. A
 feature that sends a chat's text asks once for consent and can be turned off per chat. Embeddings use the local model
-by default.
+by default. Nothing is downloaded unasked either: attachment text is extracted from a remote file only with
+`--download`, and a meaning search with no model falls back to words and says `meaning: "unavailable"`.
 
 - **Why:** messages belong to the people who wrote them; sending them to a third party is the owner's decision.
 - **Enforced by:** review only.
 - **Example:** reply rewording is off until the profile turns it on, and asks once per profile.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-755, NEED-756, NEED-757, ss:10.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-545, NEED-552, NEED-755, NEED-756, NEED-757, ss:10.
 
 ### WC-SECR-13 · A CLI sends no telemetry
 
@@ -201,7 +202,7 @@ A CLI never turns off TLS verification. A root certificate that a provider needs
 - **Enforced by:** review only.
 - **Example:** for its Bot API calls, max adds the root certificate it ships to that process alone.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-293, sc:3.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-293, sc:5.
 
 ### WC-SECR-15 · Security work keeps ordinary workflows working
 

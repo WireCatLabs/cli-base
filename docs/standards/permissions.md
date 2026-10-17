@@ -38,8 +38,12 @@ These documents explain the rules below in more detail. Where one of them disagr
 ## Who follows these rules today
 
 tg, max and wa use cli-core's permissions and write guard in full. memo uses them for the shared commands only. drive
-has its own policy and guard, and refuses level `ask` over MCP; zoom only reads. Where this page says "every CLI that
-writes", drive is a known gap.
+has its own policy and guard (with its own `--read-only` flag), and refuses level `ask` over MCP; zoom only reads.
+Where this page says "every CLI that writes", drive is a known gap.
+
+WC-PERM-10 and WC-PERM-11 need cli-core 0.321.0. On origin/main tg, max and memo pin 0.320.0 and wa pins 0.317.0, so
+until each one upgrades, `mcp --permission` can still loosen a level there, and wa's MCP delete still takes
+`for_everyone`.
 
 ## Rules
 
@@ -156,7 +160,7 @@ for every other write. With no terminal and no flag, the command answers `confir
 
 - **Why:** a deletion needs a flag a person has to mean, not a habit.
 - **Enforced by:** review only.
-- **Example:** `tg work messages delete 42 --chat @me --allow-dangerous`.
+- **Example:** `tg work messages delete @me 42 --allow-dangerous`.
 - **Exceptions:** `--allow-dangerous` is the flag for `messages.delete`, `bot.messages.delete`, `topics.delete`,
   `chats.delete` and `chats.clear`; every other key takes `--yes`.
 - **Applies to:** every CLI that writes. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -300,7 +304,7 @@ Moderation rules use the same four levels for each kind of action (delete, remov
 
 - **Why:** typing the command is the owner's consent for what the rules do.
 - **Enforced by:** review only.
-- **Example:** `tg work chats moderate @group` acts under `chats.moderate`; `bot chats moderate` under
+- **Example:** `tg work chats moderate @group` acts under `chats.moderate`; `tg work bot chats moderate` under
   `bot.chats.moderate`.
 - **Exceptions:** an agent may run the same check over MCP, under the same levels. A rule's level is meant to be no
   looser than the profile's `chats.moderate`; the code does not check that yet.

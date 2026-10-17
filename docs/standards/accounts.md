@@ -32,9 +32,10 @@ These documents explain the rules below in more detail. Where one of them disagr
 
 ## Who follows these rules today
 
-cli-core resolves the profile for tg, max and wa, and for the shared commands in memo. drive and zoom still have their
-own profile code: drive registers its own profiles, and zoom keeps one saved profile in its config file. Those two are
-known gaps, not exceptions.
+cli-core resolves the profile for tg, max and wa, and for the shared commands in memo. WC-ACCT-1 needs cli-core 0.319.0
+or newer; on origin/main tg, max and memo pin 0.320.0, but wa pins 0.317.0, which still reads `default_profile`. drive
+and zoom still have their own profile code: drive registers its own profiles, and zoom keeps one saved profile in its
+config file. These are known gaps, not exceptions.
 
 ## Rules
 
@@ -46,8 +47,9 @@ on the computer.
 
 - **Why:** which account a command speaks for is the owner's choice; a guess sends from the wrong account.
 - **Enforced by:** review only.
-- **Example:** `tg personal chats list`, or `TG_PROFILE=personal tg chats list`. cli-core refuses a config file that
-  still has `default_profile`, and refuses `config set default_profile`.
+- **Example:** `tg personal chats list`, or `TG_PROFILE=personal tg chats list`. When no profile is named and the
+  config file still has `default_profile`, cli-core stops and says which profile to type. `config set default_profile`
+  is refused.
 - **Exceptions:** a command that touches no account runs without a profile, for example `account list`,
   `config show` and `commands`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84.
@@ -120,7 +122,7 @@ first account in a list.
 
 - **Why:** the same reason as WC-ACCT-1, one level down.
 - **Enforced by:** review only.
-- **Example:** `memo mail search "invoice"` reads every mailbox; `--source email:work@example.com` reads one.
+- **Example:** `memo search mail "invoice"` reads every mailbox; `--source email:work` reads one.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -132,7 +134,7 @@ the config allows.
 
 - **Why:** an agent that learned a flag in one CLI must not be surprised by it in another.
 - **Enforced by:** `flag-two-meanings` · `flag-synonym` · `option-role` · `same-flag-meaning`.
-- **Example:** `max work search messages "invoice" --source max,telegram`.
+- **Example:** `memo search messages "invoice" --source telegram,max`.
 - **Exceptions:** `same-flag-meaning` runs weekly and does not block a pull request.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
