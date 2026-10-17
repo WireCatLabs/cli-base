@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.43.0 — 17.10.2026
 
 ### Added
 
@@ -17,23 +17,18 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   below that version, a pre-release of it included. A CLI that moved to the shared heading set sets it to its last
   version released with the old names, instead of renaming lines before the check. A value that is not a version
   is reported as a problem.
-
-### Changed — may break callers
-
-- **`cli-dev audit` compares wa with the other CLIs** on the shared roots of the `all` parity group (`commands`,
-  `doctor`, `skill`, `mcp`, `upgrade`, `search`, `notes`, `meetings`). An audit run that passes `--cli` for wa may
-  find differences it did not report before; the weekly scorecard adds wa once wa is published.
-
-## 0.43.0 — 17.10.2026
-
-### Added
-
 - **One test setup file for every CLI**: `setupFiles: ["@wirecat/cli-base/testing/setup"]` in `vitest.config.ts`
   gives each test file a fresh folder for `TMPDIR`, `HOME`, the XDG folders and every `<APP>_CONFIG_DIR`,
   `_STATE_DIR` and `_CACHE_DIR` already set, removed when the file is done; replaces `@napi-rs/keyring` with one that
   throws; and refuses every connection to anything but this machine, naming the host, from `net`, `tls`, `http(s)`,
   `fetch` and `WebSocket`. A test about the network itself calls `onTestFinished(allowNetwork())`. It needs `vitest`,
   now an optional peer dependency. A CLI's own setup file, listed after it, keeps only what is the CLI's own.
+
+### Changed — may break callers
+
+- **`cli-dev audit` compares wa with the other CLIs** on the shared roots of the `all` parity group (`commands`,
+  `doctor`, `skill`, `mcp`, `upgrade`, `search`, `notes`, `meetings`). An audit run that passes `--cli` for wa may
+  find differences it did not report before; the weekly scorecard adds wa once wa is published.
 
 ## 0.42.0 — 17.10.2026
 
