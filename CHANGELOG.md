@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The WireCat CLI standards handbook ships in the package**, at `docs/standards/README.md`: an index and one page
+  per area, from the toolchain to releases, plus a checklist for a new CLI. It is a skeleton for now: the pages state
+  their scope and the rule format, and the rules come in later releases. `pnpm docs:check` checks the rule ids and
+  that every "Enforced by" line names a real check.
+
 ## 0.40.4 — 17.10.2026
 
 ### Added

@@ -24,6 +24,7 @@ the command tree as data — the parts every CLI needs and nobody should write t
 | [Shared tooling](docs/TOOLING.md) | The TypeScript, Biome, lefthook, docs and CI setup a CLI takes from here, and `cli-dev` |
 | [Testing](docs/dev/TESTING.md) | The checks, and what each one is for |
 | [Conventions](docs/dev/CONVENTIONS.md) | How code here is written |
+| [Standards handbook](docs/standards/README.md) | The rules every WireCat CLI follows, one page per area (a skeleton for now) |
 | [CLI standard](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md) | The rules every WireCat CLI follows; this package holds them as data |
 | [Changelog](CHANGELOG.md) | What each version changed, and what may break callers |
 
