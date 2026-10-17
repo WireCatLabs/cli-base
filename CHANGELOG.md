@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Released changelog sections may keep their old headings**: `legacyHeadingsThrough: "<version>"` in
+  `ChangelogRules` (`@wirecat/cli-base/release`) skips the heading-name and repeat checks for every section at or
+  below that version, a pre-release of it included. A CLI that moved to the shared heading set sets it to its last
+  version released with the old names, instead of renaming lines before the check. A value that is not a version
+  is reported as a problem.
+
 ## 0.43.0 — 17.10.2026
 
 ### Added

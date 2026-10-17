@@ -225,6 +225,8 @@ shares: `command(root, "pnpm", "lint")` for anything that passes by exiting 0, `
 dated top section, `docsProblems` for dead links and anchors and the rules of the pages a user reads,
 and `versionScript` — the whole of a `version:check` / `version:sync` script. Each CLI passes its
 own headings, id prefixes and pages; the checks that belong to one messenger stay in that CLI.
+A CLI whose released sections used other headings sets `legacyHeadingsThrough: "<version>"` in its
+`ChangelogRules`: sections at or below that version are not checked for heading names or repeats.
 
 ```ts
 import { command, notOnNpm, packageVersion, releaseCheck } from "@wirecat/cli-base/release"

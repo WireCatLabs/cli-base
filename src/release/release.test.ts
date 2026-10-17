@@ -125,6 +125,40 @@ describe("changelogProblems", () => {
     ])
   })
 
+  it("lets sections at or below legacyHeadingsThrough keep the headings they were released with, repeats included", () => {
+    const text = `# Изменения
+
+## Не выпущено
+
+### Что нового
+
+- a
+
+## 0.19.0 — 29.09.2026
+
+### What's new
+
+- b
+
+## 0.18.1-rc.1 — 28.09.2026
+
+### Documentation
+
+- c
+
+### Documentation
+
+- d
+`
+    expect(changelogProblems(text, { ...rules, release: false, legacyHeadingsThrough: "0.18.1" })).toEqual([
+      'CHANGELOG.md:11: "What\'s new" is not one of: Что нового, Исправлено',
+    ])
+    expect(changelogProblems(text, { ...rules, release: false, legacyHeadingsThrough: "0.19.0" })).toEqual([])
+    expect(changelogProblems(released, { ...rules, release: false, legacyHeadingsThrough: "v0.19" })).toEqual([
+      'legacyHeadingsThrough: "v0.19" is not a version',
+    ])
+  })
+
   it("refuses an internal id but not UTF-8 or ISO-8601", () => {
     const text = released.replace("Текст.", "Текст в UTF-8, время в ISO-8601 (CLI-57).")
     expect(changelogProblems(text, { ...rules, version: "0.19.0", release: true })).toEqual([
