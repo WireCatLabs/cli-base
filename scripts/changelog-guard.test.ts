@@ -135,3 +135,76 @@ describe("changelog guard", () => {
     expect(checkChangelog({ title: "fix: x", base: iso, head: edited, tags: ["v0.52.0"] })).toMatch(/already released/)
   })
 })
+
+describe("restoring immutable release notes", () => {
+  const canonical = base("Unreleased")
+  const corrupted = canonical.replace("- **Added.** Shipped.", `- **Added.** Shipped.\n${entry}`)
+  const restored = canonical.replace("- **Fixed.** Already there.", `- **Fixed.** Already there.\n${entry}`)
+  const tagged = (version: string) => (version === "0.52.0" ? canonical : undefined)
+  it("allows moving a raced addition to Unreleased while restoring the exact tag section", () => {
+    expect(
+      checkChangelog({
+        title: "fix(changelog): restore release",
+        base: corrupted,
+        head: restored,
+        tags: ["v0.52.0"],
+        releasedText: tagged,
+      }),
+    ).toBeUndefined()
+  })
+  it("does not read tags for unchanged historical sections", () => {
+    expect(
+      checkChangelog({
+        title: "fix: pending",
+        base: corrupted,
+        head: corrupted.replace("- **Fixed.** Already there.", entry),
+        tags: ["v0.52.0"],
+        releasedText: () => {
+          throw new Error("must stay lazy")
+        },
+      }),
+    ).toBeUndefined()
+  })
+  it.each([undefined, () => undefined, () => "# Changelog\n\n## Unreleased\n"])(
+    "refuses restoration without a verifiable tagged section",
+    (releasedText) => {
+      expect(
+        checkChangelog({ title: "fix: pending", base: corrupted, head: restored, tags: ["v0.52.0"], releasedText }),
+      ).toMatch(/already released/)
+    },
+  )
+  it("refuses partial restoration and invented edits even with tag access", () => {
+    const invented = restored.replace("Shipped.", "Invented.")
+    expect(
+      checkChangelog({
+        title: "fix: historical",
+        base: corrupted,
+        head: invented,
+        tags: ["v0.52.0"],
+        releasedText: tagged,
+      }),
+    ).toMatch(/already released/)
+    const twiceCorrupted = corrupted.replace("Shipped.", "Shipped.\n- **Extra.** Still wrong.")
+    expect(
+      checkChangelog({
+        title: "fix: partial",
+        base: twiceCorrupted,
+        head: corrupted,
+        tags: ["v0.52.0"],
+        releasedText: tagged,
+      }),
+    ).toMatch(/already released/)
+  })
+  it("can restore the exact tagged heading as well as its body", () => {
+    const wrongDate = corrupted.replace("14.10.2026", "2026-10-15")
+    expect(
+      checkChangelog({
+        title: "fix: release date",
+        base: wrongDate,
+        head: restored,
+        tags: ["v0.52.0"],
+        releasedText: tagged,
+      }),
+    ).toBeUndefined()
+  })
+})
