@@ -14,6 +14,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **`scan` is a known verb**: read stored messages for what a rule finds, such as tasks, and list it; record
   it only with `--yes`. For `tasks scan <chat>` in cli-core, the name the owner chose over `tasks apply`.
+- **`mcp: false` keeps a command off MCP servers**: set on a command or a whole group with `annotate`, it covers every
+  command below it. `commands --json` carries `mcp: false` on each command it reaches and nothing on the rest, so MCP
+  tool lists can be built from the command tree. Agents running the CLI itself are not affected.
 
 ## 0.40.3 â€” 17.10.2026
 
