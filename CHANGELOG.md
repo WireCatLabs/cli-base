@@ -17,6 +17,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `--render <mode>` selects returned value representation. Drive uses the existing `info`,
   `show`, `update`, `add` and `clear` verbs. Consumers can remove corresponding dated lint
   exceptions after adopting this version; existing baselines need no additions.
+- **`places` is a view noun**: the street addresses confirmed as places, most mentioned first, as in
+  `tg <profile> mentions places` (cli-core 0.308.0). The `unknown-verb` lint no longer reports it; tg and max can
+  drop that baseline line after adopting this version.
 
 - **`--certainty <n>` is a known flag** (role `value`): how sure an agent is, 0 to 1, kept with what it wrote, as
   `tasks close --certainty` in cli-core takes it. tg and max listed it in their `option-role` lint baselines; after

@@ -268,6 +268,7 @@ const views: [string, string][] = [
   ["agenda", "what needs a look today"],
   ["categories", "the categories a thing takes, with what each means"],
   ["domains", "the internet domains links point to, most linked first"],
+  ["places", "the street addresses confirmed as places, most mentioned first"],
 ]
 
 const roots: [string, string][] = [
