@@ -27,24 +27,24 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 ### WC-ARCH-1 · Call only the layers below you: interface, then service, then port, then adapter
 
 - **Why:** when a command calls an adapter directly, the MCP tool for the same job does something different.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: biome noRestrictedImports`.
 - **Example:** cli-core has five layers: domain (`src/domain/`), adapters, ports (`port.ts`, the store), services
-  (`src/services/`) and the interface (commands and MCP tools). Its `biome.json` is meant to refuse an import of
+  (`src/services/`) and the interface (commands and MCP tools). Its `biome.json` refuses an import of
   `commander` or of `src/cli/` from the services and the layers below them, and an import of a command file from
   `src/mcp/`. What a
   command and a service share lives below the command.
-- **Exceptions:** none. A new adapter method goes into a named group in `port.ts`, never into the domain. Today the
-  last `noRestrictedImports` override in cli-core's `biome.json` replaces the earlier ones, so cli-core's layer,
-  provider, module and store import rules (WC-ARCH-2, WC-ARCH-8, WC-STORE-4) catch nothing until it is fixed.
+- **Exceptions:** none. A new adapter method goes into a named group in `port.ts`, never into the domain. In Biome, a later
+  override that sets `noRestrictedImports` for the same file replaces the earlier one's options, so every block that
+  sets the rule carries the complete list for its paths.
 - **Applies to:** all CLIs. Each repository's `biome.json` holds its own import rules. **Since:** cli-base 0.41.0.
   **Rulings:** none.
 
 ### WC-ARCH-2 · Dependencies point one way: a CLI depends on cli-core, cli-core on cli-base, never back
 
 - **Why:** a shared package that imports an app cannot be shared.
-- **Enforced by:** review only.
-- **Example:** cli-base has no dependency on cli-core or on any CLI. cli-core's `biome.json` is meant to refuse an import
-  of a messenger library or an adapter directory ("cli-core speaks no provider"); today it does not (WC-ARCH-1).
+- **Enforced by:** `cli-core: biome noRestrictedImports`.
+- **Example:** cli-base has no dependency on cli-core or on any CLI. cli-core's `biome.json` refuses an import of a
+  messenger library or an adapter directory ("cli-core speaks no provider").
 - **Exceptions:** none.
 - **Applies to:** cli-base, cli-core and all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -110,13 +110,13 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 ### WC-ARCH-8 · Cross a module boundary only through the module's entry point
 
 - **Why:** a deep import ties the caller to another module's internals.
-- **Enforced by:** `cli-memo: biome noRestrictedImports` · `drive-cli: biome noRestrictedImports` ·
-  `zoom-cli: biome noRestrictedImports`.
+- **Enforced by:** `cli-core: biome noRestrictedImports` · `cli-memo: biome noRestrictedImports` ·
+  `drive-cli: biome noRestrictedImports` · `zoom-cli: biome noRestrictedImports`.
 - **Example:** in cli-core, `src/tasks/` and `src/meetings/` are entered only through their `index.ts`, `cli/`, `mcp/`
-  and `testing/` entries; its `biome.json` is meant to refuse the rest, and today does not (WC-ARCH-1). memo, drive and zoom have a "public exports only" rule. A
+  and `testing/` entries; its `biome.json` refuses the rest. memo, drive and zoom have a "public exports only" rule. A
   package's own entry points are its `exports`
   ([WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcindexts)).
-- **Exceptions:** tests may import what they test.
+- **Exceptions:** a test inside a module may import what it tests; a test outside the module uses the entry point.
 - **Applies to:** all CLIs. tg, max and wa do not have the import rule yet. **Since:** cli-base 0.41.0.
   **Rulings:** none.
 
