@@ -116,9 +116,11 @@ cli-testing, cli-docs, plus community itself.
 - **Why:** a repository with no merges for weeks still meets new advisories, new runner images and expired pins.
 - **Enforced by:** `monthly.yml:validation` · `monthly.yml:security`.
 - **Example:** `monthly.yml`, from the community template, calls the repository's `ci.yml` and the pinned cli-base
-  `release-checks.yml`. Each repository has its own minute, between 02:17 and 03:21 UTC, so runs do not overlap.
-- **Exceptions:** community has no build, so it runs only the release security checks, at 03:47 UTC. A monthly run
-  never publishes a package or deploys the site.
+  `release-checks.yml`. Each repository has its own minute, between 02:17 and 03:20 UTC, so runs do not overlap.
+- **Exceptions:** cli-core also builds and probes its native packages in their own workflows, after the window:
+  `onnx.yml` at 03:27 and `sqlite.yml` at 03:37 UTC. A scheduled run of either never publishes; only a manual run
+  with `publish` does. community has no build, so it runs only the release security checks, at 03:47 UTC. A monthly
+  run never publishes a package or deploys the site.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CI-10 · Run heavy security checks only at release, monthly or on request
