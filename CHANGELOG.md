@@ -10,6 +10,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Fixed
+
+- **A test that imitates SIGTERM keeps its sandbox and its worker.** Since 0.43.2 the shared test setup removed every
+  sandbox folder and ended the worker on any `SIGTERM` event, so a test calling `process.emit("SIGTERM")` lost its
+  files and killed its vitest worker. The setup now acts only on a signal from the operating system, which is still
+  how vitest ends a worker after a file fails; a CLI that set other `SIGTERM` listeners aside around such a test can
+  drop that.
+
 ## 0.43.3 â€” 17.10.2026
 
 ### Added
