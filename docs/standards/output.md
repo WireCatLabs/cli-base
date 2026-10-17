@@ -246,6 +246,27 @@ JSON Schema 2020-12.
 - **Applies to:** CLIs that run on cli-core's `run()`; zoom uses cli-base's `createOutputBuffer` for the same cap.
   **Since:** cli-base 0.41.0. **Rulings:** none.
 
+## Agents first
+
+### WC-OUT-23 · When a stable answer for an agent and a nicer view pull apart, the stable answer wins
+
+Three things follow from it:
+
+1. **The machine answer is stable data.** Its shape does not change to read better.
+2. **Every action is explicit.** A command does only what its path and options name.
+3. **An unknown outcome is not a reason to retry.** When a write may or may not have landed, the answer says so, and
+   the caller checks before it repeats anything.
+
+- **Why:** an agent acts on what it parses, so a shape that shifts, a hidden action or an invitation to retry can make
+  it do the wrong thing.
+- **Enforced by:** review only.
+- **Example:** the human view may round, shorten or group what it prints
+  ([WC-OUT-2](#wc-out-2--build-the-human-view-from-the-same-facts-as-the-machine-answer)), but `--json` keeps every
+  key. A write whose outcome is unknown fails with `outcome_unknown` and `retry.safe: false`
+  ([WC-OUT-20](#wc-out-20--mark-a-failure-safe-to-retry-only-when-repeating-it-cannot-do-harm)).
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
@@ -254,3 +275,5 @@ holds.
 - [cli-core `STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md): agent execution
   contract, output
 - [cli-base API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md)
+- [cli-core `STANDARD.md`, "External references and our adoption profile"](https://github.com/WireCatLabs/cli-core/blob/022f69fb0acc86f6df05e074ec4df1b911ec94c6/docs/dev/STANDARD.md#external-references-and-our-adoption-profile),
+  as it stood before it moved to the handbook (WC-OUT-23)

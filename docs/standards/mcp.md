@@ -172,6 +172,20 @@ needs a one-time code that the owner reads in a terminal. `--revoke` ends every 
 - **Exceptions:** none.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-594, NEED-774.
 
+### WC-MCP-13 · A tool's hints and descriptions never stand in for the permission check
+
+A tool's annotations, such as `readOnlyHint`, its description and the server's instructions tell an agent what to
+expect. They decide nothing. Every call goes through the profile's permissions, read again at the time of the call,
+and every write goes through the write guard ([WC-PERM-13](permissions.md#wc-perm-13--every-write-passes-the-write-guard-before-it-leaves)).
+
+- **Why:** an agent may ignore a hint or be talked out of it; only a check in the CLI's own code stops it.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts` · `cli-core: src/mcp/bot/server.test.ts`.
+- **Example:** the owner sets `messages` to `deny` while an MCP session is open. The next `messages list` call
+  through that session fails with `permission_error`, although the tool was listed and marked read-only when the
+  session started.
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+
 ## Planned — not built yet
 
 The owner chose this design on 2026-10-17 (NEED-1408, NEED-1411). It is being built in cli-core. Until a cli-core
@@ -208,3 +222,5 @@ holds.
 
 - [cli-core `STANDARD.md`, "MCP"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#mcp)
 - [cli-core `STANDARD.md`, "Permissions"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#permissions)
+- [cli-core `STANDARD.md`, "External references and our adoption profile"](https://github.com/WireCatLabs/cli-core/blob/022f69fb0acc86f6df05e074ec4df1b911ec94c6/docs/dev/STANDARD.md#external-references-and-our-adoption-profile),
+  as it stood before it moved to the handbook (WC-MCP-13)

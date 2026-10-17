@@ -147,6 +147,7 @@ const verbs: [string, string][] = [
     "rebuild",
     "compute again, from what the store already holds, what the tool derives from it, keeping the owner's decisions",
   ],
+  // Only when someone asks, never from a matching name: WC-ACCT-11 in docs/standards/accounts.md.
   ["link", "record that two identities are one person"],
   ["unlink", "undo a link"],
   ["lookup", "ask the messenger who is behind a phone number"],

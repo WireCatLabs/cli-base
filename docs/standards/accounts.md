@@ -139,11 +139,24 @@ A read that is not limited to one account reads every account in its scope, and 
 - **Exceptions:** none.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** bots:12.
 
+### WC-ACCT-11 · Two identities become one person only when someone links them
+
+A link between two identities, such as a Telegram contact and a MAX contact, is recorded only when someone asks for it
+with the `link` verb
+([cli-base's vocabulary](https://github.com/WireCatLabs/cli-base/blob/main/src/standards/vocabulary.ts)). It is never
+inferred from a matching name, and `unlink` undoes it.
+
+- **Why:** two people can share a name, and joining them would show one person's messages as another's.
+- **Enforced by:** `cli-core: src/services/person-context.test.ts`.
+- **Example:** `tg personal contacts link Ana max:Ana`. Until then, a Telegram Ana and a MAX Ana stay two people.
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
 holds.
 
 - [cli-core `STANDARD.md`, "Command names"](https://github.com/WireCatLabs/cli-core/blob/022f69fb0acc86f6df05e074ec4df1b911ec94c6/docs/dev/STANDARD.md#command-names),
-  rule 1, as it stood before these rules moved to this page
+  rule 1 and the `link` verb in rule 3, as they stood before these rules moved to this page
 - [cli-core `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md), on the account-bound store

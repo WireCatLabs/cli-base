@@ -28,15 +28,15 @@ rules it keeps. A new CLI is ready for its first release when every check under 
 | [Toolchain](toolchain.md) | `TOOL` | 19 | TypeScript, Biome, grit plugins, size caps, import cycles, spelling, Markdown |
 | [Layout](layout.md) | `LAY` | 9 | Repository layout, entry points, exports, file size, one job per file, splitting a unit |
 | [Commands](commands.md) | `CMD` | 28 | Paths, vocabulary, flags, arguments, effects, lifetime, query, help, external references |
-| [Output](output.md) | `OUT` | 22 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection |
-| [MCP](mcp.md) | `MCP` | 12 | The MCP tools, how they come from commands, what each permission shows |
-| [Accounts](accounts.md) | `ACCT` | 10 | The explicit profile, reads across accounts, scope flags |
+| [Output](output.md) | `OUT` | 23 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection |
+| [MCP](mcp.md) | `MCP` | 13 | The MCP tools, how they come from commands, what each permission shows |
+| [Accounts](accounts.md) | `ACCT` | 11 | The explicit profile, reads across accounts, scope flags, linked identities |
 | [Permissions](permissions.md) | `PERM` | 21 | Levels, keys, defaults, hard limits, the write guard and its journal |
 | [Architecture](architecture.md) | `ARCH` | 16 | Layers, dependency direction, vendor types, what goes in which package |
 | [Lifecycle](lifecycle.md) | `LIFE` | 13 | Opening late, who closes, one-shot exits, long-running commands, the `serve` relay, resumable syncs |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
 | [Testing](testing.md) | `TEST` | 17 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity |
-| [Security](security.md) | `SECR` | 19 | Secrets, logs, keyring, argv, error text, scanners, workflow hardening, reporting |
+| [Security](security.md) | `SECR` | 20 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting |
 | [Documents](docs.md) | `DOC` | 20 | User pages and developer pages, generated pages, current facts, changelog |
 | [Releases](releases.md) | `REL` | 16 | `bin/release`, the release lock, versions, release reports, trusted publishing |
 | [CI](ci.md) | `CI` | 12 | Hooks, the pull request budget, full validation, monthly runs |
