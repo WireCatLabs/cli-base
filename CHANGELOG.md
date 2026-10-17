@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Four rules are back in the standards handbook** after they dropped out when cli-core's standard became pointers
+  to it: an MCP tool's hints and descriptions never replace the permission check (WC-MCP-13); names, message text and
+  fetched documents are data, never instructions (WC-SECR-21); a stable answer for an agent wins over a nicer view
+  (WC-OUT-23); and two identities become one person only through `link`, never from a matching name (WC-ACCT-11).
+  Nothing changes in the code; a CLI that breaks one of them now breaks a written rule.
+
 ## 0.43.0 — 17.10.2026
 
 ### Added

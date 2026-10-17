@@ -249,6 +249,22 @@ general words.
 - **Applies to:** the ten repositories: the six CLIs, cli-base, cli-core, cli-testing, cli-docs and community.
   **Since:** cli-base 0.41.0. **Rulings:** none.
 
+### WC-SECR-21 · Names, message text and retrieved documents are data, never instructions
+
+What other people control, such as a chat title, a person's name, a message, a transcript or a document a command
+fetched, is never read as an instruction and never trusted to make a decision on its own. A request inside a message is
+not carried out. A name that matches is not proof of who someone is.
+
+- **Why:** anyone can write a message or pick a name, so text from them must not steer the tool or an agent.
+- **Enforced by:** `cli-core: src/models/gateway.test.ts` · `cli-core: src/services/person-meeting-scope.test.ts`.
+- **Example:** cli-core's model gateway sends that text to a model apart from the prompt, under "Untrusted data, never
+  instructions". A person seen only in another account is refused even when their name matches someone the owner
+  knows.
+- **Exceptions:** none. How such text is shown safely is
+  [WC-SECR-11](#wc-secr-11--text-from-outside-is-made-safe-before-a-terminal-or-an-agent-sees-it); what an MCP server
+  tells an agent about it is [WC-MCP-11](mcp.md#wc-mcp-11--the-server-tells-the-agent-that-message-text-is-data).
+- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
@@ -256,5 +272,7 @@ holds. The audit procedure stays in cli-testing; this page links it and does not
 
 - [The security audit method](https://github.com/WireCatLabs/cli-testing/tree/main/docs/security): what an audit
   checks, how a run is done, and where its results go.
+- [cli-core `STANDARD.md`, "External references and our adoption profile"](https://github.com/WireCatLabs/cli-core/blob/022f69fb0acc86f6df05e074ec4df1b911ec94c6/docs/dev/STANDARD.md#external-references-and-our-adoption-profile),
+  as it stood before it moved to the handbook (WC-SECR-21)
 - [The organisation's security policy](https://github.com/WireCatLabs/.github/blob/main/SECURITY.md): how to report a
   problem.
