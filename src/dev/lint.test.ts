@@ -375,6 +375,36 @@ describe("lint rules", () => {
     expect(lintOf(root).find((found) => found.target === "link")?.message).toMatch(/named with a verb/)
   })
 
+  it("recognizes preparation communications scope, query and time flags without exemptions", () => {
+    const root = clean()
+    annotate(
+      root
+        .command("meetings")
+        .description("meetings")
+        .command("prepare")
+        .description("prepare context")
+        .argument("<series-id>", "exact series")
+        .option("--context-source <id=cursor>", "selected source and optional continuation")
+        .option("--context-query <words>", "literal words")
+        .option("--context-since-time <time>", "inclusive start")
+        .option("--context-before-time <time>", "exclusive end"),
+      {
+        examples: ["tool meetings prepare 123 --context-source work --context-query launch"],
+      },
+    )
+    expect(lintOf(root).filter((found) => ["option-role", "flag-two-meanings"].includes(found.rule))).toEqual([])
+    expect(
+      VOCABULARY.flags.filter((flag) => flag.name.startsWith("--context-")).map((flag) => [flag.name, flag.role]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["--context-source", "scope"],
+        ["--context-query", "query"],
+        ["--context-since-time", "target"],
+        ["--context-before-time", "target"],
+      ]),
+    )
+  })
+
   it("lists every kind a two-meaning flag takes", () => {
     const root = clean()
     root

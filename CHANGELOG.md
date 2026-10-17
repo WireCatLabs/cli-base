@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Fixed
+
+- **Meeting preparation's communications flags have shared vocabulary roles.** `--context-source` selects an
+  explicit source and optional continuation, `--context-query` supplies literal words, and
+  `--context-since-time` / `--context-before-time` bound its time window. Consumers adopting the shared
+  preparation command can lint these options without adding baseline exceptions.
+
 ### Added
 
 - **Four rules are back in the standards handbook** after they dropped out when cli-core's standard became pointers
