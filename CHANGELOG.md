@@ -17,6 +17,31 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   fetched documents are data, never instructions (WC-SECR-21); a stable answer for an agent wins over a nicer view
   (WC-OUT-23); and two identities become one person only through `link`, never from a matching name (WC-ACCT-11).
   Nothing changes in the code; a CLI that breaks one of them now breaks a written rule.
+- **`writeSecurely` writes bytes as well as text**: `contents` takes a `string` or a `Uint8Array` (a `Buffer` is one).
+  A login QR image can now be written atomically with mode `0600`, like the credentials file, instead of with
+  `writeFileSync` and a `chmod` after it. Callers that pass a string see no change.
+- **The vocabulary knows `setup` and `--agent`**: `setup`, the guided first run that logs in and then installs the
+  agent skill, is a registered root word, and `setup --agent <agent>` has the `action` role. `cli-dev lint` no
+  longer reports them in tg and wa; their `lint/baseline` entries for them turn stale and can be removed.
+- **The audit baseline holds wa's shared findings**: `cli-dev audit --for wa --lint wa=lint`, run with the other
+  CLIs' command trees, starts with no new finding. What wa shares with the other CLIs was already in the baseline
+  under the other CLIs' names.
+- **The handbook covers a CLI with a Go part and a messenger with no test accounts**: a new toolchain rule pins Go
+  from `go.mod` and runs gofmt, vet and the Go tests; Go keeps its own file names, and the 1,000-line cap is
+  TypeScript only. Live checks may use the owner's own chat where no test account exists, no test may open a real
+  credential store of any kind, and a release checks every package it publishes. Logging in and out answer without
+  an operation id, a flag counts as naming a command in a lower layer, `SECURITY.md` is a user page, and the
+  `replies` rules apply only where the messenger has replies. Read the toolchain, layout, style, testing, releases,
+  output, architecture, lifecycle, security, permissions and documents pages before the next audit.
+
+### Fixed
+
+- **`--json=item.<field>` keeps that field**: `projectFields` read `items.` as each listed thing but not `item.` as
+  the one answered thing, so `--json=item.profile` printed `item: {}`. It now prints `item: { profile: … }`, as
+  `--json=profile` already did.
+- **`cli-dev audit` leaves a baseline entry alone when the run lacks one of the CLIs it names**: such an entry was
+  counted as fixed, and `--write-baseline` dropped it, so a run over fewer CLIs wiped what a wider run had recorded.
+  It now stays in the baseline and is not counted.
 
 ## 0.43.0 — 17.10.2026
 

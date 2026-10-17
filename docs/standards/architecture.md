@@ -169,8 +169,10 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Why:** an adapter that prints "check `tg polls show`" breaks when the command is renamed and cannot be shared.
 - **Enforced by:** review only.
 - **Example:** a tg adapter error carries a typed reason, such as `{ check: "polls.show" }`. The command layer turns
-  the reason into the words `tg polls show`.
-- **Exceptions:** none.
+  the reason into the words `tg polls show`. A flag counts as naming a command, for the same reason: an adapter
+  refusal carries `{ option: "link" }`, and the command layer writes `--link`.
+- **Exceptions:** none. tg's `src/telegram/errors.ts` (`--anonymous`, `--correct`) and wa's adapter (`--link`,
+  `--for-everyone`) still name flags.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-ARCH-17 · Merged into [WC-LAY-8](layout.md#wc-lay-8--give-each-module-one-reason-to-change)

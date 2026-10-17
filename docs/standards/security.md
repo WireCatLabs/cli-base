@@ -53,7 +53,10 @@ name is scoped to that directory (`isolated: true`).
   owner's real keyring entry.
 - **Enforced by:** `src/credentials.test.ts`.
 - **Example:** a bot token is read from `MAX_BOT_TOKEN`, then the keyring entry `bot:<profile>`, then the file.
-- **Exceptions:** `auto` storage tries the keyring and, when it fails, warns once on stderr and uses the file.
+- **Exceptions:** `auto` storage tries the keyring and, when it fails, warns once on stderr and uses the file. A
+  messenger library's own device store, which the library opens as a file and which cannot live in the keyring
+  (WhatsApp's `private.db`), is an owner-only file under
+  [WC-SECR-10](#wc-secr-10--private-files-are-written-atomically-with-private-modes) instead.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-295.
 
 ### WC-SECR-5 · A secret is never taken on the command line
@@ -102,7 +105,9 @@ Output shows the last four digits (`***1234`). `--show-phone` prints the whole n
 - **Why:** a phone number identifies a person and is the login of a messenger account.
 - **Enforced by:** review only.
 - **Example:** `max work account show --show-phone`.
-- **Exceptions:** none.
+- **Exceptions:** an id that is itself the phone number is printed whole, because a masked id cannot be passed back
+  to the next command. WhatsApp names a person by a phone-form id while their hidden id (LID) is not known yet; wa
+  prints the LID whenever it has one.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-209.
 
 ### WC-SECR-9 · A command does not send the CLI's own secret files unless the owner says so
@@ -119,7 +124,8 @@ the message store. The owner adds `--allow-any-file` to send one anyway.
 ### WC-SECR-10 · Private files are written atomically with private modes
 
 A file that holds a secret or private state is written with `writeSecurely`: atomically, mode `0600`, in a directory
-created with mode `0700`. A temporary credential file, such as a login QR image, is `0600` and removed in `finally`.
+created with mode `0700`. `writeSecurely` takes text or bytes, so a login QR image is written the same way. A
+temporary credential file, such as that image, is `0600` and removed in `finally`.
 tg's `doctor` reports a wrong mode and prints the `chmod` fix without applying it.
 
 - **Why:** another user on the same computer must not read the session.
