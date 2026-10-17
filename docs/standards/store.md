@@ -60,10 +60,9 @@ Related pages: which account a read covers, and how a read across accounts is as
 
 - **Why:** the table modules are the SQL layer; a caller that imports them skips the transaction and the account
   binding.
-- **Enforced by:** review only.
-- **Example:** in cli-core, `biome.json` is meant to refuse an import of `src/store/sqlite/*` from `src/services/`,
-  `src/sends/`, `src/mcp/` and `src/cli/`; today it does not, because a later override replaces that rule
-  ([WC-ARCH-1](architecture.md#wc-arch-1--call-only-the-layers-below-you-interface-then-service-then-port-then-adapter)). They import from `src/store/store.ts`, which re-exports what they need.
+- **Enforced by:** `cli-core: biome noRestrictedImports`.
+- **Example:** in cli-core, `biome.json` refuses an import of `src/store/sqlite/*` from `src/services/`,
+  `src/sends/`, `src/mcp/` and `src/cli/`. They import from `src/store/store.ts`, which re-exports what they need.
 - **Exceptions:** tests of a table module.
 - **Applies to:** cli-core. **Since:** cli-base 0.41.0. **Rulings:** none.
 
