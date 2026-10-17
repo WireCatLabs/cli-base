@@ -33,6 +33,10 @@
       "types": "./dist/testing/index.d.ts",
       "default": "./dist/testing/index.js"
     },
+    "./testing/setup": {
+      "types": "./dist/testing/setup.d.ts",
+      "default": "./dist/testing/setup.js"
+    },
     "./http": {
       "types": "./dist/http/index.d.ts",
       "default": "./dist/http/index.js"
@@ -132,10 +136,14 @@
     "access": "public"
   },
   "peerDependencies": {
-    "commander": ">=15"
+    "commander": ">=15",
+    "vitest": ">=5"
   },
   "peerDependenciesMeta": {
     "commander": {
+      "optional": true
+    },
+    "vitest": {
       "optional": true
     }
   }

@@ -55,8 +55,9 @@ Rule ids on this page are `WC-LAY-<n>`. How to read a rule, how ids work and whi
 - **Why:** everything under `src/` of a library is compiled into `dist/` and published, so a test helper there ships
   to every user.
 - **Enforced by:** review only.
-- **Example:** cli-base keeps its test sandbox in `test/sandbox.ts`, not in `src/`. A helper that callers also use in
-  their own tests is a public entry point instead, such as `@wirecat/cli-base/testing`.
+- **Example:** a helper only cli-base's own tests use goes in `test/`, not in `src/`. A helper that callers also use
+  in their own tests is a public entry point instead, such as `@wirecat/cli-base/testing` and the shared test setup
+  `@wirecat/cli-base/testing/setup`.
 - **Exceptions:** a CLI's colocated `*.test.ts` files stay in `src/`, because its `tsconfig.json` excludes them from
   the build.
 - **Applies to:** cli-base, cli-core and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.

@@ -24,11 +24,13 @@ review guidelines for module size. The entry-point map below applies it to this 
 | `/skill` | the CLI's SKILL.md for agents: the `skill` command, the daily hint, the MCP resource | Commander **at run time** (the only entry point that is), `/update`'s state file, the root's `Renderer` and `Streams` types |
 | `/mcp` | local stdio MCP entry setup and a handshake probe | Node child processes; no messenger or MCP SDK dependency |
 | `/standards` | the registries of the shared standard: vocabulary, envelope, error object and reasons, next steps, log record, lint rules | `valibot`, `@valibot/to-json-schema`; the root's error codes |
-| `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock` | the root |
+| `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock`, `allowNetwork` | the root |
+| `/testing/setup` | a vitest `setupFiles` entry: per-file sandbox, a keyring that throws, no network | `vitest` (optional peer) |
 
 Each is a separate `exports` entry in [`package.json`](../../package.json), built from
-`src/<name>/index.ts`. **Everything under `src/` ships in `dist/`**, including `src/testing/` — which
-is why the test sandbox lives in [`test/`](../../test/sandbox.ts) and not there.
+`src/<name>/index.ts`, except `/testing/setup` from [`src/testing/setup.ts`](../../src/testing/setup.ts).
+**Everything under `src/` ships in `dist/`**, including `src/testing/`, so a helper only cli-base's own
+tests use goes in `test/`.
 
 Two more things ship that are not imports:
 

@@ -38,6 +38,7 @@ import {
 } from "../src/index.js"
 import { setupArguments } from "../src/mcp/index.js"
 import { fakeClock } from "../src/testing/index.js"
+import { installNetworkGuard } from "../src/testing/network.js"
 import { installerOf, isNewer } from "../src/update/index.js"
 
 const ESCAPE = String.fromCharCode(27)
@@ -200,6 +201,15 @@ try {
   failures.push("HTTP JSON accepted an oversized body")
 } catch (error) {
   check("HTTP JSON reports its byte limit", error instanceof CliError && error.code === "invalid_response")
+}
+
+// The setup file itself needs vitest, which Bun cannot run; the guard it installs is checked here, last.
+installNetworkGuard()
+try {
+  await fetch("https://example.com/")
+  failures.push("the test network guard let fetch reach example.com")
+} catch (error) {
+  check("the test network guard names the host", error instanceof Error && error.message.includes("example.com"))
 }
 
 if (failures.length > 0) {

@@ -28,10 +28,13 @@ Checked on 2026-09-29 by putting a type error into a test and watching `pnpm typ
 
 ## No test reaches the real machine
 
-[`test/sandbox.ts`](../../test/sandbox.ts) is a vitest `setupFiles` entry, so it holds for every test
-file, including the next one:
+[`src/testing/setup.ts`](../../src/testing/setup.ts) is a vitest `setupFiles` entry, so it holds for every test
+file, including the next one. It ships as `@wirecat/cli-base/testing/setup`, so a CLI gets the same guarantees
+from one line in its `vitest.config.ts`: `setupFiles: ["@wirecat/cli-base/testing/setup"]`
+([WC-TEST-1](../standards/testing.md#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory)).
 
-- **`TMPDIR`, `TMP` and `TEMP` point into a directory of its own, removed when the file is done.** The config,
+- **`TMPDIR`, `TMP`, `TEMP`, `HOME`, the XDG and Windows folders and every `<APP>_*_DIR` already set point into a
+  directory of its own, removed when the file is done.** The config,
   credential, logging and update tests make directories with `mkdtempSync(join(tmpdir(), …))` and
   never removed them; one run left 34 in `/tmp`. The setup covers Unix and Windows temporary-path
   selection and restores the inherited environment afterwards. Explicit stack ordering runs its
@@ -44,16 +47,17 @@ file, including the next one:
   does a real keychain read of an entry that does not exist (and can block on a locked keyring's
   prompt). Keep `get` first in that test: without the sandbox it fails there, before `set` and
   `delete` can write anything.
+- **No connection leaves the machine.** `net` and `tls` connects, `http(s)` requests, `fetch` and `WebSocket` to
+  anything but `localhost`, `127.0.0.1` and `::1` throw an error naming the host, before any name is looked up
+  ([WC-TEST-3](../standards/testing.md#wc-test-3--no-test-contacts-a-provider-or-the-network)). A test about the
+  network itself calls `onTestFinished(allowNetwork())`. `src/testing/network.test.ts` covers each path.
 
-No `*_CONFIG_DIR` is set: cli-base has no app name of its own, and every test that resolves paths
-passes `env` explicitly.
+cli-base has no app name of its own, and every test that resolves paths passes `env` explicitly.
 
-Consumer CLI suites should apply this per-file lifecycle too: place temporary-file setup in the
-runner's `setupFiles`, let subprocesses inherit it, close resources before removing the root, and
-restore all three temporary-path variables before the worker runs another file. Keep deliberate
-coverage and debug artifacts outside those roots, with bounded retention such as one previous
-command trace. Check the actual temporary parent after a full suite; mocking removal calls does
-not prove fixtures were removed. Never clean another session's scratch directory as test teardown.
+A CLI lists the shared setup first and its own setup file after it, for what is its own (a default profile, pacing
+off). Subprocesses inherit the sandbox. Keep deliberate coverage and debug artifacts outside it, with bounded
+retention such as one previous command trace. Check the actual temporary parent after a full suite; mocking removal
+calls does not prove fixtures were removed. Never clean another session's scratch directory as test teardown.
 
 ## No test waits for real
 

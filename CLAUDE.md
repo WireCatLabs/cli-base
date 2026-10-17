@@ -19,8 +19,8 @@ vulnerabilities are reported as the
    `streams` and `renderer`, and every CLI above inherits it.
 2. **The environment is an argument.** Clock, keyring, `env`, `fetch`, streams — passed in, the
    real one only a default. Nothing here reads `process.env` or the keychain unasked.
-3. **No test reaches the owner's keychain or leaves files behind.** `test/sandbox.ts` enforces it
-   for every test file; do not weaken it.
+3. **No test reaches the owner's keychain or the network, or leaves files behind.**
+   `src/testing/setup.ts` enforces it for every test file; do not weaken it.
 4. **Nothing in the root export is HTTP.** HTTP helpers go to `/http`.
 5. **Everything under `src/` is published.** Test-only helpers go to `test/`.
 

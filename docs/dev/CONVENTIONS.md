@@ -14,7 +14,7 @@ ports, thin transport handlers and dependency direction toward domain contracts.
 guidelines require review judgment, not mechanical splitting.
 
 **`src/` is the package.** Every `.ts` file under it is compiled into `dist/` and published, so a
-helper only tests need does not go there — [`test/`](../../test/sandbox.ts) is for that. A new entry
+helper only tests need does not go there — `test/` is for that. A new entry
 point is a new `exports` entry in `package.json`, and [`scripts/smoke.ts`](../../scripts/smoke.ts)
 gets a line that runs it under Bun.
 
