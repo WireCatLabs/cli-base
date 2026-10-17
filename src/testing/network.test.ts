@@ -52,6 +52,20 @@ describe("the network guard from the shared setup", () => {
     expect(response.statusCode).toBe(200)
   })
 
+  it("treats every 127.x.x.x address as this machine, and nothing that only looks like one", async () => {
+    const closed = (error: unknown) => expect(String(error)).not.toMatch(/a test tried to reach/)
+    const socket = net.connect(1, "127.0.0.2")
+    socket.on("error", closed)
+    socket.destroy()
+    const request = http.get("http://127.255.0.9:1/")
+    request.on("error", closed)
+    request.destroy()
+    await fetch("http://127.0.0.2:1/").catch(closed)
+
+    expect(() => net.connect(443, "128.0.0.1")).toThrow(/a test tried to reach 128\.0\.0\.1/)
+    expect(() => net.connect(443, "127.0.0.1.example.com")).toThrow(/a test tried to reach/)
+  })
+
   it("lets a connection through after allowNetwork, until it is restored", () => {
     const restore = allowNetwork()
     onTestFinished(restore)

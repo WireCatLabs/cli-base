@@ -35,9 +35,13 @@ and which run after merge is in [CI](ci.md).
   file gets a fresh directory: `TMPDIR`, `TMP`, `TEMP`, `HOME`, `USERPROFILE`, the XDG and Windows folders, and
   every `<APP>_CONFIG_DIR`, `_STATE_DIR` and `_CACHE_DIR` already set, with the store variables
   ([WC-STORE-14](store.md#wc-store-14--tests-never-open-the-owners-store)), point into it. One that is not set falls
-  back to the sandboxed home. When the file is done, after its own hooks have closed their resources, the setup
-  restores the variables and removes the directory. A CLI's own setup file, listed after the shared one, adds only
-  what is its own, such as a default profile.
+  back to the sandboxed home. npm's and pnpm's update check is off (`npm_config_update_notifier=false`,
+  `NO_UPDATE_NOTIFIER=1`): with a fresh home, a child `npm` would reach the registry past the network guard and print
+  its notice into output a test parses. On macOS the directory is made under `/tmp`, so a Unix socket path under the
+  sandboxed home stays within the 104-byte limit. When the file is done, after its own hooks have closed their
+  resources, the setup restores the variables and removes the directory; when the file fails while loading or its
+  own `afterAll` throws, vitest skips that step and the directory is removed as the worker ends. A CLI's own setup
+  file, listed after the shared one, adds only what is its own, such as a default profile.
 - **Exceptions:** keep coverage reports and debug traces outside the sandbox, with bounded retention. Never clean
   another session's scratch directory as test teardown.
 - **Applies to:** all CLIs and the shared packages. cli-base uses the shared setup; the CLIs keep their own sandboxes
@@ -61,7 +65,7 @@ and which run after merge is in [CI](ci.md).
 - **Enforced by:** `src/testing/network.test.ts`, `max-cli: src/testing/unscripted.ts`.
 - **Example:** the shared setup
   ([WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory)) refuses every connection
-  to anything but `localhost`, `127.0.0.1` and `::1` before a name is looked up: `net` and `tls` connects,
+  to anything but `localhost`, any `127.x.x.x` address and `::1` before a name is looked up: `net` and `tls` connects,
   `http(s)` requests, `fetch` and `WebSocket` throw an error that names the host. A test talks to a local server or
   a scripted adapter instead. max-cli's `src/testing/mock-max.ts` scripts the service: an answer per request, a
   refusal, or silence to test a timeout, and a request with no scripted answer fails the test that sent it. tg's

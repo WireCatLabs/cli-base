@@ -8,6 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The shared test setup is quieter and leaves nothing behind.** `@wirecat/cli-base/testing/setup` now turns off
+  npm's and pnpm's update check in the sandbox, so a test that runs `npm pack --json` as a child process no longer
+  gets the "new version available" notice in its output or reaches the registry. The network guard treats every
+  `127.x.x.x` address as this machine, not only `127.0.0.1`. The sandbox folder is removed even when a test file fails
+  while loading or its own `afterAll` throws; before, one `wirecat-test-*` folder was left per such file. On macOS the
+  folder is made under `/tmp`, so Unix socket paths in tests stay under the 104-byte limit; a CLI that moved its
+  sandbox to `/tmp` for this can drop that.
+
 ## 0.43.1 — 17.10.2026
 
 ### Fixed
