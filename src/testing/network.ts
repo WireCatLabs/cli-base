@@ -3,7 +3,10 @@ import https from "node:https"
 import { syncBuiltinESMExports } from "node:module"
 import net from "node:net"
 
-const LOCAL = new Set(["localhost", "127.0.0.1", "::1", "[::1]"])
+const isLocal = (host: string): boolean => {
+  const name = host.toLowerCase().replace(/^\[(.*)\]$/, "$1")
+  return name === "localhost" || name === "::1" || (net.isIPv4(name) && name.startsWith("127."))
+}
 const STATE = Symbol.for("@wirecat/cli-base/testing/network")
 
 interface GuardState {
@@ -24,7 +27,7 @@ export const networkRefused = (host: string): Error =>
   )
 
 const refuseUnlessLocal = (host: string): void => {
-  if (state().allowed > 0 || LOCAL.has(host.toLowerCase())) return
+  if (state().allowed > 0 || isLocal(host)) return
   throw networkRefused(host)
 }
 
