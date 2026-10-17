@@ -5,6 +5,7 @@
 
 export { brokenKeyring, memoryKeyring } from "../keyring.js"
 export { captureStreams } from "../streams.js"
+export { allowNetwork } from "./network.js"
 
 import { type LogEvent, logEventProblems } from "../standards/log.js"
 

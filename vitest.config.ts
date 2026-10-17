@@ -6,8 +6,7 @@ export default defineConfig({
     globals: false,
     // Agents run suites side by side on 24 cores; one worker per core ran the machine out of memory (2026-10-11).
     maxWorkers: 4,
-    // Outside src/: src/testing is a published subpath, and everything under src/ ships in dist/.
-    setupFiles: ["test/sandbox.ts"],
+    setupFiles: ["src/testing/setup.ts"],
     sequence: { hooks: "stack" },
     coverage: {
       provider: "v8",

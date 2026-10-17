@@ -29,36 +29,46 @@ and which run after merge is in [CI](ci.md).
 ### WC-TEST-1 · Point every path a test could write at a temporary directory
 
 - **Why:** one test that falls back to a default path writes into the owner's config, state, cache or store.
-- **Enforced by:** review only.
-- **Example:** `src/testing/sandbox.ts` is a vitest `setupFiles` entry, so it holds for every test file, including
-  the next one. It sets the CLI's config, state and cache directories, the store variables
-  ([WC-STORE-14](store.md#wc-store-14--tests-never-open-the-owners-store)) and `TMPDIR`, `TMP` and `TEMP` to a
-  directory of its own. It closes resources first, then removes that directory and restores the variables when the
-  file is done.
+- **Enforced by:** `src/testing/sandbox.test.ts`.
+- **Example:** a CLI adopts the shared setup with one line in `vitest.config.ts`:
+  `setupFiles: ["@wirecat/cli-base/testing/setup"]`. It holds for every test file, including the next one. Each
+  file gets a fresh directory: `TMPDIR`, `TMP`, `TEMP`, `HOME`, `USERPROFILE`, the XDG and Windows folders, and
+  every `<APP>_CONFIG_DIR`, `_STATE_DIR` and `_CACHE_DIR` already set, with the store variables
+  ([WC-STORE-14](store.md#wc-store-14--tests-never-open-the-owners-store)), point into it. One that is not set falls
+  back to the sandboxed home. When the file is done, after its own hooks have closed their resources, the setup
+  restores the variables and removes the directory. A CLI's own setup file, listed after the shared one, adds only
+  what is its own, such as a default profile.
 - **Exceptions:** keep coverage reports and debug traces outside the sandbox, with bounded retention. Never clean
   another session's scratch directory as test teardown.
-- **Applies to:** all CLIs and the shared packages. drive has no sandbox yet, and zoom's sandbox moves only the
-  temporary directory. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs and the shared packages. cli-base uses the shared setup; the CLIs keep their own sandboxes
+  for now. drive has none yet, and zoom's moves only the temporary directory. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-2 · No test reaches the real keyring
 
 - **Why:** the owner's tokens live in the real keychain, and one test that forgets an option would write there.
 - **Enforced by:** `src/keyring.test.ts`.
-- **Example:** every test passes `memoryKeyring()` from `@wirecat/cli-base/testing`. cli-base's own sandbox also
-  replaces `@napi-rs/keyring` with a module that throws, so a forgotten option fails the test instead of reaching the
-  keychain, and `src/keyring.test.ts` asserts that `systemKeyring` throws under it.
-- **Exceptions:** none. The CLIs' sandboxes do not replace `@napi-rs/keyring` yet; tg and max only scope the keyring
-  entry through environment variables.
+- **Example:** every test passes `memoryKeyring()` from `@wirecat/cli-base/testing`. The shared setup
+  (`@wirecat/cli-base/testing/setup`, [WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory))
+  also replaces `@napi-rs/keyring` with a module that throws, so a forgotten option fails the test instead of
+  reaching the keychain, and `src/keyring.test.ts` asserts that `systemKeyring` throws under it.
+- **Exceptions:** none. Until a CLI adopts the shared setup, its sandbox does not replace `@napi-rs/keyring`; tg and
+  max only scope the keyring entry through environment variables.
 - **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-3 · No test contacts a provider or the network
 
 - **Why:** a test that reaches the network is slow, flaky, and can act on a real account.
-- **Enforced by:** `max-cli: src/testing/unscripted.ts`.
-- **Example:** max-cli's `src/testing/mock-max.ts` scripts the service: an answer per request, a refusal, or silence
-  to test a timeout. A request with no scripted answer fails the test that sent it, through a second `setupFiles`
-  entry. tg's `scripted({...})` adapter does the same job.
-- **Exceptions:** none. No CLI has a global guard that refuses sockets and `fetch` in tests yet.
+- **Enforced by:** `src/testing/network.test.ts`, `max-cli: src/testing/unscripted.ts`.
+- **Example:** the shared setup
+  ([WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory)) refuses every connection
+  to anything but `localhost`, `127.0.0.1` and `::1` before a name is looked up: `net` and `tls` connects,
+  `http(s)` requests, `fetch` and `WebSocket` throw an error that names the host. A test talks to a local server or
+  a scripted adapter instead. max-cli's `src/testing/mock-max.ts` scripts the service: an answer per request, a
+  refusal, or silence to test a timeout, and a request with no scripted answer fails the test that sent it. tg's
+  `scripted({...})` adapter does the same job.
+- **Exceptions:** a test whose subject is the network itself calls `onTestFinished(allowNetwork())`, with
+  `allowNetwork` from `@wirecat/cli-base/testing`; the guard is back for the next test. Until a CLI adopts the shared
+  setup it has no global guard; max's unscripted check and tg's scripted adapter cover only their own service.
 - **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-4 · Give a command that must not connect an adapter that throws
