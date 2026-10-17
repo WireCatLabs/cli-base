@@ -105,7 +105,10 @@ formatting, so this page does not repeat it.
 - **Enforced by:** review only.
 - **Example:** `feat(standards): add the verb scan`, `docs(standards): toolchain rules`,
   `feat!: remove the --take alias`. The body says why. A title marked breaking needs a changelog line; the
-  changelog rules are on the [Documents page](docs.md).
+  changelog rules are on the [Documents page](docs.md). Every WireCat repository merges pull requests by squash
+  only, with the pull request's title and body as the commit message; merge commits and rebase merges are off
+  (repository settings, set for all repositories on 2026-10-17). So the pull request title is the commit title on
+  `main`, and its body is the commit body.
 - **Exceptions:** none.
 - **Applies to:** all repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
