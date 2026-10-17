@@ -8,12 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## 0.43.2 — 17.10.2026
+## Unreleased
 
 ### Added
 
 - **`--plain-order` in the vocabulary**, a sort switch: search results best first by the words alone, without
   moving mail from senders with signs of fraud down. memo ranks such mail lower by default; this finds it.
+
+## 0.43.2 — 17.10.2026
 
 ### Fixed
 
