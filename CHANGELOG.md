@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.43.0 — 17.10.2026
+
+### Added
+
+- **One test setup file for every CLI**: `setupFiles: ["@wirecat/cli-base/testing/setup"]` in `vitest.config.ts`
+  gives each test file a fresh folder for `TMPDIR`, `HOME`, the XDG folders and every `<APP>_CONFIG_DIR`,
+  `_STATE_DIR` and `_CACHE_DIR` already set, removed when the file is done; replaces `@napi-rs/keyring` with one that
+  throws; and refuses every connection to anything but this machine, naming the host, from `net`, `tls`, `http(s)`,
+  `fetch` and `WebSocket`. A test about the network itself calls `onTestFinished(allowNetwork())`. It needs `vitest`,
+  now an optional peer dependency. A CLI's own setup file, listed after it, keeps only what is the CLI's own.
+
 ## 0.42.0 — 17.10.2026
 
 ### Added
@@ -16,12 +27,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `@wirecat/cli-base/commands` marks it, and `commands --json` carries `mcp: false` on that option and nothing on the
   rest, so an MCP tool can leave it out of its input while the command stays offered. The first use is
   `messages delete --for-everyone`: agents never delete for everyone. No MCP server reads it yet.
-- **One test setup file for every CLI**: `setupFiles: ["@wirecat/cli-base/testing/setup"]` in `vitest.config.ts`
-  gives each test file a fresh folder for `TMPDIR`, `HOME`, the XDG folders and every `<APP>_CONFIG_DIR`,
-  `_STATE_DIR` and `_CACHE_DIR` already set, removed when the file is done; replaces `@napi-rs/keyring` with one that
-  throws; and refuses every connection to anything but this machine, naming the host, from `net`, `tls`, `http(s)`,
-  `fetch` and `WebSocket`. A test about the network itself calls `onTestFinished(allowNetwork())`. It needs `vitest`,
-  now an optional peer dependency. A CLI's own setup file, listed after it, keeps only what is the CLI's own.
 
 ## 0.41.0 — 17.10.2026
 
