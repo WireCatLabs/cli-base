@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **An upgrade through pnpm installs the newest version.** pnpm 11 installs only versions at least a day old
+  (`minimumReleaseAge` 1440), so `pnpm add -g <package>@latest` could install a day-old release — on 2026-10-17 an
+  older `tg` than the one installed — while the update notice named the newest. `updateCommand("pnpm", …)` now adds
+  `--config.minimumReleaseAgeExclude=<scope>/*` for the package's own scope; every other dependency keeps pnpm's wait.
+
 ## 0.40.1 — 17.10.2026
 
 ### Added
