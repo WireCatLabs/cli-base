@@ -36,8 +36,10 @@ export const installerOf = (scriptPath: string): Installer => {
 export const updateCommand = (installer: Installer, packageName: string): string[] | undefined => {
   const target = `${packageName}@latest`
   switch (installer) {
+    // pnpm 11 installs only versions a day old (minimumReleaseAge 1440); a fix must reach users the day it ships.
+    // Only the package's own scope is exempt — every other dependency keeps the wait.
     case "pnpm":
-      return ["pnpm", "add", "-g", target]
+      return ["pnpm", "add", "-g", target, `--config.minimumReleaseAgeExclude=${ownScope(packageName)}`]
     case "npm":
       return ["npm", "install", "-g", target]
     case "bun":
@@ -46,6 +48,9 @@ export const updateCommand = (installer: Installer, packageName: string): string
       return undefined
   }
 }
+
+const ownScope = (packageName: string): string =>
+  packageName.startsWith("@") ? `${packageName.split("/", 1)[0]}/*` : packageName
 
 /** Plain `x.y.z` only: a pre-release is never offered, so it never counts as newer. */
 export const isNewer = (candidate: string, current: string): boolean => {
