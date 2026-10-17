@@ -118,6 +118,8 @@ const verbs: [string, string][] = [
   ["update", "change a thing's fields"],
   ["set", "set one named key"],
   ["unset", "remove one named key"],
+  ["insert", "put bounded rows, columns or cells before an explicit position, shifting later entries"],
+  ["format", "change how selected cells are displayed without replacing their values"],
   ["rename", "change a thing's name only"],
   ["start", "start a running process, or a login session"],
   ["stop", "stop a running process"],
