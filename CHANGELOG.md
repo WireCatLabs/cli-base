@@ -18,6 +18,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **The shared changelog guard can restore a historical section to its exact immutable tag.** This repairs notes that raced publication without permitting arbitrary historical edits; missing tag content still fails closed.
+
 - **The changelog guard refuses a pull request that repeats a `###` heading in a section not yet released**
   (`### Fixed` twice under `## Unreleased`). Each app's shape check refuses it too, but only in full validation,
   so it reached main and stopped cli-core's 0.307.0 release. A repeat already on the base does not fail the guard.

@@ -5,7 +5,7 @@
 // 1. A title marked breaking (`feat!:`, `fix(watch)!:`) adds a line under the unreleased heading.
 // 2. A section whose version is already tagged `v<version>` is not edited. A dated heading alone does
 //    not mean released: a release is dated in a pull request, merged, and tagged only after npm has it,
-//    and that window still takes changelog fixes.
+//    and that window still takes changelog fixes. An incorrect historical section may only be restored to its tag.
 // 3. No `###` heading repeats inside a section the pull request leaves untagged: an entry belongs under the
 //    section's existing heading. Only a repeat the base did not have fails, so an old one does not block others.
 import { execFileSync } from "node:child_process"
@@ -58,6 +58,7 @@ export function checkChangelog(input: {
   base: string
   head: string
   tags: string[]
+  releasedText?: (version: string) => string | undefined
 }): string | undefined {
   const repeated = duplicateHeading(input.head)
   if (repeated) return `CHANGELOG.md: duplicate heading for ${repeated}; keep one section per version`
@@ -68,8 +69,15 @@ export function checkChangelog(input: {
   for (const [heading, body] of base) {
     const version = DATED.exec(heading)?.[1]
     if (!version || !tagged.has(version)) continue
-    if (head.get(heading)?.join("\n").trim() !== body.join("\n").trim())
-      return `CHANGELOG.md: "${heading}" is already released (tag v${version}); put the change under the unreleased heading`
+    if (head.get(heading)?.join("\n").trim() !== body.join("\n").trim()) {
+      const taggedText = input.releasedText?.(version)
+      const original =
+        taggedText === undefined
+          ? undefined
+          : [...sections(taggedText)].find(([name]) => DATED.exec(name)?.[1] === version)
+      if (!original || head.get(original[0])?.join("\n").trim() !== original[1].join("\n").trim())
+        return `CHANGELOG.md: "${heading}" is already released (tag v${version}); put the change under the unreleased heading`
+    }
   }
 
   const before = repeatedSubheadings(base, tagged)
@@ -107,6 +115,13 @@ function main() {
     base: show(mergeBase),
     head: show(headSha),
     tags: git("tag", "--list", "v*").split("\n").filter(Boolean),
+    releasedText: (version) => {
+      try {
+        return git("show", `v${version}:CHANGELOG.md`)
+      } catch {
+        return undefined
+      }
+    },
   })
   if (message) {
     console.error(message)

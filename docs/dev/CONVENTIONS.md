@@ -47,4 +47,6 @@ Three rules are checked on every pull request by the shared
 [changelog guard](../../.github/workflows/changelog-guard.yml): release versions and the pending
 heading each appear once; a title marked breaking (`feat!:`,
 `fix(scope)!:`) adds a line under `## Unreleased` (`## Не выпущено` in max-cli), and a section whose
-`v<version>` tag exists is never edited. A dated section without a tag is still open to fixes.
+`v<version>` tag exists is frozen. An incorrect historical section may only be restored to the exact
+heading and body in that immutable tag; arbitrary edits remain blocked. A dated section without a tag is
+still open to fixes.
