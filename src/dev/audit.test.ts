@@ -6,7 +6,7 @@ import * as v from "valibot"
 import { beforeEach, describe, expect, it } from "vitest"
 import { commandsDocument } from "../commands/document.js"
 import { annotate } from "../commands/index.js"
-import { AUDIT_RULES, type ParityGroup, REQUIRED_ROOTS } from "../standards/audit.js"
+import { AUDIT_RULES, PARITY_GROUPS, type ParityGroup, REQUIRED_ROOTS } from "../standards/audit.js"
 import { listEnvelopeSchema } from "../standards/output.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, type AuditOptions, auditClis, scorecardTable, snakeKeys } from "./audit.js"
@@ -115,6 +115,18 @@ describe("audit rules", () => {
       "a+b notes list --limit: a: <n>, b: absent",
       "a+b notes list: output: a: note, b: memo",
     ])
+  })
+
+  it("holds wa to the shared roots of the other CLIs in the shipped groups", () => {
+    const found = cross(
+      [
+        inputOf(tool("memo", notes("list notes", [["--limit <n>", "how many"]]))),
+        inputOf(tool("wa", notes("list notes"))),
+      ],
+      "same-path-contract",
+      { groups: PARITY_GROUPS },
+    )
+    expect(found).toEqual(["memo+wa notes list --limit: memo: <n>, wa: absent"])
   })
 
   it("reports a path one member of a whole-tree group lacks, and not one outside a group's roots or members", () => {

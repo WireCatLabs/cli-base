@@ -14,6 +14,23 @@ export type ChangelogRules = {
   /** The top section's title until it is dated, `Unreleased` or `Не выпущено`. */
   unreleased: string
   ids: readonly string[]
+  /**
+   * Sections at or below this version keep the `###` headings they were released with, repeats included: a
+   * released section is never edited, so a check on it could only fail.
+   */
+  legacyHeadingsThrough?: string
+}
+
+const versionParts = (version: string) => {
+  const [core = "", pre] = version.split("-", 2)
+  return [...core.split(".").map(Number), pre === undefined ? 1 : 0]
+}
+
+const atOrBelow = (version: string, through: string) => {
+  const a = versionParts(version)
+  const b = versionParts(through)
+  for (let i = 0; i < 4; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) < (b[i] ?? 0)
+  return true
 }
 
 /**
@@ -23,19 +40,30 @@ export type ChangelogRules = {
  */
 export const changelogProblems = (
   text: string,
-  { version, release, headings, unreleased, ids }: ChangelogRules & { version?: string; release: boolean },
+  {
+    version,
+    release,
+    headings,
+    unreleased,
+    ids,
+    legacyHeadingsThrough,
+  }: ChangelogRules & { version?: string; release: boolean },
 ) => {
   const problems: string[] = []
   const id = idPattern(ids)
   let section: string | undefined
   let subheadings = new Set<string>()
   let first = true
+  let legacy = false
+  if (legacyHeadingsThrough !== undefined && !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(legacyHeadingsThrough))
+    problems.push(`legacyHeadingsThrough: "${legacyHeadingsThrough}" is not a version`)
 
   text.split("\n").forEach((line, index) => {
     const where = `CHANGELOG.md:${index + 1}`
     if (line.startsWith("## ")) {
       section = line.slice(3)
       subheadings = new Set()
+      legacy = false
       if (section === unreleased) {
         if (release) problems.push(`${where}: "${unreleased}" is left — date it as ${version} before releasing`)
         else if (!first) problems.push(`${where}: "${unreleased}" must be the top section`)
@@ -43,7 +71,8 @@ export const changelogProblems = (
         const found = VERSION_HEADING.exec(line)
         if (!found) problems.push(`${where}: "${line}" is not "## <version> — DD.MM.YYYY"`)
         else {
-          const [, heading, day, month] = found
+          const [, heading = "", day, month] = found
+          legacy = legacyHeadingsThrough !== undefined && atOrBelow(heading, legacyHeadingsThrough)
           if (Number(day) < 1 || Number(day) > 31 || Number(month) < 1 || Number(month) > 12)
             problems.push(`${where}: "${line}" has no such date`)
           if (release && first && heading !== version)
@@ -53,7 +82,7 @@ export const changelogProblems = (
       first = false
       return
     }
-    if (line.startsWith("### ")) {
+    if (line.startsWith("### ") && !legacy) {
       const heading = line.slice(4)
       if (!headings.includes(heading)) problems.push(`${where}: "${heading}" is not one of: ${headings.join(", ")}`)
       if (subheadings.has(heading)) problems.push(`${where}: "${heading}" twice in "${section}"`)

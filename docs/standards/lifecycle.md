@@ -3,8 +3,8 @@
 ## Scope
 
 How a process starts and ends: nothing opens before it is needed, the code that opens a resource closes it, a
-one-shot command exits, everything that was opened is closed before the answer is printed, and an exclusive
-connection is held by one process only.
+one-shot command exits, everything that was opened is closed before the answer is printed, an exclusive
+connection is held by one process only, and a long sync carries on after a kill.
 
 Rule ids on this page are `WC-LIFE-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). How a command declares `lifetime` and `cooperative` is on the [commands](commands.md) page. The
@@ -132,6 +132,48 @@ waits for a person, such as a login).
 - **Applies to:** messenger CLIs with an exclusive connection (wa today). **Since:** cli-base 0.41.0.
   **Rulings:** NEED-1389.
 
+## Resumable syncs
+
+A long sync — a mailbox, a chat history, a Drive folder, a recording archive — is stopped by a kill, a reboot or a
+provider's limit as often as it ends. These three rules make the next run carry on.
+
+### WC-LIFE-12 · Save a long sync's work per item or per page, so a kill loses nothing saved
+
+- **Why:** a sync that saves only at the end loses hours of work to one kill.
+- **Enforced by:** review only.
+- **Example:** each page of a chat's history goes into the store in its own transaction as it arrives, and the
+  position moves with it. drive saves its first folder walk in its state file as it goes.
+- **Exceptions:** none.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+
+### WC-LIFE-13 · A rerun goes on from where the last run stopped, and starting over is an option
+
+- **Why:** a rerun that lists or pages everything again repeats the work the kill cut short.
+- **Enforced by:** `drive-cli: src/sync.test.ts` · `cli-memo: src/mail/import.test.ts`.
+- **Example:** a rerun skips what is stored and does not redo the listing or paging that got there. The position
+  lives in the store when the store already holds it: tg and max keep the held stretch of each chat, so
+  `messages sync --all` skips a chat held to its newest message; memo keeps a resume point per mail folder; zm keeps
+  the checkpoint of `recordings sync`. Otherwise it lives in a checkpoint file,
+  `<state>/checkpoints/<profile>/<job>.json`, written with `saveCheckpoint` and read with `readCheckpoint` from
+  `@wirecat/cli-core/background`. The write is atomic, and a torn file reads as no checkpoint: one run from the start,
+  never a failed run. Starting over is `--rescan`, as in `drive personal sync --rescan`; it is in the cli-base flag
+  registry.
+- **Exceptions:** none. No CLI uses the checkpoint file yet; drive keeps its position in its own state file.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+
+### WC-LIFE-14 · A sync's status command says how far it is, in one shape
+
+- **Why:** a person or an agent deciding whether to wait or rerun needs the same answer from every CLI.
+- **Enforced by:** `cli-core: src/background/checkpoints.test.ts`.
+- **Example:** `progressOf` from `@wirecat/cli-core/background` builds
+  `{ job, profile, done, total, remaining, state, updated_at, cursor_age_ms }`, and `progressLine` prints it on one
+  line in text. `state` is `partial` or `complete`; `total` and `remaining` are `null` when the source does not say how
+  much there is. memo's `mail status` answers with it, and the messenger CLIs' `store jobs show` answers with it as
+  `progress`.
+- **Exceptions:** none. drive and zm print no progress shape yet; that is a known gap. Whether the last scheduled run
+  failed is a different question, answered by `recordRun` and `failingNotice` in cli-core's schedules.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
@@ -141,3 +183,4 @@ holds.
 - [cli-core `STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md), "Agent execution
   contract"
 - [cli-base API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md)
+- [cli-core `STANDARD.md`, "Resumable syncs"](https://github.com/WireCatLabs/cli-core/blob/9be227198793fabf506ee946b10aaad94d84d519/docs/dev/STANDARD.md#resumable-syncs)

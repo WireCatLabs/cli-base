@@ -150,8 +150,13 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Example:** `### Added`, `### Changed — may break callers`, `### Fixed`, `### Security`, `### Removed`. max-cli
   uses this fixed Russian rendering: `Что нового`, `Изменено — может сломать скрипты`, `Исправлено`, `Безопасность`,
   `Удалено`.
-- **Exceptions:** none. tg-cli and whatsapp-cli still check `What's new` and `Changed — may break scripts`, and memo
-  and drive have used `Changed` and `Documentation`. They move to this set.
+- **Exceptions:** a released section keeps the headings it was released with, because it is never edited
+  ([WC-DOC-20](#wc-doc-20--a-released-section-is-frozen-and-a-new-entry-goes-under-an-existing-heading)). A CLI that
+  moves to this set puts its last version with the old headings in its changelog rules as
+  `legacyHeadingsThrough: "<version>"`, and the check skips heading names and repeats in every section at or below
+  that version. tg-cli keeps the old headings up to 0.69.0, still with its own copy of that rename. memo still
+  writes `Changed — may break scripts`, `Documentation` and `Deprecated`, and drive writes `Changed`. Neither runs
+  this check yet; they move to this set.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-16 · A change a caller may notice goes under "Changed — may break callers"
