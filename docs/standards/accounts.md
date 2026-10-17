@@ -144,5 +144,6 @@ A read that is not limited to one account reads every account in its scope, and 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
 holds.
 
-- [cli-core `STANDARD.md`, "Command names"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#command-names), rule 1
+- [cli-core `STANDARD.md`, "Command names"](https://github.com/WireCatLabs/cli-core/blob/022f69fb0acc86f6df05e074ec4df1b911ec94c6/docs/dev/STANDARD.md#command-names),
+  rule 1, as it stood before these rules moved to this page
 - [cli-core `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md), on the account-bound store

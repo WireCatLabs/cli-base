@@ -293,6 +293,48 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 - **Exceptions:** none. Only memo calls `refuseJoinedPath` today; cli-core and the other CLIs do not yet.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+## External references
+
+### WC-CMD-28 · Use the external command-line references as a baseline, and keep the project's choices where they differ
+
+The references, each for its own part:
+
+* [POSIX Utility Conventions, §12](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html): utility
+  syntax, including `--` to end the options. Long options and the nested command tree are the project's own profile,
+  not strict POSIX.
+* [GNU Command-Line Interfaces](https://www.gnu.org/prep/standards/html_node/Command_002dLine-Interfaces): long option
+  names, `--help` and `--version`.
+* [Command Line Interface Guidelines](https://clig.dev/): discovery, streams, scripting and compatibility. A guide,
+  not a certification.
+* [MCP tools specification, 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/server/tools): the
+  contract of the MCP server, not of the shell grammar ([MCP](mcp.md)).
+* [JSON Schema](https://json-schema.org/specification): the language of machine contracts. A schema says which
+  dialect it uses.
+* [Agent Skills specification](https://agentskills.io/specification): how the agent skill is packaged.
+* [Writing effective tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents), the
+  [CLI Agent Spec](https://cli-agent-spec.github.io/) and the
+  [Google Workspace CLI agent context](https://github.com/googleworkspace/cli/blob/main/CONTEXT.md): ideas to weigh
+  one by one. No conformance level is claimed, and the CLI Agent Spec's exit codes and response envelope are not
+  adopted.
+
+- **Why:** a person or an agent who knows these conventions can guess most of a WireCat CLI; where the project
+  differs, it says so instead of half-following a reference.
+- **Enforced by:** review only.
+- **Example:** `tg --help` and `tg --version` print text on stdout, also when stdout is not a terminal. An agent
+  learns a command from `tg commands <path> --json`; help is never a JSON answer. Data and failures follow
+  [WC-OUT-4](output.md#wc-out-4--answer-every-json-request-with-one-envelope-a-list-or-one-thing),
+  [WC-OUT-14](output.md#wc-out-14--print-a-failure-in-machine-mode-as-one-json-object-on-stderr-with-stdout-empty) and
+  [WC-OUT-18](output.md#wc-out-18--exit-with-cli-bases-code-for-each-kind-of-failure), prompts follow
+  [WC-CMD-15](#wc-cmd-15--never-prompt-when-no-person-can-answer), and a renamed path keeps no alias
+  ([WC-CMD-8](#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)), unlike the
+  deprecation advice of the Command Line Interface Guidelines. A read may have documented local effects, such as storing what it read or recording a failed
+  run, so a failed command does not promise that it wrote nothing. A write is never retried on its own, and a tool's
+  whole payload is never logged. The `stats` root and its resources are the project's own choice.
+- **Exceptions:** the CLI Agent Spec's rule that help goes to stderr when stdout is not a terminal is not adopted. The
+  Agent Client Protocol links an editor to a coding agent; a WireCat CLI is a tool an agent calls, so it adds no
+  requirement.
+- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
@@ -301,3 +343,4 @@ holds.
 - [cli-core `STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md): command names, agent
   execution contract, help text
 - [cli-base API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md)
+- [cli-core `STANDARD.md`, "External references and our adoption profile"](https://github.com/WireCatLabs/cli-core/blob/9be227198793fabf506ee946b10aaad94d84d519/docs/dev/STANDARD.md#external-references-and-our-adoption-profile)
