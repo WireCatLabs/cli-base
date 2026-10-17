@@ -94,6 +94,25 @@ describe("a list's query", () => {
     expect(failure(() => parseLucene('"open')).details.alternative).toBeUndefined()
   })
 
+  it("tells to quote a value whose slash opened a regular expression that never closes", () => {
+    const hints = Object.fromEntries(
+      ["mime:text/plain", "mime:(text/plain)", "text/plain", "/abc"].map((query) => {
+        const error = failure(() => parseLucene(query))
+        expect(error.details.reason).toBe("query.unclosed-literal")
+        return [query, error.details.alternative]
+      }),
+    )
+    expect(hints).toEqual({
+      "mime:text/plain": 'put the value in quotes: mime:"text/plain"',
+      "mime:(text/plain)": '/ starts a regular expression; put the value in quotes: "text/plain"',
+      "text/plain": '/ starts a regular expression; put the value in quotes: "text/plain"',
+      "/abc": '/ starts a regular expression; put the value in quotes: "/abc"',
+    })
+    expect(failure(() => parseLucene("text/plain")).message).toBe(
+      'query: query.unclosed-literal at position 5 — / starts a regular expression; put the value in quotes: "text/plain"',
+    )
+  })
+
   it("reads an email address as one term, unquoted", () => {
     for (const address of ["alice@example.com", "bob.sample@mail.example.co.uk", "noreply@github.com"])
       expect(parseLucene(`from:${address}`).root).toMatchObject({ operator: "term", value: address })

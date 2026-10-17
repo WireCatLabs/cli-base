@@ -75,7 +75,8 @@ const tokensOf = (text: string, fail: Fail = queryError): Token[] => {
         if (text[at] === "\\" && (c === '"' || text[at + 1] === "/")) at++
         at++
       }
-      if (at >= text.length) fail("query.unclosed-literal", { start, end: at })
+      if (at >= text.length)
+        fail("query.unclosed-literal", { start, end: at }, c === "/" ? regexHint(text, start) : undefined)
       at++
       if (c === "/" && /^[dgimsuvy]+(?:$|[ \t\n\r)])/.test(text.slice(at)))
         fail("query.unsupported-regex-flags", { start: at, end: at + 1 }, "Lucene regex does not take JavaScript flags")
@@ -146,6 +147,12 @@ const quoteHint = (text: string, at: number): string | undefined => {
     return /[:=/?*~^@<>![\]{}\\]/u.test(value) ? `put the value in quotes: ${field}:"${value}"` : undefined
   }
   return undefined
+}
+
+// An unquoted `text/plain` opens a regular expression that never closes, so the error names the slash, not a quote.
+const regexHint = (text: string, at: number): string => {
+  const word = `${/[^\s()"]*$/u.exec(text.slice(0, at))?.[0] ?? ""}${/^[^\s()"]*/u.exec(text.slice(at))?.[0] ?? ""}`
+  return quoteHint(text, at) ?? `/ starts a regular expression; put the value in quotes: "${word}"`
 }
 
 export const parseLucene = (text: string, { defaultField = "text", ...context }: ParseOptions = {}): QueryAst => {
