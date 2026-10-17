@@ -34,6 +34,8 @@ export interface CommandMeta {
   /** The command may answer with `meta.complete: false` and still exit 0; without it a partial answer fails. */
   partial?: boolean
   lifetime?: CommandLifetime
+  /** `false` keeps the command and all its subcommands off MCP servers; agents using the CLI itself are not affected. */
+  mcp?: boolean
   /** Stops at its own pace when the run is aborted from outside, keeping what it already did — a long fetch. */
   cooperative?: boolean
   examples?: readonly string[]
@@ -89,6 +91,8 @@ export interface CommandInfo {
   state?: CommandState
   partial?: boolean
   lifetime?: CommandLifetime
+  /** Present only when the command or a group above it is kept off MCP servers. */
+  mcp?: false
   cooperative?: boolean
   examples?: readonly string[]
   output?: CommandOutput
@@ -109,7 +113,7 @@ export const annotate = <T extends Command>(command: T, meta: CommandMeta): T =>
 export const metaOf = (command: Command): CommandMeta => labels.get(command) ?? {}
 
 export const describeProgram = (root: Command): CommandInfo[] =>
-  visible(root).map((child) => describe(child, root.name(), []))
+  visible(root).map((child) => describe(child, root.name(), [], false))
 
 export const describeOptions = (command: Command): OptionInfo[] =>
   command.options.filter((option) => !option.hidden).map(describeOption)
@@ -141,11 +145,12 @@ export const stepTargets = (root: Command): ((command: string) => StepTarget | u
   return (command) => found.get(command)
 }
 
-const describe = (command: Command, cli: string, parents: readonly string[]): CommandInfo => {
+const describe = (command: Command, cli: string, parents: readonly string[], offMcpAbove: boolean): CommandInfo => {
   const path = [...parents, command.name()]
   const args = command.registeredArguments.map(describeArgument)
   const options = describeOptions(command)
-  const { origin = "handwritten", query, ...meta } = metaOf(command)
+  const { origin = "handwritten", query, mcp, ...meta } = metaOf(command)
+  const offMcp = offMcpAbove || mcp === false
 
   const usage = [
     cli,
@@ -164,10 +169,11 @@ const describe = (command: Command, cli: string, parents: readonly string[]): Co
     usage,
     origin,
     ...meta,
+    ...(offMcp ? { mcp: false as const } : {}),
     ...(query ? { query: describeQuery(query) } : {}),
     arguments: args,
     options,
-    commands: visible(command).map((child) => describe(child, cli, path)),
+    commands: visible(command).map((child) => describe(child, cli, path, offMcp)),
   }
 }
 

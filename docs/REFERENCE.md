@@ -108,6 +108,10 @@ person answers (a login); unset, the runner bounds it with its default timeout. 
 stops at its own pace when the run is aborted from outside, keeping what it already did. A runner reads both with
 `metaOf(command)` rather than matching command names.
 
+`mcp: false` keeps a command, and every command under it, off MCP servers; the CLI itself still runs it. The command
+description says `mcp: false` on that command and each one below it, and leaves the key out everywhere else, so an
+MCP server builds its tool list from `describeProgram` without walking the parents itself.
+
 Each option says whether it `takes_value` and, separately, whether it is `mandatory` — not
 Commander's `required`, which means "takes a value when given" — plus its choices, default,
 environment variable, the options it `conflicts` with and the values it `implies`, keyed by long flag.

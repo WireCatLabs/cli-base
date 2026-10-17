@@ -305,6 +305,25 @@ describe("commands document", () => {
     expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
   })
 
+  it("keeps a command off MCP servers when it or a group above it says so", () => {
+    const root = new Command("tool")
+    const admin = annotate(root.command("admin").description("group"), { mcp: false })
+    annotate(admin.command("reset").description("leaf under a group kept off"), { mcp: true })
+    const tasks = root.command("tasks").description("group")
+    annotate(tasks.command("purge").description("leaf kept off"), { mcp: false })
+    tasks.command("list").description("left alone")
+    const document = commandsDocument(root, about)
+    const at = (...path: string[]) =>
+      flatten(document.commands).find((command) => command.path.join(" ") === path.join(" "))
+
+    expect(at("admin")?.mcp).toBe(false)
+    expect(at("admin", "reset")?.mcp).toBe(false)
+    expect(at("tasks", "purge")?.mcp).toBe(false)
+    expect(at("tasks")).not.toHaveProperty("mcp")
+    expect(at("tasks", "list")).not.toHaveProperty("mcp")
+    expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
+  })
+
   it("carries a list's output entity and its query fields, without the fields' own checks", () => {
     const root = new Command("tool")
     annotate(root.command("tasks").command("list").argument("[query...]", "field:value terms"), {
