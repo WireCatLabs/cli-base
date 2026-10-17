@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 import { systemKeyring } from "../keyring.js"
-import { enterSandbox } from "./sandbox.js"
+import { enterSandbox, removed } from "./sandbox.js"
 
 describe("enterSandbox", () => {
   it("points home, temp, XDG and every set app directory at a fresh folder, and removes it", () => {
@@ -77,5 +77,20 @@ describe("enterSandbox", () => {
 describe("the keyring under the shared setup", () => {
   it("throws on any use of the real keyring", () => {
     expect(() => systemKeyring.get("cli-base-test", "default")).toThrow(/real OS keyring/)
+  })
+})
+
+describe("removed", () => {
+  const failing = (code: string) => () => {
+    throw Object.assign(new Error(code), { code })
+  }
+
+  it("leaves a folder Windows still holds open instead of failing the test file", () => {
+    expect(removed("/tmp/wirecat-test-held", 1, failing("EPERM") as never)).toBe(false)
+    expect(removed("/tmp/wirecat-test-busy", 1, failing("EBUSY") as never)).toBe(false)
+  })
+
+  it("still throws any other error", () => {
+    expect(() => removed("/tmp/wirecat-test-x", 1, failing("EACCES") as never)).toThrow("EACCES")
   })
 })
