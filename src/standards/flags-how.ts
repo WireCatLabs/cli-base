@@ -188,6 +188,12 @@ export const HOW_FLAGS: VocabularyFlag[] = [
   { name: "--measure", value: "<name>", role: "sort", type: "choice", meaning: "the metric a ranking is ordered by" },
   { name: "--newest", role: "sort", type: "switch", meaning: "newest first instead of best first" },
   {
+    name: "--plain-order",
+    role: "sort",
+    type: "switch",
+    meaning: "best first by the words alone, without moving mail from suspicious senders down",
+  },
+  {
     name: "--order",
     value: "<recent|name>",
     role: "sort",
