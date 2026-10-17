@@ -12,6 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **Spreadsheet commands have shared vocabulary.** `sheets` names remote spreadsheets;
+  `--values <json>` supplies cell rows, `--input <mode>` selects input parsing and
+  `--render <mode>` selects returned value representation. Drive uses the existing `info`,
+  `show`, `update`, `add` and `clear` verbs. Consumers can remove corresponding dated lint
+  exceptions after adopting this version; existing baselines need no additions.
+
 - **`--certainty <n>` is a known flag** (role `value`): how sure an agent is, 0 to 1, kept with what it wrote, as
   `tasks close --certainty` in cli-core takes it. tg and max listed it in their `option-role` lint baselines; after
   they update cli-base those lines are stale and go.

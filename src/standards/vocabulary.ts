@@ -224,6 +224,7 @@ const collections: [string, string][] = [
   ["facts", "what happened, with evidence"],
   ["memories", "what an agent concluded, with evidence and scope"],
   ["relationships", "confirmed or suggested links between people, organizations and projects"],
+  ["sheets", "remote spreadsheets and their cell ranges, read or changed through a provider"],
   ["files", "files in the source, such as Google Drive, read and changed there"],
   ["comments", "comments people left on a thing in the source: a channel post or a file"],
   ["meetings", "stored meetings, from Zoom or another provider"],

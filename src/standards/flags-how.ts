@@ -927,4 +927,18 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "sessions in parallel on this machine, each with its own copy of the model",
     unit: "sessions",
   },
+  {
+    name: "--input",
+    value: "<mode>",
+    role: "mode",
+    type: "choice",
+    meaning: "how supplied cell values are parsed: literal values or provider-interpreted formulas and locale formats",
+  },
+  {
+    name: "--render",
+    value: "<mode>",
+    role: "output",
+    type: "choice",
+    meaning: "how returned cell values are represented: formatted display values, unformatted values or formulas",
+  },
 ]
