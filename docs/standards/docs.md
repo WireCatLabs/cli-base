@@ -10,32 +10,6 @@ changelog.
 Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
 
-## Rule template
-
-```markdown
-### WC-DOC-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-The rules below replace the document rules in these files. Where a file disagrees with a rule here, the rule here
-applies:
-
-- [cli-base `CONVENTIONS.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/CONVENTIONS.md)
-- [max-cli `CONVENTIONS.md`](https://github.com/WireCatLabs/max-cli/blob/main/docs/dev/CONVENTIONS.md), sections
-  "Documents" and "The changelog"
-- [cli-docs `STRUCTURE.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/STRUCTURE.md),
-  [`AUTHORING.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/AUTHORING.md),
-  [`TERMINOLOGY.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/TERMINOLOGY.md) and
-  [`REVIEWING.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/REVIEWING.md). These stay the contract
-  of the docs portal. This page links them and does not repeat them.
-
 ## Rules
 
 ### WC-DOC-1 · Keep user pages and developer pages apart
@@ -50,7 +24,8 @@ applies:
 ### WC-DOC-2 · A user page has no correction marks, no struck-out text and no internal ids
 
 - **Why:** the reader wants the current behaviour, not the history of a page or a journal number they cannot open.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: pnpm docs:check` · `max-cli: pnpm docs:check` · `whatsapp-cli: pnpm docs:check` ·
+  `zoom-cli: pnpm docs:check`.
 - **Example:** write "`--limit` defaults to 50", not "~~20~~ 50 (correction 2026-10-01, NEED-12)".
 - **Exceptions:** none. `cli-dev docs-check` checks this when the CLI's rules module sets `userPage`. tg, max, wa
   and zoom set it; memo, drive and cli-base's default check do not.
@@ -68,10 +43,11 @@ applies:
 ### WC-DOC-4 · A generated page is never edited by hand
 
 - **Why:** the next generation overwrites a hand edit, and the page then disagrees with the program until it does.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-memo: pnpm generate:check` · `drive-cli: pnpm generate:check` ·
+  `zoom-cli: pnpm generate:check` · `tg-cli: ci.yml:ci` · `max-cli: ci.yml:ci` · `whatsapp-cli: ci.yml:ci`.
 - **Example:** `docs/commands.md` comes from the program. Change the command's help text, then run `pnpm generate`.
-- **Exceptions:** none. memo, drive and zoom check this with `pnpm generate:check`. tg, max and wa check it in
-  `pnpm release:check`, which runs `pnpm generate` and then fails if the tree changed.
+- **Exceptions:** none. memo, drive and zoom check this with `pnpm generate:check`. tg, max and wa run the generator
+  and then `git diff --exit-code` in full validation.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-5 · Every relative link and anchor resolves
@@ -86,7 +62,7 @@ applies:
 ### WC-DOC-6 · The `docs/` folder matches `docs/meta.json` and has the shared page set
 
 - **Why:** every tool has the same pages at the same addresses, so a reader who knows one tool knows them all.
-- **Enforced by:** review only.
+- **Enforced by:** `max-cli: pnpm docs:check` · `whatsapp-cli: pnpm docs:check` · `tg-cli: pnpm docs:check`.
 - **Example:** `docs/meta.json` lists every page once, in sidebar order. The folder has `index`, `installation`,
   `usage`, `commands`, `configuration`, `troubleshooting` and `security`. Each page has exactly one `#` heading.
 - **Exceptions:** `changelog` in `meta.json` comes from the root `CHANGELOG.md`. `cli-dev docs-check --pages` checks
@@ -222,3 +198,17 @@ applies:
   exact text in that tag. It also fails a new repeated `###` heading in any section that has no tag yet.
 - **Exceptions:** a dated section with no tag is still open to fixes; a release is tagged only after npm has it.
 - **Applies to:** every repository that calls the changelog guard. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-base `CONVENTIONS.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/CONVENTIONS.md)
+- [max-cli `CONVENTIONS.md`](https://github.com/WireCatLabs/max-cli/blob/main/docs/dev/CONVENTIONS.md), sections
+  "Documents" and "The changelog"
+- [cli-docs `STRUCTURE.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/STRUCTURE.md),
+  [`AUTHORING.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/AUTHORING.md),
+  [`TERMINOLOGY.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/TERMINOLOGY.md) and
+  [`REVIEWING.md`](https://github.com/WireCatLabs/cli-docs/blob/main/docs/REVIEWING.md). These stay the contract
+  of the docs portal. This page links them and does not repeat them.

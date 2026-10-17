@@ -11,31 +11,12 @@ hold a personal session, a bot token, or both.
 Rule ids on this page are `WC-ACCT-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
 
-## Rule template
+### Who follows these rules today
 
-```markdown
-### WC-ACCT-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-These documents explain the rules below in more detail. Where one of them disagrees with this page, this page holds.
-
-- [cli-core `STANDARD.md`, "Command names"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#command-names), rule 1
-- [cli-core `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md), on the account-bound store
-
-## Who follows these rules today
-
-cli-core resolves the profile for tg, max and wa, and for the shared commands in memo. WC-ACCT-1 needs cli-core 0.319.0
-or newer; on origin/main tg, max and memo pin 0.320.0, but wa pins 0.317.0, which still reads `default_profile`. drive
-and zoom still have their own profile code: drive registers its own profiles, and zoom keeps one saved profile in its
-config file. These are known gaps, not exceptions.
+cli-core resolves the profile for tg, max and wa. WC-ACCT-1 needs cli-core 0.319.0 or newer, and all three pin
+0.321.0. memo has no messenger profile: its shared commands run without one, and they pick accounts with `--provider`
+and `--account` (WC-ACCT-7). drive and zoom still have their own profile code: drive registers its own profiles, and
+zoom keeps one saved profile in its config file. These are known gaps, not exceptions.
 
 ## Rules
 
@@ -46,7 +27,7 @@ owner: not a config file, not the first profile in a list, not a profile called 
 on the computer.
 
 - **Why:** which account a command speaks for is the owner's choice; a guess sends from the wrong account.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/settings.test.ts`.
 - **Example:** `tg personal chats list`, or `TG_PROFILE=personal tg chats list`. When no profile is named and the
   config file still has `default_profile`, cli-core stops and says which profile to type. `config set default_profile`
   is refused.
@@ -60,7 +41,7 @@ There is no `--profile` option. The first word is the profile unless it names a 
 profile.
 
 - **Why:** one place for the profile keeps every command line readable the same way, in every CLI.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/profile.test.ts`.
 - **Example:** `max work bot messages send …` uses the same first word as `max work chats list`. `tg --json chats list`
   still works, because `--json` is an option.
 - **Exceptions:** none.
@@ -73,7 +54,7 @@ When a command needs a profile and none is named, it fails with `validation_erro
 name.
 
 - **Why:** the owner, or an agent, can fix the command from the error alone.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/settings.test.ts`.
 - **Example:** ``name a profile: `tg <profile> …` — profiles here: personal, work (or set TG_PROFILE)``. With none,
   the message says to ``create one with `tg personal setup` (any name in place of personal)``.
 - **Exceptions:** none.
@@ -86,7 +67,7 @@ top-level command, such as `chats` or `bot`, is refused when the profile is crea
 
 - **Why:** the name becomes a file name and a keyring account, and a profile named after a command could never be
   selected.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/profile.test.ts` · `cli-core: src/cli/settings.test.ts`.
 - **Example:** `tg work setup` works. `tg chats setup` is refused with the list of command words to avoid.
   `tg a/../b setup` is refused as a name.
 - **Exceptions:** none.
@@ -98,7 +79,7 @@ When `<PREFIX>_PROFILE_LOCK` is set, a first word or `<PREFIX>_PROFILE` that nam
 `permission_error`.
 
 - **Why:** an agent must not escape its guards by naming a profile with fewer of them.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/settings.test.ts`.
 - **Example:** with `MAX_PROFILE_LOCK=agent`, `max personal messages send …` is refused, and `max messages list` runs
   as `agent`.
 - **Exceptions:** none.
@@ -157,3 +138,11 @@ A read that is not limited to one account reads every account in its scope, and 
 - **Example:** `read_other_bots: ["support"]` in the bot's section, and `--all-bots` or `--bots support` on the command.
 - **Exceptions:** none.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** bots:12.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-core `STANDARD.md`, "Command names"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#command-names), rule 1
+- [cli-core `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md), on the account-bound store

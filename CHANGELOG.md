@@ -12,10 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
-- **The WireCat CLI standards handbook ships in the package**, at `docs/standards/README.md`: an index and one page
-  per area, from the toolchain to releases, plus a checklist for a new CLI. It is a skeleton for now: the pages state
-  their scope and the rule format, and the rules come in later releases. `pnpm docs:check` checks the rule ids and
-  that every "Enforced by" line names a real check.
+- **The WireCat CLI standards handbook ships in the package**, at `docs/standards/README.md`: an index, 16 area
+  pages with 254 rules, from the toolchain to releases, and a checklist for a new CLI. Each rule has an id, a reason,
+  the check that enforces it or "review only", an example, its exceptions and the CLIs it applies to. A rule lives
+  on one page; a rule that moved or merged keeps its old id as a pointer, so a citation still resolves.
+  `pnpm docs:check` checks the ids, the rule counts in the index, and that every "Enforced by" entry names a real
+  check: one in this repository, or one in another WireCat repository written as `<repo>: <check>`.
 
 ## 0.40.4 â€” 17.10.2026
 

@@ -1,11 +1,11 @@
 # Security
 
-<!-- cspell:words SECR zizmor -->
+<!-- cspell:words zizmor -->
 
 ## Scope
 
 How a CLI keeps secrets and private data safe: secrets never in logs, fixtures or argv, the keyring, error text that
-never repeats input, the scanners, and how a vulnerability is reported.
+never repeats input, the scanners, workflow hardening, and how a vulnerability is reported.
 
 Two words used on this page:
 
@@ -15,28 +15,6 @@ Two words used on this page:
 
 Rule ids on this page are `WC-SECR-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
-
-## Rule template
-
-```markdown
-### WC-SECR-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-These documents explain the rules below in more detail. Where one of them disagrees with this page, this page holds.
-The audit procedure stays in cli-testing; this page links it and does not copy it.
-
-- [The security audit method](https://github.com/WireCatLabs/cli-testing/tree/main/docs/security): what an audit
-  checks, how a run is done, and where its results go.
-- [The organisation's security policy](https://github.com/WireCatLabs/.github/blob/main/SECURITY.md): how to report a
-  problem.
 
 ## Rules
 
@@ -58,22 +36,12 @@ name. Any other top-level key is written as `[not allowed]`. A key that names co
 `token`, `phone`, `chatTitle`, `accessToken` …) is written as `[redacted]`, at any depth.
 
 - **Why:** redaction is the second line of defence; the first is never handing a secret to a logger.
-- **Enforced by:** review only.
+- **Enforced by:** `src/logging.test.ts`.
 - **Example:** `recordLog({ … redact: ["sessionKey"] })` adds a CLI's own secret field to the redacted list.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-SECR-3 · Test data is visibly fake, and tests prove it does not leak
-
-Fixtures and examples use values that are clearly synthetic. Data that must stay hidden carries a unique marker, and
-a test asserts the marker is absent from output and errors.
-
-- **Why:** a "does not leak" test proves the rule; a convention alone does not.
-- **Enforced by:** review only.
-- **Example:** `synthetic text 42`, the phone number `+71234567890`, the device id
-  `00000000-0000-0000-0000-000000000001`, `your-token-here`; `expect(err).not.toContain(token)`.
-- **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+### WC-SECR-3 · Merged into [WC-TEST-8](testing.md#wc-test-8--prove-that-content-does-not-leak-with-a-marker-and-visibly-fake-data)
 
 ### WC-SECR-4 · Secrets come from the environment, then the OS keyring, then a private file
 
@@ -83,7 +51,7 @@ name is scoped to that directory (`isolated: true`).
 
 - **Why:** the keyring is the safest store on the computer, and a throwaway config directory must not overwrite the
   owner's real keyring entry.
-- **Enforced by:** review only.
+- **Enforced by:** `src/credentials.test.ts`.
 - **Example:** a bot token is read from `MAX_BOT_TOKEN`, then the keyring entry `bot:<profile>`, then the file.
 - **Exceptions:** `auto` storage tries the keyring and, when it fails, warns once on stderr and uses the file.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-295.
@@ -155,7 +123,7 @@ created with mode `0700`. A temporary credential file, such as a login QR image,
 tg's `doctor` reports a wrong mode and prints the `chmod` fix without applying it.
 
 - **Why:** another user on the same computer must not read the session.
-- **Enforced by:** review only.
+- **Enforced by:** `src/config.test.ts`.
 - **Example:** `writeSecurely(path, JSON.stringify(state), 0o600)`.
 - **Exceptions:** Windows ignores both modes.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -167,7 +135,7 @@ the characters that reverse text direction.
 
 - **Why:** a chat title can hold `\x1b[2K` and overwrite what the tool already printed, or make `invoice‮fdp.exe`
   look like a PDF.
-- **Enforced by:** review only.
+- **Enforced by:** `src/sanitize.test.ts`.
 - **Example:** a title with an escape sequence prints as visible `\x1b` text.
 - **Exceptions:** machine output (`--json`) keeps the original strings, as a contract with scripts.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -216,16 +184,21 @@ critical goes to the owner for review first.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** sc:3, sc:5, sc:6, sc:8.
 
-### WC-SECR-16 · Secret scanners run on every commit and every pull request
+### WC-SECR-16 · Keep the secret scanners on, and run each one with `--redact`
 
-- gitleaks scans staged changes in the pre-commit hook, and the whole history in pull request CI, always with
-  `--redact`.
-- Biome's `noSecrets` rule runs from the shared preset, off in tests only.
-- Before a release, and every month: a dependency audit, zizmor for workflows, CodeQL and a gitleaks scan.
+- gitleaks, in the pre-commit hook on staged changes, in the pull request job on the new commits, and on the whole
+  history in full validation, at release and every month.
+- Biome's `noSecrets` rule, from the shared preset, off in tests only
+  ([WC-TOOL-10](toolchain.md#wc-tool-10--keep-the-secret-lint-on-and-suppress-a-finding-only-with-its-reason)).
+- At release and every month: a dependency audit, zizmor for workflows and CodeQL.
 - **Why:** a secret removed in a later commit is still a leaked secret; `--redact` keeps a finding from leaking it
   again into the log.
-- **Enforced by:** `node-ci.yml:secrets` · `release-checks.yml` · `pnpm standards:check`.
-- **Example:** `gitleaks git --staged --no-banner --redact .`.
+- **Enforced by:** `node-ci.yml:secrets` · `release-checks.yml` · `standards.yml:standards` · `pnpm standards:check`.
+- **Example:** `gitleaks git --staged --no-banner --redact .`. When each scanner runs is on the CI page:
+  [WC-CI-1](ci.md#wc-ci-1--run-only-staged-lint-and-a-staged-secret-scan-before-a-commit),
+  [WC-CI-3](ci.md#wc-ci-3--run-the-fast-standards-job-on-every-pull-request-and-every-push-to-main),
+  [WC-CI-7](ci.md#wc-ci-7--run-full-validation-once-on-each-merge-to-main-on-linux-without-publishing) and
+  [WC-CI-10](ci.md#wc-ci-10--run-heavy-security-checks-only-at-release-monthly-or-on-request).
 - **Exceptions:** the pre-commit hook warns, and does not block, when gitleaks is not installed; CI scans anyway.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -238,7 +211,7 @@ allowlist names synthetic values by value, never a whole file, so the file stays
 - **Enforced by:** review only.
 - **Example:** max's `.gitleaks.toml` has `max-session-token`, `max-device-identity` and `phone-number-e164`, and
   allows only `+71234567890` and other sanctioned fakes.
-- **Exceptions:** `pnpm-lock.yaml` may be allowed by path. Today only max has the phone number rule.
+- **Exceptions:** `pnpm-lock.yaml` may be allowed by path. Today only max and wa have a phone number rule.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-SECR-18 · Report a vulnerability privately
@@ -263,3 +236,25 @@ general words.
 - **Example:** "Fixed: an error could include part of a request" — not the steps to make it happen.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-271.
+
+### WC-SECR-20 · Pin each third-party action to a commit, and give each workflow read-only defaults
+
+- **Why:** a moved tag or a write token in a workflow is how an outside change reaches a release.
+- **Enforced by:** review only.
+- **Example:** `uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` with
+  `persist-credentials: false`, and `permissions: contents: read` at the top of the workflow. A job that needs more
+  asks for it on that job only. The `zizmor` scan in `release-checks.yml` reports high findings at release, but does
+  not fail on them.
+- **Exceptions:** none.
+- **Applies to:** the ten repositories: the six CLIs, cli-base, cli-core, cli-testing, cli-docs and community.
+  **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds. The audit procedure stays in cli-testing; this page links it and does not copy it.
+
+- [The security audit method](https://github.com/WireCatLabs/cli-testing/tree/main/docs/security): what an audit
+  checks, how a run is done, and where its results go.
+- [The organisation's security policy](https://github.com/WireCatLabs/.github/blob/main/SECURITY.md): how to report a
+  problem.

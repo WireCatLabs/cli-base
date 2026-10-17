@@ -49,7 +49,7 @@ JSON Schema 2020-12.
 ### WC-OUT-4 · Answer every JSON request with one envelope: a list or one thing
 
 - **Why:** a caller reads `items` or `item`, `page` and `meta` in the same place in every command of every CLI.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/envelope.test.ts` · `cli-core: src/mcp/output-schema.test.ts`.
 - **Example:** a list is `{ items, page, next?, missing?, meta }`. One thing is `{ item, next?, missing?, meta }`.
   cli-core builds them with `listOf` and `itemOf`, and its `renderAnswer` refuses any other shape. A list never
   answers a bare array.
@@ -155,7 +155,7 @@ JSON Schema 2020-12.
 
 - **Why:** a caller tells success from failure without parsing text, and stdout never holds half an answer and an
   error.
-- **Enforced by:** review only.
+- **Enforced by:** `src/failure.test.ts` · `cli-core: src/cli/agent-contract.test.ts`.
 - **Example:** `{"error":{"code":"not_found","reason":"item.not-found","message":"…","retry":{"safe":false}}}`. The
   keys are `code`, `reason`, `message`, `param?`, `details?`, `next?`, `retry` and `run_id?`. MCP answers the same
   object with `isError`. cli-base's `errorObjectOf` builds it.
@@ -175,7 +175,7 @@ JSON Schema 2020-12.
 ### WC-OUT-16 · Report a failure that is not a `CliError` as `internal_error`, exit 1, with a fixed message
 
 - **Why:** a foreign error's own text can carry anything, including data that must not reach the screen.
-- **Enforced by:** review only.
+- **Enforced by:** `src/failure.test.ts` · `cli-core: src/mcp/result-contract.test.ts`.
 - **Example:** `{"error":{"code":"internal_error","reason":"command.crashed",…}}`. No command can raise this code
   itself.
 - **Exceptions:** none.
@@ -193,7 +193,7 @@ JSON Schema 2020-12.
 ### WC-OUT-18 · Exit with cli-base's code for each kind of failure
 
 - **Why:** a script branches on `$?` without parsing text, and the numbers are the same in every CLI.
-- **Enforced by:** review only.
+- **Enforced by:** `src/exit-codes.test.ts`.
 - **Example:** 0 ok · 1 internal error · 2 validation error · 3 configuration error · 4 authentication error ·
   5 permission error · 6 not found · 7 confirmation required · 8 rate limited · 9 timeout · 10 network error ·
   11 provider error · 12 provider unavailable · 13 invalid response · 14 outcome unknown · 130 cancelled.
@@ -213,7 +213,7 @@ JSON Schema 2020-12.
 ### WC-OUT-20 · Mark a failure safe to retry only when repeating it cannot do harm
 
 - **Why:** an agent repeats a failure marked safe, so a write that may have landed must never be marked safe.
-- **Enforced by:** review only.
+- **Enforced by:** `src/failure.test.ts`.
 - **Example:** every error has `retry: { safe, after_ms? }`. A transient failure (`timeout`, `rate_limited`,
   `network_error`, `provider_unavailable`) is safe for a command that writes nothing on the service, or for a write
   that never left (`sent: false`). A sync that only writes the local store is safe to repeat. `outcome_unknown` is
@@ -238,7 +238,7 @@ JSON Schema 2020-12.
 ### WC-OUT-22 · Fail visibly when machine output passes its size cap
 
 - **Why:** a silently cut JSON answer looks whole.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/cli/execution.test.ts` · `src/failure.test.ts`.
 - **Example:** machine output stops at 4 MiB by default. `--max-output-bytes <bytes>` changes it, and 0 turns the cap
   off. Past the cap the command fails with `invalid_response`, reason `output.too-large`, `retry.safe: false`, and
   `partial_output` says whether some output was already printed.
@@ -248,8 +248,9 @@ JSON Schema 2020-12.
 
 ## Sources
 
-These rules were gathered from cli-core
-[`docs/dev/STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md) (agent execution
-contract, output), cli-base's registries and the cli-base
-[API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md). Where those documents disagree
-with this page, this page holds.
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-core `STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md): agent execution
+  contract, output
+- [cli-base API reference](https://github.com/WireCatLabs/cli-base/blob/main/docs/REFERENCE.md)

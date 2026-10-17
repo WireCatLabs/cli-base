@@ -3,15 +3,16 @@
 ## Scope
 
 How a CLI is tested: the sandbox, no network and no real waits in tests, what kind of test to write, coverage
-floors, offline contracts, the test matrix, parity between CLIs, Bun, and the live checks that are not tests.
+floors, offline contracts, the test matrix, parity between CLIs, and the live checks that are not tests.
 
 Rule ids on this page are `WC-TEST-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
 
-Related pages: tests and the shared store are in [Store](store.md); secrets in logs and fixtures are in
-[Security](security.md); which checks run on a pull request and which run after merge is in [CI](ci.md).
+Related pages: tests and the shared store are in [Store](store.md); secrets in logs are in [Security](security.md);
+typechecking the tests and the Bun smoke test are in [Toolchain](toolchain.md); which checks run on a pull request
+and which run after merge is in [CI](ci.md).
 
-## Words used here
+### Words used here
 
 - **Sandbox:** a vitest `setupFiles` entry that runs before every test file and moves every path a test could write
   into a temporary directory.
@@ -22,29 +23,6 @@ Related pages: tests and the shared store are in [Store](store.md); secrets in l
   why no offline test can.
 - **Full validation:** the CI run on each merge to `main`, on a release and in the monthly run. It is not the pull
   request run.
-
-## Rule template
-
-```markdown
-### WC-TEST-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-These documents explain the rules below in more detail. Where one of them disagrees with this page, this page holds.
-
-- [cli-base `TESTING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/TESTING.md)
-- [cli-core `TESTING.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/TESTING.md)
-- [max-cli `TESTING.md`](https://github.com/WireCatLabs/max-cli/blob/main/docs/dev/TESTING.md)
-- [cli-testing contracts guide](https://github.com/WireCatLabs/cli-testing/blob/main/docs/ci/CONTRACTS.md) and
-  [upgrade guide](https://github.com/WireCatLabs/cli-testing/blob/main/docs/ci/UPGRADES.md)
-- [cli-testing CI docs](https://github.com/WireCatLabs/cli-testing/tree/main/docs/ci)
 
 ## Rules
 
@@ -65,17 +43,18 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-TEST-2 · No test reaches the real keyring
 
 - **Why:** the owner's tokens live in the real keychain, and one test that forgets an option would write there.
-- **Enforced by:** review only.
-- **Example:** every test passes `memoryKeyring()` from `@wirecat/cli-base/testing`. The sandbox also replaces
-  `@napi-rs/keyring` with a module that throws, so a forgotten option fails the test instead of reaching the
-  keychain. cli-base's `src/keyring.test.ts` asserts that `systemKeyring` throws under the sandbox.
-- **Exceptions:** none.
+- **Enforced by:** `src/keyring.test.ts`.
+- **Example:** every test passes `memoryKeyring()` from `@wirecat/cli-base/testing`. cli-base's own sandbox also
+  replaces `@napi-rs/keyring` with a module that throws, so a forgotten option fails the test instead of reaching the
+  keychain, and `src/keyring.test.ts` asserts that `systemKeyring` throws under it.
+- **Exceptions:** none. The CLIs' sandboxes do not replace `@napi-rs/keyring` yet; tg and max only scope the keyring
+  entry through environment variables.
 - **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-3 · No test contacts a provider or the network
 
 - **Why:** a test that reaches the network is slow, flaky, and can act on a real account.
-- **Enforced by:** review only.
+- **Enforced by:** `max-cli: src/testing/unscripted.ts`.
 - **Example:** max-cli's `src/testing/mock-max.ts` scripts the service: an answer per request, a refusal, or silence
   to test a timeout. A request with no scripted answer fails the test that sent it, through a second `setupFiles`
   entry. tg's `scripted({...})` adapter does the same job.
@@ -121,13 +100,15 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-TEST-8 · Prove that content does not leak, with a marker
+### WC-TEST-8 · Prove that content does not leak, with a marker and visibly fake data
 
-- **Why:** "the output has no message text" only means something when the text was there to leak.
+- **Why:** "the output has no message text" only means something when the text was there to leak; a convention alone
+  proves nothing.
 - **Enforced by:** review only.
-- **Example:** test data is visibly fake (`synthetic text ${id}`). Content that must stay hidden carries a unique
-  marker, and the test asserts that the marker is absent from output, errors and run events, while the id is
-  present. The positive check stops the test from passing by recording nothing.
+- **Example:** test data is visibly fake: `synthetic text ${id}`, the phone number `+71234567890`, the device id
+  `00000000-0000-0000-0000-000000000001`, `your-token-here`. Content that must stay hidden carries a unique marker,
+  and the test asserts that the marker is absent from output, errors and run events, while the id is present:
+  `expect(err).not.toContain(token)`. The positive check stops the test from passing by recording nothing.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -140,13 +121,13 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-TEST-10 · A skip is not a pass: typecheck the tests, and report the counts
+### WC-TEST-10 · A skip is not a pass: report the suite that ran and its counts
 
-- **Why:** a test that compares against a constant that does not exist passes for any input.
-- **Enforced by:** `pnpm typecheck` · `node-ci.yml:check`.
-- **Example:** `tsconfig.test.json` checks the tests with `noEmit` and carries `"exclude": []`. Without that line it
-  inherits the build's `exclude`, checks no test file and still passes. When you report work, name the suite that
-  ran and give its counts.
+- **Why:** a suite that ran nothing, or skipped what mattered, still exits 0.
+- **Enforced by:** review only.
+- **Example:** when you report work, name the suite that ran and give its counts: passed, failed and skipped. A
+  skipped test is counted as skipped, never as passed. That the tests are typechecked at all is
+  [WC-TOOL-5](toolchain.md#wc-tool-5--typecheck-every-typescript-file-source-tests-and-scripts).
 - **Exceptions:** none.
 - **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -165,7 +146,8 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-TEST-12 · Every command and option has a test, or a written reason
 
 - **Why:** a flag that no test passes can break without anyone noticing.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: pnpm test:matrix` · `max-cli: pnpm test:matrix` · `whatsapp-cli: pnpm test:matrix` ·
+  `zoom-cli: pnpm test:matrix:check`.
 - **Example:** under vitest, `run()` appends each parsed command path and option name (never a value) to
   `coverage/argv.jsonl`. `pnpm test:matrix` turns that into `docs/dev/test-matrix.md` and fails on a command or
   option with neither a test nor a reason. A reason names the live scenario that covers it. A test that calls a
@@ -177,7 +159,8 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-TEST-13 · Keep offline contracts for help, discovery, errors and the MCP tool list
 
 - **Why:** agents depend on `commands --json` and the MCP tool list; a change to them must be seen and reviewed.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: pnpm contracts:check` · `max-cli: pnpm contracts:check` ·
+  `whatsapp-cli: pnpm contracts:check` · `drive-cli: pnpm contracts:check` · `zoom-cli: pnpm contracts:check`.
 - **Example:** `pnpm contracts:check` runs `cli-contract contracts/plan.json` against the built CLI. It checks the
   help snapshot, that discovery is one JSON value on stdout with empty stderr, that a bad option gives the documented
   exit code and one JSON error on stderr, and the MCP tool names, schemas and annotations. A change is accepted with
@@ -188,7 +171,8 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-TEST-14 · Check the upgrade from the previous published version
 
 - **Why:** a release that cannot read what the previous one wrote loses the owner's data.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: pnpm contracts:upgrade` · `max-cli: pnpm contracts:upgrade` ·
+  `drive-cli: pnpm contracts:upgrade` · `zoom-cli: pnpm contracts:upgrade`.
 - **Example:** `pnpm contracts:upgrade` runs the previous published package and this build on the same synthetic
   state and checks that the data survives. Each store migration also has its own upgrade test (WC-STORE-9).
 - **Exceptions:** a CLI with no local state.
@@ -206,22 +190,14 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-TEST-16 · A messenger CLI matches its column of the parity manifest
 
 - **Why:** tg, max and wa promise the same commands and options where their messengers allow it.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: pnpm parity:check` · `cli-core: parity.yml` · `cli-core: src/parity/manifest.test.ts`.
 - **Example:** `pnpm parity:check` compares the CLI's `commands --json` with its column of `parity.json` from the
   cli-core version it installed. cli-core's `parity.yml` builds tg, max and wa from `main` and runs the same check in
   full validation.
 - **Exceptions:** a row marked `planned` passes whether the command exists or not.
 - **Applies to:** messenger CLIs (tg, max, wa). **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-TEST-17 · Run the real exports under Bun as well as Node
-
-- **Why:** both runtimes are supported, and a static import of one runtime's module fails to load on the other.
-- **Enforced by:** `pnpm smoke:bun` · `node-ci.yml:bun`.
-- **Example:** `bun test` cannot run the vitest suite, so `scripts/smoke.ts` runs the built exports with plain
-  assertions under Bun. A new entry point gets a line there.
-- **Exceptions:** none.
-- **Applies to:** all CLIs and the shared packages. memo has no Bun smoke test yet. **Since:** cli-base 0.41.0.
-  **Rulings:** NEED-11.
+### WC-TEST-17 · Merged into [WC-TOOL-6](toolchain.md#wc-tool-6--support-node-22-and-later-and-bun-and-run-the-built-exports-under-bun)
 
 ### WC-TEST-18 · Check the real service by hand, never in the test suite
 
@@ -232,3 +208,15 @@ These documents explain the rules below in more detail. Where one of them disagr
   never its content. When a scenario is run again, the sentence it supports is updated.
 - **Exceptions:** none.
 - **Applies to:** all CLIs that talk to a real account. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-base `TESTING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/TESTING.md)
+- [cli-core `TESTING.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/TESTING.md)
+- [max-cli `TESTING.md`](https://github.com/WireCatLabs/max-cli/blob/main/docs/dev/TESTING.md)
+- [cli-testing contracts guide](https://github.com/WireCatLabs/cli-testing/blob/main/docs/ci/CONTRACTS.md) and
+  [upgrade guide](https://github.com/WireCatLabs/cli-testing/blob/main/docs/ci/UPGRADES.md)
+- [cli-testing CI docs](https://github.com/WireCatLabs/cli-testing/tree/main/docs/ci)

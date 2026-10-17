@@ -2,17 +2,17 @@
 
 ## Scope
 
-How the code is split: the layers and the direction of dependencies, no vendor type above the adapter, what belongs
-in cli-base, in cli-core or in the CLI itself, who opens and closes a resource, and how a large unit is split.
+How the code is split: the layers and the direction of dependencies, no vendor type above the adapter, and what
+belongs in cli-base, in cli-core or in the CLI itself.
 
 Rule ids on this page are `WC-ARCH-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
 
-Related pages: file size and one job per file are in [Layout](layout.md); import cycles are in
-[Toolchain](toolchain.md); exit timing and closing before output are in [Lifecycle](lifecycle.md); the store's own
-rules are in [Store](store.md).
+Related pages: file size, one job per file and how a large unit is split are in [Layout](layout.md); import cycles
+and the lint that holds the layers are in [Toolchain](toolchain.md); who opens and closes a resource, what may open
+at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's own rules are in [Store](store.md).
 
-## Words used here
+### Words used here
 
 - **Adapter:** the code that talks to one provider (Telegram, MAX, WhatsApp, Google Drive, Zoom) and translates its
   objects into our own types.
@@ -22,27 +22,6 @@ rules are in [Store](store.md).
   `program.ts` and the command context.
 - **Vendor type:** a type from a provider library, such as `@mtcute/*` or `ws`.
 
-## Rule template
-
-```markdown
-### WC-ARCH-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-These documents explain the rules below in more detail. Where one of them disagrees with this page, this page holds.
-
-- [cli-base `MODULARITY.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/MODULARITY.md)
-- [cli-base `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/ARCHITECTURE.md)
-- [cli-core `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md)
-- [cli-core `ADAPTERS.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ADAPTERS.md)
-
 ## Rules
 
 ### WC-ARCH-1 · Call only the layers below you: interface, then service, then port, then adapter
@@ -50,10 +29,13 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Why:** when a command calls an adapter directly, the MCP tool for the same job does something different.
 - **Enforced by:** review only.
 - **Example:** cli-core has five layers: domain (`src/domain/`), adapters, ports (`port.ts`, the store), services
-  (`src/services/`) and the interface (commands and MCP tools). Its `biome.json` refuses an import of `commander` or
-  of `src/cli/` from the services and the layers below them, and an import of a command file from `src/mcp/`. What a
+  (`src/services/`) and the interface (commands and MCP tools). Its `biome.json` is meant to refuse an import of
+  `commander` or of `src/cli/` from the services and the layers below them, and an import of a command file from
+  `src/mcp/`. What a
   command and a service share lives below the command.
-- **Exceptions:** none. A new adapter method goes into a named group in `port.ts`, never into the domain.
+- **Exceptions:** none. A new adapter method goes into a named group in `port.ts`, never into the domain. Today the
+  last `noRestrictedImports` override in cli-core's `biome.json` replaces the earlier ones, so cli-core's layer,
+  provider, module and store import rules (WC-ARCH-2, WC-ARCH-8, WC-STORE-4) catch nothing until it is fixed.
 - **Applies to:** all CLIs. Each repository's `biome.json` holds its own import rules. **Since:** cli-base 0.41.0.
   **Rulings:** none.
 
@@ -61,15 +43,16 @@ These documents explain the rules below in more detail. Where one of them disagr
 
 - **Why:** a shared package that imports an app cannot be shared.
 - **Enforced by:** review only.
-- **Example:** cli-base has no dependency on cli-core or on any CLI. cli-core's `biome.json` refuses an import of a
-  messenger library or an adapter directory ("cli-core speaks no provider").
+- **Example:** cli-base has no dependency on cli-core or on any CLI. cli-core's `biome.json` is meant to refuse an import
+  of a messenger library or an adapter directory ("cli-core speaks no provider"); today it does not (WC-ARCH-1).
 - **Exceptions:** none.
 - **Applies to:** cli-base, cli-core and all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-ARCH-3 · Only the adapter imports a vendor library; nothing above it sees a vendor type
 
 - **Why:** the provider library underneath must be replaceable, and the layers above must not change when it is.
-- **Enforced by:** review only.
+- **Enforced by:** `max-cli: biome noRestrictedImports` · `tg-cli: biome noRestrictedImports` ·
+  `whatsapp-cli: biome noRestrictedImports`.
 - **Example:** in max-cli, `biome.json` lets only `src/client.ts` and `src/client/` reach the protocol, and only
   `src/adapter/` maps the client onto the shared messenger port. A field that only one provider has travels in
   `providerMetadata`.
@@ -127,11 +110,15 @@ These documents explain the rules below in more detail. Where one of them disagr
 ### WC-ARCH-8 · Cross a module boundary only through the module's entry point
 
 - **Why:** a deep import ties the caller to another module's internals.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-memo: biome noRestrictedImports` · `drive-cli: biome noRestrictedImports` ·
+  `zoom-cli: biome noRestrictedImports`.
 - **Example:** in cli-core, `src/tasks/` and `src/meetings/` are entered only through their `index.ts`, `cli/`, `mcp/`
-  and `testing/` entries; `biome.json` refuses the rest. memo, drive and zoom have a "public exports only" rule.
+  and `testing/` entries; its `biome.json` is meant to refuse the rest, and today does not (WC-ARCH-1). memo, drive and zoom have a "public exports only" rule. A
+  package's own entry points are its `exports`
+  ([WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcindexts)).
 - **Exceptions:** tests may import what they test.
-- **Applies to:** all CLIs. tg and max do not have the import rule yet. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs. tg, max and wa do not have the import rule yet. **Since:** cli-base 0.41.0.
+  **Rulings:** none.
 
 ### WC-ARCH-9 · Pass the narrow port or callback a use case needs, not a whole store or container
 
@@ -162,35 +149,11 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Exceptions:** a CLI that does not use cli-core's command skeleton keeps one environment of its own.
 - **Applies to:** CLIs built on cli-core's command skeleton. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-ARCH-12 · Importing a module or listing the commands opens nothing
+### WC-ARCH-12 · Merged into [WC-LIFE-6](lifecycle.md#wc-life-6--open-nothing-until-an-action-needs-it)
 
-- **Why:** `commands --json`, help and completion must work with no account, database, keyring or network.
-- **Enforced by:** review only.
-- **Example:** a service is a factory over its dependencies, and the connection, the store and the account open on
-  first use. A read from the store never connects. Heavy engines (speech, charts, PDF) load on first use.
-- **Exceptions:** none.
-- **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
+### WC-ARCH-13 · Merged into [WC-LIFE-1](lifecycle.md#wc-life-1--the-code-that-opens-a-resource-closes-it-so-a-one-shot-command-exits-when-it-has-answered)
 
-### WC-ARCH-13 · The code that opens a resource closes it
-
-- **Why:** a resource with no clear owner is closed twice or never, and the process does not exit.
-- **Enforced by:** review only.
-- **Example:** the command context opens the services with `withServices`, and closes what was opened. A service
-  never closes a connection it was handed. A borrowed connection has a `close` that does nothing. When and in what
-  order things close is in [Lifecycle](lifecycle.md).
-- **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
-
-### WC-ARCH-14 · Connect through `connectFor`, so a command inside serve borrows serve's connection
-
-- **Why:** some providers allow one connection per account; a second connection drops the first.
-- **Enforced by:** review only.
-- **Example:** a messenger that allows only one connection sets `Messenger.connection: "exclusive"`. Its `serve`
-  then runs other commands for the same profile through a local socket (the relay). `connectFor` gives a relayed run
-  serve's own adapter, and refuses a run for another profile. A CLI's own command that connects also goes through
-  `connectFor`.
-- **Exceptions:** `serve`, `server`, `bot`, logins, `--offline`, `--dry-run` and `mcp --http` are never relayed.
-- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1389.
+### WC-ARCH-14 · Merged into [WC-LIFE-11](lifecycle.md#wc-life-11--run-commands-through-serve-when-the-messenger-allows-one-connection-per-account)
 
 ### WC-ARCH-15 · Each CLI runs its own background server, built on cli-core's process library
 
@@ -210,18 +173,7 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-ARCH-17 · Split a large unit along a named seam, and dispatch by lookup, not by branch
-
-- **Why:** a named seam gives each change one place to go; a branch per case grows without limit.
-- **Enforced by:** review only.
-- **Example:**
-  - The tg adapter is a thin class over feature modules (folders, topics, groups, contacts, login, watch) that share a
-    small feature context.
-  - The cli-core store is a set of areas, each in its own file ([Store](store.md)).
-  - The Lucene compiler has one compiler per field, picked from the field registry by name.
-- **Exceptions:** do not scatter one operation into trivial files, add a barrel or wrap each function in a class only
-  to meet a size limit. The size limits are in [Layout](layout.md).
-- **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
+### WC-ARCH-17 · Merged into [WC-LAY-8](layout.md#wc-lay-8--give-each-module-one-reason-to-change)
 
 ### WC-ARCH-18 · An optional capability that is missing fails out loud
 
@@ -237,7 +189,8 @@ These documents explain the rules below in more detail. Where one of them disagr
 - **Why:** what is written, and where, is the host's decision; a stray line breaks machine output.
 - **Enforced by:** review only.
 - **Example:** cli-base hands the host a `Logger` interface, a Pino adapter and a renderer. It never calls
-  `console.log`.
+  `console.log`, nor `console.error`, which the lint allows elsewhere
+  ([WC-TOOL-9](toolchain.md#wc-tool-9--write-to-the-console-only-with-consoleerror-except-in-scripts)).
 - **Exceptions:** none.
 - **Applies to:** cli-base and cli-core. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -245,6 +198,17 @@ These documents explain the rules below in more detail. Where one of them disagr
 
 - **Why:** a CLI that only speaks a socket must not depend on an HTTP stack.
 - **Enforced by:** review only.
-- **Example:** a helper that reads a status code or a header goes to `@wirecat/cli-base/http`.
+- **Example:** a helper that reads a status code or a header goes to `@wirecat/cli-base/http`. How an entry point
+  is added is [WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcindexts).
 - **Exceptions:** none.
 - **Applies to:** cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-15.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-base `MODULARITY.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/MODULARITY.md)
+- [cli-base `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/ARCHITECTURE.md)
+- [cli-core `ARCHITECTURE.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ARCHITECTURE.md)
+- [cli-core `ADAPTERS.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/ADAPTERS.md)

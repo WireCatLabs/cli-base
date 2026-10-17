@@ -10,35 +10,12 @@ Rule ids on this page are `WC-REL-<n>`. How to read a rule, how ids work and whi
 [index](README.md). The changelog a release dates is on the [Documents](docs.md) page. The checks a release runs are
 on the [CI](ci.md) page.
 
-## Rule template
-
-```markdown
-### WC-REL-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-The rules below replace the release rules in these files. Where a file disagrees with a rule here, the rule here
-applies:
-
-- [cli-base `RELEASING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/RELEASING.md), the step by step
-  for cli-base itself
-- [community standards, "Release locking"](https://github.com/WireCatLabs/community/blob/main/standards/README.md),
-  the how-to for installing the lock helper
-- each CLI's `bin/release` and its release skill, which carry out these rules
-
 ## Rules
 
 ### WC-REL-1 · Release only with `bin/release`, from a clean `main` that matches `origin/main`
 
 - **Why:** the workflow publishes `origin/main`, so a local commit or a dirty tree would not ship what was checked.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: bin/release`.
 - **Example:** raise `version` in `package.json` and date the pending changelog section in a pull request. Merge it.
   Then run `bin/release` on `main`. It refuses another branch, uncommitted changes and a `main` ahead of
   `origin/main`.
@@ -50,14 +27,15 @@ applies:
 - **Why:** the repository ruleset requires it, and every change to `main` then passes the pull request checks.
 - **Enforced by:** review only.
 - **Example:** when `bin/release` renumbers the version or folds the changelog, it opens a pull request, waits for its
-  checks and merges it before it publishes.
+  checks and merges it before it publishes. The merge rule itself is
+  [WC-CI-12](ci.md#wc-ci-12--merge-to-main-only-through-a-pull-request-whose-checks-all-passed).
 - **Exceptions:** none.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-3 · `bin/release` takes the machine release lock before it builds or publishes
 
 - **Why:** two sessions published at the same time on one machine; one release at a time, across every package.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: bin/release`.
 - **Example:**
 
   ```sh
@@ -82,7 +60,8 @@ applies:
 ### WC-REL-5 · One releaser per version: npm decides which number is free
 
 - **Why:** two sessions often prepare the same number; the second must not publish over the first or fail late.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: bin/release` · `max-cli: bin/release` · `whatsapp-cli: bin/release` ·
+  `cli-memo: bin/release`.
 - **Example:** before it publishes, `bin/release` asks npm. When npm already has the version, or a higher one, it
   takes the next free number at the same level (after `x.y.0` the next minor, else the next patch). It lands that
   number through a pull request and publishes it.
@@ -93,7 +72,7 @@ applies:
 ### WC-REL-6 · `package.json` holds the version, and the program reads a synced copy
 
 - **Why:** a bundled command has no `package.json` to read, so `--version` reads a source file that must not drift.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: pnpm version:check` · `max-cli: pnpm version:check` · `whatsapp-cli: pnpm version:check`.
 - **Example:** edit only `package.json`, then run `pnpm version:sync` to update `src/version.ts`. `pnpm version:check`
   fails when the two disagree.
 - **Exceptions:** a shared library that prints no version has no `src/version.ts`. Today tg, max and wa have
@@ -114,7 +93,7 @@ applies:
 
 - **Why:** a broken CLI release must be noticed before the next one lands on top of it. Every CLI waits for a library
   release, so a gap there only delays them.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: bin/release`.
 - **Example:** tg-cli, max-cli and whatsapp-cli's `bin/release` refuse to start within two hours of the last version
   on npm. cli-base and cli-core release one after another with no gap.
 - **Exceptions:** memo, drive and zoom have no gap in their `bin/release` today.
@@ -133,7 +112,7 @@ applies:
 
 - **Why:** the judgement half of a release (changelog wording, docs against the change, live checks) has no other
   record that it ran for this exact commit.
-- **Enforced by:** review only.
+- **Enforced by:** `max-cli: bin/release`.
 - **Example:** max-cli's `bin/release` refuses unless the report has `Commit: <HEAD>` and `Signed off: <date>`. When
   `bin/release` only renumbers or folds the changelog, it carries the report to the new commit. A fork passes its
   own report with `bin/release --report <path>`.
@@ -173,7 +152,8 @@ applies:
 ### WC-REL-14 · `bin/release --local` is the fallback, and it never prints the npm token
 
 - **Why:** a release must still be possible when GitHub Actions is down, without leaking the token.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: bin/release` · `max-cli: bin/release` · `whatsapp-cli: bin/release` ·
+  `cli-memo: bin/release`.
 - **Example:** `bin/release --local` runs the same checks on this machine and reads the npm token from the keyring
   into the publish command's environment. Neither success nor an error prints it.
 - **Exceptions:** none. drive's and zoom's `bin/release` have no `--local` yet.
@@ -192,8 +172,20 @@ applies:
 ### WC-REL-16 · The package ships only the files it names
 
 - **Why:** a stray file in the package can leak local data and grows every install.
-- **Enforced by:** review only.
+- **Enforced by:** `tg-cli: pnpm release:check` · `max-cli: pnpm release:check` · `whatsapp-cli: pnpm release:check`.
 - **Example:** `package.json` `files` lists what ships. The CLI's `pnpm release:check` runs `packContents` from
   `@wirecat/cli-base/release` and fails on any other path in `npm pack --dry-run`.
-- **Exceptions:** none. tg, max and wa run this check; memo, drive and zoom do not yet.
+- **Exceptions:** none. tg, max and wa run this check. memo's `release:check` has no package-contents step, drive and
+  zoom have no `release:check`, and zoom checks the packed file in a test instead.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-base `RELEASING.md`](https://github.com/WireCatLabs/cli-base/blob/main/docs/dev/RELEASING.md), the step by step
+  for cli-base itself
+- [community standards, "Release locking"](https://github.com/WireCatLabs/community/blob/main/standards/README.md),
+  the how-to for installing the lock helper
+- each CLI's `bin/release` and its release skill, which carry out these rules

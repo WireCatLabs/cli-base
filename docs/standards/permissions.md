@@ -1,7 +1,5 @@
 # Permissions
 
-<!-- cspell:words SECR -->
-
 ## Scope
 
 What a CLI may do without asking: permission levels and keys, their defaults, the limits no level lifts, the write
@@ -17,33 +15,13 @@ Two words used on this page:
 Rule ids on this page are `WC-PERM-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
 
-## Rule template
-
-```markdown
-### WC-PERM-<n> · <the rule, in one short sentence>
-
-- **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
-- **Example:** <a command or a piece of code that keeps the rule>.
-- **Exceptions:** <when the rule does not apply>, or "none".
-- **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
-```
-
-## Sources today
-
-These documents explain the rules below in more detail. Where one of them disagrees with this page, this page holds.
-
-- [cli-core `STANDARD.md`, "Permissions"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#permissions)
-
-## Who follows these rules today
+### Who follows these rules today
 
 tg, max and wa use cli-core's permissions and write guard in full. memo uses them for the shared commands only. drive
-has its own policy and guard (with its own `--read-only` flag), and refuses level `ask` over MCP; zoom only reads.
-Where this page says "every CLI that writes", drive is a known gap.
+has its own policy and guard, with its own `--read-only` flag; zoom only reads. Where this page says "every CLI that
+writes", drive is a known gap.
 
-WC-PERM-10 and WC-PERM-11 need cli-core 0.321.0. On origin/main tg, max and memo pin 0.320.0 and wa pins 0.317.0, so
-until each one upgrades, `mcp --permission` can still loosen a level there, and wa's MCP delete still takes
-`for_everyone`.
+WC-PERM-10 and WC-PERM-11 need cli-core 0.321.0, which tg, max and wa pin.
 
 ## Rules
 
@@ -123,7 +101,7 @@ With no `permissions` set, a profile may do almost everything. The built-in defa
 A default is never made stricter without the owner's word.
 
 - **Why:** the tool should work without questions; only a deletion, a logout or an automatic reply needs one.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/sends/permissions.test.ts`.
 - **Example:** a new profile sends at once, and asks before `messages delete`.
 - **Exceptions:** `replies.send` is `deny`: a reply rule writes to people with nobody typing a command, so it waits for
   the owner's own `allow`.
@@ -135,7 +113,7 @@ Against a broader key the owner set, the stricter of the two holds. A key the ow
 wins. In the config file, a key in a nearer section also hides that key and every key under it in farther sections.
 
 - **Why:** `messages: allow` must not remove the question before a deletion by accident.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/sends/permissions.test.ts`.
 - **Example:** `messages: allow` still asks before `messages delete`; `messages.delete: allow` does not. A profile's
   `messages: readonly` is not undone by `messages.delete: allow` in `defaults`.
 - **Exceptions:** none.
@@ -167,13 +145,12 @@ for every other write. With no terminal and no flag, the command answers `confir
 
 ### WC-PERM-10 · A flag confirms; it never grants
 
-`--yes` and `--allow-dangerous` only answer `ask`. They never lift `deny` or `readonly`. A start-up override such as
-`mcp --permission <key=level>` may only make a level stricter.
+`--yes` and `--allow-dangerous` only answer `ask`. They never lift `deny` or `readonly`. An `mcp` flag never grants
+either ([WC-MCP-8](mcp.md#wc-mcp-8--no-mcp-flag-grants-access)).
 
 - **Why:** a flag an agent can add must not be a way around the owner's settings.
-- **Enforced by:** review only.
-- **Example:** with `messages: readonly`, `messages send … --yes` is still refused. `mcp --permission
-  messages.send=allow` on that profile is refused at start-up with `validation_error`.
+- **Enforced by:** `cli-core: src/cli/messenger/messenger.test.ts`.
+- **Example:** with `messages: readonly`, `messages send … --yes` is still refused.
 - **Exceptions:** none.
 - **Applies to:** every CLI that writes. **Since:** cli-base 0.41.0. **Rulings:** NEED-1423.
 
@@ -182,7 +159,7 @@ for every other write. With no terminal and no flag, the command answers `confir
 An agent never deletes a message for everyone, and never ends the owner's other sessions.
 
 - **Why:** both hurt people other than the owner, or lock the owner out, and cannot be undone.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts`.
 - **Example:** MCP `messages delete` has no `for_everyone` argument. A messenger whose every delete is for everyone
   sets `Messenger.deleteForMe: false`, and there the MCP delete refuses with `permission_error` without connecting.
   No MCP command ends sessions; `account sessions end` exists only on the command line.
@@ -207,7 +184,7 @@ messenger, and the hourly limit. Then it reserves a line in the send journal. A 
 before every write it forwards, and so does an MCP server.
 
 - **Why:** a model that was talked into sending by a message it read must be stopped by code, not by its own judgement.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/sends/guard.test.ts`.
 - **Example:** `messages send`, `reactions add`, `chats members add` and `polls vote` all call the guard.
 - **Exceptions:** the guard does not stop an agent that can edit the config file itself. Run an unattended agent under
   `<PREFIX>_READ_ONLY` or `<PREFIX>_PROFILE_LOCK`, somewhere it cannot write the config.
@@ -223,7 +200,7 @@ Each profile may have a list of chats, kept in a state file and changed with `re
 - A person added to a group must have a one-to-one chat on the list.
 - A write to a chat not on the list answers `confirmation_required`, with the command that adds it.
 - **Why:** the owner can fence an agent into a few chats without changing any level.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/sends/guard.test.ts`.
 - **Example:** `max work recipients add 123456`.
 - **Exceptions:** a bot has its own list.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-159, NEED-305.
@@ -238,7 +215,7 @@ Each profile may have a list of chats, kept in a state file and changed with `re
 - A scheduled message counts in the hour it is sent. One batch larger than the limit is refused.
 - Over the limit, the write answers `rate_limited` with the time the next one is possible.
 - **Why:** many writes at once is what the messenger reads as automation, and what bans an account.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/sends/guard.test.ts`.
 - **Example:** `{ "defaults": { "sends_per_hour": 10 } }`.
 - **Exceptions:** none.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-168, NEED-282, NEED-305.
@@ -262,7 +239,7 @@ to write the journal after a send only warns.
 
 - **Why:** the journal is what the hourly limit counts and what the owner audits; content in it would be a second copy
   of private messages. After a send, an error would invite a second send.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/sends/guard.test.ts` · `cli-core: src/sends/journal.test.ts`.
 - **Example:** `{ "at": "…", "profile": "work", "chatId": "…", "kind": "message", "outcome": "sent" }`.
 - **Exceptions:** none.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-161.
@@ -309,3 +286,10 @@ Moderation rules use the same four levels for each kind of action (delete, remov
 - **Exceptions:** an agent may run the same check over MCP, under the same levels. A rule's level is meant to be no
   looser than the profile's `chats.moderate`; the code does not check that yet.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-306, NEED-310.
+
+## Sources
+
+These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
+holds.
+
+- [cli-core `STANDARD.md`, "Permissions"](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md#permissions)
