@@ -108,6 +108,7 @@ const verbs: [string, string][] = [
   ["check", "verify, and change nothing; the answer says what is wrong and how to fix it"],
   ["test", "run rules over what is already stored and say what they would have done, doing none of it"],
   ["apply", "run the owner's saved rules over what is already stored and change what they match; dry run unless --yes"],
+  ["scan", "read stored messages for what a rule finds, such as tasks, and list it; records it only with --yes"],
   ["pause", "stop what a running process does for a profile, without stopping the process"],
   ["resume", "restart what pause stopped"],
   ["create", "make a thing"],
