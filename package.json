@@ -16,6 +16,7 @@
   "files": [
     "dist",
     "config",
+    "docs/standards",
     "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES"
@@ -88,7 +89,7 @@
     "typecheck": "tsc --build --force --emitDeclarationOnly && tsc -p tsconfig.test.json && tsc -p tsconfig.scripts.json",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "docs:check": "pnpm build && node dist/dev/bin.js docs-check --ids CLI,MAX,OPS,CORE,SPEC,DOC",
+    "docs:check": "pnpm build && node dist/dev/bin.js docs-check --ids CLI,MAX,OPS,CORE,SPEC,DOC && node scripts/standards-ids.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -99,7 +100,7 @@
     "prepublishOnly": "pnpm build",
     "standards:check": "node config/wirecat/check.mjs",
     "docs:lint": "markdownlint-cli2",
-    "docs:spell": "cspell lint --config cspell.json --no-progress README.md",
+    "docs:spell": "cspell lint --config cspell.json --no-progress README.md \"docs/standards/**/*.md\"",
     "ci:quick": "pnpm typecheck"
   },
   "dependencies": {
