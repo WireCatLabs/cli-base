@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **A query whose `/` opens a regular expression that never closes now says to quote the value.** `/` starts a
+  regular expression in the query language, so `text/plain` or `mime:(text/plain)` failed with
+  `query.unclosed-literal` and no hint; the message and `details.alternative` now read
+  `/ starts a regular expression; put the value in quotes: "text/plain"`. `mime:text/plain` keeps its existing hint,
+  `mime:"text/plain"`. The error code and reason are unchanged.
+
 ## 0.43.5 — 18.10.2026
 
 ### Fixed
