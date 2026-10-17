@@ -281,6 +281,7 @@ const roots: [string, string][] = [
   ["review", "go through what needs the owner"],
   ["watch", "follow new events as they come"],
   ["serve", "the long-running process"],
+  ["setup", "the guided first run: log in or link the account, then install the agent skill"],
   ["doctor", "check this machine's setup"],
   ["upgrade", "install a newer version of this tool"],
   ["commands", "the command tree as data"],

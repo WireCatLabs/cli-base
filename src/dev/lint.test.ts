@@ -206,6 +206,14 @@ describe("lint rules", () => {
     ])
   })
 
+  it("passes the guided first run, setup --agent, as tg and wa have it", () => {
+    const root = clean()
+    annotate(root.command("setup").description("log in, then install the agent skill").option("--agent <agent>", "x"), {
+      examples: ["tool work setup", "tool work setup --agent codex"],
+    })
+    expect(lintOf(root)).toEqual(lintOf(clean()))
+  })
+
   for (const [rule, breakIt] of Object.entries(failing))
     it(`fails ${rule}`, () => {
       const root = clean()
