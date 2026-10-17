@@ -10,6 +10,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`--plain-order` in the vocabulary**, a sort switch: search results best first by the words alone, without
+  moving mail from senders with signs of fraud down. memo ranks such mail lower by default; this finds it.
+
 ### Fixed
 
 - **The shared test setup is quieter and leaves nothing behind.** `@wirecat/cli-base/testing/setup` now turns off
