@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## 0.44.4 — 18.10.2026
+## Unreleased
 
 ### Added
 
@@ -18,6 +18,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   step, and `skip` lists the ones a CLI cannot have yet. `platforms: true` runs the unit suite and the built `bin`
   on Windows and macOS, with `platform-run` for extra commands. All are off by default, so today's callers see no
   change.
+
+## 0.44.4 — 18.10.2026
+
+### Added
+
 - **The handbook catches up with wa**: WC-LIFE-8 lets a one-shot command end a wait it entered with cli-core's
   `untilStopped()` with exit 0, not 130, since stopping is how that wait ends. WC-REL-10 counts whatsapp-cli's
   `bin/release` among the ones that check a signed release report. WC-PERM-18 is stricter: a standing hold (frozen,
