@@ -27,10 +27,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   show the `dist/` JavaScript, which is close to the source.
 - **The package now holds `CHANGELOG.md`,** and its npm page links the repository's issues and README.
 - **The README gives the install command** and says the package is ESM only (`require()` works from Node 22.12).
-
 - **WC-PERM-12 says that any command saves incoming history under the read-only lock**, not only `serve` and
-  `watch`: on a messenger whose history lives in the store, cli-core 0.343.0 saves what arrives during a one-shot
-  command or an MCP session through the adapter's `listen`. The lock does not stop it.
+  `watch`: on a messenger whose history lives in the store and whose adapter has the optional `listen`, cli-core
+  0.343.0 saves what arrives during a one-shot command or an MCP session. The lock does not stop it. No messenger
+  has `listen` yet.
 - **WC-CI-12 now names the required checks in every repository.** The `main` rulesets of whatsapp-cli, cli-core,
   tg-cli, max-cli, cli-base and cli-memo require the pull request validation jobs besides `standards`, so a red pull
   request cannot merge there. drive-cli, zoom-cli, cli-testing and cli-docs have no `pr.yml` and require only
