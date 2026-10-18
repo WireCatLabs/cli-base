@@ -114,6 +114,10 @@ MCP server builds its tool list from `describeProgram` without walking the paren
 `annotateOption(new Option("--for-everyone", "…"), { mcp: false })` leaves it out of MCP tools' input, and that
 option alone says `mcp: false`; `optionMetaOf(option)` reads it back.
 
+`offline: false` marks a command, and every command under it, that cannot answer from the local copy — a sync, or a
+read only the service can answer. The description carries it the same way as `mcp: false`, so an MCP server offers
+no `offline` input on that tool. The CLI's global `--offline` still reaches the command, which refuses it itself.
+
 Each option says whether it `takes_value` and, separately, whether it is `mandatory` — not
 Commander's `required`, which means "takes a value when given" — plus its choices, default,
 environment variable, the options it `conflicts` with, the values it `implies`, keyed by long flag, and `mcp: false`

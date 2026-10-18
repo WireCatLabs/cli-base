@@ -36,6 +36,11 @@ export interface CommandMeta {
   lifetime?: CommandLifetime
   /** `false` keeps the command and all its subcommands off MCP servers; agents using the CLI itself are not affected. */
   mcp?: boolean
+  /**
+   * `false`: the command and all its subcommands cannot answer from the local copy, so an MCP tool offers no
+   * `offline` input for them. The CLI's global `--offline` still reaches them and they refuse it themselves.
+   */
+  offline?: boolean
   /** Stops at its own pace when the run is aborted from outside, keeping what it already did — a long fetch. */
   cooperative?: boolean
   examples?: readonly string[]
@@ -100,6 +105,8 @@ export interface CommandInfo {
   lifetime?: CommandLifetime
   /** Present only when the command or a group above it is kept off MCP servers. */
   mcp?: false
+  /** Present only when the command or a group above it cannot answer from the local copy. */
+  offline?: false
   cooperative?: boolean
   examples?: readonly string[]
   output?: CommandOutput
@@ -130,7 +137,7 @@ export const annotateOption = <T extends Option>(option: T, meta: OptionMeta): T
 export const optionMetaOf = (option: Option): OptionMeta => optionLabels.get(option) ?? {}
 
 export const describeProgram = (root: Command): CommandInfo[] =>
-  visible(root).map((child) => describe(child, root.name(), [], false))
+  visible(root).map((child) => describe(child, root.name(), [], { offMcp: false, noOffline: false }))
 
 export const describeOptions = (command: Command): OptionInfo[] =>
   command.options.filter((option) => !option.hidden).map(describeOption)
@@ -162,12 +169,17 @@ export const stepTargets = (root: Command): ((command: string) => StepTarget | u
   return (command) => found.get(command)
 }
 
-const describe = (command: Command, cli: string, parents: readonly string[], offMcpAbove: boolean): CommandInfo => {
+interface Above {
+  offMcp: boolean
+  noOffline: boolean
+}
+
+const describe = (command: Command, cli: string, parents: readonly string[], above: Above): CommandInfo => {
   const path = [...parents, command.name()]
   const args = command.registeredArguments.map(describeArgument)
   const options = describeOptions(command)
-  const { origin = "handwritten", query, mcp, ...meta } = metaOf(command)
-  const offMcp = offMcpAbove || mcp === false
+  const { origin = "handwritten", query, mcp, offline, ...meta } = metaOf(command)
+  const here: Above = { offMcp: above.offMcp || mcp === false, noOffline: above.noOffline || offline === false }
 
   const usage = [
     cli,
@@ -186,11 +198,12 @@ const describe = (command: Command, cli: string, parents: readonly string[], off
     usage,
     origin,
     ...meta,
-    ...(offMcp ? { mcp: false as const } : {}),
+    ...(here.offMcp ? { mcp: false as const } : {}),
+    ...(here.noOffline ? { offline: false as const } : {}),
     ...(query ? { query: describeQuery(query) } : {}),
     arguments: args,
     options,
-    commands: visible(command).map((child) => describe(child, cli, path, offMcp)),
+    commands: visible(command).map((child) => describe(child, cli, path, here)),
   }
 }
 

@@ -12,6 +12,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`offline: false` marks a command that cannot answer offline**: `annotate(command, { offline: false })` on a
+  command or a group, and `describeProgram` and `commands --json` say `offline: false` on it and on every command
+  below it, like `mcp: false`. cli-core's agent catalogue offers an `offline` input on every command that reads the
+  service, and a sync or an `inbox` that refuses `--offline` had no way to say so. Nothing changes until a command
+  sets it; a reader of `commands --json` that rejects unknown keys must accept the new one.
 - **`writeSecurely` writes bytes as well as text**: `contents` takes a `string` or a `Uint8Array` (a `Buffer` is one).
   A login QR image can now be written atomically with mode `0600`, like the credentials file, instead of with
   `writeFileSync` and a `chmod` after it. Callers that pass a string see no change.
