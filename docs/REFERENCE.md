@@ -102,6 +102,8 @@ describeProgram(program) // [{ path: ["send"], usage, origin, effects, options: 
 `write`. A command without it counts as a write: the error handler never marks its failure safe to retry
 (`error.retry.safe`), and a next step that runs it is never `safe_to_auto_execute`. `stepTargets(program)` gives
 `stepOf` and `errorObjectOf` each command's effects and the names it takes, so a step that would not bind is dropped.
+A group with an action of its own says `runnable: true`; a group without it only prints its help. `cli-dev lint`
+(`missing-command-effects`) asks effects of every leaf and every runnable group.
 
 `lifetime` says how long a command runs: `persistent` until it is stopped (a server, a watch), `interactive` until a
 person answers (a login); unset, the runner bounds it with its default timeout. `cooperative` marks a long command that

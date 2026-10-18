@@ -188,7 +188,7 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 ### WC-CMD-17 · Declare `effects` on every command
 
 - **Why:** retries and unasked next steps are judged on effects, and a command without them counts as a write.
-- **Enforced by:** `cli-core: src/cli/effects.test.ts` · `cli-memo: src/effects.test.ts`.
+- **Enforced by:** `missing-command-effects` · `cli-core: src/cli/effects.test.ts` · `cli-memo: src/effects.test.ts`.
 - **Example:** `annotate(send, { effects: { remote: "write", local: "write" } })`. Each side is `none`, `read` or
   `write`. A sync that reads the service and writes the local store is `{ remote: "read", local: "write" }`.
 - **Exceptions:** none. Without `effects`, the error handler never marks a failure safe to retry, and a next step

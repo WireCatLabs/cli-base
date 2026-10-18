@@ -111,6 +111,8 @@ export interface CommandInfo {
   examples?: readonly string[]
   output?: CommandOutput
   query?: QueryInfo
+  /** Present only on a group that runs on its own; a group without it only shows its help. */
+  runnable?: true
   arguments: readonly ArgumentInfo[]
   options: readonly OptionInfo[]
   commands: readonly CommandInfo[]
@@ -201,11 +203,16 @@ const describe = (command: Command, cli: string, parents: readonly string[], abo
     ...(here.offMcp ? { mcp: false as const } : {}),
     ...(here.noOffline ? { offline: false as const } : {}),
     ...(query ? { query: describeQuery(query) } : {}),
+    ...(visible(command).length > 0 && hasAction(command) ? { runnable: true as const } : {}),
     arguments: args,
     options,
     commands: visible(command).map((child) => describe(child, cli, path, here)),
   }
 }
+
+// Commander has no public getter for the action either; without one, a group prints its help.
+const hasAction = (command: Command): boolean =>
+  Boolean((command as Command & { _actionHandler?: unknown })._actionHandler)
 
 // `addCommand(command, { hidden: true })` sets only this; Commander has no public getter for it.
 const visible = (command: Command): Command[] =>

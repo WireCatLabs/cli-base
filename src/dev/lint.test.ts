@@ -5,7 +5,7 @@ import { Command } from "commander"
 import * as v from "valibot"
 import { beforeEach, describe, expect, it } from "vitest"
 import { commandsDocument } from "../commands/document.js"
-import { annotate } from "../commands/index.js"
+import { annotate, type CommandMeta } from "../commands/index.js"
 import type { QueryRegistry } from "../query/fields.js"
 import { LINT_RULES } from "../standards/lint.js"
 import { logAttributesJsonSchema } from "../standards/log.js"
@@ -14,18 +14,21 @@ import { VOCABULARY } from "../standards/vocabulary.js"
 import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
 import { type DevIo, main } from "./main.js"
 
+const READS = { remote: "read", local: "none" } as const
+const ran = <T extends Command>(command: T, meta: CommandMeta = {}): T => annotate(command, { effects: READS, ...meta })
+
 const clean = (): Command => {
   const root = new Command("tool").description("a tool").option("--json", "print JSON")
   const chats = root.command("chats").description("chats in the messenger")
-  annotate(chats.command("list").description("list chats").option("--limit <n>", "how many chats"), {
+  ran(chats.command("list").description("list chats").option("--limit <n>", "how many chats"), {
     examples: ["tool chats list", "tool work chats list --limit=5 --json"],
   })
-  annotate(chats.command("show").description("show one chat").argument("<chat>", "chat id or name"), {
+  ran(chats.command("show").description("show one chat").argument("<chat>", "chat id or name"), {
     examples: ["tool work chats show 'Kai Sample'"],
   })
-  annotate(root.command("doctor").description("check this machine"), { examples: ["tool doctor"] })
+  ran(root.command("doctor").description("check this machine"), { examples: ["tool doctor"] })
   const bot = root.command("bot").description("the bot account")
-  annotate(bot.command("getMe").description(""), { origin: "generated" })
+  ran(bot.command("getMe").description(""), { origin: "generated" })
   return root
 }
 
@@ -56,36 +59,40 @@ const chatsOf = (root: Command): Command => root.commands.find((one) => one.name
 
 const failing: Record<string, (root: Command) => void> = {
   "unknown-verb": (root) =>
-    annotate(chatsOf(root).command("grab").description("grab a chat"), { examples: ["tool chats grab"] }),
+    ran(chatsOf(root).command("grab").description("grab a chat"), { examples: ["tool chats grab"] }),
   "unknown-resource": (root) =>
-    annotate(root.command("metadata").description("chat metadata").command("list").description("list it"), {
+    ran(root.command("metadata").description("chat metadata").command("list").description("list it"), {
       examples: ["tool metadata list"],
     }),
   "flag-two-meanings": (root) =>
-    annotate(chatsOf(root).command("export").description("export").option("--limit <time>", "until"), {
+    ran(chatsOf(root).command("export").description("export").option("--limit <time>", "until"), {
       examples: ["tool chats export --limit 2h"],
     }),
-  "missing-command-help": (root) => annotate(chatsOf(root).command("delete"), { examples: ["tool chats delete"] }),
+  "missing-command-effects": (root) =>
+    annotate(chatsOf(root).command("move").description("move a chat to a folder"), {
+      examples: ["tool chats move"],
+    }),
+  "missing-command-help": (root) => ran(chatsOf(root).command("delete"), { examples: ["tool chats delete"] }),
   "command-help-too-long": (root) =>
-    annotate(root.command("inbox").description("x".repeat(81)), { examples: ["tool inbox"] }),
-  "command-example-count": (root) => root.command("review").description("go through what needs you"),
+    ran(root.command("inbox").description("x".repeat(81)), { examples: ["tool inbox"] }),
+  "command-example-count": (root) => ran(root.command("review").description("go through what needs you")),
   "faulty-help-example-parameters": (root) =>
-    annotate(root.command("watch").description("follow new events"), { examples: ["tool watch --follow"] }),
+    ran(root.command("watch").description("follow new events"), { examples: ["tool watch --follow"] }),
   "missing-argument-help": (root) =>
-    annotate(chatsOf(root).command("leave").description("leave a chat").argument("<chat>"), {
+    ran(chatsOf(root).command("leave").description("leave a chat").argument("<chat>"), {
       examples: ["tool chats leave 42"],
     }),
   "key-casing": (root) =>
-    annotate(chatsOf(root).command("sync").description("sync chats"), {
+    ran(chatsOf(root).command("sync").description("sync chats"), {
       examples: ["tool chats sync"],
       ...({ operationId: "chats.sync" } as object),
     }),
   "missing-option-help": (root) =>
-    annotate(chatsOf(root).command("clear").description("empty a chat").option("--dry-run"), {
+    ran(chatsOf(root).command("clear").description("empty a chat").option("--dry-run"), {
       examples: ["tool chats clear --dry-run"],
     }),
   "filter-flag": (root) =>
-    annotate(
+    ran(
       root
         .command("messages")
         .description("messages")
@@ -96,20 +103,20 @@ const failing: Record<string, (root: Command) => void> = {
       { examples: ["tool messages list --since-time 2h"], output: { entity: "message" }, query: messageQuery },
     ),
   "flag-synonym": (root) =>
-    annotate(chatsOf(root).command("search").description("search chats").option("--take <n>", "how many"), {
+    ran(chatsOf(root).command("search").description("search chats").option("--take <n>", "how many"), {
       examples: ["tool chats search --take 5"],
     }),
   "option-role": (root) =>
-    annotate(chatsOf(root).command("pin").description("pin a chat").option("--unread", "only unread"), {
+    ran(chatsOf(root).command("pin").description("pin a chat").option("--unread", "only unread"), {
       examples: ["tool chats pin --unread"],
     }),
   "list-without-query": (root) =>
-    annotate(root.command("contacts").description("contacts").command("list").description("list contacts"), {
+    ran(root.command("contacts").description("contacts").command("list").description("list contacts"), {
       examples: ["tool contacts list"],
       output: { entity: "contact" },
     }),
   "query-example": (root) =>
-    annotate(
+    ran(
       chatsOf(root).command("events").description("what happened in chats").argument("[query...]", "field:value terms"),
       {
         examples: ["tool chats events kind:group"],
@@ -208,7 +215,7 @@ describe("lint rules", () => {
 
   it("passes the guided first run, setup --agent, as tg and wa have it", () => {
     const root = clean()
-    annotate(root.command("setup").description("log in, then install the agent skill").option("--agent <agent>", "x"), {
+    ran(root.command("setup").description("log in, then install the agent skill").option("--agent <agent>", "x"), {
       examples: ["tool work setup", "tool work setup --agent codex"],
     })
     expect(lintOf(root)).toEqual(lintOf(clean()))
@@ -222,6 +229,43 @@ describe("lint rules", () => {
       const fresh = lintOf(root).filter((found) => !before.has(`${found.rule} ${found.target}`))
       expect(fresh.map((found) => found.rule)).toEqual([rule])
     })
+
+  it("asks effects of a group that runs on its own, not of one that only shows its help, and of generated commands", () => {
+    const root = clean()
+    annotate(
+      root
+        .command("inbox")
+        .description("what needs you")
+        .action(() => {}),
+      { examples: ["tool inbox"] },
+    )
+    ran(
+      root.commands
+        .find((one) => one.name() === "inbox")
+        ?.command("list")
+        .description("list it") ?? root,
+      {
+        examples: ["tool inbox list"],
+      },
+    )
+    annotate(
+      root.commands
+        .find((one) => one.name() === "bot")
+        ?.command("getChat")
+        .description("get a chat") ?? root,
+      {
+        origin: "generated",
+      },
+    )
+    expect(lintOf(root).filter((found) => found.rule === "missing-command-effects")).toEqual([
+      {
+        rule: "missing-command-effects",
+        target: "bot getChat",
+        message: "no effects; without them it counts as a write",
+      },
+      { rule: "missing-command-effects", target: "inbox", message: "no effects; without them it counts as a write" },
+    ])
+  })
 
   it("checks every key of a registered schema and of the document as printed, but not a record's data keys", () => {
     const document = commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 })
@@ -264,7 +308,7 @@ describe("lint rules", () => {
 
   it("reads a list's entity fields from its schema, and leaves a scope flag alone", () => {
     const root = clean()
-    annotate(
+    ran(
       chatsOf(root)
         .command("events")
         .description("what happened in chats")
@@ -318,7 +362,7 @@ describe("lint rules", () => {
       [search, "grab"],
       [botSearch, "messages"],
     ] as const)
-      annotate(group?.command(name).description(`search ${name}`) ?? root, { examples: [`tool search ${name}`] })
+      ran(group?.command(name).description(`search ${name}`) ?? root, { examples: [`tool search ${name}`] })
     expect(lintOf(root).filter((found) => found.rule === "unknown-verb")).toEqual([
       { rule: "unknown-verb", target: "search grab", message: '"grab" is not a verb or view noun in the vocabulary' },
     ])
@@ -329,7 +373,7 @@ describe("lint rules", () => {
     const add = (path: string, ...examples: string[]) => {
       const [group, name] = path.split(" ")
       const parent = root.commands.find((one) => one.name() === group) ?? root.command(group ?? "")
-      annotate(
+      ran(
         parent
           .command(name ?? "")
           .description("x")
@@ -385,7 +429,7 @@ describe("lint rules", () => {
 
   it("recognizes preparation communications scope, query and time flags without exemptions", () => {
     const root = clean()
-    annotate(
+    ran(
       root
         .command("meetings")
         .description("meetings")

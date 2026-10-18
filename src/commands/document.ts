@@ -64,6 +64,7 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
       defaults: v.optional(v.array(v.string())),
     }),
   ),
+  runnable: v.optional(v.literal(true)),
   arguments: v.array(argumentInfoSchema),
   options: v.array(optionInfoSchema),
   commands: v.array(v.lazy(() => commandInfoSchema)),

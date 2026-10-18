@@ -12,13 +12,18 @@ import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, type AuditOptions, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { type DevIo, main } from "./main.js"
 
+const READS = { remote: "read", local: "none" } as const
+
 const tool = (cli: string, build: (root: Command) => void = () => {}): Command => {
   const root = new Command(cli).description("a tool")
   for (const name of ["commands", "doctor", "mcp", "upgrade"])
-    annotate(root.command(name).description(`the ${name} command`), { examples: [`${cli} ${name}`] })
+    annotate(root.command(name).description(`the ${name} command`), { effects: READS, examples: [`${cli} ${name}`] })
   const skill = root.command("skill").description("the agent skill")
   for (const name of ["show", "install"])
-    annotate(skill.command(name).description(`${name} the skill`), { examples: [`${cli} skill ${name}`] })
+    annotate(skill.command(name).description(`${name} the skill`), {
+      effects: READS,
+      examples: [`${cli} skill ${name}`],
+    })
   build(root)
   return root
 }
@@ -47,7 +52,11 @@ const notes =
   (root: Command) => {
     const command = root.command("notes").description("notes").command("list").description(summary)
     for (const [flag, about] of flags) command.option(flag, about)
-    annotate(command, { examples: [`${root.name()} notes list`], ...(output ? { output: { entity: output } } : {}) })
+    annotate(command, {
+      effects: READS,
+      examples: [`${root.name()} notes list`],
+      ...(output ? { output: { entity: output } } : {}),
+    })
   }
 
 const cross = (inputs: AuditInput[], rule: string, more: Partial<AuditOptions> = {}) =>
@@ -132,6 +141,7 @@ describe("audit rules", () => {
   it("reports a path one member of a whole-tree group lacks, and not one outside a group's roots or members", () => {
     const chats = (root: Command) => {
       annotate(root.command("chats").description("chats").command("list").description("list chats"), {
+        effects: READS,
         examples: [`${root.name()} chats list`],
       })
     }
@@ -141,6 +151,7 @@ describe("audit rules", () => {
     ])
     const summaries = (summary: string) => (root: Command) => {
       annotate(root.command("chats").description(summary).command("list").description(summary), {
+        effects: READS,
         examples: [`${root.name()} chats list`],
       })
     }
@@ -217,7 +228,11 @@ describe("judging an audit", () => {
   it("does not block on a cross-CLI divergence when blocking is off, but still on a lint violation", () => {
     const inputs = [
       ...diverging(),
-      inputOf(tool("c", (root) => annotate(root.command("grab").description("grab it"), { examples: ["c grab"] }))),
+      inputOf(
+        tool("c", (root) =>
+          annotate(root.command("grab").description("grab it"), { effects: READS, examples: ["c grab"] }),
+        ),
+      ),
     ]
     const rules = auditClis(inputs, options({ blocks: "never" })).blocking.map((one) => one.rule)
     expect(rules).toContain("unknown-verb")
@@ -254,7 +269,9 @@ describe("judging an audit", () => {
   })
 
   it("judges a CLI's lint rules by its own lint folder when given", () => {
-    const grab = tool("a", (root) => annotate(root.command("grab").description("grab it"), { examples: ["a grab"] }))
+    const grab = tool("a", (root) =>
+      annotate(root.command("grab").description("grab it"), { effects: READS, examples: ["a grab"] }),
+    )
     const own = { baseline: { "unknown-verb": ["grab"] }, overrides: [], budget: 10 }
     const result = auditClis([inputOf(grab, { lint: own }), inputOf(tool("b"))], options())
     expect(result.rows.find((one) => one.cli === "a" && one.rule === "unknown-verb")).toMatchObject({
