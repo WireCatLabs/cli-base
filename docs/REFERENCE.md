@@ -110,6 +110,11 @@ person answers (a login); unset, the runner bounds it with its default timeout. 
 stops at its own pace when the run is aborted from outside, keeping what it already did. A runner reads both with
 `metaOf(command)` rather than matching command names.
 
+`reaches: "other_service"` says the remote side of a command's `effects` is not the CLI's own service but another
+one: an embedding or analysis provider, a model host. It belongs to that command alone. `commandsPage` then labels a
+remote write "Sends text to an outside service" and a remote read "Reads from an outside service" (`labels.sendsOutside`,
+`labels.readsOutside`), instead of the CLI's `mutates` or `mutatesLocal` line.
+
 `mcp: false` keeps a command, and every command under it, off MCP servers; the CLI itself still runs it. The command
 description says `mcp: false` on that command and each one below it, and leaves the key out everywhere else, so an
 MCP server builds its tool list from `describeProgram` without walking the parents itself. On one option,

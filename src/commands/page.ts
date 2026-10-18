@@ -17,6 +17,10 @@ export type CommandsPageLabels = {
   when: string
   success: string
   otherwise: string
+  /** Under a command that writes to a service other than the CLI's own (`reaches: "other_service"`). */
+  sendsOutside?: string
+  /** Under a command that only reads from such a service. */
+  readsOutside?: string
 }
 
 export const COMMANDS_PAGE_LABELS = {
@@ -33,6 +37,8 @@ export const COMMANDS_PAGE_LABELS = {
     when: "When",
     success: "it worked",
     otherwise: "anything else",
+    sendsOutside: "**Sends text to an outside service.**",
+    readsOutside: "**Reads from an outside service.**",
   },
   ru: {
     option: "Опция",
@@ -47,6 +53,8 @@ export const COMMANDS_PAGE_LABELS = {
     when: "Когда",
     success: "получилось",
     otherwise: "всё остальное",
+    sendsOutside: "**Отправляет текст во внешний сервис.**",
+    readsOutside: "**Читает из внешнего сервиса.**",
   },
 } as const satisfies Record<string, CommandsPageLabels>
 
@@ -59,7 +67,7 @@ export type CommandsPageText = {
   intro: string
   globalHeading: string
   globalIntro: string
-  /** Shown under a command that changes something outside this machine. */
+  /** Shown under a command that changes something outside this machine, unless that is another service. */
   mutates: string
   /** Shown instead under a command that writes only on this machine; without it, nothing is. */
   mutatesLocal?: string
@@ -113,12 +121,18 @@ export const commandsPage = ({ cli, commands, options, labels, text }: CommandsP
 
   const body = (command: CommandInfo): string[] => {
     const parts = [cell(command.description), ""]
+    const outside = command.reaches === "other_service"
+    const remote = command.effects?.remote
     const label =
-      command.effects?.remote === "write"
-        ? text.mutates
-        : command.effects?.local === "write"
-          ? text.mutatesLocal
-          : undefined
+      outside && remote === "write"
+        ? labels.sendsOutside
+        : outside && remote === "read"
+          ? labels.readsOutside
+          : remote === "write"
+            ? text.mutates
+            : command.effects?.local === "write"
+              ? text.mutatesLocal
+              : undefined
     if (label) parts.push(label, "")
     parts.push("```sh", command.usage, "```")
     if (command.arguments.length > 0)

@@ -224,6 +224,39 @@ describe("commandsPage", () => {
     expect(describeProgram(root)[1]).toMatchObject({ effects: { remote: "none", local: "write" } })
   })
 
+  it("labels a command that reaches another service by that service, not by the CLI's", () => {
+    const root = new Command("tool")
+    annotate(root.command("embed").description("embed"), {
+      effects: { remote: "write", local: "write" },
+      reaches: "other_service",
+    })
+    annotate(root.command("ask").description("ask"), {
+      effects: { remote: "read", local: "read" },
+      reaches: "other_service",
+    })
+    annotate(root.command("download").description("download"), {
+      effects: { remote: "read", local: "write" },
+      reaches: "other_service",
+    })
+    const text = commandsPage({
+      cli: "tool",
+      commands: describeProgram(root),
+      options: [],
+      labels: COMMANDS_PAGE_LABELS.en,
+      text: { ...COMMON_TEXT, mutates: "**Changes the service.**", mutatesLocal: "**Changes this machine only.**" },
+    })
+
+    expect(text).toContain("## `tool embed`\n\nembed\n\n**Sends text to an outside service.**")
+    expect(text).toContain("## `tool ask`\n\nask\n\n**Reads from an outside service.**")
+    expect(text).toContain("## `tool download`\n\ndownload\n\n**Reads from an outside service.**")
+    expect(text).not.toContain("Changes the service")
+    expect(describeProgram(root)[0]).toMatchObject({ reaches: "other_service" })
+    expect(
+      parseCommandsDocument(commandsDocument(root, { cli: "tool", version: "1.0.0", contract: 1 })).document
+        ?.commands[0],
+    ).toMatchObject({ reaches: "other_service" })
+  })
+
   it("keeps a pipe or a tilde from breaking its row, and lists the allowed values", () => {
     expect(page()).toContain("| `--sort <order>` | order. One of: `new`, `old`. |")
     const piped = commandsPage({

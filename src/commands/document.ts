@@ -51,6 +51,7 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   state: v.optional(v.picklist(["beta", "deprecated"])),
   partial: v.optional(v.boolean()),
   lifetime: v.optional(v.picklist(["persistent", "interactive"])),
+  reaches: v.optional(v.literal("other_service")),
   mcp: v.optional(v.literal(false)),
   offline: v.optional(v.literal(false)),
   cooperative: v.optional(v.boolean()),
