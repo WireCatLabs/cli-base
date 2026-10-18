@@ -22,7 +22,9 @@ has its own policy and guard, with its own `--read-only` flag; zoom only reads. 
 writes", drive is a known gap.
 
 WC-PERM-10 and WC-PERM-11 need cli-core 0.321.0, which tg, max and wa pin. WC-PERM-12 as written needs cli-core
-0.337.0; before it, the lock let through some local writes that overwrite what the owner saved.
+0.337.0; before it, the lock let through some local writes that overwrite what the owner saved. A command other
+than `serve` and `watch` saves incoming history only from cli-core 0.343.0, and only when the messenger's adapter has
+`listen`. wa is the one messenger whose history lives in the store; it pins 0.341.0 and has no `listen` yet.
 
 ## Rules
 
@@ -181,14 +183,15 @@ recipient list) are refused too. A `--dry-run` preview still runs.
 - **Why:** an unattended agent needs one switch that the config file and `--permission` cannot undo, and that also
   keeps it from deleting or overwriting what the owner saved here.
 - **Enforced by:** `cli-core: src/cli/effects.test.ts` · `cli-core: src/mcp/vocabulary.test.ts` ·
-  `cli-core: src/mcp/mcp.test.ts`.
+  `cli-core: src/mcp/mcp.test.ts` · `cli-core: src/cli/messenger/connected.test.ts`.
 - **Example:** `schedule` starts an agent with `MAX_READ_ONLY=1`. It reads, drafts and adds tasks; `tags add` and
   `messages send` answer `permission_error`.
-- **Exceptions:** receiving goes on: syncs, fetches, and `serve` and `watch` saving incoming history. Local writes
-  marked `destroysNothing` run: what the store rebuilds (`store reindex`, `mentions rebuild`), a new file
-  (`store backup`, `store export`, `stats charts`), and the task writes the follow-ups skill makes on a timer, where
-  `tasks close` only suggests the close to the owner. Embedding and analysis on this machine run; sending text to an
-  outside service for them is refused.
+- **Exceptions:** receiving goes on: syncs, fetches, and saving incoming history. `serve` and `watch` save what
+  arrives; on a messenger whose history lives in the store and whose adapter has the optional `listen`, so does any
+  other command, an MCP session included (cli-core 0.343.0). Local writes marked `destroysNothing` run: what the store
+  rebuilds (`store reindex`, `mentions rebuild`), a new file (`store backup`, `store export`, `stats charts`), and the
+  task writes the follow-ups skill makes on a timer, where `tasks close` only suggests the close to the owner.
+  Embedding and analysis on this machine run; sending text to an outside service for them is refused.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-PERM-13 · Every write passes the write guard before it leaves
