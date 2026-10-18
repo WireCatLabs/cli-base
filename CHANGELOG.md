@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **WC-CI-12 now names the required checks in every repository.** The `main` rulesets of whatsapp-cli, cli-core,
+  tg-cli, max-cli, cli-base and cli-memo require the pull request validation jobs besides `standards`, so a red pull
+  request cannot merge there. drive-cli, zoom-cli, cli-testing and cli-docs have no `pr.yml` and require only
+  `standards`. WC-CI-5 lists cli-memo among the repositories with `pr.yml`.
+
 ## 0.45.1 — 18.10.2026
 
 ### Fixed

@@ -95,8 +95,8 @@ cli-testing, cli-docs, plus community itself.
   cli-base `macos.yml` for the path code. cli-docs and community run `security-pr.yml`, a new-commit secret scan;
   cli-docs validates its site before each deployment instead, and community has no build. Third-party security apps
   may post their own checks.
-- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli and cli-core
-  have `pr.yml`; cli-memo, drive-cli, zoom-cli and cli-testing do not have it yet. **Since:**
+- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli, cli-core
+  and cli-memo have `pr.yml`; drive-cli, zoom-cli and cli-testing do not have it yet. **Since:**
   cli-base 0.41.0 (pull request validation since cli-base 0.44.6). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
@@ -166,9 +166,11 @@ cli-testing, cli-docs, plus community itself.
 ### WC-CI-12 · Merge to `main` only through a pull request whose checks all passed
 
 - **Why:** a red merge breaks `main` for every parallel branch, and an admin merge skips the only gate there is.
-- **Enforced by:** `whatsapp-cli: main ruleset required checks` · `cli-core: main ruleset required checks`, where each
-  repository's main ruleset lists the PR validation jobs as required checks; review elsewhere until each repository
-  adds them.
+- **Enforced by:** `whatsapp-cli: main ruleset required checks` · `cli-core: main ruleset required checks` ·
+  `tg-cli: main ruleset required checks` · `max-cli: main ruleset required checks` ·
+  `cli-memo: main ruleset required checks`, plus the main ruleset of cli-base itself. In each repository with pr.yml,
+  the ruleset requires the pull request validation jobs besides the standards job. drive-cli, zoom-cli, cli-testing
+  and cli-docs have no pr.yml, so their rulesets require only the standards job, and review covers the rest.
 - **Example:** `gh pr checks <number>` shows every line as pass before `gh pr merge`. Never merge with `--admin`. A
   release changes `main` the same way
   ([WC-REL-2](releases.md#wc-rel-2--main-changes-only-through-a-pull-request-also-during-a-release)).
