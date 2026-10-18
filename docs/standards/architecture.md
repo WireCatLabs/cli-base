@@ -110,14 +110,13 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 ### WC-ARCH-8 · Cross a module boundary only through the module's entry point
 
 - **Why:** a deep import ties the caller to another module's internals.
-- **Enforced by:** `cli-core: biome noRestrictedImports` · `cli-memo: biome noRestrictedImports` ·
-  `drive-cli: biome noRestrictedImports` · `zoom-cli: biome noRestrictedImports`.
+- **Enforced by:** `pnpm lint` · `<app>: biome no-deep-wirecat-import` · `cli-core: biome noRestrictedImports`.
 - **Example:** in cli-core, `src/tasks/` and `src/meetings/` are entered only through their `index.ts`, `cli/`, `mcp/`
-  and `testing/` entries; its `biome.json` refuses the rest. memo, drive and zoom have a "public exports only" rule. A
+  and `testing/` entries; its `biome.json` refuses the rest. Every repository refuses `@wirecat/<package>/src/…` and `/dist/…` outside tests. A
   package's own entry points are its `exports`
   ([WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcindexts)).
 - **Exceptions:** a test inside a module may import what it tests; a test outside the module uses the entry point.
-- **Applies to:** all CLIs. tg, max and wa do not have the import rule yet. **Since:** cli-base 0.41.0.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0.
   **Rulings:** none.
 
 ### WC-ARCH-9 · Pass the narrow port or callback a use case needs, not a whole store or container

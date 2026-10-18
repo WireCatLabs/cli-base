@@ -43,11 +43,9 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 ### WC-DOC-4 · A generated page is never edited by hand
 
 - **Why:** the next generation overwrites a hand edit, and the page then disagrees with the program until it does.
-- **Enforced by:** `cli-memo: pnpm generate:check` · `drive-cli: pnpm generate:check` ·
-  `zoom-cli: pnpm generate:check` · `tg-cli: ci.yml:ci` · `max-cli: ci.yml:ci` · `whatsapp-cli: ci.yml:ci`.
+- **Enforced by:** `node-ci.yml:check` · `<app>: pnpm generate:check` · `whatsapp-cli: ci.yml:ci`.
 - **Example:** `docs/commands.md` comes from the program. Change the command's help text, then run `pnpm generate`.
-- **Exceptions:** none. memo, drive and zoom check this with `pnpm generate:check`. tg, max and wa run the generator
-  and then `git diff --exit-code` in full validation.
+- **Exceptions:** none. wa runs the generator and then `git diff --exit-code` in full validation.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-5 · Every relative link and anchor resolves
@@ -62,12 +60,11 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 ### WC-DOC-6 · The `docs/` folder matches `docs/meta.json` and has the shared page set
 
 - **Why:** every tool has the same pages at the same addresses, so a reader who knows one tool knows them all.
-- **Enforced by:** `max-cli: pnpm docs:check` · `whatsapp-cli: pnpm docs:check` · `tg-cli: pnpm docs:check`.
+- **Enforced by:** `node-ci.yml:check` · `<app>: pnpm docs:check` · `whatsapp-cli: pnpm docs:check`.
 - **Example:** `docs/meta.json` lists every page once, in sidebar order. The folder has `index`, `installation`,
   `usage`, `commands`, `configuration`, `troubleshooting` and `security`. Each page has exactly one `#` heading.
 - **Exceptions:** `changelog` in `meta.json` comes from the root `CHANGELOG.md`. `cli-dev docs-check --pages` checks
-  this. max and wa run it, and tg runs the same check in its own `scripts/docs-check.ts`. memo, drive and zoom do not
-  yet.
+  this. tg and drive run the same check in their own `scripts/docs-check.ts`.
 - **Applies to:** every CLI in the docs portal. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-7 · `README.md` is the full introduction to the tool
