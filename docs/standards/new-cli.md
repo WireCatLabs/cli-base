@@ -30,6 +30,9 @@ whatsapp-cli is the worked example: it has every file below. Compare with it whe
    workflow. Commit the result with the lockfile. Proved by: `pnpm standards:check`, run by `standards.yml`.
 3. **Copy community's `monthly.yml` template** into `.github/workflows/`, and set its cron to a day no other
    repository uses. Proved by: the workflow appears in the Actions tab. See [CI](ci.md).
+4. **Add `pr.yml`**, the pull request validation that calls `ci.yml` with platform suites skipped, as shown in
+   [WC-CI-5](ci.md#wc-ci-5--run-the-full-linux-validation-on-every-pull-request-and-keep-platform-suites-out).
+   Proved by: the `validation` check on the first pull request.
 
 ## Toolchain
 
