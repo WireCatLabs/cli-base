@@ -193,7 +193,7 @@ critical goes to the owner for review first.
 ### WC-SECR-16 · Keep the secret scanners on, and run each one with `--redact`
 
 - gitleaks, in the pre-commit hook on staged changes, in the pull request job on the new commits, and on the whole
-  history in full validation, at release and every month.
+  history in full validation (on pull requests and on `main`), at release and every month.
 - Biome's `noSecrets` rule, from the shared preset, off in tests only
   ([WC-TOOL-10](toolchain.md#wc-tool-10--keep-the-secret-lint-on-and-suppress-a-finding-only-with-its-reason)).
 - At release and every month: a dependency audit, zizmor for workflows and CodeQL.

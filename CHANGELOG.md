@@ -15,9 +15,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **Every pull request now runs the full Linux validation, coverage floor included (WC-CI-5).** A `pr.yml` calls the
   repository's own `ci.yml` on `pull_request`, with platform suites skipped and superseded runs cancelled; before,
   tests, coverage, contracts and parity ran only after the merge, so a pull request that lowered coverage passed and
-  then broke `main`. WC-CI-4, WC-CI-7, WC-TEST-11 and WC-TEST-13 say the same, and cli-base has its own `pr.yml`. A
-  CLI adds the workflow shown in WC-CI-5; it costs about two and a half minutes per pull request. Windows, macOS and
-  install checks still run only at release, monthly or on request.
+  then broke `main`. WC-CI-4, WC-CI-7, WC-CI-10, WC-TEST-11 and WC-TEST-13 say the same, and cli-base has its own
+  `pr.yml`. A CLI adds the workflow shown in WC-CI-5; it costs about two and a half minutes per pull request. Windows,
+  macOS and install checks still run only at release, monthly or on request.
 
 ## 0.44.5 â€” 18.10.2026
 

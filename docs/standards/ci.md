@@ -151,9 +151,12 @@ cli-testing, cli-docs, plus community itself.
   changes.
 - **Enforced by:** `release.yml:checks` · `monthly.yml:security`.
 - **Example:** cli-base `release-checks.yml` runs the production dependency audit, the workflow scan (`zizmor`),
-  CodeQL and a full-history gitleaks scan. A release depends on it. A pull request runs only the new-commit gitleaks
-  scan in the standards job.
-- **Exceptions:** none. Do not add a heavy scanner to an editor hook, a stop hook or an ordinary pull request job.
+  CodeQL and a full-history gitleaks scan. A release depends on it. A pull request runs the new-commit gitleaks scan
+  in the standards job.
+- **Exceptions:** the full-history gitleaks scan in `node-ci.yml` also runs on pull requests, through the validation
+  job ([WC-CI-5](#wc-ci-5--run-the-full-linux-validation-on-every-pull-request-and-keep-platform-suites-out)); it
+  takes seconds. The dependency audit, `zizmor` and CodeQL stay out. Do not add a heavy scanner to an editor hook, a
+  stop hook or an ordinary pull request job.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** sc:9.
 
 ### WC-CI-11 · Moved to [WC-SECR-20](security.md#wc-secr-20--pin-each-third-party-action-to-a-commit-and-give-each-workflow-read-only-defaults)
