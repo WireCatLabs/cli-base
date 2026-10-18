@@ -20,6 +20,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   something in the messenger. The labels come with `COMMANDS_PAGE_LABELS.en` and `.ru`; a CLI's own labels object
   may leave them out, and then the command gets no line. Commands without the field are described as before;
   regenerate `docs/commands.md` once a command sets it.
+- **WC-STORE-13 says why keys stay out of the shared store, and allows a per-file media key or reference**: the
+  store is what gets backed up, exported, copied and read by agents, so a key there would open an account or a device
+  from any copy. A per-file media key (WhatsApp's `mediaKey`) or a per-file reference (a MAX bot's attachment
+  `token`) may now be kept in the attachment's `providerRef`: each opens only that one file. Device, session and
+  identity keys, account tokens and passwords still stay out.
 
 ## 0.44.2 â€” 18.10.2026
 

@@ -147,12 +147,30 @@ Related pages: which account a read covers, and how a read across accounts is as
 
 ### WC-STORE-13 · Keep keys and device state out of the shared store
 
-- **Why:** a store that holds keys turns every backup and export into a secret.
+The shared store is the file that gets copied. It is backed up, exported and moved to a new machine. Agents read it,
+and so does every CLI on the machine. A key in it would open something outside the store from each of those copies:
+an account (a token), a device identity (a linked device's keys can act as the owner, send as them and read their new
+messages), or other people's data.
+
+- **Why:** a leaked backup must expose at most what is already in it, never the account.
 - **Enforced by:** review only.
 - **Example:** WhatsApp's linked-device keys live in a separate file per profile, `private.db`, which only the
   provider engine writes. Tokens go to the keyring ([Security](security.md)).
-- **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1395.
+- **Exceptions:** a key or reference that opens one file may be stored with its message, in the attachment's
+  `providerRef`.
+  - WhatsApp keeps `mediaKey` there, next to `media`, `directPath`, `fileSha256` and `fileEncSha256`. The key
+    decrypts only that one file. Without it, a file from history cannot be downloaded later.
+  - A MAX bot keeps the attachment's `token` there. It only attaches that same file to a new message, in a request
+    that also carries the bot's access token. The file's link is already stored as the attachment's `url`.
+  - Neither opens the account or any other file. The owner already received the file, and the store already holds
+    the message text in the clear.
+  - Device, session and identity keys, account tokens and passwords still stay out: linked-device keys in the
+    engine's own `private.db`, tokens in the keyring.
+  - A `providerRef` never reaches a log or a command's output
+    ([WC-SECR-1](security.md#wc-secr-1--private-data-and-secrets-never-reach-a-log-a-fixture-or-a-committed-document)).
+    cli-core strips it everywhere (`cli-core: src/cli/provider-refs.test.ts`,
+    `cli-core: src/cli/messenger/store-mode.test.ts`, `cli-core: src/cli/messenger/watch.test.ts`).
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1395, NEED-1444.
 
 ### WC-STORE-14 · Tests never open the owner's store
 
