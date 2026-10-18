@@ -23,6 +23,11 @@ export type CommandState = "beta" | "deprecated"
  * (a login). Unset, it is bounded by the default timeout.
  */
 export type CommandLifetime = "persistent" | "interactive"
+/**
+ * Who the remote side of `effects` is when it is not the CLI's own service: an embedding or analysis provider, a model
+ * host. The commands page labels such a command by that service, not by the CLI's.
+ */
+export type CommandReach = "other_service"
 
 export interface CommandMeta {
   origin?: Origin
@@ -34,6 +39,7 @@ export interface CommandMeta {
   /** The command may answer with `meta.complete: false` and still exit 0; without it a partial answer fails. */
   partial?: boolean
   lifetime?: CommandLifetime
+  reaches?: CommandReach
   /** `false` keeps the command and all its subcommands off MCP servers; agents using the CLI itself are not affected. */
   mcp?: boolean
   /**
@@ -103,6 +109,7 @@ export interface CommandInfo {
   state?: CommandState
   partial?: boolean
   lifetime?: CommandLifetime
+  reaches?: CommandReach
   /** Present only when the command or a group above it is kept off MCP servers. */
   mcp?: false
   /** Present only when the command or a group above it cannot answer from the local copy. */

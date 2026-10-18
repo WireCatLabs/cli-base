@@ -12,6 +12,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- `annotate(command, { reaches: "other_service" })` marks a command whose remote side is a service other than the CLI's own, such as an embedding provider or a model host. The command description and `commands --json` carry `reaches: "other_service"`, and `commandsPage` labels it "Sends text to an outside service" (remote write) or "Reads from an outside service" (remote read) instead of the CLI's `mutates` line, which said such a command changed something in the messenger. The labels come with `COMMANDS_PAGE_LABELS.en` and `.ru`; a CLI's own labels object may leave them out, and then the command gets no line. Commands without the field are described as before; regenerate `docs/commands.md` once a command sets it.
+
 - `--meeting-inventory` is a registered MCP mode switch for hosts that explicitly bind the shared read-only series inventory tool. Candidate dates stay unverified; the flag does not add a provider connection or widen a default server on its own.
 
 ## 0.44.1 â€” 18.10.2026
