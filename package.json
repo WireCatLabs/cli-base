@@ -8,6 +8,10 @@
     "type": "git",
     "url": "git+https://github.com/WireCatLabs/cli-base.git"
   },
+  "homepage": "https://github.com/WireCatLabs/cli-base#readme",
+  "bugs": {
+    "url": "https://github.com/WireCatLabs/cli-base/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -18,6 +22,7 @@
     "config",
     "docs/standards",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES"
   ],
