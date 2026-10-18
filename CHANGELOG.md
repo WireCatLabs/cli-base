@@ -23,6 +23,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `unknown-verb`. `--backend archive`, the local archive of messages, keeps its meaning. Watch for: once a CLI takes
   this release, `cli-dev lint` fails on its `unknown-verb` baseline entries for these commands as stale until they
   are deleted.
+- **`star` and `unstar` are vocabulary verbs.** They name the messenger CLIs' `messages star` and `messages unstar`:
+  WhatsApp's starred messages, a mark only the owner sees. Watch for: once a CLI takes this release, `cli-dev lint`
+  fails on its `unknown-verb` baseline entries for them as stale until they are deleted.
 
 ### Changed â€” may break callers
 

@@ -160,6 +160,8 @@ const verbs: [string, string][] = [
   ["forward", "send an existing message on to another chat"],
   ["pin", "pin a message or chat"],
   ["unpin", "unpin a message or chat"],
+  ["star", "mark a message so the owner finds it again; only the owner sees the star"],
+  ["unstar", "take the owner's star off a message"],
   ["vote", "answer a poll"],
   ["close", "close a thing that stays: a poll, a task"],
   ["join", "join a chat"],
