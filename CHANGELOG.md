@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **WC-PERM-12 now says what the read-only lock refuses in cli-core 0.337.0**: every write, and every local change
+  not marked `destroysNothing`, so a new local write fails closed. Syncs, `serve` and `watch` keep receiving; rebuilt
+  indexes, backups, exports, charts and the timed task writes still run; local embedding still runs while text for an
+  outside service is refused. A CLI's own local write must be marked, or the lock refuses it.
+
 ## 0.44.3 — 18.10.2026
 
 ### Added
