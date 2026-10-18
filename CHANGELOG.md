@@ -14,6 +14,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **The README says which platforms CI covers here:** Linux, plus a non-blocking macOS run of the path tests; no
   Windows job. It read as if the keyring were tested on every platform it lists. `CLEANUP.md` is no longer tracked.
+- **Commander is needed at run time by `/skill`,** not only as a type, and the README says so. Full validation
+  takes a `platforms` input to run the suite on Windows and macOS by hand; Windows fails 14 tests today.
 
 - **WC-CI-12 now names the required checks in every repository.** The `main` rulesets of whatsapp-cli, cli-core,
   tg-cli, max-cli, cli-base and cli-memo require the pull request validation jobs besides `standards`, so a red pull

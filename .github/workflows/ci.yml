@@ -6,10 +6,18 @@ on:
       pack:
         type: boolean
         default: false
+      platforms:
+        type: boolean
+        default: false
     outputs:
       package-sha256:
         value: ${{ jobs.ci.outputs.package-sha256 }}
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: Also run the unit suite on Windows and macOS
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -19,6 +27,7 @@ jobs:
     uses: ./.github/workflows/node-ci.yml
     with:
       pack: ${{ inputs.pack || false }}
+      platforms: ${{ inputs.platforms || false }}
       checks: |
         pnpm docs:check
 
