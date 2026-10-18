@@ -4,7 +4,7 @@ import { EXIT_CODES, GENERIC_FAILURE } from "../exit-codes.js"
 import { FIELD_TYPES, QUERY_BACKENDS } from "../query/fields.js"
 import { effectsSchema } from "../standards/effects.js"
 import { issuesOf, jsonSchemaOf } from "../standards/registry.js"
-import { type CommandInfo, describeOptions, describeProgram, type OptionInfo } from "./index.js"
+import { type CommandInfo, describeOptions, describeProgram, type OptionInfo } from "./registry.js"
 
 const argumentInfoSchema = v.object({
   name: v.string(),

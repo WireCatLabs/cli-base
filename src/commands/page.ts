@@ -1,5 +1,5 @@
 import { EXIT_CODES } from "../exit-codes.js"
-import type { ArgumentInfo, CommandInfo, OptionInfo } from "./index.js"
+import type { ArgumentInfo, CommandInfo, OptionInfo } from "./registry.js"
 
 /** The labels of the tables; the same for every CLI writing in one language. */
 export type CommandsPageLabels = {
