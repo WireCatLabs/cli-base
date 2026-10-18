@@ -306,6 +306,10 @@ const CHECKS: Record<string, Check> = {
     walk(document.commands)
       .filter((command) => summaryOf(command) === "")
       .map((command) => ({ target: label(command), message: "no summary or description" })),
+  "missing-command-effects": (document) =>
+    walk(document.commands)
+      .filter((command) => (command.commands.length === 0 || command.runnable) && command.effects === undefined)
+      .map((command) => ({ target: label(command), message: "no effects; without them it counts as a write" })),
   "command-help-too-long": (document) =>
     walk(document.commands)
       .filter((command) => command.origin === "handwritten" && summaryOf(command).length > SUMMARY_LIMIT)

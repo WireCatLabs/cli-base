@@ -62,7 +62,8 @@ Every option needs a role from the vocabulary (`paging`, `output`, `sort`, `mode
 `target`, `value`, `query`) — there is no filter role. `filter-flag` reports an option of a read-only command
 named after a field of its entity (`--kind`, `--since-time`, `--before-id`), except a `scope` flag such as
 `--account`; `list-without-query` a `list` with an `output` entity and no query; `query-example` a field example
-or default term that does not run. `--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
+or default term that does not run. `missing-command-effects` reports a command that runs — a leaf, or a group with
+an action of its own (`runnable` in the document) — and declares no `effects`. `--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
 keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed. Its entry
 `log_attributes` (`logAttributesJsonSchema(allow)`) is the CLI's log allow-list instead: `log-attribute-key` fails a
 key that names message text, a token or a phone number.

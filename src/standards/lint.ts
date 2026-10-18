@@ -42,6 +42,12 @@ export const LINT_RULES: LintRule[] = defineLintRules([
   },
   { id: "missing-command-help", severity: "high", scope: "command", summary: "every command has a summary" },
   {
+    id: "missing-command-effects",
+    severity: "high",
+    scope: "command",
+    summary: "every command that runs declares its effects: each leaf, and a group with an action of its own",
+  },
+  {
     id: "command-help-too-long",
     severity: "low",
     scope: "command",
