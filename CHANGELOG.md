@@ -26,6 +26,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`star` and `unstar` are vocabulary verbs.** They name the messenger CLIs' `messages star` and `messages unstar`:
   WhatsApp's starred messages, a mark only the owner sees. Watch for: once a CLI takes this release, `cli-dev lint`
   fails on its `unknown-verb` baseline entries for them as stale until they are deleted.
+- **The vocabulary has the words for privacy settings and muted chats.** `privacy` is a resource (an account has one),
+  `mute` and `unmute` are verbs, and `account privacy set`'s options (`--find-by-phone`, `--phone-number`, `--calls`,
+  `--chat-invites`, `--hide-online`, `--read-receipts`, `--profile-photo`, `--about-text`, `--last-seen`) and
+  `chats mute --until` have the role `value`. Why: every messenger CLI that turned these commands on carried up to 13
+  command-lint findings in its baseline (`unknown-resource`, `unknown-verb`, `option-role`). Watch for: once a CLI
+  takes this release, `cli-dev lint` fails on those baseline entries as stale until they are deleted.
 
 ### Changed â€” may break callers
 

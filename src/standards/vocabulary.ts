@@ -166,6 +166,8 @@ const verbs: [string, string][] = [
   ["close", "close a thing that stays: a poll, a task"],
   ["join", "join a chat"],
   ["leave", "leave a chat"],
+  ["mute", "stop notifications from a chat for the owner; nobody in it is told"],
+  ["unmute", "undo a mute"],
   ["block", "block a person"],
   ["unblock", "unblock a person"],
   ["mark-read", "mark a chat read; the other person sees it"],
@@ -258,6 +260,7 @@ const singulars: [string, string][] = [
   ["flood", "what the messenger told this profile to hold off on"],
   ["vocabulary", "the owner's catalogue of canonical names, with their aliases"],
   ["api", "the source's own API, one command per operation"],
+  ["privacy", "who may find, see, call or add the account"],
 ]
 
 const views: [string, string][] = [
