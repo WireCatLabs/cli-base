@@ -95,7 +95,7 @@ cli-testing, cli-docs, plus community itself.
   may post their own checks.
 - **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base has `pr.yml`; wa adds it in its
   `ci/pr-validation` branch; tg, max, memo, drive, zoom, cli-core and cli-testing do not have it yet. **Since:**
-  cli-base 0.41.0 (pull request validation since cli-base 0.44.5). **Rulings:** none.
+  cli-base 0.41.0 (pull request validation since cli-base 0.44.6). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
 
