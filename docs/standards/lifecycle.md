@@ -101,8 +101,9 @@ waits for a person, such as a login).
   may enter a wait the person ends on purpose with cli-core's `untilStopped()` (cli-core 0.328.0), such as wa's
   `setup` waiting for the history the phone sends after linking. Ctrl-C, SIGTERM, a cancel or an explicit `--timeout`
   then ends only that wait: the command answers with what it got and exits 0, because stopping is the expected end.
-  The wait has no default deadline. A second signal ends the command with 130 or 143 as above. A write that the stop
-  cuts still follows WC-LIFE-9.
+  The wait has no default deadline. A second signal ends the command with 130 or 143 as above. However the wait
+  ends, the steps after it are one-shot again (cli-core 0.334.0): bounded by the deadline, and ended by a signal with
+  130 or 143. A write that the stop cuts still follows WC-LIFE-9.
 - **Applies to:** CLIs that run on cli-core's `run()`. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-LIFE-9 · Never let an abort hide a write that was in flight

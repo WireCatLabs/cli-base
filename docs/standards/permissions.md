@@ -262,8 +262,9 @@ to write the journal after a send only warns.
 
 When the messenger says the account may not write for a while, the profile holds every counted write until that time.
 A standing hold, when the messenger reports the account frozen, limited or banned, holds every remote write: sends
-and edits, and also reactions and read receipts. It may have no end time; it lasts until the owner lifts it or a
-check finds the account healthy again. Reads still work. The owner lifts the hold with `flood clear`.
+and edits, and also reactions and read receipts (cli-core 0.334.0). A ban with no end date holds until the owner lifts
+it or `doctor --online` finds the account well again. A spam limit or a frozen account with no end date holds for an
+hour or a day. Reads still work. The owner lifts the hold with `flood clear`.
 
 - **Why:** writing through a hold makes the messenger's penalty longer, or permanent.
 - **Enforced by:** review only.
