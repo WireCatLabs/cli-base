@@ -2,5 +2,5 @@
   "version": "0.2",
   "files": ["README.md", "docs/standards/**/*.md"],
   "import": ["./config/wirecat/cspell.json"],
-  "words": ["SECR"]
+  "words": ["SECR", "whatsapp"]
 }
