@@ -83,6 +83,8 @@ export type CommandsPage = {
   options: readonly OptionInfo[]
   labels: CommandsPageLabels
   text: CommandsPageText
+  /** Markdown paragraphs closing a command's section — cli-core's Returns, Next usually and Example. */
+  details?: (command: CommandInfo) => readonly string[]
 }
 
 /** A cell that will not break the table it sits in; `~~struck~~` in a description would strike the row. */
@@ -99,7 +101,7 @@ const sentence = (text: string | undefined): string => {
  * codes. Descriptions are quoted as `--help` prints them, untranslated — a translation here would
  * give the sentence a second home, and the one on screen is the one that gets corrected.
  */
-export const commandsPage = ({ cli, commands, options, labels, text }: CommandsPage): string => {
+export const commandsPage = ({ cli, commands, options, labels, text, details }: CommandsPage): string => {
   // What a value may be and what it is when left out: Commander keeps both out of the description.
   const extras = ({ choices, default: fallback }: { choices?: readonly string[]; default?: unknown }) =>
     [
@@ -139,6 +141,7 @@ export const commandsPage = ({ cli, commands, options, labels, text }: CommandsP
       parts.push("", `| ${labels.argument} | | ${labels.isWhat} |`, "|---|---|---|", argumentRows(command.arguments))
     if (command.options.length > 0)
       parts.push("", `| ${labels.option} | ${labels.does} |`, "|---|---|", optionRows(command.options))
+    for (const paragraph of details?.(command) ?? []) parts.push("", paragraph)
     return parts
   }
 

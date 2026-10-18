@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`commandsPage({ â€¦, details })`** closes each command's section with the Markdown paragraphs `details(command)`
+  returns. cli-core's `commandHelpMarkdown` gives the Returns, Next usually and Example lines that `--help` shows,
+  so `docs/commands.md` says the same as the terminal. Without `details` the page is unchanged.
+
 ### Fixed
 
 - **The README says which platforms CI covers here:** Linux, plus a non-blocking macOS run of the path tests; no
