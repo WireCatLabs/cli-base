@@ -168,9 +168,9 @@ cli-testing, cli-docs, plus community itself.
 - **Why:** a red merge breaks `main` for every parallel branch, and an admin merge skips the only gate there is.
 - **Enforced by:** `whatsapp-cli: main ruleset required checks` · `cli-core: main ruleset required checks` ·
   `tg-cli: main ruleset required checks` · `max-cli: main ruleset required checks` ·
-  `cli-memo: main ruleset required checks`, and the cli-base main ruleset: in each repository with pr.yml, the ruleset
-  requires the pull request validation jobs besides the standards job. drive-cli, zoom-cli, cli-testing and cli-docs
-  have no pr.yml, so their rulesets require only the standards job, and review covers the rest.
+  `cli-memo: main ruleset required checks`, plus the main ruleset of cli-base itself. In each repository with pr.yml,
+  the ruleset requires the pull request validation jobs besides the standards job. drive-cli, zoom-cli, cli-testing
+  and cli-docs have no pr.yml, so their rulesets require only the standards job, and review covers the rest.
 - **Example:** `gh pr checks <number>` shows every line as pass before `gh pr merge`. Never merge with `--admin`. A
   release changes `main` the same way
   ([WC-REL-2](releases.md#wc-rel-2--main-changes-only-through-a-pull-request-also-during-a-release)).
