@@ -112,12 +112,12 @@ on the [CI](ci.md) page.
 
 - **Why:** the judgement half of a release (changelog wording, docs against the change, live checks) has no other
   record that it ran for this exact commit.
-- **Enforced by:** `max-cli: bin/release`.
-- **Example:** max-cli's `bin/release` refuses unless the report has `Commit: <HEAD>` and `Signed off: <date>`. When
-  `bin/release` only renumbers or folds the changelog, it carries the report to the new commit. A fork passes its
-  own report with `bin/release --report <path>`.
-- **Exceptions:** none. Today only max-cli's `bin/release` checks the report. tg-cli and whatsapp-cli have the
-  release skill, but their `bin/release` does not check a report yet.
+- **Enforced by:** `max-cli: bin/release` · `whatsapp-cli: bin/release`.
+- **Example:** max-cli's and whatsapp-cli's `bin/release` refuse unless the report has `Commit: <HEAD>` and
+  `Signed off: <date>`. When `bin/release` only renumbers or folds the changelog, it carries the report to the new
+  commit. A fork passes its own report with `bin/release --report <path>`.
+- **Exceptions:** none. max-cli and whatsapp-cli (from 0.1.0) check the report in `bin/release`. tg-cli has the
+  release skill, but its `bin/release` does not check a report yet.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-11 · Publish from GitHub Actions with npm trusted publishing
