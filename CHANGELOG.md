@@ -16,6 +16,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   Windows job. It read as if the keyring were tested on every platform it lists. `CLEANUP.md` is no longer tracked.
 - **Commander is needed at run time by `/skill`,** not only as a type, and the README says so. Full validation
   takes a `platforms` input to run the suite on Windows and macOS by hand; Windows fails 14 tests today.
+- **The package no longer ships source maps.** They pointed at `src/`, which is not published, so vitest in every
+  consumer printed "Sourcemap â€¦ points to missing source files" for each file it loaded from here. Stack traces now
+  show the `dist/` JavaScript, which is close to the source.
+- **The package now holds `CHANGELOG.md`,** and its npm page links the repository's issues and README.
+- **The README gives the install command** and says the package is ESM only (`require()` works from Node 22.12).
 
 - **WC-CI-12 now names the required checks in every repository.** The `main` rulesets of whatsapp-cli, cli-core,
   tg-cli, max-cli, cli-base and cli-memo require the pull request validation jobs besides `standards`, so a red pull

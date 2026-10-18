@@ -35,7 +35,15 @@ Every WireCat tool is built on it: [tg-cli](https://github.com/WireCatLabs/tg-cl
 messaging engine — and through it the mail, notes, Zoom and Drive tools.
 
 Up to version 0.20.0 (October 2026) this package was `@wirecat/cli-core`. That name now belongs to the shared
-messaging engine: in older changelogs, plans and issues, "cli-core" means this package.
+messaging engine: in older changelogs, plans and issues, "cli-core" means this package. Those old
+`@wirecat/cli-core` versions (0.18–0.20) are deprecated on npm.
+
+```sh
+npm install @wirecat/cli-base
+```
+
+It is ESM only, for Node 22 and later: `import` it (`require()` works from Node 22.12). Add `commander` if you use
+`/skill`, and `vitest` if you use `/testing/setup`.
 
 **One rule shapes everything here: in a machine mode, stdout carries data and nothing else.** No spinner, no `✓`, no
 warning, no ANSI. Diagnostics go to stderr, in every mode including the pretty one. That is the contract a script or
