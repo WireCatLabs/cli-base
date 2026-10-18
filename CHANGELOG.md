@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## 0.44.2 — 18.10.2026
+## Unreleased
 
 ### Added
 
@@ -20,6 +20,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   something in the messenger. The labels come with `COMMANDS_PAGE_LABELS.en` and `.ru`; a CLI's own labels object
   may leave them out, and then the command gets no line. Commands without the field are described as before;
   regenerate `docs/commands.md` once a command sets it.
+
+## 0.44.2 — 18.10.2026
+
+### Added
 
 - `--meeting-inventory` is a registered MCP mode switch for hosts that explicitly bind the shared read-only series inventory tool. Candidate dates stay unverified; the flag does not add a provider connection or widen a default server on its own.
 
