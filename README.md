@@ -77,7 +77,7 @@ Three lines this package does not cross:
   renderer; what is written, and where, is the host's call.
 
 Five runtime dependencies: valibot and its JSON Schema converter, cli-table3, picocolors and cross-spawn. Commander is
-an optional peer, used as a type.
+an optional peer: `/commands` and `/completion` use only its types, and `/skill` needs it installed at run time.
 
 ## Features
 
@@ -135,7 +135,10 @@ so libsecret is not a requirement. Checked against `@napi-rs/keyring` 2.1.0 on 2
 
 This repository's CI runs the tests on Linux only. macOS runs the path tests when they change, and that run does not
 block a merge (`macos.yml`); nothing runs on Windows here. A CLI built on this library can run its own unit suite
-on macOS and Windows through `node-ci.yml` with `platforms: true`.
+on macOS and Windows through `node-ci.yml` with `platforms: true`; here, Full validation started by hand with
+`platforms` does the same. On 2026-10-18 that run passed on macOS and failed 14 tests on Windows (file modes,
+spawning `npm` and `tsc`). In every test the keyring is a fake, so no test reaches a real Keychain or Credential
+Manager.
 
 Two traps worth designing for: the keyring is global, so a throwaway config directory overwrites the real secret
 unless you pass `isolated: true`; and a locked Linux keyring can block on a prompt rather than fail.
