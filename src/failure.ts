@@ -217,7 +217,7 @@ export const renderError = (object: ErrorObject, options: RenderErrorOptions): s
   return [
     `✗ ${visibleControls(message)}`,
     ...(step?.kind === "command"
-      ? [`→ ${visibleControls(step.why)}: ${visibleControls(commandLine(options.cli, step))}`]
+      ? [`→ ${visibleControls(step.why)}: ${visibleControls(step.line ?? commandLine(options.cli, step))}`]
       : step
         ? [`→ ${visibleControls(step.why)}`]
         : []),

@@ -17,6 +17,11 @@ export const nextStepSchema = v.variant("kind", [
     /** The command path as one string, `messages list` — what the MCP router tools take as `command`. */
     command: text,
     args: v.record(v.string(), v.unknown()),
+    /**
+     * The whole line to type, with the tool and the profile it ran with: `tg personal mcp config`. Only the CLI
+     * knows the profile, so it fills this; MCP answers leave it out.
+     */
+    line: v.optional(text),
     why: text,
     /** True only when the target command is known to write nothing, here or at the provider. */
     safe_to_auto_execute: v.boolean(),
