@@ -209,6 +209,12 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "the ranking component weights, all of them",
   },
   {
+    name: "--meeting-project-candidates",
+    role: "mode",
+    type: "switch",
+    meaning: "expose read-only project suggestions from selected meeting evidence and the global project vocabulary",
+  },
+  {
     name: "--meeting-preparation",
     role: "mode",
     type: "switch",
