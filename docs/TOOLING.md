@@ -129,3 +129,25 @@ jobs:
 
 Inputs: `node-version` (`"24"`), `checks` (shell lines run after the build), `bun` (`true`),
 `bun-run`. The workflow is in the repository, not the package: pin a tag or a commit, not `main`.
+
+A CLI sets `cli: true`. After the build the job then runs one named step per script, in this order:
+`contracts:check`, `contracts:upgrade`, `security:no-leak`, `version:check`, `generate:check`,
+`test:matrix:check`, `docs:check`, `package:check`, `lint:commands`, and `parity:check` when `parity: true`.
+A missing script fails its step, so a check nobody wired up shows as red, not as a line nobody wrote.
+`skip` lists the steps a CLI cannot have yet, one per line; say why beside it in your `ci.yml`.
+`checks` still runs after them, for what is yours alone.
+
+`platforms: true` adds a job on Windows and macOS: install, `pnpm test` (one worker on Windows), build,
+`node dist/bin/<bin>.js --version`, then the lines in `platform-run` (commands that need no login).
+
+```yaml
+    with:
+      cli: true
+      parity: true
+      bin: max
+      platforms: ${{ !inputs.skip-platforms }}
+      platform-run: |
+        node dist/bin/max.js default doctor --json
+      skip: |
+        contracts:upgrade
+```
