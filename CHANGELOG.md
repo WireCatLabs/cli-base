@@ -10,6 +10,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **The handbook catches up with wa**: WC-LIFE-8 lets a one-shot command end a wait it entered with cli-core's
+  `untilStopped()` with exit 0, not 130, since stopping is how that wait ends. WC-REL-10 counts whatsapp-cli's
+  `bin/release` among the ones that check a signed release report. WC-PERM-18 is stricter: a standing hold (frozen,
+  limited, banned) holds every remote write, reactions and read receipts too, and a ban with no end date holds until
+  it is lifted.
+
 ### Changed â€” may break callers
 
 - **WC-PERM-12 now says what the read-only lock refuses in cli-core 0.337.0**: every write, and every local change
@@ -79,11 +87,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   an operation id, a flag counts as naming a command in a lower layer, `SECURITY.md` is a user page, and the
   `replies` rules apply only where the messenger has replies. Read the toolchain, layout, style, testing, releases,
   output, architecture, lifecycle, security, permissions and documents pages before the next audit.
-- **The handbook catches up with wa**: WC-LIFE-8 lets a one-shot command end a wait it entered with cli-core's
-  `untilStopped()` with exit 0, not 130, since stopping is how that wait ends. WC-REL-10 counts whatsapp-cli's
-  `bin/release` among the ones that check a signed release report. WC-PERM-18 is stricter: a standing hold (frozen,
-  limited, banned) holds every remote write, reactions and read receipts too, and a ban with no end date holds until
-  it is lifted.
 
 ### Fixed
 
