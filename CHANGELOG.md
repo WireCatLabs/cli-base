@@ -12,6 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`node-ci.yml` runs a CLI's whole contract by name**: `cli: true` runs `contracts:check`, `contracts:upgrade`,
+  `security:no-leak`, `version:check`, `generate:check`, `test:matrix:check`, `docs:check`, `package:check` and
+  `lint:commands` as separate steps after the build (`parity: true` adds `parity:check`); a missing script fails its
+  step, and `skip` lists the ones a CLI cannot have yet. `platforms: true` runs the unit suite and the built `bin`
+  on Windows and macOS, with `platform-run` for extra commands. All are off by default, so today's callers see no
+  change.
 - **The handbook catches up with wa**: WC-LIFE-8 lets a one-shot command end a wait it entered with cli-core's
   `untilStopped()` with exit 0, not 130, since stopping is how that wait ends. WC-REL-10 counts whatsapp-cli's
   `bin/release` among the ones that check a signed release report. WC-PERM-18 is stricter: a standing hold (frozen,
