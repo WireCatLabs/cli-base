@@ -209,6 +209,12 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "the ranking component weights, all of them",
   },
   {
+    name: "--meeting-inventory",
+    role: "mode",
+    type: "switch",
+    meaning: "expose read-only discovery of candidate series in the selected meeting account",
+  },
+  {
     name: "--meeting-project-candidates",
     role: "mode",
     type: "switch",
