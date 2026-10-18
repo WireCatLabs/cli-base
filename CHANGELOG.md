@@ -16,8 +16,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   ones included, and every group that runs on its own must declare them; a command without them counts as a write,
   so its failures are never retried and no next step runs it unasked. The commands document now says
   `runnable: true` on a group with an action of its own, so the rule can tell it from a group that only prints its
-  help — a CLI's groups are checked from the release that picks up this version. tg, max, memo, drive and zoom pass
-  it today.
+  help — a CLI's groups are checked from the release that picks up this version. tg, max, wa, memo, drive and zoom
+  pass it at their current `main`. A reader of `commands --json` that rejects unknown keys must accept `runnable`,
+  and an exact comparison of `describeProgram` output gains it on groups such as `doctor`, `mcp` and `commands`.
 - **`offline: false` marks a command that cannot answer offline**: `annotate(command, { offline: false })` on a
   command or a group, and `describeProgram` and `commands --json` say `offline: false` on it and on every command
   below it, like `mcp: false`. cli-core's agent catalogue offers an `offline` input on every command that reads the
