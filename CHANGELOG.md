@@ -15,6 +15,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`commandsPage({ â€¦, details })`** closes each command's section with the Markdown paragraphs `details(command)`
   returns. cli-core's `commandHelpMarkdown` gives the Returns, Next usually and Example lines that `--help` shows,
   so `docs/commands.md` says the same as the terminal. Without `details` the page is unchanged.
+- **`guide` is a root word in the vocabulary**: a top-level `<tool> guide [name]` (cli-core's scenarios command)
+  passes `cli-dev lint` without a baseline entry.
 
 ### Fixed
 
