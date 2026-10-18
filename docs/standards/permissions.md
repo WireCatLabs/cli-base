@@ -261,7 +261,9 @@ to write the journal after a send only warns.
 ### WC-PERM-18 · A flood hold stops writes until it ends
 
 When the messenger says the account may not write for a while, the profile holds every counted write until that time.
-Reads still work. The owner lifts the hold with `flood clear`.
+A standing hold, when the messenger reports the account frozen, limited or banned, holds every remote write: sends
+and edits, and also reactions and read receipts. It may have no end time; it lasts until the owner lifts it or a
+check finds the account healthy again. Reads still work. The owner lifts the hold with `flood clear`.
 
 - **Why:** writing through a hold makes the messenger's penalty longer, or permanent.
 - **Enforced by:** review only.
