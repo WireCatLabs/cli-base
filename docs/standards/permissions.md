@@ -24,7 +24,8 @@ writes", drive is a known gap.
 WC-PERM-10 and WC-PERM-11 need cli-core 0.321.0, which tg, max and wa pin. WC-PERM-12 as written needs cli-core
 0.337.0; before it, the lock let through some local writes that overwrite what the owner saved. A command other
 than `serve` and `watch` saves incoming history only from cli-core 0.343.0, and only when the messenger's adapter has
-`listen`. wa is the one messenger whose history lives in the store; it pins 0.341.0 and has no `listen` yet.
+`listen`. wa is the one messenger whose history lives in the store. Its main branch pins 0.343.0 and has `listen`
+(whatsapp-cli#136), but no release carries it yet: the newest, wa 0.1.0, pins 0.326.0 and has no `listen`.
 
 ## Rules
 
