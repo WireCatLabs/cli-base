@@ -1,0 +1,17 @@
+name: Pull request validation
+
+# The full Linux validation before merge, so a pull request that lowers coverage or breaks
+# a contract fails here and not on main (WC-CI-5). Platform suites stay in release and monthly runs.
+on:
+  pull_request:
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validation:
+    uses: ./.github/workflows/ci.yml

@@ -151,7 +151,7 @@ and which run after merge is in [CI](ci.md).
 ### WC-TEST-11 · Keep a coverage floor, and raise it; never lower it
 
 - **Why:** a floor stops coverage from falling one pull request at a time.
-- **Enforced by:** `pnpm test:coverage` · `node-ci.yml:check`.
+- **Enforced by:** `pnpm test:coverage` · `node-ci.yml:check` · `pr.yml:validation`.
 - **Example:** `vitest.config.ts` holds thresholds for lines, statements, functions and branches over `src/`, a little
   under what the suite reaches, and `perFile: { lines: 50 }`. A change that falls below gets a test, not a lower
   number. Each excluded file has its reason written beside it.
@@ -180,7 +180,7 @@ and which run after merge is in [CI](ci.md).
   help snapshot, that discovery is one JSON value on stdout with empty stderr, that a bad option gives the documented
   exit code and one JSON error on stderr, and the MCP tool names, schemas and annotations. A change is accepted with
   `pnpm exec cli-contract contracts/plan.json --update` and a reviewed diff.
-- **Exceptions:** the contracts run in full validation, not on pull requests.
+- **Exceptions:** none. The contracts run in full validation, on every pull request and on `main` (WC-CI-5, WC-CI-7).
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-14 · Check the upgrade from the previous published version

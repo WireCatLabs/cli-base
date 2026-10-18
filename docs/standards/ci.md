@@ -2,8 +2,8 @@
 
 ## Scope
 
-What runs where: the local hooks, the checks on every pull request and their time budget, full validation on each
-merge to `main`, and the monthly runs.
+What runs where: the local hooks, the fast checks and the Linux validation on every pull request, full validation
+on each merge to `main`, and the monthly runs.
 
 Rule ids on this page are `WC-CI-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). What each tool checks is on the [Toolchain page](toolchain.md); the release workflow is on the
@@ -48,7 +48,7 @@ cli-testing, cli-docs, plus community itself.
 
 ### WC-CI-4 · Keep `ci:quick` to early bug checks that finish within two minutes
 
-- **Why:** it is the only build-level check on a pull request, so it must stay fast enough that nobody wants it gone.
+- **Why:** it is the first build-level answer on a pull request, so it must stay fast enough that nobody wants it gone.
 - **Enforced by:** `standards.yml:standards` · `pnpm ci:quick`.
 - **Example:** what each repository runs today:
   - tg, max, memo and wa: `pnpm typecheck && pnpm build && pnpm lint:commands`;
@@ -57,20 +57,45 @@ cli-testing, cli-docs, plus community itself.
   - cli-core: `pnpm typecheck` and its command lint test;
   - cli-docs: its unit tests, without the one that needs generated pages;
   - community: its script tests.
-- **Exceptions:** never put live-account suites, agent suites, full tests, coverage or platform jobs here.
+- **Exceptions:** never put live-account suites, agent suites or platform jobs here. Full tests and coverage run in
+  the pull request validation job ([WC-CI-5](#wc-ci-5--run-the-full-linux-validation-on-every-pull-request-and-keep-platform-suites-out)),
+  not in `ci:quick`.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-CI-5 · Keep full tests, builds of documents, parity and platform suites out of pull request CI
+### WC-CI-5 · Run the full Linux validation on every pull request, and keep platform suites out
 
-- **Why:** pull request CI is the step people wait on; the heavy suites run once on `main`, where a failure still
-  shows within minutes of the merge.
-- **Enforced by:** review only.
-- **Example:** on a pull request, only the standards job, the changelog guard and small path-scoped jobs run. Coverage,
-  contracts, the test matrix, `docs:check`, parity, Windows and macOS run in full validation (WC-CI-7).
-- **Exceptions:** a path-scoped job that tests one platform-specific file may run on pull requests, such as cli-base
-  `macos.yml` for the path code. cli-docs and community run `security-pr.yml`, a new-commit secret scan. Third-party
-  security apps may post their own checks.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Why:** a pull request that lowers coverage or breaks a contract must fail before it merges; once on `main` it
+  blocks every other branch and the next release. It costs about two and a half minutes per pull request.
+- **Enforced by:** `pr.yml:validation`.
+- **Example:** `pr.yml` runs on `pull_request` and calls the repository's own `ci.yml`, the same full validation as
+  `main` (WC-CI-7): lint, typecheck, `test:coverage` with the coverage floor, build, the contracts, the test matrix,
+  `docs:check` and parity, the Bun job and the secret scan. It passes `skip-platforms: true` where `ci.yml` has that
+  input, and a new commit cancels the run it replaces:
+
+  ```yaml
+  on:
+    pull_request:
+  concurrency:
+    group: pr-validation-${{ github.event.pull_request.number }}
+    cancel-in-progress: true
+  permissions:
+    contents: read
+  jobs:
+    validation:
+      uses: ./.github/workflows/ci.yml
+      with:
+        skip-platforms: true
+  ```
+
+  It runs beside the standards job (WC-CI-3), which stays the fast first answer.
+- **Exceptions:** Windows, macOS and install checks stay out of pull requests and run in full validation at release,
+  monthly or on request. A path-scoped job that tests one platform-specific file may run on pull requests, such as
+  cli-base `macos.yml` for the path code. cli-docs and community run `security-pr.yml`, a new-commit secret scan;
+  cli-docs validates its site before each deployment instead, and community has no build. Third-party security apps
+  may post their own checks.
+- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base has `pr.yml`; wa adds it in its
+  `ci/pr-validation` branch; tg, max, memo, drive, zoom, cli-core and cli-testing do not have it yet. **Since:**
+  cli-base 0.41.0 (pull request validation since cli-base 0.44.6). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
 
@@ -84,7 +109,8 @@ cli-testing, cli-docs, plus community itself.
 
 ### WC-CI-7 · Run full validation once on each merge to `main`, on Linux, without publishing
 
-- **Why:** a merge that breaks the full suite shows up the same hour, not at the next release.
+- **Why:** two pull requests that each pass on their own can still break each other once both are merged; `main`
+  catches that merge skew the same hour, not at the next release.
 - **Enforced by:** `main.yml:validation` · `node-ci.yml:check` · `node-ci.yml:bun` · `node-ci.yml:secrets`.
 - **Example:** `main.yml` calls the repository's own `ci.yml`, which calls cli-base `node-ci.yml`. That runs
   `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage`, `pnpm build`, then the project's `checks` lines (for max:
@@ -125,9 +151,12 @@ cli-testing, cli-docs, plus community itself.
   changes.
 - **Enforced by:** `release.yml:checks` · `monthly.yml:security`.
 - **Example:** cli-base `release-checks.yml` runs the production dependency audit, the workflow scan (`zizmor`),
-  CodeQL and a full-history gitleaks scan. A release depends on it. A pull request runs only the new-commit gitleaks
-  scan in the standards job.
-- **Exceptions:** none. Do not add a heavy scanner to an editor hook, a stop hook or an ordinary pull request job.
+  CodeQL and a full-history gitleaks scan. A release depends on it. A pull request runs the new-commit gitleaks scan
+  in the standards job.
+- **Exceptions:** the full-history gitleaks scan in `node-ci.yml` also runs on pull requests, through the validation
+  job ([WC-CI-5](#wc-ci-5--run-the-full-linux-validation-on-every-pull-request-and-keep-platform-suites-out)); it
+  takes seconds. The dependency audit, `zizmor` and CodeQL stay out. Do not add a heavy scanner to an editor hook, a
+  stop hook or an ordinary pull request job.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** sc:9.
 
 ### WC-CI-11 · Moved to [WC-SECR-20](security.md#wc-secr-20--pin-each-third-party-action-to-a-commit-and-give-each-workflow-read-only-defaults)
