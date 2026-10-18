@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The permissions page says wa's `listen` is on main, not released**: WC-PERM-12's "Who follows these rules
+  today" said wa pins cli-core 0.341.0 with no `listen`. whatsapp-cli#136 moved wa's main branch to 0.343.0 with
+  `listen`, so its one-shot commands save incoming history there; wa 0.1.0, the newest release, still does not.
+
 ## 0.46.0 — 18.10.2026
 
 ### Added
