@@ -166,7 +166,8 @@ cli-testing, cli-docs, plus community itself.
 ### WC-CI-12 · Merge to `main` only through a pull request whose checks all passed
 
 - **Why:** a red merge breaks `main` for every parallel branch, and an admin merge skips the only gate there is.
-- **Enforced by:** review only.
+- **Enforced by:** `whatsapp-cli: main ruleset required checks`, where the repository's main ruleset lists the PR
+  validation jobs as required checks; review elsewhere until each repository adds them.
 - **Example:** `gh pr checks <number>` shows every line as pass before `gh pr merge`. Never merge with `--admin`. A
   release changes `main` the same way
   ([WC-REL-2](releases.md#wc-rel-2--main-changes-only-through-a-pull-request-also-during-a-release)).
