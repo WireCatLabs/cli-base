@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **A command step may carry `line`, the whole command to type** (`nextStepSchema`): `tg personal mcp config`, with
+  the profile, where `command` stays the bare path the MCP router takes. A CLI fills it, since only it knows the
+  profile; `renderError` prints `line` when it is there.
+
 ### Fixed
 
 - **The permissions page says wa's `listen` is on main, not released**: WC-PERM-12's "Who follows these rules

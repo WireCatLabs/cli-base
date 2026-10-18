@@ -13,7 +13,14 @@ import {
   retryOf,
 } from "./failure.js"
 import { createOutputBuffer } from "./output-buffer.js"
-import { BASE_REASONS, defineReasons, defineSteps, errorObjectSchema, logEventProblems } from "./standards/index.js"
+import {
+  BASE_REASONS,
+  defineReasons,
+  defineSteps,
+  errorObjectSchema,
+  logEventProblems,
+  type NextStep,
+} from "./standards/index.js"
 
 const reasons = defineReasons([
   {
@@ -282,6 +289,16 @@ describe("renderError", () => {
         '→ /tmp/s stays locked: max store unlock --path "/tmp/s"',
         "details: max runs show r1",
       ].join("\n"),
+    )
+  })
+
+  it("prints a step's own line when the CLI filled it, so the profile is in it", () => {
+    const [step] = object.error.next ?? []
+    const withLine = {
+      error: { ...object.error, next: [{ ...step, line: "max personal store unlock --path /tmp/s" } as NextStep] },
+    }
+    expect(renderError(withLine, { cli: "max", interactive: true })).toContain(
+      "→ /tmp/s stays locked: max personal store unlock --path /tmp/s",
     )
   })
 

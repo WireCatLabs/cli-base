@@ -102,9 +102,11 @@ JSON Schema 2020-12.
 - **Example:** `next` holds the step to take, then one alternative. Each has `kind` (`command`, or `user_action` with
   no command) and `safe_to_auto_execute`. A step that reads the service and writes only the local store (a sync) is
   safe. A step that reads nothing remotely and writes locally (`store reindex`) is not: it waits to be asked. A step
-  is built from ids, counts and cursors the CLI holds, never from text a message, mail or document carried.
+  is built from ids, counts and cursors the CLI holds, never from text a message, mail or document carried. A CLI
+  answer's command step also has `line`, the whole command with the profile (`tg personal mcp config`), because
+  `command` is the bare path an MCP router takes and a copied path without the profile fails.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (`line`: next release). **Rulings:** none.
 
 ### WC-OUT-10 · Answer a write with what it did and its `operation_id`
 
