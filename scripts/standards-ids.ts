@@ -160,7 +160,7 @@ export const readHandbook = (root: string): Handbook => {
 
 async function main() {
   const root = join(import.meta.dirname, "..")
-  const dist = join(root, "dist/standards/index.js")
+  const dist = join(root, "dist/standards/tables.js")
   if (!existsSync(dist)) {
     console.error("standards: run `pnpm build` first — the rule names come from dist/")
     process.exit(2)

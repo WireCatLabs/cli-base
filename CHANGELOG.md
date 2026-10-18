@@ -12,6 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ### Changed — may break callers
 
+- **The lint, audit and vocabulary tables moved to `@wirecat/cli-base/standards/tables`.** `VOCABULARY`, `LINT_RULES`,
+  `AUDIT_RULES`, `PARITY_GROUPS`, `REQUIRED_ROOTS`, `IDENTIFIERS`, `FIELD_RULES` and their `define…` helpers and types
+  are no longer exported from `/standards`, which keeps the run-time contract only: effects, errors, output envelopes,
+  the log record and next steps. Every CLI loads `/standards` on start and parsed six dev-only tables it never read
+  (82 KB, about 7–12 ms; [measurement](https://github.com/WireCatLabs/cli-testing/tree/main/performance/startup/standards-split-before/README.md)).
+  Import the tables from `/standards/tables`; run-time names need no change.
 - **Every pull request now runs the full Linux validation, coverage floor included (WC-CI-5).** A `pr.yml` calls the
   repository's own `ci.yml` on `pull_request`, with platform suites skipped and superseded runs cancelled; before,
   tests, coverage, contracts and parity ran only after the merge, so a pull request that lowered coverage passed and

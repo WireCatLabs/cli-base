@@ -31,7 +31,8 @@ and why it is built this way.
 | `/skill` | the CLI's SKILL.md for coding agents: `skillCommand` (`show`, `install`), `skillHint`, `skillResource` — see below |
 | `/mcp` | local stdio MCP setup for Codex and Claude Code, plus a read-only handshake and tool-list probe |
 | `/query` | one query language for every list: the Lucene 9.12.3 parser port, fields from an entity schema, validation, the Fields help and `evaluate` as a test oracle — see below |
-| `/standards` | the registries the standard is made of — vocabulary, output envelope, error object and reasons, next steps, log record, lint rules — as Valibot schemas that also emit JSON Schema 2020-12 |
+| `/standards` | the run-time contract: effects, output envelope, error object and reasons, next steps, log record — as Valibot schemas that also emit JSON Schema 2020-12 |
+| `/standards/tables` | the tables lint, audit and docs read: vocabulary, lint and audit rules, parity groups, identifiers, output field rules |
 
 **Nothing in the root export is HTTP.** Status classification, `Retry-After` parsing and the fetch
 seam live in `@wirecat/cli-base/http`, so a CLI that speaks a socket never depends on a stack it
