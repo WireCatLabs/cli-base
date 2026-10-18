@@ -50,7 +50,7 @@ extends:
 | — | `cli-dev audit --cli <bin> --cli <bin> …`: several CLIs against the standard and against each other |
 
 `cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and
-judges it by `LINT_RULES` and `VOCABULARY` from `/standards`. Known violations live in
+judges it by `LINT_RULES` and `VOCABULARY` from `/standards/tables`. Known violations live in
 `lint/baseline/<rule-id>.json`, one file per rule, and may only shrink: an entry with no violation left
 fails the run. `--write-baseline` rewrites those files to today's violations. Permanent exceptions go in
 `lint/overrides.json` — `[{ "rule", "target", "reason", "owner", "review_after" }]`, `owner` a GitHub handle
@@ -70,7 +70,7 @@ key that names message text, a token or a phone number.
 
 `cli-dev audit` reads two or more commands documents (`--cli <bin>` or `--commands <file>`, repeated) and prints a
 scorecard: per CLI and rule, what it found, what the baseline holds, what is overridden, what is new and what was
-fixed; `--json` prints it as the list envelope. Every lint rule judges each CLI alone; `AUDIT_RULES` in `/standards`
+fixed; `--json` prints it as the list envelope. Every lint rule judges each CLI alone; `AUDIT_RULES` in `/standards/tables`
 compare them: `required-root` (`REQUIRED_ROOTS`: `commands`, `doctor`, `skill show|install`, `mcp`, `upgrade`),
 `same-path-contract` (a path two CLIs of a parity group share has the same options, value names, output and summary;
 a group covering the whole tree has the same paths), `same-flag-meaning`, `same-entity-schema` (from `--schemas

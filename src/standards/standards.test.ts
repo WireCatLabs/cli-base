@@ -1,38 +1,42 @@
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import {
-  baselineProblems,
-  baselineSchema,
-  defineFieldRules,
-  defineIdentifiers,
-  defineLintRules,
   defineLogEvents,
   defineReasons,
   defineSteps,
-  defineVocabulary,
   errorObjectSchema,
-  FIELD_RULES,
-  IDENTIFIERS,
   isContentKey,
   itemEnvelopeSchema,
   jsonlEndSchema,
   jsonlItemSchema,
   jsonlOf,
   jsonSchemaOf,
-  LINT_RULES,
   LOG_EVENTS,
   listEnvelopeSchema,
   logRecordSchema,
-  overridesProblems,
-  overridesSchema,
   RegistryError,
-  rulesForReview,
   STEPS,
   stepOf,
   traceIdOf,
+} from "./index.js"
+import {
+  baselineProblems,
+  baselineSchema,
+  defineFieldRules,
+  defineIdentifiers,
+  defineLintRules,
+  defineVocabulary,
+  FIELD_RULES,
+  IDENTIFIERS,
+  LINT_RULES,
+  overridesProblems,
+  overridesSchema,
+  rulesForReview,
   VOCABULARY,
   vocabularySchema,
-} from "./index.js"
+} from "./tables.js"
 
 const vocabulary = (patch: object) => ({
   verbs: [{ word: "list", meaning: "show many" }],
@@ -471,5 +475,31 @@ describe("JSON Schema", () => {
       overridesSchema,
     ])
       expect(jsonSchemaOf(schema).$schema).toBe("https://json-schema.org/draft/2020-12/schema")
+  })
+})
+
+describe("the runtime entry", () => {
+  const reached = (file: string, seen = new Set<string>()): Set<string> => {
+    if (seen.has(file)) return seen
+    seen.add(file)
+    for (const [, path] of readFileSync(file, "utf8").matchAll(/from "(\.{1,2}\/[^"]+)\.js"/g))
+      reached(join(dirname(file), `${path}.ts`), seen)
+    return seen
+  }
+
+  it("**never loads the dev tables**: a command start does not parse vocabulary, lint, audit or field rules", () => {
+    const files = [...reached(join(import.meta.dirname, "index.ts"))].map((file) =>
+      file.slice(file.lastIndexOf("/") + 1),
+    )
+    for (const table of [
+      "vocabulary.ts",
+      "flags-how.ts",
+      "flags-what.ts",
+      "lint.ts",
+      "audit.ts",
+      "identifiers.ts",
+      "fields.ts",
+    ])
+      expect(files).not.toContain(table)
   })
 })

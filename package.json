@@ -81,6 +81,10 @@
       "types": "./dist/standards/index.d.ts",
       "default": "./dist/standards/index.js"
     },
+    "./standards/tables": {
+      "types": "./dist/standards/tables.d.ts",
+      "default": "./dist/standards/tables.js"
+    },
     "./biome": "./config/biome.base.json",
     "./tsconfig.base.json": "./config/tsconfig.base.json",
     "./tsconfig.test.json": "./config/tsconfig.test.json",

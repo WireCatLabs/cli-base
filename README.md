@@ -59,7 +59,8 @@ The package is split by **when** a piece runs, so a tool loads only what it call
 |---|---|
 | Every command | root: streams, renderer, errors and exit codes, keyring, credentials, paths, config, time, retry, logging, field selection, output buffer, deadlines |
 | Only if the tool speaks HTTP | `/http` |
-| Commands that describe the tool | `/commands`, `/completion`, `/query`, `/skill`, `/mcp`, `/update`, `/standards` |
+| Every command that answers | `/standards`: effects, errors, output envelopes, log record, next steps |
+| Commands that describe the tool | `/commands`, `/completion`, `/query`, `/skill`, `/mcp`, `/update`, `/standards/tables` |
 | Build time | `/codegen`, with a small `/codegen/runtime` for the generated schemas |
 | Release time | `/release` |
 | Tests | `/testing`: captured streams, memory and broken keyrings, a fake clock |

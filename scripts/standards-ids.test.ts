@@ -1,6 +1,6 @@
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import { AUDIT_RULES, LINT_RULES } from "../src/standards/index.ts"
+import { AUDIT_RULES, LINT_RULES } from "../src/standards/tables.ts"
 import { knownChecks, OTHER_REPOSITORIES, readHandbook, standardsProblems } from "./standards-ids.ts"
 
 const index = ["| Page | Area id | What |", "|---|---|---|", "| [Output](output.md) | `OUT` | output |"].join("\n")
