@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Meeting project suggestions have a distinct MCP opt-in.** `--meeting-project-candidates` is registered as a mode switch for hosts that bind the shared read-only candidate SDK. It selects that capability explicitly rather than widening an existing MCP server; consumer hosts still supply the implementation.
+
 ## 0.44.0 — 18.10.2026
 
 ### Added
