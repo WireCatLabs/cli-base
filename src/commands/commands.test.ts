@@ -325,6 +325,25 @@ describe("commands document", () => {
     expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
   })
 
+  it("marks a command that cannot answer offline, and every command under a group marked so", () => {
+    const root = new Command("tool")
+    const members = annotate(root.command("members").description("group"), { offline: false })
+    members.command("fetch").description("leaf under a group marked")
+    const chats = root.command("chats").description("group")
+    annotate(chats.command("inspect").description("leaf marked"), { offline: false })
+    chats.command("list").description("left alone")
+    const document = commandsDocument(root, about)
+    const at = (...path: string[]) =>
+      flatten(document.commands).find((command) => command.path.join(" ") === path.join(" "))
+
+    expect(at("members")?.offline).toBe(false)
+    expect(at("members", "fetch")?.offline).toBe(false)
+    expect(at("chats", "inspect")?.offline).toBe(false)
+    expect(at("chats")).not.toHaveProperty("offline")
+    expect(at("chats", "list")).not.toHaveProperty("offline")
+    expect(parseCommandsDocument(JSON.parse(JSON.stringify(document)))).toEqual({ document })
+  })
+
   it("keeps an option off MCP tools when it says so, and only that option", () => {
     const root = new Command("tool").addOption(annotateOption(new Option("--unsafe", "global"), { mcp: false }))
     root

@@ -52,6 +52,7 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
   partial: v.optional(v.boolean()),
   lifetime: v.optional(v.picklist(["persistent", "interactive"])),
   mcp: v.optional(v.literal(false)),
+  offline: v.optional(v.literal(false)),
   cooperative: v.optional(v.boolean()),
   examples: v.optional(v.array(v.string())),
   output: v.optional(v.object({ entity: v.string(), view: v.optional(v.string()) })),
