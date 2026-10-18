@@ -17,6 +17,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `bin/release` among the ones that check a signed release report. WC-PERM-18 is stricter: a standing hold (frozen,
   limited, banned) holds every remote write, reactions and read receipts too, and a ban with no end date holds until
   it is lifted.
+- **`archive`, `unarchive` and `mark-unread` are vocabulary verbs.** They name the messenger CLIs' commands that
+  move a chat into the messenger's own archive and back, and mark a chat unread for the owner alone
+  (`chats archive`, `chats unarchive`, `chats mark-unread`). `cli-dev lint` no longer reports them as
+  `unknown-verb`. `--backend archive`, the local archive of messages, keeps its meaning. Watch for: once a CLI takes
+  this release, `cli-dev lint` fails on its `unknown-verb` baseline entries for these commands as stale until they
+  are deleted.
 
 ### Changed â€” may break callers
 
