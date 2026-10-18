@@ -65,7 +65,9 @@ cli-testing, cli-docs, plus community itself.
 ### WC-CI-5 · Run the full Linux validation on every pull request, and keep platform suites out
 
 - **Why:** a pull request that lowers coverage or breaks a contract must fail before it merges; once on `main` it
-  blocks every other branch and the next release. It costs about two and a half minutes per pull request.
+  blocks every other branch and the next release. It costs 2–3 minutes per pull request in the CLIs (measured: wa
+  2.9, tg 2.2, max 3.0) and about 8 in cli-core, where `test:coverage` alone takes 5m46s; splitting that job into
+  shards would need a new `node-ci.yml` input.
 - **Enforced by:** `pr.yml:validation`.
 - **Example:** `pr.yml` runs on `pull_request` and calls the repository's own `ci.yml`, the same full validation as
   `main` (WC-CI-7): lint, typecheck, `test:coverage` with the coverage floor, build, the contracts, the test matrix,
@@ -93,8 +95,8 @@ cli-testing, cli-docs, plus community itself.
   cli-base `macos.yml` for the path code. cli-docs and community run `security-pr.yml`, a new-commit secret scan;
   cli-docs validates its site before each deployment instead, and community has no build. Third-party security apps
   may post their own checks.
-- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base has `pr.yml`; wa adds it in its
-  `ci/pr-validation` branch; tg, max, memo, drive, zoom, cli-core and cli-testing do not have it yet. **Since:**
+- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli and cli-core
+  have `pr.yml`; cli-memo, drive-cli, zoom-cli and cli-testing do not have it yet. **Since:**
   cli-base 0.41.0 (pull request validation since cli-base 0.44.6). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
@@ -164,7 +166,8 @@ cli-testing, cli-docs, plus community itself.
 ### WC-CI-12 · Merge to `main` only through a pull request whose checks all passed
 
 - **Why:** a red merge breaks `main` for every parallel branch, and an admin merge skips the only gate there is.
-- **Enforced by:** review only.
+- **Enforced by:** `whatsapp-cli: main ruleset required checks`, where the repository's main ruleset lists the PR
+  validation jobs as required checks; review elsewhere until each repository adds them.
 - **Example:** `gh pr checks <number>` shows every line as pass before `gh pr merge`. Never merge with `--admin`. A
   release changes `main` the same way
   ([WC-REL-2](releases.md#wc-rel-2--main-changes-only-through-a-pull-request-also-during-a-release)).

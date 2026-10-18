@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **WC-CI-5 now lists who runs pull request validation and what it costs, as measured.** whatsapp-cli, tg-cli,
+  max-cli and cli-core have `pr.yml` beside cli-base; cli-memo, drive-cli, zoom-cli and cli-testing still lack it. A
+  run takes 2–3 minutes in the CLIs and about 8 in cli-core, not the two and a half minutes the rule guessed.
+- **WC-CI-12 now names what enforces it.** whatsapp-cli's `main` ruleset requires the pull request validation jobs
+  besides `standards`, so a red pull request cannot merge there; tg-cli, max-cli, cli-core and cli-base require only
+  `standards` and still rely on review.
+
 ## 0.45.0 — 18.10.2026
 
 ### Changed — may break callers
