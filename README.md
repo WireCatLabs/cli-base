@@ -133,6 +133,10 @@ Credentials resolve environment → keyring → file, warning once and falling t
 **No compiler is involved.** Prebuilt binaries cover twelve platform triples, and the Linux one speaks D-Bus itself,
 so libsecret is not a requirement. Checked against `@napi-rs/keyring` 2.1.0 on 2026-09-19.
 
+This repository's CI runs the tests on Linux only. macOS runs the path tests when they change, and that run does not
+block a merge (`macos.yml`); nothing runs on Windows here. A CLI built on this library can run its own unit suite
+on macOS and Windows through `node-ci.yml` with `platforms: true`.
+
 Two traps worth designing for: the keyring is global, so a throwaway config directory overwrites the real secret
 unless you pass `isolated: true`; and a locked Linux keyring can block on a prompt rather than fail.
 
