@@ -205,6 +205,21 @@ describe("commandsPage", () => {
     expect(text.endsWith("| `1` | anything else |\n")).toBe(true)
   })
 
+  it("closes a command's section with the paragraphs details gives it", () => {
+    const root = new Command("tool")
+    root.command("list").description("list").option("--limit <n>", "how many")
+    const text = commandsPage({
+      cli: "tool",
+      commands: describeProgram(root),
+      options: [],
+      labels: COMMANDS_PAGE_LABELS.en,
+      text: COMMON_TEXT,
+      details: (command) => [`**Example:** \`tool ${command.path.join(" ")}\``],
+    })
+
+    expect(text).toContain("| `--limit <n>` | how many. |\n\n**Example:** `tool list`")
+  })
+
   it("labels a write that changes only this machine with its own line, or none", () => {
     const root = new Command("tool")
     annotate(root.command("send").description("send"), { effects: SEND })
