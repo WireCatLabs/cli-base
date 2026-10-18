@@ -79,13 +79,15 @@ cli-testing, cli-docs, plus community itself.
 
 - **Why:** users install the CLIs with either runtime, and a static import of one runtime's module fails to load on
   the other.
-- **Enforced by:** `pnpm smoke:bun` · `node-ci.yml:bun`.
+- **Enforced by:** `pnpm smoke:bun` · `node-ci.yml:bun` · `node-ci.yml:platforms` (the unit suite on Windows and
+  macOS).
 - **Example:** `"engines": { "node": ">=22" }` in `package.json`. Full validation runs on Node 24. `bun test` cannot
   run the vitest suite, so `scripts/smoke.ts` runs the built exports with plain assertions, and the Bun job runs it
   (`pnpm build && pnpm smoke:bun`). A new entry point gets a line there. Node 22 runs in the Windows install matrix of
   tg, max and wa, in zoom's full validation and in cli-core's old-Node job.
 - **Exceptions:** cli-docs and community publish no runtime package. memo, drive and cli-base do not run Node 22 in
-  any workflow yet. memo has no Bun smoke test yet.
+  any workflow yet. The unit suite runs on Windows and macOS for tg, max and drive (`platforms: true`); zoom and
+  memo still fail tests there, so theirs is off.
 - **Applies to:** the CLIs, cli-core and cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-11.
 
 ### WC-TOOL-7 · Let Biome format the code, and do not format by hand
@@ -152,22 +154,22 @@ cli-testing, cli-docs, plus community itself.
 ### WC-TOOL-13 · Cap every file at 1,000 lines with Biome
 
 - **Why:** a file past 1,000 lines always holds more than one job; the cap stops it before review has to.
-- **Enforced by:** `<app>: biome noExcessiveLinesPerFile` · `cli-core: biome noExcessiveLinesPerFile`.
-- **Example:** `biome.json` sets the style rule noExcessiveLinesPerFile to error with `"maxLines": 1000`, and turns it
-  off for `**/*.test.ts`, `test/**` and `**/generated/**`. Below the cap, the review signals at 300 and 500 lines are
+- **Enforced by:** `pnpm lint` · `standards.yml:standards` (the shared Biome base, like WC-TOOL-8).
+- **Example:** the shared Biome base (community `standards/configs/biome.base.json`) sets the style rule
+  noExcessiveLinesPerFile to error with `"maxLines": 1000`, and turns it off for tests, `fixtures/` and `generated/`. Below the cap, the review signals at 300 and 500 lines are
   in [WC-LAY-7](layout.md#wc-lay-7--treat-300-and-500-lines-as-review-signals).
 - **Exceptions:** a file that is one cohesive unit may get its own override, listed by path in `biome.json` (tg
-  `src/telegram/adapter.ts`; four files in cli-core). A smaller cap is allowed: zoom uses 500. cli-base, cli-testing,
-  cli-docs and community have no cap yet. Biome reads only JavaScript and TypeScript, so the cap does not cover
+  `src/telegram/adapter.ts`; four files in cli-core). A smaller cap is allowed: zoom uses 500. cli-docs turns it off for
+  stylesheets. Biome reads only JavaScript and TypeScript, so the cap does not cover
   code in another language, such as wa's Go engine; the review signals of WC-LAY-7 still apply to it.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-14 · Turn on the import cycle rule
 
 - **Why:** a cycle makes load order decide which value a module sees, and the failure shows only at run time.
-- **Enforced by:** `<app>: biome noImportCycles` · `cli-core: biome noImportCycles`.
-- **Example:** `biome.json` sets the suspicious rule noImportCycles to error.
-- **Exceptions:** cli-base, cli-testing, cli-docs and community do not have it yet.
+- **Enforced by:** `pnpm lint` · `standards.yml:standards` (the shared Biome base, like WC-TOOL-8).
+- **Example:** the shared Biome base sets the suspicious rule noImportCycles to error.
+- **Exceptions:** none.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-15 · Declare layer boundaries as restricted imports in `biome.json`
@@ -178,8 +180,7 @@ cli-testing, cli-docs, plus community itself.
   folders that layer may not import, and a `message` that says why, such as "commands speak the domain model; only
   `src/client.ts` may reach the protocol". Which layers exist and which way they depend is on the
   [Architecture page](architecture.md).
-- **Exceptions:** cli-base and cli-docs have no layer overrides. cli-core has them, but its last override replaces
-  the earlier ones today, so they catch nothing until it is fixed.
+- **Exceptions:** cli-base and cli-docs have no layer overrides.
 - **Applies to:** the CLIs, cli-core and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-16 · Run the command lint on the built CLI, and let its baseline only shrink

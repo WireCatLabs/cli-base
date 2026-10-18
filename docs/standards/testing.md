@@ -163,37 +163,34 @@ and which run after merge is in [CI](ci.md).
 ### WC-TEST-12 · Every command and option has a test, or a written reason
 
 - **Why:** a flag that no test passes can break without anyone noticing.
-- **Enforced by:** `tg-cli: pnpm test:matrix` · `max-cli: pnpm test:matrix` · `whatsapp-cli: pnpm test:matrix` ·
-  `zoom-cli: pnpm test:matrix:check`.
+- **Enforced by:** `node-ci.yml:check` · `<app>: pnpm test:matrix:check`.
 - **Example:** under vitest, `run()` appends each parsed command path and option name (never a value) to
   `coverage/argv.jsonl`. `pnpm test:matrix` turns that into `docs/dev/test-matrix.md` and fails on a command or
   option with neither a test nor a reason. A reason names the live scenario that covers it. A test that calls a
   function directly does not count.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. tg, max, zoom and wa have the matrix; memo and drive do not yet. **Since:** cli-base
-  0.41.0. **Rulings:** NEED-359.
+- **Applies to:** all CLIs. memo's check fails only on a stale page, not yet on an option with no test.
+  **Since:** cli-base 0.41.0. **Rulings:** NEED-359.
 
 ### WC-TEST-13 · Keep offline contracts for help, discovery, errors and the MCP tool list
 
 - **Why:** agents depend on `commands --json` and the MCP tool list; a change to them must be seen and reviewed.
-- **Enforced by:** `tg-cli: pnpm contracts:check` · `max-cli: pnpm contracts:check` ·
-  `whatsapp-cli: pnpm contracts:check` · `drive-cli: pnpm contracts:check` · `zoom-cli: pnpm contracts:check`.
+- **Enforced by:** `node-ci.yml:check` · `<app>: pnpm contracts:check` · `whatsapp-cli: pnpm contracts:check`.
 - **Example:** `pnpm contracts:check` runs `cli-contract contracts/plan.json` against the built CLI. It checks the
   help snapshot, that discovery is one JSON value on stdout with empty stderr, that a bad option gives the documented
   exit code and one JSON error on stderr, and the MCP tool names, schemas and annotations. A change is accepted with
   `pnpm exec cli-contract contracts/plan.json --update` and a reviewed diff.
 - **Exceptions:** the contracts run in full validation, not on pull requests.
-- **Applies to:** all CLIs. memo has no contracts yet. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-14 · Check the upgrade from the previous published version
 
 - **Why:** a release that cannot read what the previous one wrote loses the owner's data.
-- **Enforced by:** `tg-cli: pnpm contracts:upgrade` · `max-cli: pnpm contracts:upgrade` ·
-  `drive-cli: pnpm contracts:upgrade` · `zoom-cli: pnpm contracts:upgrade`.
+- **Enforced by:** `node-ci.yml:check` · `<app>: pnpm contracts:upgrade`.
 - **Example:** `pnpm contracts:upgrade` runs the previous published package and this build on the same synthetic
   state and checks that the data survives. Each store migration also has its own upgrade test (WC-STORE-9).
 - **Exceptions:** a CLI with no local state.
-- **Applies to:** all CLIs with local state. memo and wa have no upgrade contract yet. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs with local state. wa has no upgrade contract yet. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-15 · A refactor keeps `commands --json` and the MCP tool list as they were
 

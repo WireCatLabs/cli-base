@@ -72,11 +72,10 @@ on the [CI](ci.md) page.
 ### WC-REL-6 · `package.json` holds the version, and the program reads a synced copy
 
 - **Why:** a bundled command has no `package.json` to read, so `--version` reads a source file that must not drift.
-- **Enforced by:** `tg-cli: pnpm version:check` · `max-cli: pnpm version:check` · `whatsapp-cli: pnpm version:check`.
+- **Enforced by:** `node-ci.yml:check` · `<app>: pnpm version:check` · `whatsapp-cli: pnpm version:check`.
 - **Example:** edit only `package.json`, then run `pnpm version:sync` to update `src/version.ts`. `pnpm version:check`
   fails when the two disagree.
-- **Exceptions:** a shared library that prints no version has no `src/version.ts`. Today tg, max and wa have
-  `version:check`; memo, drive and zoom do not.
+- **Exceptions:** a shared library that prints no version has no `src/version.ts`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-7 · Versions are `x.y.z`; before 1.0.0 the changelog, not the number, marks a breaking change
@@ -174,11 +173,11 @@ on the [CI](ci.md) page.
 ### WC-REL-16 · The package ships only the files it names
 
 - **Why:** a stray file in the package can leak local data and grows every install.
-- **Enforced by:** `tg-cli: pnpm release:check` · `max-cli: pnpm release:check` · `whatsapp-cli: pnpm release:check`.
+- **Enforced by:** `node-ci.yml:check` · `<app>: pnpm package:check` · `whatsapp-cli: pnpm release:check`.
 - **Example:** `package.json` `files` lists what ships. The CLI's `pnpm release:check` runs `packContents` from
   `@wirecat/cli-base/release` and fails on any other path in `npm pack --dry-run`.
-- **Exceptions:** none. tg, max and wa run this check. memo's `release:check` has no package-contents step, drive and
-  zoom have no `release:check`, and zoom checks the packed file in a test instead.
+- **Exceptions:** none. Each CLI's `package:check` runs `packContents`; tg and max as
+  `release-check.ts --package-only`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Sources
