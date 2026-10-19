@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--alias <name>` is a vocabulary flag** (role `query`): another name of the thing, searched as its own
+  alternative beside its name, repeatable. memo's `projects evidence` takes extra project names with it; before,
+  a CLI that wanted the option failed `option-role`.
+
 ## 0.47.0 — 18.10.2026
 
 ### Added
