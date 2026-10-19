@@ -17,6 +17,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "literal words to find within the communications selected for preparation",
   },
   {
+    name: "--alias",
+    value: "<name>",
+    role: "query",
+    type: "string",
+    meaning: "another name of the thing, searched as its own alternative beside its name; repeat for more",
+  },
+  {
     name: "--context-since-time",
     value: "<time>",
     role: "target",
