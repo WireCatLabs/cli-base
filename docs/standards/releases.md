@@ -98,14 +98,19 @@ on the [CI](ci.md) page.
 - **Exceptions:** memo, drive and zoom have no gap in their `bin/release` today.
 - **Applies to:** messenger CLIs (gap); shared libraries (no gap). **Since:** cli-base 0.41.0. **Rulings:** NEED-854.
 
-### WC-REL-9 · A breaking change to a stable shared-library export ships at most once a week
+### WC-REL-9 · A change to a stable shared-library export that makes a CLI change its code ships at most once a week
 
-- **Why:** each such change makes every CLI change too; batching them keeps the CLIs on one version.
-- **Enforced by:** review only.
-- **Example:** gather breaking export changes into one release a week. Bump the library in every CLI that uses it on
-  the same day.
+- **Why:** the limit keeps the CLIs from chasing versions; a change that no CLI has to follow gives them nothing to
+  chase.
+- **Enforced by:** `cli-core: parity.yml` (it decides which changes count; review keeps the week).
+- **Example:** cli-core's parity jobs build tg-cli, max-cli and whatsapp-cli from their `main` against every pull
+  request. A change to a stable export counts unless all three jobs pass with each CLI's `main` unchanged; its
+  changelog still lists it under "Changed — may break callers" for outside users. It counts when a job fails, when it
+  passes only against a CLI branch made for the change, and when it compiles but changes behaviour that any CLI must
+  adapt to. Parity cannot see that last case, so when in doubt the change counts. Gather the changes that count into
+  one release a week, and bump the library in every CLI that uses it on the same day.
 - **Exceptions:** none.
-- **Applies to:** shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-473.
+- **Applies to:** shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-473, NEED-1552.
 
 ### WC-REL-10 · A messenger CLI is released only with a release report the owner signed for that commit
 
