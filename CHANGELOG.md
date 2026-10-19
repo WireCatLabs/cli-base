@@ -19,6 +19,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   exists so the CLIs do not chase versions, and a change they need not follow gives them nothing to chase. Its
   changelog still marks it "may break callers" for outside users.
 
+### Removed
+
+- **`--qr-file` is no longer a vocabulary flag.** tg, max and cli-core dropped the option that wrote the login QR
+  code to a PNG; a CLI now prints the QR code as text for the user or agent to paste. A CLI that still declares
+  `--qr-file` fails `option-role` in `cli-dev lint`; none does today.
+
 ## 0.47.1 â€” 19.10.2026
 
 ### Added

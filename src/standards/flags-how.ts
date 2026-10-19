@@ -177,13 +177,6 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "switch",
     meaning: "also print edits, deletions and other changes; every line names its event",
   },
-  {
-    name: "--qr-file",
-    value: "<png>",
-    role: "output",
-    type: "path",
-    meaning: "write the login QR code to this PNG instead of drawing it",
-  },
   { name: "--all-versions", role: "output", type: "switch", meaning: "also the earlier versions a newer one replaced" },
   { name: "--measure", value: "<name>", role: "sort", type: "choice", meaning: "the metric a ranking is ordered by" },
   { name: "--newest", role: "sort", type: "switch", meaning: "newest first instead of best first" },
