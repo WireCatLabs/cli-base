@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **WC-REL-9 counts a shared-library change toward its once-a-week limit only when a CLI must change its code to take
+  it.** The library's own CI proves it: cli-core builds tg-cli, max-cli and whatsapp-cli against every pull request,
+  and a change all three pass with, unchanged, ships in any release. The limit exists so the CLIs do not chase
+  versions, and such a change gives them nothing to chase. Its changelog still marks it "may break callers" for
+  outside users.
+
 ## 0.47.1 — 19.10.2026
 
 ### Added

@@ -98,14 +98,17 @@ on the [CI](ci.md) page.
 - **Exceptions:** memo, drive and zoom have no gap in their `bin/release` today.
 - **Applies to:** messenger CLIs (gap); shared libraries (no gap). **Since:** cli-base 0.41.0. **Rulings:** NEED-854.
 
-### WC-REL-9 · A breaking change to a stable shared-library export ships at most once a week
+### WC-REL-9 · A change to a stable shared-library export that makes a CLI change its code ships at most once a week
 
-- **Why:** each such change makes every CLI change too; batching them keeps the CLIs on one version.
-- **Enforced by:** review only.
-- **Example:** gather breaking export changes into one release a week. Bump the library in every CLI that uses it on
-  the same day.
+- **Why:** the limit keeps the CLIs from chasing versions; a change that no CLI has to follow gives them nothing to
+  chase.
+- **Enforced by:** `cli-core: parity.yml`.
+- **Example:** cli-core's CI builds tg-cli, max-cli and whatsapp-cli against every pull request. A change to a stable
+  export that all three still build and pass with, unchanged, does not count toward the week; its changelog still
+  lists it under "Changed — may break callers" for outside users. A change that makes any CLI fail counts: gather
+  those into one release a week, and bump the library in every CLI that uses it on the same day.
 - **Exceptions:** none.
-- **Applies to:** shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-473.
+- **Applies to:** shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-473, NEED-1552.
 
 ### WC-REL-10 · A messenger CLI is released only with a release report the owner signed for that commit
 
