@@ -2,6 +2,20 @@ import type { VocabularyFlag } from "./vocabulary.js"
 
 export const WHAT_FLAGS: VocabularyFlag[] = [
   {
+    name: "--target-store",
+    value: "<file>",
+    role: "target",
+    type: "path",
+    meaning: "explicit destination store file for checking or restoring selected annotations",
+  },
+  {
+    name: "--bindings",
+    value: "<file>",
+    role: "target",
+    type: "path",
+    meaning: "JSON file mapping source typed references to explicitly selected destination references",
+  },
+  {
     name: "--context-source",
     value: "<id=cursor>",
     role: "scope",
