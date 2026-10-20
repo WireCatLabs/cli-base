@@ -112,7 +112,7 @@ const tokensOf = (text: string, fail: Fail = queryError): Token[] => {
           at += 2
           continue
         }
-        if (next === "@" && /^@[\p{L}\p{N}][^\s@]*\.[\p{L}\p{N}]/u.test(text.slice(at))) {
+        if (next === "@" && /^@(?:\p{L}|[\p{L}\p{N}][^\s@]*\.[\p{L}\p{N}])/u.test(text.slice(at))) {
           at++
           continue
         }
