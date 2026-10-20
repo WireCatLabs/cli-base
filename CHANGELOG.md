@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **A messenger chat id parses unquoted in a query.** `chat:133…@lid`, `chat:120…@g.us` and `…@s.whatsapp.net` are
+  one term now; before, `@lid` was read as minimum-should-match and the query failed with
+  `query.unsupported-operator`. An `@` inside a word is part of the value when a letter follows it; `alpha@2` and
+  `(a b)@2` are still refused.
+
 ## 0.47.2 — 19.10.2026
 
 ### Added

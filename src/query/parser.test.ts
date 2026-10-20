@@ -121,6 +121,12 @@ describe("a list's query", () => {
     expect(reason(() => parseLucene("(alpha OR beta)@2"))).toBe("query.unsupported-operator")
   })
 
+  it("reads a messenger chat id as one term, unquoted", () => {
+    for (const id of ["133713371337@lid", "120363000000000000@g.us", "34600000000@s.whatsapp.net"])
+      expect(parseLucene(`chat:${id}`).root).toMatchObject({ operator: "term", value: id })
+    expect(reason(() => parseLucene("chat:133@2"))).toBe("query.unsupported-operator")
+  })
+
   it("reads the terms lists need: quoted values with a colon, comparisons, presence, relative dates", () => {
     expect(failure(() => parseLucene("subject:note:42", { defaultField: "none" })).details.reason).toBe(
       "query.invalid-syntax",
