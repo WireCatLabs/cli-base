@@ -26,7 +26,16 @@ interface Entry {
   deletePassword(): boolean
 }
 
-type EntryConstructor = new (service: string, account: string) => Entry
+type EntryConstructor = new (
+  service: string,
+  account: string,
+  options?: { linux?: { store?: "secret-service" | "keyutils" } },
+) => Entry
+
+// Without a pinned store the binding silently falls back to the kernel keyring when the Secret
+// Service fails (locked, not running): reads miss every stored secret and writes are lost on
+// reboot, and nothing throws, so `Credentials` never falls back to its file. Ignored off Linux.
+const ENTRY_OPTIONS = { linux: { store: "secret-service" } } as const
 
 const require = createRequire(import.meta.url)
 let cached: EntryConstructor | undefined
@@ -38,14 +47,16 @@ const entryClass = (): EntryConstructor => {
   return cached
 }
 
+const entry = (service: string, account: string): Entry => new (entryClass())(service, account, ENTRY_OPTIONS)
+
 export const systemKeyring: KeyringStore = {
   // Returns null for an absent entry rather than throwing — measured against @napi-rs/keyring
   // on 2026-09-13, and the difference matters: a throw here means the keychain is unusable.
-  get: (service, account) => new (entryClass())(service, account).getPassword(),
+  get: (service, account) => entry(service, account).getPassword(),
   set: (service, account, secret) => {
-    ;new (entryClass())(service, account).setPassword(secret)
+    entry(service, account).setPassword(secret)
   },
-  delete: (service, account) => new (entryClass())(service, account).deletePassword(),
+  delete: (service, account) => entry(service, account).deletePassword(),
 }
 
 /** An in-memory stand-in. Every test uses this; none can reach the real keychain. */
