@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.47.5 — 21.10.2026
+
+### Fixed
+
+- **On Linux the OS keyring now means the Secret Service, never the kernel keyring.** `@napi-rs/keyring` silently
+  fell back to the in-memory kernel keyring when the Secret Service did not answer (gnome-keyring locked, D-Bus
+  timeout): reads of stored secrets came back empty with no hint why, and writes went to memory that a reboot
+  clears. `systemKeyring` now pins every entry to the Secret Service, so such a failure throws and `Credentials`
+  in `auto` mode warns once and uses its file. What to watch for: a machine with no Secret Service but a working
+  kernel keyring now gets the credentials file instead; a secret written to the kernel keyring by an earlier
+  version is no longer read and has to be stored again. The warning now reads "could not reach the OS keyring — it
+  may be locked, or no keyring service is running (…); using <file> instead, readable only by you".
+
 ## 0.47.4 — 20.10.2026
 
 ### Added

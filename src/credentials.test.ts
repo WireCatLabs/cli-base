@@ -46,7 +46,7 @@ describe("Credentials", () => {
     expect(credentials.write("default", "s3cret")).toBe("file")
     expect(credentials.read("default")).toEqual({ secret: "s3cret", source: "file" })
     expect(warnings).toHaveLength(1)
-    expect(warnings[0]).toMatch(/keyring is unavailable/)
+    expect(warnings[0]).toMatch(/could not reach the OS keyring — it may be locked/)
   })
 
   it("writes the fallback file with owner-only permissions", () => {

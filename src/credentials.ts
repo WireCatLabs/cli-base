@@ -160,8 +160,9 @@ export class Credentials {
       if (!this.#warned) {
         this.#warned = true
         this.#warn(
-          `the OS keyring is unavailable (${error instanceof Error ? error.message : String(error)}); ` +
-            `storing in ${this.#path()} instead, readable only by you`,
+          `could not reach the OS keyring — it may be locked, or no keyring service is running ` +
+            `(${error instanceof Error ? error.message : String(error)}); ` +
+            `using ${this.#path()} instead, readable only by you`,
         )
       }
       return undefined
