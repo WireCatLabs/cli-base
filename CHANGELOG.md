@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Selected annotation workflows share the `annotations` resource and explicit `--target-store` and
+  `--bindings` flags.** A CLI can export, check and restore derived records without implying a full
+  archive backup or choosing destination identities by name. Each command states its included and
+  omitted facets; `check` keeps its existing read-only meaning.
+
 ## 0.47.3 — 20.10.2026
 
 ### Fixed

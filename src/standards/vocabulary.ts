@@ -227,6 +227,10 @@ const collections: [string, string][] = [
   ["documents", "files imported from Google Drive or Docs, or linked in a chat"],
   ["notes", "text the owner writes, or files from a notes folder"],
   ["projects", "the owner's work units with a task key"],
+  [
+    "annotations",
+    "derived records attached to a selected entity, with explicit coverage of included and omitted facets",
+  ],
   ["organizations", "companies, teams, families or communities"],
   [
     "identities",
