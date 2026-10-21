@@ -121,6 +121,20 @@ describe("a list's query", () => {
     expect(reason(() => parseLucene("(alpha OR beta)@2"))).toBe("query.unsupported-operator")
   })
 
+  it("reads a phrase's distance only when asked to", () => {
+    expect(reason(() => parseLucene('"alpha beta"~3'))).toBe("query.unsupported-operator")
+    expect(parseLucene('"alpha beta"~3', { proximity: true }).root).toMatchObject({
+      operator: "phrase",
+      value: "alpha beta",
+      slop: 3,
+      span: { start: 0, end: 14 },
+    })
+    expect(parseLucene('"alpha beta"~3 gamma', { proximity: true }).root).toMatchObject({ kind: "boolean" })
+    expect(reason(() => parseLucene("alpha~2", { proximity: true }))).toBe("query.unsupported-operator")
+    expect(reason(() => parseLucene('"alpha beta"~1.5', { proximity: true }))).toBe("query.invalid-syntax")
+    expect(reason(() => parseLucene('"alpha beta"~', { proximity: true }))).toBe("query.invalid-syntax")
+  })
+
   it("reads a messenger chat id as one term, unquoted", () => {
     for (const id of ["133713371337@lid", "120363000000000000@g.us", "34600000000@s.whatsapp.net"])
       expect(parseLucene(`chat:${id}`).root).toMatchObject({ operator: "term", value: id })

@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`parseLucene` can read a phrase's distance.** With `{ proximity: true }`, `"a b"~3` parses as a phrase predicate
+  with `slop: 3`, and `queryNodeSchema` accepts `slop`. Meeting search needs it for words spread over neighbouring
+  transcript lines, and a caller that turns it on says what the number counts. Without the option `~` is still
+  `query.unsupported-operator`, so messages and lists see no change. A distance that is not a whole number is
+  `query.invalid-syntax`; `word~2` (fuzzy) stays unsupported either way.
+
 ## 0.48.0 — 21.10.2026
 
 ### Changed — may break callers

@@ -21,6 +21,8 @@ export interface Predicate {
   span: Span
   /** A bare word, under no field. */
   implicit?: true
+  /** `"a b"~N`, read only when the parser is asked to: how far apart the phrase's words may be. */
+  slop?: number
 }
 export type QueryNode = Predicate | { kind: "boolean"; clauses: { occur: Occur; node: QueryNode }[]; span: Span }
 export interface QueryAst {
@@ -40,6 +42,7 @@ const predicateSchema = v.object({
   upper_inclusive: v.optional(v.boolean()),
   span: spanSchema,
   implicit: v.optional(v.literal(true)),
+  slop: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
 })
 export const queryNodeSchema: v.GenericSchema<QueryNode> = v.variant("kind", [
   predicateSchema,
