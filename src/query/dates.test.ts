@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { dateEndpoint, dateRange, dayBoundary, timezoneOf } from "./dates.js"
+import { dateEndpoint, dateRange, dayBoundary, timezoneOf, wallTime } from "./dates.js"
 
 const span = { start: 0, end: 10 }
 describe("typed calendar boundaries", () => {
@@ -75,5 +75,31 @@ describe("relative dates", () => {
   })
   it("still refuses an unknown word", () => {
     expect(() => dateRange("tomorrow", "*", true, true, "UTC", span, now)).toThrow("query.invalid-date")
+  })
+})
+
+describe("a wall-clock time read in a zone", () => {
+  it("reads the same typed time as the same moment whatever the process zone", () => {
+    const before = process.env.TZ
+    const moments = ["Asia/Vladivostok", "America/Los_Angeles"].map((zone) => {
+      process.env.TZ = zone
+      expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(zone)
+      return wallTime("2026-10-21T16:03", "Europe/Madrid", span)
+    })
+    process.env.TZ = before
+    expect(moments).toEqual([Date.parse("2026-10-21T14:03:00Z"), Date.parse("2026-10-21T14:03:00Z")])
+  })
+  it("keeps seconds and milliseconds", () => {
+    expect(wallTime("2026-01-01T10:00:05.25", "Asia/Vladivostok", span)).toBe(Date.parse("2026-01-01T00:00:05.250Z"))
+  })
+  it.each([
+    ["2026-03-29T02:30", "skipped"],
+    ["2026-10-25T02:30", "repeated"],
+  ])("refuses %s, which daylight saving %s in Madrid", (value) => {
+    expect(() => wallTime(value, "Europe/Madrid", span)).toThrow(/daylight saving/)
+  })
+  it("refuses a time that is not on the calendar or carries a zone", () => {
+    expect(() => wallTime("2026-02-30T10:00", "UTC", span)).toThrow()
+    expect(() => wallTime("2026-01-01T10:00Z", "UTC", span)).toThrow()
   })
 })

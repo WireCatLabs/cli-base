@@ -8,6 +8,7 @@ import {
   defineSteps,
   errorObjectSchema,
   isContentKey,
+  isoTime,
   itemEnvelopeSchema,
   jsonlEndSchema,
   jsonlItemSchema,
@@ -223,6 +224,23 @@ describe("output registry", () => {
     ])
     expect(v.is(jsonlItemSchema(v.object({ ref: v.string() })), lines[0])).toBe(true)
     expect(v.is(jsonlEndSchema, lines[2])).toBe(true)
+  })
+
+  it("names the zone and the UTC window in meta, and refuses a window with an offset", () => {
+    const list = listEnvelopeSchema(v.string())
+    const page = { mode: "page", limit: 1, has_more: false }
+    const meta = { run_id: "r1", duration_ms: 1, complete: true, timezone: "Europe/Madrid" }
+    const window = { since: "2026-08-31T22:00:00.000Z" }
+    expect(v.is(list, { items: [], page, meta: { ...meta, window } })).toBe(true)
+    expect(v.is(list, { items: [], page, meta: { ...meta, window: { since: "2026-09-01T00:00:00+02:00" } } })).toBe(
+      false,
+    )
+  })
+
+  it("takes a time only in UTC", () => {
+    expect(v.is(isoTime, "2026-10-21T14:03:00.000Z")).toBe(true)
+    expect(v.is(isoTime, "2026-10-21T16:03:00.000+02:00")).toBe(false)
+    expect(v.is(isoTime, "2026-10-21T14:03:00.000+00:00")).toBe(false)
   })
 
   it("keeps field rules unique", () => {

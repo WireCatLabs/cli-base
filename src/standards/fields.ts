@@ -11,7 +11,7 @@ export const defineFieldRules = (input: unknown): FieldRule[] =>
 
 export const FIELD_RULES: FieldRule[] = defineFieldRules([
   { id: "envelope", rule: "every JSON answer is one object: a list `{items, page, …}`, one thing `{item, …}`" },
-  { id: "time", rule: "a time is an ISO 8601 string with a zone, never epoch milliseconds" },
+  { id: "time", rule: "a time is an ISO 8601 string in UTC, ending in `Z`, never epoch milliseconds" },
   { id: "duration", rule: "a length of time is a number of milliseconds in a key ending in `_ms`" },
   { id: "ref", rule: "a stored thing is named by `ref`; a message's `ref` value is its locator" },
   { id: "snake-case", rule: "keys are snake_case words, no abbreviations a reader has to decode" },

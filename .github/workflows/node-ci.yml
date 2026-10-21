@@ -90,6 +90,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test:coverage
+        env:
+          TZ: Asia/Vladivostok
       - run: pnpm build
       # One step per script, after test:coverage: test:matrix:check reads that run's argv log.
       - name: cli steps to skip

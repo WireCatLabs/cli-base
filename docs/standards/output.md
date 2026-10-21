@@ -80,7 +80,9 @@ JSON Schema 2020-12.
 
 - **Why:** `run_id` finds the run later, and `complete` says whether the answer can be trusted as whole.
 - **Enforced by:** review only.
-- **Example:** `{ run_id, duration_ms, accounts?, complete, issues?, truncated? }`. `complete: false` with
+- **Example:** `{ run_id, duration_ms, accounts?, complete, issues?, truncated?, timezone?, window? }`. `timezone`
+  names the zone a time without one was read or shown in, and `window` the UTC bounds a date filter used
+  ([Time](time.md)). `complete: false` with
   `issues: [{ code, reason?, source }]` says a source failed or was skipped. `truncated` says a size cap cut the
   answer. Neither one means another page exists: that is `page.has_more`.
 - **Exceptions:** none.
@@ -147,7 +149,7 @@ JSON Schema 2020-12.
 
 - **Why:** a caller must not guess whether `0` means "none" or "unknown".
 - **Enforced by:** `nullable-list`.
-- **Example:** a time is an ISO 8601 string with a zone, never epoch milliseconds. A length of time is a number of
+- **Example:** a time is an ISO 8601 string in UTC, ending in `Z`, never epoch milliseconds ([Time](time.md)). A length of time is a number of
   milliseconds in a key ending in `_ms`. A stored thing is named by `ref`. A key that is absent was not asked for or
   is not known. `null` is known to have no value. `[]` is known to be empty, never `null`. `0` is measured, never a
   stand-in for unknown.

@@ -1,7 +1,7 @@
 # WireCat CLI standards
 
 This handbook holds the rules every WireCat CLI follows: tools, layout, commands, output, MCP, accounts,
-permissions, architecture, tests, security, documents, releases and CI. Read this page first. Then read the page
+permissions, architecture, time, tests, security, documents, releases and CI. Read this page first. Then read the page
 for the area you are about to change.
 
 It ships in the `@wirecat/cli-base` package. A CLI that depends on cli-base has it at
@@ -40,6 +40,7 @@ rules it keeps. A new CLI is ready for its first release when every check under 
 | [Documents](docs.md) | `DOC` | 20 | User pages and developer pages, generated pages, current facts, changelog |
 | [Releases](releases.md) | `REL` | 16 | `bin/release`, the release lock, versions, release reports, trusted publishing |
 | [CI](ci.md) | `CI` | 12 | Hooks, the pull request budget, full validation, monthly runs |
+| [Time](time.md) | `TIME` | 6 | UTC in the store and in answers, the zone at input and display edges, date-only filters, tests in another zone |
 | [Style](style.md) | `STYLE` | 10 | Comments, TypeScript habits, commit messages |
 | [New CLI](new-cli.md) | — | — | The checklist for starting a new CLI |
 
