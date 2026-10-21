@@ -136,6 +136,8 @@ interface Clause {
 export interface ParseOptions extends QueryContext {
   /** The field a bare word searches; `none` for a list, where a bare word is `query.bare-word`. */
   defaultField?: string
+  /** Read `"a b"~N` as a phrase with `slop: N`; a caller that turns it on says what N counts. */
+  proximity?: boolean
 }
 
 // A value written without quotes that holds an operator (`url:a.com/x?y=1`) fails at a character the reader does not
@@ -155,7 +157,10 @@ const regexHint = (text: string, at: number): string => {
   return quoteHint(text, at) ?? `/ starts a regular expression; put the value in quotes: "${word}"`
 }
 
-export const parseLucene = (text: string, { defaultField = "text", ...context }: ParseOptions = {}): QueryAst => {
+export const parseLucene = (
+  text: string,
+  { defaultField = "text", proximity = false, ...context }: ParseOptions = {},
+): QueryAst => {
   const fail: Fail = (reason, span, alternative) =>
     queryError(reason, span, alternative ?? quoteHint(text, span.start), context)
   if (text.length > QUERY_LIMITS.bytes || new TextEncoder().encode(text).length > QUERY_LIMITS.bytes)
@@ -289,6 +294,13 @@ export const parseLucene = (text: string, { defaultField = "text", ...context }:
         span: { start: start ?? token.span.start, end: token.span.end },
         ...(implicit ? { implicit: true as const } : {}),
       })
+    }
+    if (proximity && peek().kind === "~" && node.kind === "predicate" && node.operator === "phrase") {
+      take()
+      const distance = take()
+      if (distance.kind !== "number" || !/^\d+$/u.test(distance.raw))
+        fail("query.invalid-syntax", distance.span, 'write the distance as a whole number: "a b"~3')
+      node = { ...node, slop: Number(distance.raw), span: { start: node.span.start, end: distance.span.end } }
     }
     if (peek().kind === "~")
       fail(
