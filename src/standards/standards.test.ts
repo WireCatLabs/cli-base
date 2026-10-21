@@ -8,6 +8,7 @@ import {
   defineSteps,
   errorObjectSchema,
   isContentKey,
+  isoTime,
   itemEnvelopeSchema,
   jsonlEndSchema,
   jsonlItemSchema,
@@ -223,6 +224,12 @@ describe("output registry", () => {
     ])
     expect(v.is(jsonlItemSchema(v.object({ ref: v.string() })), lines[0])).toBe(true)
     expect(v.is(jsonlEndSchema, lines[2])).toBe(true)
+  })
+
+  it("takes a time only in UTC", () => {
+    expect(v.is(isoTime, "2026-10-21T14:03:00.000Z")).toBe(true)
+    expect(v.is(isoTime, "2026-10-21T16:03:00.000+02:00")).toBe(false)
+    expect(v.is(isoTime, "2026-10-21T14:03:00.000+00:00")).toBe(false)
   })
 
   it("keeps field rules unique", () => {

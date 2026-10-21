@@ -147,7 +147,7 @@ JSON Schema 2020-12.
 
 - **Why:** a caller must not guess whether `0` means "none" or "unknown".
 - **Enforced by:** `nullable-list`.
-- **Example:** a time is an ISO 8601 string with a zone, never epoch milliseconds. A length of time is a number of
+- **Example:** a time is an ISO 8601 string in UTC, ending in `Z`, never epoch milliseconds ([Time](time.md)). A length of time is a number of
   milliseconds in a key ending in `_ms`. A stored thing is named by `ref`. A key that is absent was not asked for or
   is not known. `null` is known to have no value. `[]` is known to be empty, never `null`. `0` is measured, never a
   stand-in for unknown.

@@ -5,7 +5,11 @@ import { dottedId, text } from "./registry.js"
 /** At most two next steps per answer: the one to take, then one alternative. */
 export const MAX_NEXT_STEPS = 2
 
-export const isoTime = v.pipe(v.string(), v.isoTimestamp("an ISO 8601 time with a zone"))
+export const isoTime = v.pipe(
+  v.string(),
+  v.isoTimestamp("an ISO 8601 time in UTC"),
+  v.endsWith("Z", "an ISO 8601 time in UTC, ending in `Z`"),
+)
 
 /** The typed name of a stored thing, `msg:telegram/1/2/3` or `note:42`: what every other command takes. */
 export const reference = v.pipe(v.string(), v.regex(/^[a-z]+:\S+$/, "a reference such as `note:42`"))

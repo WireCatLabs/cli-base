@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **The handbook has a Time page, and the shared CI runs tests in `Asia/Vladivostok`.** Every time is stored and
+  exchanged in UTC; a zone is applied only where a time with no zone comes in and where a person reads one
+  ([`docs/standards/time.md`](docs/standards/time.md), `WC-TIME-1`…`6`). `WC-OUT-13` now asks for ISO 8601 ending
+  in `Z`, not any zone. `node-ci.yml` sets `TZ=Asia/Vladivostok` for `test:coverage`, so a test that passed only
+  because CI ran in UTC fails. What to watch for: a repository that moves its `node-ci.yml` pin to this release may
+  see tests fail that read or print local dates; those are the bugs the Time page names.
+
 ## 0.47.5 — 21.10.2026
 
 ### Fixed
