@@ -98,6 +98,19 @@ export const wallTime = (value: string, zone: string, span: Span): number => {
     queryError("query.invalid-date", span, "this local time is skipped or repeated by daylight saving; add an offset")
   return [...found][0] as number
 }
+const ZONED = /(?:Z|[+-]\d{2}:?\d{2})$/iu
+/**
+ * A typed date or time as epoch ms. A zone the value names wins; else it is read in `zone`. A date alone is the
+ * start of that local day, or with `end` its last millisecond, so an inclusive `<=` keeps the whole day.
+ */
+export const zonedMoment = (value: string, zone: string, span: Span, { end = false } = {}): number => {
+  if (/^\d{4}-\d{2}-\d{2}$/u.test(value)) return dayBoundary(value, zone, end, span) - (end ? 1 : 0)
+  if (!ZONED.test(value)) return wallTime(value, zone, span)
+  const time = Date.parse(value)
+  if (!/^\d{4}-\d{2}-\d{2}T/u.test(value) || !Number.isFinite(time)) queryError("query.invalid-date", span)
+  calendar(value.slice(0, 10), span)
+  return time
+}
 const AGO = /^(\d+)(m|h|d)$/u
 const AGO_MS: Record<string, number> = { m: 60_000, h: 3_600_000, d: 86_400_000 }
 const dayOf = (word: string, zone: string, now: number, span: Span): string => {

@@ -25,6 +25,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   optional seconds) as the moment it names in an IANA zone, whatever the process zone. A local time that daylight
   saving skips or repeats is refused with `validation_error`, never guessed. It is the input edge `WC-TIME-3` asks
   for; cli-core's `--since-time` and `--at-time` parsers are to move onto it.
+- **`zonedMoment(value, zone, span, { end? })` in `@wirecat/cli-base/query`** reads a typed date or time the way
+  `WC-TIME-3` and `WC-TIME-5` ask: a zone the value names wins, a time without one is read in `zone`, a date alone is
+  local midnight, or with `end` the last millisecond of that local day.
 - **`meta.timezone` and `meta.window`** are allowed in every envelope: the zone a time without one was read or shown
   in, and the UTC `{ since?, until? }` a date filter used.
 
