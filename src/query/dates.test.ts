@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { dateEndpoint, dateRange, dayBoundary, timezoneOf, wallTime } from "./dates.js"
+import { dateEndpoint, dateRange, dayBoundary, timezoneOf, wallTime, zonedMoment } from "./dates.js"
 
 const span = { start: 0, end: 10 }
 describe("typed calendar boundaries", () => {
@@ -101,5 +101,20 @@ describe("a wall-clock time read in a zone", () => {
   it("refuses a time that is not on the calendar or carries a zone", () => {
     expect(() => wallTime("2026-02-30T10:00", "UTC", span)).toThrow()
     expect(() => wallTime("2026-01-01T10:00Z", "UTC", span)).toThrow()
+  })
+})
+
+describe("a typed date or time as a moment", () => {
+  it("starts a date alone at local midnight and ends it at the last millisecond of that day", () => {
+    expect(zonedMoment("2026-09-01", "Asia/Vladivostok", span)).toBe(Date.parse("2026-08-31T14:00:00Z"))
+    expect(zonedMoment("2026-09-01", "Europe/Madrid", span, { end: true })).toBe(Date.parse("2026-09-01T22:00:00Z") - 1)
+  })
+  it("keeps a zone the value names and reads one without a zone in the given zone", () => {
+    expect(zonedMoment("2026-10-21T16:03:00+02:00", "Asia/Vladivostok", span)).toBe(Date.parse("2026-10-21T14:03:00Z"))
+    expect(zonedMoment("2026-10-21T16:03", "Europe/Madrid", span)).toBe(Date.parse("2026-10-21T14:03:00Z"))
+  })
+  it("refuses a day that is not on the calendar, with or without a zone", () => {
+    expect(() => zonedMoment("2026-02-30", "UTC", span)).toThrow()
+    expect(() => zonedMoment("2026-02-30T10:00Z", "UTC", span)).toThrow()
   })
 })
