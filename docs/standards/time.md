@@ -25,7 +25,7 @@ Every time in a database, cache, cursor, receipt, manifest or exported file is U
 
 - **Why:** a stored time read on another computer, or after the owner travels, must mean the same moment.
 - **Enforced by:** review only.
-- **Example:** `sent_at INTEGER` holding `1792936980000`, or `"2026-10-21T14:03:00.000Z"`.
+- **Example:** `sent_at INTEGER` holding `1792591380000`, or `"2026-10-21T14:03:00.000Z"`.
 - **Exceptions:** a column that already holds UTC in another unambiguous form (SQLite's `YYYY-MM-DD HH:MM:SS` from
   `CURRENT_TIMESTAMP`, epoch seconds) stays until its table next migrates; its value still leaves as `WC-TIME-2`
   says. A column that may hold local time gets a forward-only migration, or a proof from history that every writer

@@ -21,6 +21,12 @@ describe("fakeClock", () => {
     expect(time.clock()).toBe(1500)
   })
 
+  it("starts the wall clock at the given time and moves it with sleeps", async () => {
+    const time = fakeClock(1_000_000)
+    await time.sleep(250)
+    expect(time.now().getTime()).toBe(1_000_250)
+  })
+
   it("refuses a sleep whose signal has already fired", async () => {
     await expect(fakeClock().sleep(10, AbortSignal.abort())).rejects.toMatchObject({ name: "AbortError" })
   })

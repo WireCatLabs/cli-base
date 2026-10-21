@@ -80,7 +80,9 @@ JSON Schema 2020-12.
 
 - **Why:** `run_id` finds the run later, and `complete` says whether the answer can be trusted as whole.
 - **Enforced by:** review only.
-- **Example:** `{ run_id, duration_ms, accounts?, complete, issues?, truncated? }`. `complete: false` with
+- **Example:** `{ run_id, duration_ms, accounts?, complete, issues?, truncated?, timezone?, window? }`. `timezone`
+  names the zone a time without one was read or shown in, and `window` the UTC bounds a date filter used
+  ([Time](time.md)). `complete: false` with
   `issues: [{ code, reason?, source }]` says a source failed or was skipped. `truncated` says a size cap cut the
   answer. Neither one means another page exists: that is `page.has_more`.
 - **Exceptions:** none.

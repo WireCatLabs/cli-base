@@ -37,7 +37,7 @@ export const fakeClock = (startMs = 0): FakeClock => {
   return {
     waits,
     clock: () => elapsed,
-    now: () => new Date(startMs + elapsed),
+    now: () => new Date(elapsed),
     sleep: async (ms, signal, reason) => {
       if (signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError")
       waits.push(reason === undefined ? { ms } : { ms, reason })

@@ -50,6 +50,54 @@ export const dayBoundary = (value: string, zone: string, next: boolean, span: Sp
     queryError("query.invalid-date", span, "this calendar day does not exist in the selected timezone")
   return lo
 }
+const WALL = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/u
+/** A time with no zone, read in `zone`. A local time that daylight saving skips or repeats is refused. */
+export const wallTime = (value: string, zone: string, span: Span): number => {
+  const [, year, month, day, hour, minute, second = "0", fraction = "0"] = WALL.exec(value) ?? []
+  if (year === undefined) queryError("query.invalid-date", span, "use YYYY-MM-DDTHH:mm, with optional seconds")
+  const wanted = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second),
+    Number(fraction.padEnd(3, "0")),
+  )
+  const check = new Date(wanted)
+  if (
+    check.getUTCDate() !== Number(day) ||
+    check.getUTCHours() !== Number(hour) ||
+    check.getUTCMinutes() !== Number(minute) ||
+    check.getUTCSeconds() !== Number(second)
+  )
+    queryError("query.invalid-date", span)
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: zone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  })
+  const shown = (instant: number) => {
+    const parts = Object.fromEntries(formatter.formatToParts(instant).map((part) => [part.type, Number(part.value)]))
+    return (
+      Date.UTC(parts.year ?? 0, (parts.month ?? 1) - 1, parts.day, parts.hour, parts.minute, parts.second) +
+      (((instant % 1000) + 1000) % 1000)
+    )
+  }
+  const found = new Set<number>()
+  for (const probe of [wanted - 86_400_000, wanted, wanted + 86_400_000]) {
+    const candidate = wanted - (shown(probe) - probe)
+    if (shown(candidate) === wanted) found.add(candidate)
+  }
+  if (found.size !== 1)
+    queryError("query.invalid-date", span, "this local time is skipped or repeated by daylight saving; add an offset")
+  return [...found][0] as number
+}
 const AGO = /^(\d+)(m|h|d)$/u
 const AGO_MS: Record<string, number> = { m: 60_000, h: 3_600_000, d: 86_400_000 }
 const dayOf = (word: string, zone: string, now: number, span: Span): string => {

@@ -19,6 +19,21 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   because CI ran in UTC fails. What to watch for: a repository that moves its `node-ci.yml` pin to this release may
   see tests fail that read or print local dates; those are the bugs the Time page names.
 
+### Added
+
+- **`wallTime(value, zone, span)` in `@wirecat/cli-base/query`** reads a time with no zone (`2026-10-21T16:03`,
+  optional seconds) as the moment it names in an IANA zone, whatever the process zone. A local time that daylight
+  saving skips or repeats is refused with `validation_error`, never guessed. It is the input edge `WC-TIME-3` asks
+  for; cli-core's `--since-time` and `--at-time` parsers are to move onto it.
+- **`meta.timezone` and `meta.window`** are allowed in every envelope: the zone a time without one was read or shown
+  in, and the UTC `{ since?, until? }` a date filter used.
+
+### Fixed
+
+- **`fakeClock(startMs).now()` starts at `startMs`.** It reported `2 × startMs` plus the time slept, so a test that
+  gave a start time saw a different wall time than it set. What to watch for: a test that worked around the doubled
+  value now sees the value it passed.
+
 ## 0.47.5 — 21.10.2026
 
 ### Fixed

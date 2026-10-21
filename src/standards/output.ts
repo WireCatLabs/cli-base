@@ -78,6 +78,8 @@ export const metaSchema = v.strictObject({
   complete: v.boolean(),
   issues: v.optional(v.array(issueSchema)),
   truncated: v.optional(v.boolean()),
+  timezone: v.optional(text),
+  window: v.optional(v.strictObject({ since: v.optional(isoTime), until: v.optional(isoTime) })),
 })
 
 const nextSteps = v.optional(v.pipe(v.array(nextStepSchema), v.maxLength(MAX_NEXT_STEPS)))
