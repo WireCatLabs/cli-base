@@ -8,6 +8,6 @@
     "rootDir": "${configDir}",
     "allowImportingTsExtensions": true
   },
-  "include": ["${configDir}/scripts/**/*.ts"],
+  "include": ["${configDir}/scripts/**/*.ts", "${configDir}/vitest.config.ts"],
   "exclude": []
 }
