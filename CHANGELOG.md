@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **The shared scripts TypeScript configuration checks `vitest.config.ts`.** Consumers extending it now
+  catch type errors in their test-runner configuration alongside scripts; fix newly reported errors before upgrading.
+
 ## 0.50.0 — 22.10.2026
 
 ### Added
