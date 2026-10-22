@@ -20,9 +20,10 @@ Rule ids on this page are `WC-MCP-<n>`. How to read a rule, how ids work and whi
 ### Who follows these rules today
 
 tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp`) and bot server (`<cli> <profile> bot mcp`).
-memo, drive and zoom have their own servers: memo has hand-written tools, drive builds one tool per command from its
-command tree and skips commands through its own list, and zoom's `serve --mcp` only reads. Those three are known gaps
-against these rules.
+zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp`, cli-core's
+`toolsFromCommands` and `runCommandForAgent`). memo and drive have their own servers: memo has hand-written tools, and
+drive builds one tool per command from its command tree and skips commands through its own list. Those two are known
+gaps against these rules.
 
 WC-MCP-2 and WC-MCP-8 need cli-core 0.321.0, which tg, max and wa pin.
 

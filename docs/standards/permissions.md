@@ -18,8 +18,10 @@ Rule ids on this page are `WC-PERM-<n>`. How to read a rule, how ids work and wh
 ### Who follows these rules today
 
 tg, max and wa use cli-core's permissions and write guard in full. memo uses them for the shared commands only. drive
-has its own policy and guard, with its own `--read-only` flag; zoom only reads. Where this page says "every CLI that
-writes", drive is a known gap.
+has its own policy and guard, with its own `--read-only` flag. zoom has per-profile `permissions` from zoom-cli 0.35.0,
+read with cli-core's `levelFor`; its writes change Zoom meetings, its built-in default is `remote-meetings: ask`, and
+it has no send journal or recipient list, since it sends no messages. Where this page says "every CLI that writes",
+drive is a known gap.
 
 WC-PERM-10 and WC-PERM-11 need cli-core 0.321.0, which tg, max and wa pin. WC-PERM-12 as written needs cli-core
 0.337.0; before it, the lock let through some local writes that overwrite what the owner saved. A command other
