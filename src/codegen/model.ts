@@ -1,7 +1,7 @@
 /**
  * The model every generator reads, whatever the source was: an OpenAPI file, a Postman collection,
- * a scraped reference page. A source adapter lives in the consumer and produces this; nothing here
- * parses a file format.
+ * a scraped reference page. An adapter produces this from a document already parsed into plain
+ * values: `adaptOpenApi` for OpenAPI here, the rest in the consumer. Nothing here reads YAML or a file.
  */
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD"
@@ -92,6 +92,8 @@ export interface ApiParameter {
 export interface ApiBody {
   confidence: Confidence
   required: boolean
+  /** How the body travels when it is not JSON: `multipart/form-data` for a file upload, or a form. */
+  contentType?: string
   schema?: SchemaNode
   example?: unknown
 }

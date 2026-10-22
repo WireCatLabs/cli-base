@@ -20,7 +20,7 @@ export interface ManifestOperation {
     description?: string
     schema: SchemaNode
   }[]
-  request?: { required: boolean; confidence: Confidence; schema?: string }
+  request?: { required: boolean; confidence: Confidence; schema?: string; contentType?: string }
   response?: { confidence: Confidence; schema?: string; sensitive?: boolean }
 }
 
@@ -43,6 +43,7 @@ const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperatio
           required: operation.requestBody.required,
           confidence: operation.requestBody.confidence,
           schema: tree.requestName(operation.id),
+          contentType: operation.requestBody.contentType,
         })
       : undefined,
     response: operation.response

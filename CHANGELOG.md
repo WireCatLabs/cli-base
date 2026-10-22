@@ -12,6 +12,19 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`adaptOpenApi` reads an OpenAPI 3.0 or 3.1 document into the codegen model.** It moved here from max-cli because
+  whatsapp-cli needs it too for Meta's Cloud API file. Beyond what max-cli's copy did, it resolves `$ref` parameters,
+  drops the `Authorization`, `User-Agent`, `Content-Type` and `Accept` header parameters (the
+  HTTP client sets them), reads `oneOf` as a union, `const` and a typeless `enum` as their type, `type: [T, "null"]`
+  as nullable, and an array with no `items` as any item. A body that is multipart or a form keeps that in the new
+  `ApiBody.contentType` and manifest `request.contentType`; a multipart body with a file wins over a JSON one. A body
+  typed only from sample values gets `confidence: "example"`. A path with no `operationId` is skipped instead of
+  refused, since Meta uses one to describe its webhook payload. It still stops on anything else it does not
+  understand, now under the name `OpenApiError`. Parse YAML yourself and hand it the plain object.
+- **One subtype may belong to two discriminated schemas, or to one schema under two values.** The generated type and
+  schema accept each value that selects it (`"unsupported" | "unknown"`); before, generation stopped. Meta's sent and
+  received message unions share `TextMessage` this way.
+
 - **Release checks can audit Go dependencies for reachable vulnerabilities.** Set `govulncheck: true` and
   `go-version-file` to the module's `go.mod` path. The audit uses that module's Go version and runs in its
   directory; it stays off for existing callers.

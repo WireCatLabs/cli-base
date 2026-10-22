@@ -1,9 +1,7 @@
 import type { ApiModel, CodeGenerator, SchemaNode } from "./model.js"
 import { identifier } from "./names.js"
 import { CodegenError } from "./pipeline.js"
-import { SchemaTree } from "./tree.js"
-
-type Literal = { property: string; value: string }
+import { type Literal, SchemaTree } from "./tree.js"
 
 const key = (name: string): string => (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : JSON.stringify(name))
 
@@ -89,7 +87,14 @@ class SchemaWriter {
     const rest = node.additionalProperties ? this.node(node.additionalProperties, where) : undefined
     if (names.length === 0) return rest ? `v.record(v.string(), ${rest})` : "v.looseObject({})"
     const entries = names.map((name) => {
-      if (literal?.property === name) return `  ${key(name)}: v.literal(${JSON.stringify(literal.value)}),`
+      if (literal?.property === name) {
+        const [only] = literal.values
+        const exact =
+          literal.values.length === 1
+            ? `v.literal(${JSON.stringify(only)})`
+            : `v.picklist(${JSON.stringify(literal.values)})`
+        return `  ${key(name)}: ${exact},`
+      }
       const property = node.properties[name] as SchemaNode
       const schema = this.node(property, `${where}.${name}`)
       return `  ${key(name)}: ${node.required.includes(name) ? schema : `v.optional(${schema})`},`

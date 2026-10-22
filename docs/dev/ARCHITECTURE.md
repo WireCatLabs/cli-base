@@ -18,7 +18,7 @@ review guidelines for module size. The entry-point map below applies it to this 
 | `/commands` | the command tree as data (`describeProgram`, `annotate`, `flatten`), the `commands --json` document and its schema (`commandsDocument`), and the reference page written from it (`commandsPage`) | Commander, as a type only; `valibot` |
 | `/completion` | shell completion over that tree | `/commands` types |
 | `/update` | which installer put the CLI there, the daily notice, running the update | `config` (the state file), `/http`'s `FetchLike` |
-| `/codegen` | build time: `ApiModel` → types, Valibot schemas, manifest, coverage page | nothing at run time |
+| `/codegen` | build time: an OpenAPI document → `ApiModel` → types, Valibot schemas, manifest, coverage page | nothing at run time |
 | `/codegen/runtime` | the number helpers generated schemas import | `valibot` |
 | `/release` | release checks a CLI runs before it publishes: `releaseCheck` and the checks it runs (changelog shape, document links, versions in step, package contents) | Node built-ins only |
 | `/skill` | the CLI's SKILL.md for agents: the `skill` command, the daily hint, the MCP resource | Commander **at run time** (the only entry point that is), `/update`'s state file, the root's `Renderer` and `Streams` types |

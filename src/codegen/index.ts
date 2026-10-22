@@ -1,7 +1,8 @@
 /**
  * Turns an official API description into committed code: types, Valibot schemas, an operation
  * manifest and a coverage page. Build-time only, and format-neutral: it parses no file format and
- * adds no dependency. The adapter from OpenAPI, Postman or anything else lives in the consumer.
+ * adds no dependency. `adaptOpenApi` reads an OpenAPI document the consumer has parsed; an adapter from
+ * Postman or anything else lives in the consumer.
  */
 export {
   type CoverageOptions,
@@ -31,6 +32,7 @@ export type {
   SourceReference,
 } from "./model.js"
 export { identifier, kebab } from "./names.js"
+export { adaptOpenApi, OpenApiError } from "./openapi.js"
 export {
   applyOverrides,
   CodegenError,

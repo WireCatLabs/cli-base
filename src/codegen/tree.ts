@@ -4,6 +4,12 @@ import { CodegenError } from "./pipeline.js"
 
 type ObjectNode = Extract<SchemaNode, { type: "object" }>
 
+/** The values a subtype's discriminator property may hold: one per mapping entry that selects it. */
+export interface Literal {
+  property: string
+  values: readonly string[]
+}
+
 export interface NamedSchema {
   name: string
   schema: ApiSchema
@@ -16,7 +22,7 @@ export interface NamedSchema {
 export class SchemaTree {
   readonly named: NamedSchema[]
   readonly #byId: Map<string, ApiSchema>
-  readonly #literals = new Map<string, { property: string; value: string }>()
+  readonly #literals = new Map<string, Literal>()
   readonly #requests = new Map<string, string>()
   readonly #responses = new Map<string, string>()
 
@@ -44,10 +50,16 @@ export class SchemaTree {
 
     for (const schema of model.schemas) {
       for (const [value, target] of Object.entries(schema.discriminator?.mapping ?? {})) {
-        if (this.#literals.has(target)) {
-          throw new CodegenError([`schema "${target}" is a subtype of two discriminated schemas`])
+        const property = schema.discriminator?.property ?? ""
+        const known = this.#literals.get(target)
+        // Two bases may share a subtype when both choose it by the same property, as Meta's sent and received messages do.
+        if (known && known.property !== property) {
+          throw new CodegenError([
+            `schema "${target}" is a subtype chosen by both "${known.property}" and "${property}"`,
+          ])
         }
-        this.#literals.set(target, { property: schema.discriminator?.property ?? "", value })
+        const values = known?.values ?? []
+        this.#literals.set(target, { property, values: values.includes(value) ? values : [...values, value] })
       }
     }
   }
@@ -66,8 +78,8 @@ export class SchemaTree {
     return this.#responses.get(operationId)
   }
 
-  /** The value a subtype's discriminator property must hold, if the schema is a subtype. */
-  literalFor(id: string): { property: string; value: string } | undefined {
+  /** The values a subtype's discriminator property may hold, if the schema is a subtype. */
+  literalFor(id: string): Literal | undefined {
     return this.#literals.get(id)
   }
 
