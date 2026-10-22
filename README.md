@@ -171,6 +171,7 @@ unless you pass `isolated: true`; and a locked Linux keyring can block on a prom
 ### Generated API clients that never guess
 
 `/codegen` turns an API description into TypeScript types, Valibot schemas, an operation manifest and a coverage page.
+`adaptOpenApi` reads an OpenAPI 3.0 or 3.1 document; another format needs an adapter in the caller.
 Every operation is classified as a read, a write or destructive, with how far the source can be trusted. Generation
 stops, naming the problem, on a collision, an unclassified operation or a dangling reference — it never drops an
 operation and never falls back to `any`. 64-bit integers stay exact.

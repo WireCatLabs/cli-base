@@ -1,6 +1,6 @@
 import type { ApiModel, CodeGenerator, SchemaNode } from "./model.js"
 import { identifier } from "./names.js"
-import { SchemaTree } from "./tree.js"
+import { type Literal, SchemaTree } from "./tree.js"
 
 const doc = (text: string | undefined, indent: string): string => {
   const line = text?.replace(/\s+/g, " ").replace(/\*\//g, "*\\/").trim()
@@ -12,12 +12,12 @@ const key = (name: string): string => (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ?
 class TypeWriter {
   constructor(readonly tree: SchemaTree) {}
 
-  node(node: SchemaNode, where: string, literal?: { property: string; value: string }): string {
+  node(node: SchemaNode, where: string, literal?: Literal): string {
     const base = this.#bare(node, where, literal)
     return node.nullable ? `${base} | null` : base
   }
 
-  #bare(node: SchemaNode, where: string, literal?: { property: string; value: string }): string {
+  #bare(node: SchemaNode, where: string, literal?: Literal): string {
     switch (node.type) {
       case "ref":
         return identifier(node.ref)
@@ -45,11 +45,7 @@ class TypeWriter {
     }
   }
 
-  #object(
-    node: Extract<SchemaNode, { type: "object" }>,
-    where: string,
-    literal?: { property: string; value: string },
-  ): string {
+  #object(node: Extract<SchemaNode, { type: "object" }>, where: string, literal?: Literal): string {
     const names = Object.keys(node.properties)
     if (literal && !names.includes(literal.property)) names.unshift(literal.property)
     const rest = node.additionalProperties
@@ -59,7 +55,10 @@ class TypeWriter {
     const fields = names.map((name) => {
       const property: SchemaNode = node.properties[name] ?? { type: "string" }
       const optional = node.required.includes(name) || literal?.property === name ? "" : "?"
-      const type = literal?.property === name ? JSON.stringify(literal.value) : this.node(property, `${where}.${name}`)
+      const type =
+        literal?.property === name
+          ? literal.values.map((value) => JSON.stringify(value)).join(" | ")
+          : this.node(property, `${where}.${name}`)
       return `${doc(property.description, "  ")}  ${key(name)}${optional}: ${type}`
     })
     const body = `{\n${fields.join("\n")}\n}`
