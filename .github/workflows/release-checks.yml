@@ -9,6 +9,9 @@ on:
       languages:
         type: string
         default: '["actions","javascript-typescript"]'
+      govulncheck:
+        type: boolean
+        default: false
       go-version-file:
         type: string
         default: "go.mod"
@@ -23,6 +26,9 @@ on:
       languages:
         type: string
         default: '["actions","javascript-typescript"]'
+      govulncheck:
+        type: boolean
+        default: false
       go-version-file:
         type: string
         default: "go.mod"
@@ -45,6 +51,24 @@ jobs:
           package-manager-cache: false
       # The audit reads only the lockfile; installing would run dependency lifecycle scripts for nothing.
       - run: pnpm audit --prod --audit-level critical
+
+  go-dependencies:
+    if: inputs.govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: ${{ inputs.go-version-file || 'go.mod' }}
+          cache: false
+      - name: Audit reachable Go vulnerabilities
+        env:
+          GO_VERSION_FILE: ${{ inputs.go-version-file || 'go.mod' }}
+        run: |
+          cd "$(dirname -- "$GO_VERSION_FILE")"
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   workflows:
     runs-on: ubuntu-latest
