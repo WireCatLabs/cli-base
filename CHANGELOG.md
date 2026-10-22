@@ -15,6 +15,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **Release checks can audit Go dependencies for reachable vulnerabilities.** Set `govulncheck: true` and
   `go-version-file` to the module's `go.mod` path. The audit uses that module's Go version and runs in its
   directory; it stays off for existing callers.
+- **The weekly cross-CLI audit includes WhatsApp.** Its latest published command tree joins the checks for
+  required commands, shared option meanings, answer shapes and error reasons.
 
 ## 0.49.0 â€” 21.10.2026
 
