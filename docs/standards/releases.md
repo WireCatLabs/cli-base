@@ -161,7 +161,11 @@ on the [CI](ci.md) page.
 - **Enforced by:** `tg-cli: bin/release` · `max-cli: bin/release` · `whatsapp-cli: bin/release` ·
   `cli-memo: bin/release`.
 - **Example:** `bin/release --local` runs the same checks on this machine and reads the npm token from the keyring
-  into the publish command's environment. Neither success nor an error prints it.
+  into the publish command's environment. The checks include the test suite with its coverage floor,
+  any shipped non-JavaScript engine's tests, offline contracts, leak and secret scans, and dependency
+  vulnerability audits for each shipped language. Build and validate before supplying the token to the
+  publish process; publishing must not run unchecked lifecycle scripts with it. Neither success nor an
+  error prints the token.
 - **Exceptions:** none. drive's and zoom's `bin/release` have no `--local` yet.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
