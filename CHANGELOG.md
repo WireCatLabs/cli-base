@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ## 0.50.0 — 22.10.2026
 
+### Changed — may break callers
+
+- **The handbook clarifies JSON previews and local release validation.** A dry-run preview uses the item
+  envelope; local releases must run coverage, engine, contract and security checks, with the npm token
+  available only to publishing. Command discovery remains a bare document.
+
 ### Added
 
 - **`adaptOpenApi` reads an OpenAPI 3.0 or 3.1 document into the codegen model.** It moved here from max-cli because

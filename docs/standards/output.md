@@ -52,9 +52,9 @@ JSON Schema 2020-12.
 - **Enforced by:** `cli-core: src/cli/envelope.test.ts` · `cli-core: src/mcp/output-schema.test.ts`.
 - **Example:** a list is `{ items, page, next?, missing?, meta }`. One thing is `{ item, next?, missing?, meta }`.
   cli-core builds them with `listOf` and `itemOf`, and its `renderAnswer` refuses any other shape. A list never
-  answers a bare array.
-- **Exceptions:** a document that is not about the owner's data is printed whole, with no envelope: `commands --json`
-  and a `--dry-run` preview.
+  answers a bare array. A `--dry-run` preview is one thing: `{ item: <preview>, meta }`, with the
+  preview's parsed arguments and declared effects inside `item`.
+- **Exceptions:** command discovery (`commands --json`) is printed whole, with no envelope.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-358 (its older list shape is replaced by
   this one), NEED-431.
 
