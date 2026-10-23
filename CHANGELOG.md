@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The vocabulary has the words a messenger's bot commands use.** Verbs `answer`, `action` and `watch`; views `me`
+  and `between`; resources `callbacks`, `webhooks`, `templates`, `media` and the singular `auth`; flags `--secret`
+  (which secret beside a bot token to keep) and `--store-token`. The owner approved them for the shared bot commands
+  tg, max and wa mount, so `unknown-verb`, `unknown-resource` and `option-role` stop reporting those commands. A CLI
+  whose baseline lists them sees "stale baseline entry" and removes the lines.
+
 ## 0.50.2 — 23.10.2026
 
 ### Added

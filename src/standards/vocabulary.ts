@@ -163,6 +163,9 @@ const verbs: [string, string][] = [
   ["star", "mark a message so the owner finds it again; only the owner sees the star"],
   ["unstar", "take the owner's star off a message"],
   ["vote", "answer a poll"],
+  ["answer", "reply to a button someone pressed under a bot's message"],
+  ["action", "show what a bot is doing in a chat, such as typing, for a few seconds"],
+  ["watch", "follow new events as they come, and keep them"],
   ["close", "close a thing that stays: a poll, a task"],
   ["join", "join a chat"],
   ["leave", "leave a chat"],
@@ -265,6 +268,10 @@ const collections: [string, string][] = [
   ["keys", "credentials for a selected external service"],
   ["counters", "stored observations of source counts, with their freshness"],
   ["gaps", "ranges a source could contain that the local store does not hold"],
+  ["callbacks", "button presses a bot received and may answer"],
+  ["webhooks", "addresses a messenger pushes a bot's updates to"],
+  ["templates", "messages a business has approved in advance, the only kind some messengers deliver late"],
+  ["media", "files people sent, held by the messenger under an id"],
 ]
 
 const singulars: [string, string][] = [
@@ -281,6 +288,7 @@ const singulars: [string, string][] = [
   ["api", "the source's own API, one command per operation"],
   ["privacy", "who may find, see, call or add the account"],
   ["metadata", "a profile's cached source attributes"],
+  ["auth", "the credentials a bot profile uses: its token and the secrets beside it"],
 ]
 
 const views: [string, string][] = [
@@ -310,6 +318,8 @@ const views: [string, string][] = [
   ["responses", "observed replies between participants and the time taken to answer"],
   ["discussion", "source posts compared by known views and observed discussion replies"],
   ["unanswered", "questions without an observed qualifying answer"],
+  ["me", "the account a profile's token belongs to"],
+  ["between", "the messages between two given messages of one chat"],
 ]
 
 const roots: [string, string][] = [
