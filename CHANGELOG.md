@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The vocabulary has `press` and `app` for a messenger's bot buttons.** Verb `press` (press a button under a bot's
+  message; the bot sees who pressed it), the owner's word for it (2026-10-23), and view `app` (a bot's mini app: the
+  address that opens it). tg and max mount `messages press` and `chats app`, so `unknown-verb` stops reporting them;
+  a CLI whose baseline lists them sees "stale baseline entry" and removes the lines.
+
 ## 0.50.2 — 23.10.2026
 
 ### Added

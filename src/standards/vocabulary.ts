@@ -164,6 +164,7 @@ const verbs: [string, string][] = [
   ["unstar", "take the owner's star off a message"],
   ["vote", "answer a poll"],
   ["answer", "reply to a button someone pressed under a bot's message"],
+  ["press", "press a button under a bot's message; the bot sees who pressed it"],
   ["action", "show what a bot is doing in a chat, such as typing, for a few seconds"],
   ["watch", "follow new events as they come, and keep them"],
   ["close", "close a thing that stays: a poll, a task"],
@@ -320,6 +321,7 @@ const views: [string, string][] = [
   ["unanswered", "questions without an observed qualifying answer"],
   ["me", "the account a profile's token belongs to"],
   ["between", "the messages between two given messages of one chat"],
+  ["app", "a bot's mini app: the address that opens it, signed in as the owner"],
 ]
 
 const roots: [string, string][] = [
