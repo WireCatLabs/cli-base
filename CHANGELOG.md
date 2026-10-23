@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- The flag vocabulary distinguishes analysis and embedding providers, recorded-consent identities, tag ownership claims, stored-answer models and saved reply-template policies. It also declares the disappearing-message duration, admin-only chat settings, photo removal and sticker-file input with explicit roles.
+
 ## 0.50.1 — 23.10.2026
 
 ### Fixed

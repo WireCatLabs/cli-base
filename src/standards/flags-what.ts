@@ -2,6 +2,83 @@ import type { VocabularyFlag } from "./vocabulary.js"
 
 export const WHAT_FLAGS: VocabularyFlag[] = [
   {
+    name: "--analysis-provider",
+    value: "<provider>",
+    role: "mode",
+    type: "choice",
+    meaning: "who analyses the selected text: the calling agent or a configured model service",
+  },
+  {
+    name: "--embedding-provider",
+    value: "<provider>",
+    role: "mode",
+    type: "choice",
+    meaning: "who computes embeddings: a local model or a configured remote model service",
+  },
+  {
+    name: "--consent-provider",
+    value: "<identity>",
+    role: "target",
+    type: "string",
+    meaning: "the exact model-service identity whose recorded consent is being removed",
+  },
+  {
+    name: "--claim",
+    value: "<claim>",
+    role: "target",
+    type: "choice",
+    meaning: "the ownership claim to remove from a tag: manual or auto",
+  },
+  {
+    name: "--answer-model",
+    value: "<model>",
+    role: "target",
+    type: "string",
+    meaning: "remove only stored analysis answers made by this model; does not run a model",
+  },
+  {
+    name: "--template-mode",
+    value: "<mode>",
+    role: "value",
+    type: "choice",
+    meaning: "the saved reply template's policy: fill-only or may-reword",
+  },
+  {
+    name: "--disappear-after",
+    value: "<duration|off>",
+    role: "value",
+    type: "duration",
+    meaning: "how long a new chat message is kept after sending; off keeps messages",
+  },
+  {
+    name: "--only-admins-edit-info",
+    value: "<on|off>",
+    role: "value",
+    type: "choice",
+    meaning: "only admins may change the chat's name, photo and description",
+  },
+  {
+    name: "--only-admins-send",
+    value: "<on|off>",
+    role: "value",
+    type: "choice",
+    meaning: "only admins may send messages to the chat",
+  },
+  {
+    name: "--remove-photo",
+    role: "value",
+    type: "switch",
+    meaning: "remove the chat's photo; not with a replacement photo",
+  },
+  {
+    name: "--sticker-file",
+    value: "<file>",
+    role: "value",
+    type: "path",
+    meaning: "a local sticker file to send as a message",
+  },
+
+  {
     name: "--target-store",
     value: "<file>",
     role: "target",
