@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **Secret checks follow the checked revision.** Shared CI, security and release checks scan its complete reachable history. An unrelated fetched branch can no longer fail a clean pull request.
+
 ## 0.50.0 — 22.10.2026
 
 ### Changed — may break callers
