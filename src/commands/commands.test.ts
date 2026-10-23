@@ -312,6 +312,15 @@ describe("refuseJoinedPath", () => {
     expect(check("messages", "list 42")).toThrow(/run: tool messages list 42/)
   })
 
+  it("keeps a caller-supplied profile prefix in the suggested invocation", () => {
+    expect(() => refuseJoinedPath(program(), ["messages list"], ["personal"])).toThrow(
+      '"messages list" was given as one argument; run: tool personal messages list',
+    )
+    expect(() => refuseJoinedPath(program(), ["messages", "list 42"], ["personal"])).toThrow(
+      "run: tool personal messages list 42",
+    )
+  })
+
   it("leaves separate words, a quoted value and an unknown word to the parser", () => {
     expect(check("messages", "list", "--help")).not.toThrow()
     expect(check("messages", "send", "42", "hello there")).not.toThrow()

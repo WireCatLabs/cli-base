@@ -12,6 +12,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **Joined-path hints can retain a profile.** `refuseJoinedPath` accepts an optional display prefix so hosts can preserve the caller's profile in the corrected invocation. Existing two-argument calls stay valid.
+- **Skill commands have concise summaries.** Detailed installation paths remain in their descriptions, while help and discovery show short task names.
+
 - **Secret checks follow the checked revision.** Shared CI, security and release checks scan its complete reachable history. An unrelated fetched branch can no longer fail a clean pull request.
 
 ## 0.50.0 â€” 22.10.2026
