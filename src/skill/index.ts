@@ -137,9 +137,11 @@ export const skillCommand = (
   }
 
   const named = Object.keys(more)
-  const show = annotate(command.command("show"), { effects: { remote: "none", local: "read" } }).description(
-    `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it`,
-  )
+  const show = annotate(command.command("show"), { effects: { remote: "none", local: "read" } })
+    .summary("print the tool's instructions for AI agents")
+    .description(
+      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it`,
+    )
   if (named.length > 0) show.argument("[name]", `one of the skills shipped for a task: ${named.join(", ")}`)
   show.action(function (this: Command, given: unknown) {
     // Without a declared argument Commander passes the options here, not a name.
@@ -160,6 +162,7 @@ export const skillCommand = (
   })
 
   annotate(command.command("install"), { effects: { remote: "none", local: "write" } })
+    .summary("install the tool's instructions for AI agents")
     .description(
       `write SKILL.md to ~/.claude/skills/${app.appName}/ (Claude Code) and ~/.agents/skills/${app.appName}/ (Codex, Gemini CLI)`,
     )

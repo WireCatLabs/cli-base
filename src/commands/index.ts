@@ -32,9 +32,10 @@ export * from "./registry.js"
 /**
  * Refuses a command path that arrived as one argument — `"projects add" --help`, what a zsh loop over
  * `$c` passes. Commander settles `--help` for an unknown word before any hook runs and prints the root
- * help, so the words are checked before parsing. Pass the words after a leading profile, if any.
+ * help, so the words are checked before parsing. Pass the words after a leading profile, if any;
+ * `prefix` keeps those caller-supplied words between the tool name and path in the hint.
  */
-export const refuseJoinedPath = (root: Command, args: readonly string[]): void => {
+export const refuseJoinedPath = (root: Command, args: readonly string[], prefix: readonly string[] = []): void => {
   let command = root
   const path: string[] = []
   for (const arg of args) {
@@ -45,7 +46,7 @@ export const refuseJoinedPath = (root: Command, args: readonly string[]): void =
     if (rest.length > 0)
       throw new CliError(
         "validation_error",
-        `"${arg}" was given as one argument; run: ${[root.name(), ...path, first, ...rest].join(" ")}`,
+        `"${arg}" was given as one argument; run: ${[root.name(), ...prefix, ...path, first, ...rest].join(" ")}`,
       )
     path.push(first)
     command = next
