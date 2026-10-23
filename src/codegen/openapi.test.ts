@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest"
 import { parse } from "yaml"
 import { adaptOpenApi, generate, manifestGenerator, OpenApiError, typesGenerator, valibotGenerator } from "./index.js"
 
-// facebook/openapi at e96a1c9dbf240c2937b6a95920685230458e346b (2026-08-11), MIT; the LICENSE is beside it.
+// facebook/openapi at e96a1c9dbf240c2937b6a95920685230458e346b (2026-08-11), MIT; the LICENSE is beside it. Its sample
+// phone numbers are replaced with fictional 1555-01NN ones, as whatsapp-cli's snapshot is: no real number in a fixture.
 const META = join(import.meta.dirname, "../../test/fixtures/openapi/business-messaging-api_v23.0.yaml")
 
 const document = (
