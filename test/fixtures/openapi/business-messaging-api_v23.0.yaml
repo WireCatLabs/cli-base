@@ -651,12 +651,12 @@ components:
           type: string
           description: 'Phone number to add to the business account. Accepts E.164 format or formatted numbers
 
-            with spaces, hyphens, and parentheses (e.g., +1234567890, +1 (631) 555-1000, +1-631-555-1000).
+            with spaces, hyphens, and parentheses (e.g., +1555-0104, +1555-0134, +1555-0135).
 
             The phone number will be normalized and validated by the endpoint.
 
             '
-          example: '+1234567890'
+          example: '+1555-0104'
     AddPhoneNumbersResponse:
       type: object
       description: Response containing the ID of the successfully added phone number
@@ -682,7 +682,7 @@ components:
         display_phone_number:
           type: string
           description: Formatted display version of the phone number
-          example: +1 (555) 123-4567
+          example: +1555-0109
         country_prefix:
           type: integer
           description: Country code prefix for the phone number
@@ -982,7 +982,7 @@ components:
         display_phone_number:
           type: string
           description: Formatted phone number for display
-          example: +1 (555) 123-4567
+          example: +1555-0109
         verified_name:
           type: string
           description: Verified business name for the phone number
@@ -1174,7 +1174,7 @@ components:
         display_phone_number:
           type: string
           description: Formatted display version of the phone number
-          example: +1 (555) 123-4567
+          example: +1555-0109
         country_prefix:
           type: integer
           description: Country code prefix for the phone number
@@ -1217,7 +1217,7 @@ components:
           example: whatsapp
         wa_id:
           type: string
-          example: '16505551234'
+          example: '1555-0101'
     PaginationCursors:
       type: object
       properties:
@@ -1241,7 +1241,7 @@ components:
             $ref: '#/components/schemas/BlockedUser'
           example:
           - messaging_product: whatsapp
-            wa_id: '16505551234'
+            wa_id: '1555-0101'
         paging:
           $ref: '#/components/schemas/Paging'
     BlockedUserOperation:
@@ -1249,10 +1249,10 @@ components:
       properties:
         input:
           type: string
-          example: '+16505551234'
+          example: '+1555-0102'
         wa_id:
           type: string
-          example: '16505551234'
+          example: '1555-0101'
     BlockUsersResult:
       type: object
       properties:
@@ -1261,8 +1261,8 @@ components:
           items:
             $ref: '#/components/schemas/BlockedUserOperation'
           example:
-          - input: '+16505551234'
-            wa_id: '16505551234'
+          - input: '+1555-0102'
+            wa_id: '1555-0101'
     UnblockUsersResult:
       type: object
       properties:
@@ -1271,8 +1271,8 @@ components:
           items:
             $ref: '#/components/schemas/BlockedUserOperation'
           example:
-          - input: '+16505551234'
-            wa_id: '16505551234'
+          - input: '+1555-0102'
+            wa_id: '1555-0101'
     BlockUsersData:
       type: object
       properties:
@@ -1375,7 +1375,7 @@ components:
           description: Messaging product
         to:
           type: string
-          example: '14085551234'
+          example: '1555-0111'
           description: The number being called (callee)
         action:
           type: string
@@ -1938,7 +1938,7 @@ components:
         to:
           type: string
           description: WhatsApp ID or phone number of the message recipient
-          example: '16315552222'
+          example: '1555-0103'
         type:
           type: string
           description: Type of message. Must be "template" for marketing messages
@@ -1989,13 +1989,13 @@ components:
             properties:
               input:
                 type: string
-                example: '16315552222'
+                example: '1555-0103'
               wa_id:
                 type: string
-                example: '16315552222'
+                example: '1555-0103'
           example:
-          - input: '16315552222'
-            wa_id: '16315552222'
+          - input: '1555-0103'
+            wa_id: '1555-0103'
         messages:
           type: array
           items:
@@ -2724,7 +2724,7 @@ components:
         phone:
           type: string
           description: Phone number
-          example: +1 (650) 555-1234
+          example: +1555-0113
         type:
           type: string
           enum:
@@ -2734,7 +2734,7 @@ components:
         wa_id:
           type: string
           description: WhatsApp ID
-          example: '16505551234'
+          example: '1555-0101'
     UrlObject:
       type: object
       additionalProperties: false
@@ -3201,7 +3201,7 @@ components:
         tracking_id:
           type: string
           description: Unique identifier for tracking the application/update request
-          example: oba_req_1234567890abcdef
+          example: oba_req_1555-0119abcdef
     WhatsAppBusinessAppealStatus:
       type: string
       description: Official Business Account appeal and verification status
@@ -3224,7 +3224,7 @@ components:
         display_phone_number:
           type: string
           description: The string representation of the phone number
-          example: +1 631-555-5555
+          example: +1555-0123
         verified_name:
           type: string
           description: The verified name associated with the phone number
@@ -3311,7 +3311,7 @@ components:
         to:
           type: string
           description: Recipient's phone number (with country code) or group ID
-          example: '+1234567890'
+          example: '+1555-0104'
         type:
           type: string
           enum:
@@ -3533,11 +3533,11 @@ components:
         input:
           type: string
           description: Input phone number
-          example: '+1234567890'
+          example: '+1555-0104'
         wa_id:
           type: string
           description: WhatsApp ID
-          example: '1234567890'
+          example: '1555-0119'
     MessageResponseItem:
       type: object
       required:
@@ -3686,7 +3686,7 @@ components:
         id:
           type: string
           description: Unique identifier for the delivery status event
-          example: '2345678901234567'
+          example: '1555-0125'
         delivery_status:
           $ref: '#/components/schemas/WhatsAppMessageDeliveryStatus'
         webhook_update_state:
@@ -4609,12 +4609,12 @@ components:
           type: string
           description: Mobile phone number for grievance officer (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
-          example: '+913854559033'
+          example: '+1555-0120'
         landline_number:
           type: string
           description: Landline phone number for grievance officer (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
-          example: '+913857614343'
+          example: '+1555-0121'
     CustomerCareDetails:
       type: object
       description: Contact information for customer care and support
@@ -4628,12 +4628,12 @@ components:
           type: string
           description: Mobile phone number for customer care (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
-          example: '+913854559033'
+          example: '+1555-0120'
         landline_number:
           type: string
           description: Landline phone number for customer care (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
-          example: '+913857614343'
+          example: '+1555-0121'
     BusinessComplianceInfoUpdateRequest:
       type: object
       description: Request object for updating WhatsApp Business Account compliance information
@@ -4705,13 +4705,13 @@ components:
           description: Mobile phone number for grievance officer (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
           maxLength: 20
-          example: '+913854559033'
+          example: '+1555-0120'
         landline_number:
           type: string
           description: Landline phone number for grievance officer (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
           maxLength: 20
-          example: '+913857614343'
+          example: '+1555-0121'
     CustomerCareUpdateDetails:
       type: object
       description: Contact information for customer care and support
@@ -4729,13 +4729,13 @@ components:
           description: Mobile phone number for customer care (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
           maxLength: 20
-          example: '+913854559033'
+          example: '+1555-0120'
         landline_number:
           type: string
           description: Landline phone number for customer care (with country code)
           pattern: ^\\+[1-9]\\d{1,14}$
           maxLength: 20
-          example: '+913857614343'
+          example: '+1555-0121'
     Error:
       type: object
       properties:
@@ -4820,7 +4820,7 @@ components:
         id:
           type: string
           description: Unique identifier for the message delivery status occurrence
-          example: '2345678901234567'
+          example: '1555-0125'
         delivery_status:
           $ref: '#/components/schemas/WhatsAppMessageDeliveryStatus'
         error_description:
@@ -4939,7 +4939,7 @@ components:
         display_phone_number:
           type: string
           description: Formatted display version of the phone number
-          example: +1 (555) 123-4567
+          example: +1555-0109
         error_msg:
           type: string
           description: Error message if validation failed
@@ -5477,7 +5477,7 @@ components:
         request_id:
           type: string
           description: Unique identifier for tracking the deactivation request
-          example: deactivation_req_1234567890
+          example: deactivation_req_1555-0119
     AssignedWhatsAppBusinessAccount:
       type: object
       description: WhatsApp Business Account assigned to a user
@@ -5557,11 +5557,11 @@ components:
         id:
           type: string
           description: Phone number ID
-          example: '1234567890'
+          example: '1555-0119'
         display_phone_number:
           type: string
           description: Formatted phone number for display
-          example: +1 (555) 123-4567
+          example: +1555-0109
         verified_name:
           type: string
           description: Verified business name for this phone number
@@ -5623,7 +5623,7 @@ components:
         display_phone_number:
           type: string
           description: Phone number in international format for display purposes
-          example: +1 631-555-5555
+          example: +1555-0123
         verified_name:
           type: string
           description: Business name verified for this phone number
@@ -6022,7 +6022,7 @@ components:
         id:
           type: string
           description: Solution ID
-          example: '2345678901234567'
+          example: '1555-0125'
         name:
           type: string
           description: Solution name
@@ -6030,7 +6030,7 @@ components:
         partner_id:
           type: string
           description: Partner ID associated with the solution
-          example: '3456789012345678'
+          example: '1555-0126'
         status:
           type: string
           description: Current status of the solution
@@ -6049,13 +6049,13 @@ components:
         solution_id:
           type: string
           description: Unique identifier for the WhatsApp Business Solution
-          example: '2345678901234567'
+          example: '1555-0125'
         intent_type:
           $ref: '#/components/schemas/MobilityIntentType'
         target_solution_id:
           type: string
           description: Target solution ID for mobility operations (required for transfers)
-          example: '3456789012345678'
+          example: '1555-0126'
         mobility_reason:
           type: string
           description: Reason for the mobility intent
@@ -6143,7 +6143,7 @@ components:
         display_phone_number:
           type: string
           description: Phone number in international format for display purposes
-          example: +1 631-555-5555
+          example: +1555-0123
         verified_name:
           type: string
           description: Business name verified for this phone number
@@ -6284,7 +6284,7 @@ components:
           type: string
           description: Phone number in E.164 format without the + prefix
           pattern: ^[1-9][0-9]{6,14}$
-          example: '16315551000'
+          example: '1555-0129'
         verified_name:
           type: string
           description: Business name to be verified for this phone number
@@ -6548,17 +6548,17 @@ components:
           type: string
           description: Unique identifier for the Multi-Partner Solution
           pattern: ^[0-9]+$
-          example: '2345678901234567'
+          example: '1555-0125'
         app_id:
           type: string
           description: Application ID requesting OBO mobility intent
           pattern: ^[0-9]+$
-          example: '3456789012345678'
+          example: '1555-0126'
         actor_id:
           type: string
           description: Actor ID performing the OBO mobility intent operation
           pattern: ^[0-9]+$
-          example: '4567890123456789'
+          example: '1555-0127'
         client_mutation_id:
           type: string
           description: Client-provided mutation identifier for request tracking
@@ -6604,7 +6604,7 @@ components:
           type: string
           description: Target solution ID for migration (required for certain migration intents)
           pattern: ^[0-9]+$
-          example: '2345678901234567'
+          example: '1555-0125'
         migration_reason:
           type: string
           description: Reason for the migration intent
@@ -6842,7 +6842,7 @@ components:
           description: Additional structured details about the activity
           additionalProperties: true
           example:
-            phone_number: '+1234567890'
+            phone_number: '+1555-0104'
             previous_status: UNVERIFIED
             new_status: VERIFIED
         ip_address:
@@ -7258,7 +7258,7 @@ components:
         display_phone_number:
           type: string
           description: Business display phone number.
-          example: '15550783881'
+          example: '1555-0107'
         phone_number_id:
           type: string
           description: Business phone number ID.
@@ -7281,7 +7281,7 @@ components:
         wa_id:
           type: string
           description: WhatsApp user ID. Note that a WhatsApp user's ID and phone number may not always match.
-          example: '16505551234'
+          example: '1555-0101'
       required:
       - profile
     IncomingMessageValueGeneral:
@@ -7512,7 +7512,7 @@ components:
         from:
           type: string
           description: WhatsApp user phone number. Note that a WhatsApp user's phone number and ID may not always match.
-          example: '16505551234'
+          example: '1555-0101'
         id:
           type: string
           description: Unique WhatsApp message ID.
@@ -7585,7 +7585,7 @@ components:
         - type
         - text
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
           timestamp: '1749416383'
           type: text
@@ -7598,7 +7598,7 @@ components:
         from:
           type: string
           description: Business display phone number.
-          example: '15550783881'
+          example: '1555-0107'
         id:
           type: string
           description: WhatsApp message ID of the message the user used to access the "Message business" button.
@@ -7714,7 +7714,7 @@ components:
         - type
         - reaction
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
           timestamp: '1749419544'
           type: reaction
@@ -7811,7 +7811,7 @@ components:
         - type
         - image
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
           timestamp: '1744344496'
           type: image
@@ -7910,7 +7910,7 @@ components:
         - type
         - location
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTU2MjZEMDBGRkE3MENEMDE0RQA=
           timestamp: '1744344496'
           type: location
@@ -7939,7 +7939,7 @@ components:
         - type
         - contacts
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
           timestamp: '1744344496'
           type: contacts
@@ -7951,8 +7951,8 @@ components:
             org:
               company: Google
             phones:
-            - phone: +1 (983) 555-2319
-              wa_id: '19835552319'
+            - phone: +1555-0105
+              wa_id: '1555-0106'
               type: MOBILE
     ContactObject_1:
       type: object
@@ -8061,7 +8061,7 @@ components:
               phone:
                 type: string
                 description: Contact’s Phone number
-                example: '+14125550829'
+                example: '+1555-0136'
               wa_id:
                 type: string
                 description: Contact's WhatsApp Number. Note that a WhatsApp user's ID and phone number may not always match.
@@ -8103,7 +8103,7 @@ components:
         - type
         - errors
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTQyMDU1NTA3NDkVAgASGBI5N0MwRjg0RTVBNUI1RDA2OTkA
           timestamp: '1750090702'
           errors:
@@ -8163,7 +8163,7 @@ components:
               from:
                 type: string
                 description: Business display phone number.
-                example: '15550783881'
+                example: '1555-0107'
               id:
                 type: string
                 description: WhatsApp message ID of the message containing the button the WhatsApp user tapped.
@@ -8190,12 +8190,12 @@ components:
         - context
         - button
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUU0M0MxQzQzMUJCMTMwNUZFOQA=
           timestamp: '1750091045'
           type: button
           context:
-            from: '15550783881'
+            from: '1555-0107'
             id: wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBJFNjk2OTMwNEZCQjhGMzUyQUYA
           button:
             payload: Unsubscribe
@@ -8216,7 +8216,7 @@ components:
               from:
                 type: string
                 description: Business display phone number.
-                example: '15550783881'
+                example: '1555-0107'
               id:
                 type: string
                 description: WhatsApp message ID of the message containing the interactive component the user tapped.
@@ -8246,12 +8246,12 @@ components:
         - context
         - interactive
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUJDQ0NDM0FEODY4ODkzOTc5RgA=
           timestamp: '1749854575'
           type: interactive
           context:
-            from: '15550783881'
+            from: '1555-0107'
             id: wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBJGMzEyNzhENTZDMzNGODlDRDgA
           interactive:
             type: list_reply
@@ -8358,7 +8358,7 @@ components:
         - type
         - order
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTEyQjFGNzI1QTQxMjI5QTMyOQA=
           timestamp: '1750096325'
           type: order
@@ -8390,11 +8390,11 @@ components:
               body:
                 type: string
                 description: Description of the system change (e.g., user changed number).
-                example: User Sheena Nelson changed from 16505551234 to 12195555358
+                example: User Sheena Nelson changed from 1555-0101 to 1555-0108
               wa_id:
                 type: string
                 description: The user's WhatsApp ID. On user_changed_number messages this is the new phone number. Omitted when the user has no phone number visible to the business.
-                example: '12195555358'
+                example: '1555-0108'
               type:
                 type: string
                 enum:
@@ -8425,13 +8425,13 @@ components:
         - type
         - system
         example:
-          from: '16505551234'
+          from: '1555-0101'
           id: wamid.HBgLMTk4MzU1NTE5NzQVAgASGAoxMTgyMDg2MjY3AA==
           timestamp: '1750269342'
           type: system
           system:
-            body: User Sheena Nelson changed from 16505551234 to 12195555358
-            wa_id: '12195555358'
+            body: User Sheena Nelson changed from 1555-0101 to 1555-0108
+            wa_id: '1555-0108'
             type: user_changed_number
   parameters:
     UserAgent:
@@ -9034,7 +9034,7 @@ components:
               value:
                 data:
                 - messaging_product: whatsapp
-                  wa_id: '16505551234'
+                  wa_id: '1555-0101'
                 paging:
                   cursors:
                     after: eyJvZAmZAzZAXQiOjAsInZAlcnNpb25JZACI6IjE3Mzc2Nzk2ODgzODM1ODQifQZDZD
@@ -9085,8 +9085,8 @@ components:
               value:
                 block_users:
                   added_users:
-                  - input: '+16505551234'
-                    wa_id: '16505551234'
+                  - input: '+1555-0102'
+                    wa_id: '1555-0101'
                 messaging_product: whatsapp
     UnblockUsersResponse:
       description: Unblock user(s)
@@ -9134,8 +9134,8 @@ components:
               value:
                 block_users:
                   removed_users:
-                  - input: '+16505551234'
-                    wa_id: '16505551234'
+                  - input: '+1555-0102'
+                    wa_id: '1555-0101'
                 messaging_product: whatsapp
     BadRequest:
       description: Bad Request - Invalid request parameters
@@ -9391,7 +9391,7 @@ paths:
                       business_status: ACTIVE
                       created_time: '2023-01-15T10:30:00Z'
                       updated_time: '2023-06-20T14:45:00Z'
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: Example Client Business B
                       verification_status: PENDING
                       business_status: PENDING_APPROVAL
@@ -9926,7 +9926,7 @@ paths:
                       - DEVELOP
                       - MANAGE_TEMPLATES
                       - VIEW_INSIGHTS
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: Customer Support Solution
                       status: DRAFT
                       status_for_pending_request: PENDING_ACTIVATION
@@ -10071,7 +10071,7 @@ paths:
 
         **Phone Number Requirements:**
 
-        - Must be in E.164 format (e.g., +1234567890)
+        - Must be in E.164 format (e.g., +1555-0104)
 
         - Must not be already registered to another WhatsApp Business Account
 
@@ -10119,7 +10119,7 @@ paths:
               basic_phone_number:
                 summary: Add phone number with E.164 format
                 value:
-                  phone_number: '+1234567890'
+                  phone_number: '+1555-0104'
       responses:
         '200':
           description: Phone number successfully added
@@ -10486,7 +10486,7 @@ paths:
                   value:
                     data:
                     - id: '1234567890123456'
-                      display_phone_number: +1 (555) 123-4567
+                      display_phone_number: +1555-0109
                       country_prefix: 1
                       verification_status: VERIFIED
                       availability_status: AVAILABLE
@@ -10498,8 +10498,8 @@ paths:
                       - WEBHOOKS
                       country_code: US
                       region: North America
-                    - id: '2345678901234567'
-                      display_phone_number: +44 20 1234 5678
+                    - id: '1555-0125'
+                      display_phone_number: +1555-0110
                       country_prefix: 44
                       verification_status: VERIFIED
                       availability_status: AVAILABLE
@@ -10520,7 +10520,7 @@ paths:
                   value:
                     data:
                     - id: '1234567890123456'
-                      display_phone_number: +1 (555) 123-4567
+                      display_phone_number: +1555-0109
                       country_prefix: 1
                       verification_status: VERIFIED
                       availability_status: AVAILABLE
@@ -10821,7 +10821,7 @@ paths:
                       business_verification_status: VERIFIED
                       ownership_type: CLIENT_OWNED
                       is_enabled_for_insights: true
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: Client Business WABA B
                       account_review_status: PENDING
                       currency: EUR
@@ -11048,7 +11048,7 @@ paths:
                 existing_request:
                   summary: Existing pending request returned
                   value:
-                    request_id: '2345678901234567'
+                    request_id: '1555-0125'
         '400':
           description: Bad Request - Invalid parameters or malformed request
           content:
@@ -11750,9 +11750,9 @@ paths:
                     properties:
                       user:
                         type: string
-                        example: '+16505551234'
+                        example: '+1555-0102'
                   example:
-                  - user: '+16505551234'
+                  - user: '+1555-0102'
                 messaging_product:
                   type: string
                   example: whatsapp
@@ -11760,7 +11760,7 @@ paths:
               Block user(s):
                 value:
                   block_users:
-                  - user: '+16505551234'
+                  - user: '+1555-0102'
                   messaging_product: whatsapp
       responses:
         '200':
@@ -11790,9 +11790,9 @@ paths:
                     properties:
                       user:
                         type: string
-                        example: '+16505551234'
+                        example: '+1555-0102'
                   example:
-                  - user: '+16505551234'
+                  - user: '+1555-0102'
                 messaging_product:
                   type: string
                   example: whatsapp
@@ -11800,7 +11800,7 @@ paths:
               Unblock user(s):
                 value:
                   block_users:
-                  - user: '+16505551234'
+                  - user: '+1555-0102'
                   messaging_product: whatsapp
       responses:
         '200':
@@ -11851,7 +11851,7 @@ paths:
         required: true
         schema:
           type: string
-          example: '14085551234'
+          example: '1555-0111'
         description: The WhatsApp ID of the user you want to check call permissions for
       responses:
         '200':
@@ -12000,7 +12000,7 @@ paths:
               Connect Call:
                 value:
                   messaging_product: whatsapp
-                  to: '14085551234'
+                  to: '1555-0111'
                   action: connect
                   session:
                     sdp_type: offer
@@ -12084,7 +12084,7 @@ paths:
               Accept Call:
                 value:
                   messaging_product: whatsapp
-                  to: '14085551234'
+                  to: '1555-0111'
                   action: accept
                   session:
                     sdp_type: answer
@@ -12162,7 +12162,7 @@ paths:
               Reject Call:
                 value:
                   messaging_product: whatsapp
-                  to: '14085551234'
+                  to: '1555-0111'
                   action: reject
       responses:
         '200':
@@ -12419,7 +12419,7 @@ paths:
                 value:
                   messaging_product: whatsapp
                   recipient_type: individual
-                  to: '16315552222'
+                  to: '1555-0103'
                   type: template
                   template:
                     name: hello_world
@@ -12430,7 +12430,7 @@ paths:
                 value:
                   messaging_product: whatsapp
                   recipient_type: individual
-                  to: '16315552222'
+                  to: '1555-0103'
                   type: template
                   template:
                     name: welcome_offer
@@ -12443,7 +12443,7 @@ paths:
                 value:
                   messaging_product: whatsapp
                   recipient_type: individual
-                  to: '16315552222'
+                  to: '1555-0103'
                   type: template
                   template:
                     name: promotional_offer
@@ -12508,8 +12508,8 @@ paths:
                   summary: Successful marketing message response
                   value:
                     contacts:
-                    - input: '16315552222'
-                      wa_id: '16315552222'
+                    - input: '1555-0103'
+                      wa_id: '1555-0103'
                     messages:
                     - id: wamid.gBGGSFcCNEOPAgkO_KJ55r4w_ww
                     messaging_product: whatsapp
@@ -12666,7 +12666,7 @@ paths:
                     type: catalog_message
                   messaging_product: whatsapp
                   recipient_type: individual
-                  to: '+16505551234'
+                  to: '+1555-0102'
                   type: interactive
               Send Catalog Template Message:
                 value:
@@ -12692,7 +12692,7 @@ paths:
                     language:
                       code: en_US
                     name: intro_catalog_offer
-                  to: '+16505551234'
+                  to: '+1555-0102'
                   type: template
               Send Contact Message:
                 value:
@@ -12730,11 +12730,11 @@ paths:
                       department: Design
                       title: Manager
                     phones:
-                    - phone: +1 (940) 555-1234
+                    - phone: +1555-0112
                       type: HOME
-                    - phone: +1 (650) 555-1234
+                    - phone: +1555-0113
                       type: WORK
-                      wa_id: '16505551234'
+                      wa_id: '1555-0101'
                     urls:
                     - type: WORK
                       url: https://www.facebook.com
@@ -13238,11 +13238,11 @@ paths:
                       department: Design
                       title: Manager
                     phones:
-                    - phone: +1 (940) 555-1234
+                    - phone: +1555-0112
                       type: HOME
-                    - phone: +1 (650) 555-1234
+                    - phone: +1555-0113
                       type: WORK
-                      wa_id: '16505551234'
+                      wa_id: '1555-0101'
                     urls:
                     - type: WORK
                       url: https://www.facebook.com
@@ -13461,7 +13461,7 @@ paths:
                     language:
                       code: language-and-locale-code
                     name: template-name
-                  to: '16315555555'
+                  to: '1555-0114'
                   type: template
               Send Sample Text Message:
                 value:
@@ -13491,7 +13491,7 @@ paths:
                     language:
                       code: language-and-locale-code
                     name: template-name
-                  to: '16315555555'
+                  to: '1555-0114'
                   type: template
               Send Single Product Message:
                 value:
@@ -13621,8 +13621,8 @@ paths:
                 Example response:
                   value:
                     contacts:
-                    - input: '+16505551234'
-                      wa_id: '16505551234'
+                    - input: '+1555-0102'
+                      wa_id: '1555-0101'
                     messages:
                     - id: wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBJCOTY3NDc0NDFDRUI3NTA0Q0UA
                     messaging_product: whatsapp
@@ -13669,24 +13669,24 @@ paths:
                 Send Draft Flow by ID:
                   value:
                     contacts:
-                    - input: '18055555555'
-                      wa_id: '18055555555'
+                    - input: '1555-0115'
+                      wa_id: '1555-0115'
                     messages:
                     - id: wamid.HBgL...
                     messaging_product: whatsapp
                 Send Draft Flow by Name:
                   value:
                     contacts:
-                    - input: '18055555555'
-                      wa_id: '18055555555'
+                    - input: '1555-0115'
+                      wa_id: '1555-0115'
                     messages:
                     - id: wamid.HBgL...
                     messaging_product: whatsapp
                 Send Flow Template Message:
                   value:
                     contacts:
-                    - input: '18055555555'
-                      wa_id: '18055555555'
+                    - input: '1555-0115'
+                      wa_id: '1555-0115'
                     messages:
                     - id: wamid.HBgL...
                     messaging_product: whatsapp
@@ -13717,7 +13717,7 @@ paths:
                 Send List Message:
                   value:
                     contacts:
-                    - input: '15555551234'
+                    - input: '1555-0116'
                       wa_id: <WHATSAPP_ID>
                     messages:
                     - id: wamid.ID
@@ -13749,16 +13749,16 @@ paths:
                 Send Published Flow by ID:
                   value:
                     contacts:
-                    - input: '18055555555'
-                      wa_id: '18055555555'
+                    - input: '1555-0115'
+                      wa_id: '1555-0115'
                     messages:
                     - id: wamid.HBgL...
                     messaging_product: whatsapp
                 Send Published Flow by Name:
                   value:
                     contacts:
-                    - input: '18055555555'
-                      wa_id: '18055555555'
+                    - input: '1555-0115'
+                      wa_id: '1555-0115'
                     messages:
                     - id: wamid.HBgL...
                     messaging_product: whatsapp
@@ -13829,7 +13829,7 @@ paths:
                 Send Reply to List Message:
                   value:
                     contacts:
-                    - input: '15555551234'
+                    - input: '1555-0116'
                       wa_id: <WHATSAPP_ID>
                     messages:
                     - id: wamid.ID
@@ -13909,8 +13909,8 @@ paths:
                 Send Single Product Message:
                   value:
                     contacts:
-                    - input: +1-631-555-5555
-                      wa_id: '16315555555'
+                    - input: +1555-0117
+                      wa_id: '1555-0114'
                     messages:
                     - id: wamid.gBGGFlaCGg0xcvAdgmZ9plHrf2Mh-o
                     messaging_product: whatsapp
@@ -15031,13 +15031,13 @@ paths:
                 approved_status:
                   summary: Approved OBA status
                   value:
-                    id: '2345678901234567'
+                    id: '1555-0125'
                     oba_status: APPROVED
                     status_message: Your Official Business Account has been approved
                 rejected_status:
                   summary: Rejected OBA application
                   value:
-                    id: '3456789012345678'
+                    id: '1555-0126'
                     oba_status: REJECTED
                     status_message: Your Official Business Account application was rejected. Please review the requirements and reapply.
         '400':
@@ -15251,7 +15251,7 @@ paths:
                       id: '1234567890123456'
                       oba_status: PENDING
                       status_message: Your Official Business Account application is under review
-                    tracking_id: oba_req_1234567890abcdef
+                    tracking_id: oba_req_1555-0119abcdef
                 successful_withdrawal:
                   summary: Successful application withdrawal
                   value:
@@ -15579,7 +15579,7 @@ paths:
                   description: Basic phone number details without additional fields
                   value:
                     id: '106853218861309'
-                    display_phone_number: +1 555-555-5555
+                    display_phone_number: +1555-0118
                     verified_name: Jaspers Market
                     quality_rating: GREEN
                 with_name_status:
@@ -15587,7 +15587,7 @@ paths:
                   description: Includes business name certification status
                   value:
                     id: '106853218861309'
-                    display_phone_number: +1 555-555-5555
+                    display_phone_number: +1555-0118
                     verified_name: Jaspers Market
                     quality_rating: GREEN
                     name_status: AVAILABLE_WITHOUT_REVIEW
@@ -15596,7 +15596,7 @@ paths:
                   description: Includes two-step verification status
                   value:
                     id: '106853218861309'
-                    display_phone_number: +1 555-555-5555
+                    display_phone_number: +1555-0118
                     verified_name: Jaspers Market
                     quality_rating: GREEN
                     code_verification_status: VERIFIED
@@ -15605,7 +15605,7 @@ paths:
                   description: All available fields included in response
                   value:
                     id: '106853218861309'
-                    display_phone_number: +1 555-555-5555
+                    display_phone_number: +1555-0118
                     verified_name: Jaspers Market
                     quality_rating: GREEN
                     name_status: APPROVED
@@ -15993,8 +15993,8 @@ paths:
                   value:
                     messaging_product: whatsapp
                     contacts:
-                    - input: '+1234567890'
-                      wa_id: '1234567890'
+                    - input: '+1555-0104'
+                      wa_id: '1555-0119'
                     messages:
                     - id: wamid.HBgLMTY3NzE4NDM4NjAVAgARGBI5QTRCMEM4RjA2NzY4RTlBNAA=
                 settings_updated:
@@ -16441,21 +16441,21 @@ paths:
                       message_id: wamid.HBgLMTY0NzM3Nzc3NzUVAgARGBI5QTNEQTA2RjdGMEY4RTRGAA==
                       events:
                         data:
-                        - id: '2345678901234567'
+                        - id: '1555-0125'
                           delivery_status: SENT
                           timestamp: 1640995200
                           webhook_update_state: DELIVERED
                           application:
                             id: '9876543210987654'
                           webhook_uri: https://example.com/webhook
-                        - id: '3456789012345678'
+                        - id: '1555-0126'
                           delivery_status: DELIVERED
                           timestamp: 1640995260
                           webhook_update_state: DELIVERED
                           application:
                             id: '9876543210987654'
                           webhook_uri: https://example.com/webhook
-                    - id: '4567890123456789'
+                    - id: '1555-0127'
                       message_id: wamid.HBgLMTY0NzM3Nzc3NzUVAgARGBI5QTNEQTA2RjdGMEY4RTJHAA==
                       events:
                         data:
@@ -16479,15 +16479,15 @@ paths:
                       message_id: wamid.HBgLMTY0NzM3Nzc3NzUVAgARGBI5QTNEQTA2RjdGMEY4RTRGAA==
                       events:
                         data:
-                        - id: '2345678901234567'
+                        - id: '1555-0125'
                           delivery_status: SENT
                           timestamp: 1640995200
                           webhook_update_state: DELIVERED
-                        - id: '3456789012345678'
+                        - id: '1555-0126'
                           delivery_status: DELIVERED
                           timestamp: 1640995260
                           webhook_update_state: DELIVERED
-                        - id: '4567890123456789'
+                        - id: '1555-0127'
                           delivery_status: READ
                           timestamp: 1640995320
                           webhook_update_state: DELIVERED
@@ -18529,17 +18529,17 @@ paths:
                       grievance_officer_details:
                         name: Chandravati P.
                         email: chandravati@luckyshrub.com
-                        mobile_number: '+913854559033'
-                        landline_number: '+913857614343'
+                        mobile_number: '+1555-0120'
+                        landline_number: '+1555-0121'
                       customer_care_details:
                         email: support@luckyshrub.com
-                        mobile_number: '+913854559033'
-                        landline_number: '+913857614343'
+                        mobile_number: '+1555-0120'
+                        landline_number: '+1555-0121'
                 minimal_compliance_info:
                   summary: Minimal compliance information for unregistered business
                   value:
                     data:
-                    - whatsapp_business_account_id: '2345678901234567'
+                    - whatsapp_business_account_id: '1555-0125'
                       messaging_product: whatsapp
                       entity_name: null
                       entity_type: null
@@ -18734,12 +18734,12 @@ paths:
                   grievance_officer_details:
                     name: Chandravati P.
                     email: chandravati@luckyshrub.com
-                    mobile_number: '+913854559033'
-                    landline_number: '+913857614343'
+                    mobile_number: '+1555-0120'
+                    landline_number: '+1555-0121'
                   customer_care_details:
                     email: support@luckyshrub.com
-                    mobile_number: '+913854559033'
-                    landline_number: '+913857614343'
+                    mobile_number: '+1555-0120'
+                    landline_number: '+1555-0121'
               custom_entity_update:
                 summary: Custom entity type compliance information
                 value:
@@ -18751,10 +18751,10 @@ paths:
                   grievance_officer_details:
                     name: Rajesh Kumar
                     email: rajesh@innovativetech.com
-                    mobile_number: '+918901234567'
+                    mobile_number: '+1555-0122'
                   customer_care_details:
                     email: support@innovativetech.com
-                    mobile_number: '+918901234567'
+                    mobile_number: '+1555-0122'
       responses:
         '200':
           description: Successfully updated business compliance information
@@ -19034,7 +19034,7 @@ paths:
                         wa_id:
                           type: string
                           description: WhatsApp user ID
-                          example: '16505551234'
+                          example: '1555-0101'
                         creation_timestamp:
                           type: integer
                           description: Unix timestamp indicating when the join request was created
@@ -19235,7 +19235,7 @@ paths:
                       user:
                         type: string
                         description: WhatsApp user phone number or WhatsApp user ID
-                        example: '+17865347866'
+                        example: '+1555-0137'
       responses:
         '200':
           description: Participants addition request processed
@@ -19287,7 +19287,7 @@ paths:
                       user:
                         type: string
                         description: WhatsApp user phone number or WhatsApp user ID
-                        example: '+17865347866'
+                        example: '+1555-0137'
       responses:
         '200':
           description: Participants removal request processed
@@ -19717,7 +19717,7 @@ paths:
                     data:
                     - cursor: MTAxNTExOTQ1MjAwNzI5NDE=
                       node:
-                        id: '2345678901234567'
+                        id: '1555-0125'
                         delivery_status: SENT
                         occurrence_timestamp: 1640995200
                         status_timestamp: 1640995205
@@ -19726,7 +19726,7 @@ paths:
                           name: WhatsApp Business API Client
                     - cursor: MTAxNTExOTQ1MjAwNzI5NDI=
                       node:
-                        id: '3456789012345678'
+                        id: '1555-0126'
                         delivery_status: DELIVERED
                         occurrence_timestamp: 1640995260
                         status_timestamp: 1640995265
@@ -19735,7 +19735,7 @@ paths:
                           name: WhatsApp Business API Client
                     - cursor: MTAxNTExOTQ1MjAwNzI5NDM=
                       node:
-                        id: '4567890123456789'
+                        id: '1555-0127'
                         delivery_status: READ
                         occurrence_timestamp: 1640995320
                         status_timestamp: 1640995325
@@ -19753,7 +19753,7 @@ paths:
                     data:
                     - cursor: MTAxNTExOTQ1MjAwNzI5NDI=
                       node:
-                        id: '3456789012345678'
+                        id: '1555-0126'
                         delivery_status: DELIVERED
                         occurrence_timestamp: 1640995260
                         status_timestamp: 1640995265
@@ -19948,12 +19948,12 @@ paths:
                 accepted_migration:
                   summary: Accepted migration intent
                   value:
-                    id: '2345678901234567'
+                    id: '1555-0125'
                     status: ACCEPTED
                 completed_migration:
                   summary: Completed migration intent
                   value:
-                    id: '3456789012345678'
+                    id: '1555-0126'
                     status: COMPLETED
         '400':
           description: Bad Request - Invalid parameters or malformed request
@@ -20136,12 +20136,12 @@ paths:
                   value:
                     id: '1234567890123456'
                     country_prefix: 1
-                    display_phone_number: +1 (555) 123-4567
+                    display_phone_number: +1555-0109
                     is_input_id_valid: true
                 invalid_phone_number:
                   summary: Invalid pre-verified phone number
                   value:
-                    id: '2345678901234567'
+                    id: '1555-0125'
                     error_msg: Phone number format is invalid
                     is_input_id_valid: false
         '400':
@@ -20528,7 +20528,7 @@ paths:
                       primary_page: '9876543210987654'
                       timezone_id: 1
                       two_factor_type: admin_required
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: Global Commerce Partners LLC
                       verification_status: verified
                       created_time: '2023-03-10T08:15:00Z'
@@ -21841,7 +21841,7 @@ paths:
                 draft_solution:
                   summary: Draft solution with minimal details
                   value:
-                    id: '2345678901234567'
+                    id: '1555-0125'
                     name: Customer Support Solution
                     status: DRAFT
                     status_for_pending_request: NONE
@@ -22556,7 +22556,7 @@ paths:
                   value:
                     success: true
                     message: Deactivation request submitted successfully
-                    request_id: deactivation_req_1234567890
+                    request_id: deactivation_req_1555-0119
         '400':
           description: Bad Request - Invalid parameters or malformed request
           content:
@@ -22779,11 +22779,11 @@ paths:
                       - MANAGE_TEMPLATES
                       business_id: '9876543210987654'
                       phone_numbers:
-                      - id: '1234567890'
-                        display_phone_number: +1 (555) 123-4567
+                      - id: '1555-0119'
+                        display_phone_number: +1555-0109
                         verified_name: Primary Business
                         status: CONNECTED
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: Secondary Business Account
                       status: ACTIVE
                       assignment_date: '2023-10-20T09:15:00Z'
@@ -22987,7 +22987,7 @@ paths:
                   summary: Verified account number with full details
                   value:
                     id: '1234567890123456'
-                    display_phone_number: +1 631-555-5555
+                    display_phone_number: +1555-0123
                     verified_name: Jasper's Market
                     status: CONNECTED
                     quality_rating: GREEN
@@ -23001,8 +23001,8 @@ paths:
                 unverified_account_number:
                   summary: Unverified account number with minimal details
                   value:
-                    id: '2345678901234567'
-                    display_phone_number: +1 555-123-4567
+                    id: '1555-0125'
+                    display_phone_number: +1555-0124
                     status: UNVERIFIED
                     quality_rating: NA
                     code_verification_status: UNVERIFIED
@@ -23232,7 +23232,7 @@ paths:
                         id: '9876543210987654'
                         name: Example Business Inc
                       user_type: BUSINESS_USER
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: System User Bot
                       business:
                         id: '9876543210987654'
@@ -23438,7 +23438,7 @@ paths:
 
                     '
                   pattern: ^[0-9]+$
-                  example: '2345678901234567'
+                  example: '1555-0125'
                 tasks:
                   type: array
                   description: 'Array of permission tasks to grant to the user. These tasks determine
@@ -23458,14 +23458,14 @@ paths:
               basic_permissions:
                 summary: Add user with basic management permissions
                 value:
-                  user: '2345678901234567'
+                  user: '1555-0125'
                   tasks:
                   - MANAGE
                   - VIEW_INSIGHTS
               developer_permissions:
                 summary: Add user with development permissions
                 value:
-                  user: '3456789012345678'
+                  user: '1555-0126'
                   tasks:
                   - DEVELOP
                   - MANAGE_TEMPLATES
@@ -23473,7 +23473,7 @@ paths:
               full_access:
                 summary: Add user with full control
                 value:
-                  user: '4567890123456789'
+                  user: '1555-0127'
                   tasks:
                   - FULL_CONTROL
       responses:
@@ -23660,12 +23660,12 @@ paths:
 
                     '
                   pattern: ^[0-9]+$
-                  example: '2345678901234567'
+                  example: '1555-0125'
             examples:
               remove_user:
                 summary: Remove user access
                 value:
-                  user: '2345678901234567'
+                  user: '1555-0125'
       responses:
         '200':
           description: Successfully removed user from WhatsApp Business Account
@@ -25113,16 +25113,16 @@ paths:
                         id: '5678901234567890'
                         name: Partner Business LLC
                       requesting_business:
-                        id: '2345678901234567'
+                        id: '1555-0125'
                         name: My Business Inc
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       status: IN_PROGRESS
                       business_owned_object: '9876543210987654'
                       receiving_business:
-                        id: '3456789012345678'
+                        id: '1555-0126'
                         name: Another Partner Corp
                       requesting_business:
-                        id: '2345678901234567'
+                        id: '1555-0125'
                         name: My Business Inc
                     paging:
                       cursors:
@@ -25310,9 +25310,9 @@ paths:
                       name: My Business Account
                       status: ACTIVE
                     solution:
-                      id: '2345678901234567'
+                      id: '1555-0125'
                       name: My Business Solution
-                      partner_id: '3456789012345678'
+                      partner_id: '1555-0126'
                       status: ACTIVE
                     status: ACTIVE
                     created_time: '2024-01-15T10:30:00Z'
@@ -25480,9 +25480,9 @@ paths:
               initiate_transfer:
                 summary: Initiate account transfer
                 value:
-                  solution_id: '2345678901234567'
+                  solution_id: '1555-0125'
                   intent_type: INITIATE_TRANSFER
-                  target_solution_id: '3456789012345678'
+                  target_solution_id: '1555-0126'
                   mobility_reason: Transferring account management to new solution provider
                   metadata:
                     partner_approval_id: approval_123456
@@ -25490,15 +25490,15 @@ paths:
               request_handover:
                 summary: Request account handover
                 value:
-                  solution_id: '2345678901234567'
+                  solution_id: '1555-0125'
                   intent_type: REQUEST_HANDOVER
-                  target_solution_id: '3456789012345678'
+                  target_solution_id: '1555-0126'
                   scheduled_execution_time: '2024-12-01T10:00:00Z'
                   mobility_reason: Scheduled handover during maintenance window
               cancel_transfer:
                 summary: Cancel mobility operation
                 value:
-                  solution_id: '2345678901234567'
+                  solution_id: '1555-0125'
                   intent_type: CANCEL_TRANSFER
                   mobility_reason: Transfer cancelled due to business requirements change
       responses:
@@ -25773,7 +25773,7 @@ paths:
                   value:
                     data:
                     - id: '1906385232743451'
-                      display_phone_number: +1 631-555-5555
+                      display_phone_number: +1555-0123
                       verified_name: Jasper's Market
                       status: LINKED
                       quality_rating: GREEN
@@ -25787,7 +25787,7 @@ paths:
                       is_official_business_account: true
                       username: jaspers_market
                     - id: '1913623884432103'
-                      display_phone_number: +1 631-555-5556
+                      display_phone_number: +1555-0128
                       verified_name: Jasper's Ice Cream
                       status: PENDING
                       quality_rating: UNKNOWN
@@ -25808,7 +25808,7 @@ paths:
                   value:
                     data:
                     - id: '1906385232743451'
-                      display_phone_number: +1 631-555-5555
+                      display_phone_number: +1555-0123
                       verified_name: My Business
                       status: LINKED
                       quality_rating: GREEN
@@ -25997,20 +25997,20 @@ paths:
               basic_phone_number:
                 summary: Basic phone number registration
                 value:
-                  phone_number: '16315551000'
+                  phone_number: '1555-0129'
                   verified_name: My Business Name
                   cc: '1'
               migration_phone_number:
                 summary: Phone number migration from on-premises
                 value:
-                  phone_number: '16315551001'
+                  phone_number: '1555-0130'
                   verified_name: Migrated Business
                   cc: '1'
                   migrate_phone_number: true
               preverified_phone_number:
                 summary: Pre-verified phone number for BSP
                 value:
-                  phone_number: '16315551002'
+                  phone_number: '1555-0131'
                   verified_name: BSP Business
                   cc: '1'
                   preverified_id: preverified_12345
@@ -26298,7 +26298,7 @@ paths:
                       recurrence_pattern:
                         frequency: WEEKLY
                         interval: 1
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: Weekend Maintenance
                       status: INACTIVE
                       schedule_type: MAINTENANCE_WINDOW
@@ -26759,16 +26759,16 @@ paths:
                 summary: Basic OBO mobility intent setup
                 value:
                   waba_id: '1234567890123456'
-                  solution_id: '2345678901234567'
-                  app_id: '3456789012345678'
+                  solution_id: '1555-0125'
+                  app_id: '1555-0126'
                   client_mutation_id: obo_mobility_intent_mutation_123
               full_obo_intent:
                 summary: Complete OBO mobility intent with all parameters
                 value:
                   waba_id: '1234567890123456'
-                  solution_id: '2345678901234567'
-                  app_id: '3456789012345678'
-                  actor_id: '4567890123456789'
+                  solution_id: '1555-0125'
+                  app_id: '1555-0126'
+                  actor_id: '1555-0127'
                   client_mutation_id: obo_mobility_intent_mutation_456
       responses:
         '200':
@@ -26967,14 +26967,14 @@ paths:
                 value:
                   solution_id: '1234567890123456'
                   migration_intent: INITIATE_MIGRATION
-                  target_solution_id: '2345678901234567'
+                  target_solution_id: '1555-0125'
                   migration_reason: Migrating to new solution provider for enhanced features
               schedule_migration:
                 summary: Schedule solution migration
                 value:
                   solution_id: '1234567890123456'
                   migration_intent: SCHEDULE_MIGRATION
-                  target_solution_id: '2345678901234567'
+                  target_solution_id: '1555-0125'
                   scheduled_migration_time: '2024-12-01T10:00:00Z'
                   migration_reason: Scheduled migration during maintenance window
               cancel_migration:
@@ -27241,7 +27241,7 @@ paths:
                       - DEVELOP
                       - MANAGE_TEMPLATES
                       - VIEW_INSIGHTS
-                    - id: '2345678901234567'
+                    - id: '1555-0125'
                       name: Customer Support Solution
                       status: DRAFT
                       status_for_pending_request: NONE
@@ -27254,7 +27254,7 @@ paths:
                   summary: Single solution with minimal fields
                   value:
                     data:
-                    - id: '3456789012345678'
+                    - id: '1555-0126'
                       name: Analytics Integration Solution
                       status: ACTIVE
                       status_for_pending_request: NONE
@@ -27451,9 +27451,9 @@ paths:
                         name: Business Messaging App
                         link: https://www.facebook.com/games/?app_id=1234567890123456
                     - whatsapp_business_api_data:
-                        id: '2345678901234567'
+                        id: '1555-0125'
                         name: Customer Support Bot
-                        link: https://www.facebook.com/games/?app_id=2345678901234567
+                        link: https://www.facebook.com/games/?app_id=1555-0125
                 no_subscriptions:
                   summary: No apps subscribed to WABA
                   value:
@@ -28670,7 +28670,7 @@ paths:
                     text: Thank you for your order, {{1}}! Your order number is {{2}}. Tap the PDF linked above to view your receipt. If you have any questions, please use the buttons below to contact support. Thanks again!
                     type: BODY
                   - buttons:
-                    - phone_number: '16467043595'
+                    - phone_number: '1555-0132'
                       text: Call
                       type: PHONE_NUMBER
                     - text: Contact Support
@@ -28702,7 +28702,7 @@ paths:
                   - text: Offer valid until May 31, 2023
                     type: FOOTER
                   - buttons:
-                    - phone_number: '16467043595'
+                    - phone_number: '1555-0132'
                       text: Call
                       type: PHONE_NUMBER
                     - example:
@@ -29071,9 +29071,9 @@ paths:
                       actor_type: USER
                       actor_id: '9876543210987654'
                       actor_name: John Smith
-                      description: Phone number +1234567890 was successfully verified
+                      description: Phone number +1555-0104 was successfully verified
                       details:
-                        phone_number: '+1234567890'
+                        phone_number: '+1555-0104'
                         verification_method: SMS
                       ip_address: 192.168.1.100
                     - id: '1234567890123457'
@@ -29297,7 +29297,7 @@ paths:
                 basic_account:
                   summary: Basic WhatsApp Business Account with minimal details
                   value:
-                    id: '2345678901234567'
+                    id: '1555-0125'
                     name: Test Business Account
                     timezone_id: '1'
                     account_review_status: PENDING
@@ -29678,7 +29678,7 @@ paths:
                 minimal_bot_config:
                   summary: Basic bot configuration
                   value:
-                    id: '2345678901234567'
+                    id: '1555-0125'
                     prompts:
                     - Hello! I'm here to help
                     commands: []
@@ -29877,7 +29877,7 @@ paths:
                 minimal_profile:
                   summary: Minimal business profile with required fields only
                   value:
-                    id: '2345678901234567'
+                    id: '1555-0125'
         '400':
           description: Bad Request - Invalid parameters or malformed request
           content:
@@ -30188,14 +30188,14 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
                           timestamp: '1749416383'
                           type: text
@@ -30211,20 +30211,20 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
                         - context:
-                            from: '15550783881'
+                            from: '1555-0107'
                             id: wamid.HBgLMTY1MDM4Nzk0MzkVAgARGA9wcm9kdWN0X2lucXVpcnkA
                             referred_product:
                               catalog_id: '194836987003835'
                               product_retailer_id: di9ozbzfi4
-                          from: '16505551234'
+                          from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTA2NTUwRkNEMDdFQjJCRUU0NQA=
                           timestamp: '1750016800'
                           text:
@@ -30240,12 +30240,12 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
                         - referral:
                             source_url: https://fb.me/3cr4Wqqkv
@@ -30258,7 +30258,7 @@ paths:
                             ctwa_clid: Aff-n8ZTODiE79d22KtAwQKj9e_mIEOOj27vDVwFjN80dp4_0NiNhEgpGo0AHemvuSoifXaytfTzcchptiErTKCqTrJ5nW1h7IHYeYymGb5K5J5iTROpBhWAGaIAeUzHL50
                             welcome_message:
                               text: Hi there! Let us know how we can help!
-                          from: '16505551234'
+                          from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUQ0N0VFMDA2MTQ0RkJFNkNDNAA=
                           timestamp: '1750275992'
                           text:
@@ -30274,14 +30274,14 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
                           timestamp: '1749419544'
                           type: reaction
@@ -30298,14 +30298,14 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
                           timestamp: '1744344496'
                           type: image
@@ -30324,14 +30324,14 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTU2MjZEMDBGRkE3MENEMDE0RQA=
                           timestamp: '1744344496'
                           location:
@@ -30351,14 +30351,14 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=
                           timestamp: '1744344496'
                           type: contacts
@@ -30370,8 +30370,8 @@ paths:
                             org:
                               company: Google
                             phones:
-                            - phone: +1 (983) 555-2319
-                              wa_id: '19835552319'
+                            - phone: +1555-0105
+                              wa_id: '1555-0106'
                               type: MOBILE
                       field: messages
               Unsupported Message:
@@ -30383,14 +30383,14 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTQyMDU1NTA3NDkVAgASGBI5N0MwRjg0RTVBNUI1RDA2OTkA
                           timestamp: '1750090702'
                           errors:
@@ -30410,17 +30410,17 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
                         - context:
-                            from: '15550783881'
+                            from: '1555-0107'
                             id: wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBJFNjk2OTMwNEZCQjhGMzUyQUYA
-                          from: '16505551234'
+                          from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUU0M0MxQzQzMUJCMTMwNUZFOQA=
                           timestamp: '1750091045'
                           type: button
@@ -30437,17 +30437,17 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
                         - context:
-                            from: '15550783881'
+                            from: '1555-0107'
                             id: wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBJGMzEyNzhENTZDMzNGODlDRDgA
-                          from: '16505551234'
+                          from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQUJDQ0NDM0FEODY4ODkzOTc5RgA=
                           timestamp: '1749854575'
                           type: interactive
@@ -30467,17 +30467,17 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
                         - context:
-                            from: '15550783881'
+                            from: '1555-0107'
                             id: wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBI3MEM2RUJFNkI0RENGQTVDRjUA
-                          from: '16505551234'
+                          from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTZBQzg0MzQ4QjRCM0NGNkVGOAA=
                           timestamp: '1750025136'
                           type: interactive
@@ -30496,14 +30496,14 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         contacts:
                         - profile:
                             name: Sheena Nelson
-                          wa_id: '16505551234'
+                          wa_id: '1555-0101'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTEyQjFGNzI1QTQxMjI5QTMyOQA=
                           timestamp: '1750096325'
                           type: order
@@ -30529,15 +30529,15 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTk4MzU1NTE5NzQVAgASGAoxMTgyMDg2MjY3AA==
                           timestamp: '1750269342'
                           system:
-                            body: User Sheena Nelson changed from 16505551234 to 12195555358
-                            wa_id: '12195555358'
+                            body: User Sheena Nelson changed from 1555-0101 to 1555-0108
+                            wa_id: '1555-0108'
                             type: user_changed_number
                           type: system
                       field: messages
@@ -30550,10 +30550,10 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         messages:
-                        - from: '16505551234'
+                        - from: '1555-0101'
                           id: wamid.HBgLMTk4MzU1NTE5NzQVAgASGAoxMTgyMDg2MjY3AA==
                           timestamp: '1750269342'
                           system:
@@ -30574,7 +30574,7 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         groups:
                         - timestamp: '1750269342'
@@ -30584,10 +30584,10 @@ paths:
                           subject: your-group-subject
                           description: your-group-description
                           added_participants:
-                          - input: 16505551234
-                            wa_id: 16505551234
-                          - input: 16505551235
-                            wa_id: 16505551235
+                          - input: 1555-0101
+                            wa_id: 1555-0101
+                          - input: 1555-0133
+                            wa_id: 1555-0133
                       field: group_lifecycle_update
               Group Settings Update:
                 value:
@@ -30598,7 +30598,7 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         groups:
                         - timestamp: '1750269342'
@@ -30618,7 +30618,7 @@ paths:
                     - value:
                         messaging_product: whatsapp
                         metadata:
-                          display_phone_number: '15550783881'
+                          display_phone_number: '1555-0107'
                           phone_number_id: '106540352242922'
                         groups:
                         - timestamp: '1750269342'
@@ -30626,10 +30626,10 @@ paths:
                           type: group_create
                           request_id: 784D93D0C468593037EA0B1ECA245D9C
                           removed_participants:
-                          - input: 16505551234
-                            wa_id: 16505551234
-                          - input: 16505551235
-                            wa_id: 16505551235
+                          - input: 1555-0101
+                            wa_id: 1555-0101
+                          - input: 1555-0133
+                            wa_id: 1555-0133
                       field: group_participants_update
       responses:
         200:
