@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.50.2 — 23.10.2026
 
 ### Added
 
@@ -17,10 +17,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   (which secret beside a bot token to keep) and `--store-token`. The owner approved them for the shared bot commands
   tg, max and wa mount, so `unknown-verb`, `unknown-resource` and `option-role` stop reporting those commands. A CLI
   whose baseline lists them sees "stale baseline entry" and removes the lines.
-
-## 0.50.2 — 23.10.2026
-
-### Added
 
 - The messenger vocabulary names sign-in sessions, cached metadata, conversations, analysis work and statistics views precisely. Decryption and retry keep distinct meanings; model categories and alternate spellings still use existing words in command migrations.
 
