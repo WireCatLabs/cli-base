@@ -187,6 +187,8 @@ const verbs: [string, string][] = [
   ["unmerge", "undo a merge"],
   ["defer", "leave a decision undecided, for the owner"],
   ["embed", "compute the vectors a meaning search reads, for what is stored and has none"],
+  ["decrypt", "write an unencrypted copy of a file sealed by the tool, using the supplied password"],
+  ["retry", "start a fresh attempt at partial or failed work, retaining the previous attempt"],
 ]
 
 const replaces: Record<string, string[]> = {
@@ -250,6 +252,19 @@ const collections: [string, string][] = [
   ["mentions", "phones, e-mail addresses, links and documents found in stored text, each where it was written"],
   ["images", "pictures in stored messages, searched by what they show"],
   ["duplicates", "pairs of things that may be one, each waiting for a decision"],
+  ["sessions", "devices and applications signed in to an account"],
+  ["folders", "named groupings of chats or source files"],
+  ["links", "stored or source-provided connections between selected things"],
+  ["requests", "requests waiting for an explicit decision"],
+  ["rules", "saved rules the owner applies to selected things"],
+  ["conversations", "derived stretches of chat messages grouped by topic"],
+  ["batches", "bounded work packets submitted or waiting for processing"],
+  ["consents", "recorded permission to process selected data with a specified service"],
+  ["embeddings", "vectors computed from stored content for similarity search"],
+  ["reports", "saved reports about selected data or a tool's state"],
+  ["keys", "credentials for a selected external service"],
+  ["counters", "stored observations of source counts, with their freshness"],
+  ["gaps", "ranges a source could contain that the local store does not hold"],
 ]
 
 const singulars: [string, string][] = [
@@ -265,6 +280,7 @@ const singulars: [string, string][] = [
   ["vocabulary", "the owner's catalogue of canonical names, with their aliases"],
   ["api", "the source's own API, one command per operation"],
   ["privacy", "who may find, see, call or add the account"],
+  ["metadata", "a profile's cached source attributes"],
 ]
 
 const views: [string, string][] = [
@@ -285,6 +301,15 @@ const views: [string, string][] = [
   ["categories", "the categories a thing takes, with what each means"],
   ["domains", "the internet domains links point to, most linked first"],
   ["places", "the street addresses confirmed as places, most mentioned first"],
+  ["comments", "replies attached to a selected source item"],
+  ["links", "links held for a selected thing"],
+  ["voters", "people whose recorded votes are visible for a selected poll"],
+  ["charts", "time series drawn from selected statistics, optionally rendered to a file"],
+  ["newcomers", "members observed joining during the selected time window"],
+  ["retention", "whether members of a selected cohort remain or return over time"],
+  ["responses", "observed replies between participants and the time taken to answer"],
+  ["discussion", "source posts compared by known views and observed discussion replies"],
+  ["unanswered", "questions without an observed qualifying answer"],
 ]
 
 const roots: [string, string][] = [

@@ -61,9 +61,16 @@ const failing: Record<string, (root: Command) => void> = {
   "unknown-verb": (root) =>
     ran(chatsOf(root).command("grab").description("grab a chat"), { examples: ["tool chats grab"] }),
   "unknown-resource": (root) =>
-    ran(root.command("metadata").description("chat metadata").command("list").description("list it"), {
-      examples: ["tool metadata list"],
-    }),
+    ran(
+      root
+        .command("unregistered-things")
+        .description("an unregistered resource")
+        .command("list")
+        .description("list it"),
+      {
+        examples: ["tool unregistered-things list"],
+      },
+    ),
   "flag-two-meanings": (root) =>
     ran(chatsOf(root).command("export").description("export").option("--limit <time>", "until"), {
       examples: ["tool chats export --limit 2h"],

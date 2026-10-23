@@ -8,9 +8,11 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.50.2 — 23.10.2026
 
 ### Added
+
+- The messenger vocabulary names sign-in sessions, cached metadata, conversations, analysis work and statistics views precisely. Decryption and retry keep distinct meanings; model categories and alternate spellings still use existing words in command migrations.
 
 - The flag vocabulary distinguishes analysis and embedding providers, recorded-consent identities, tag ownership claims, stored-answer models and saved reply-template policies. It also declares the disappearing-message duration, admin-only chat settings, photo removal and sticker-file input with explicit roles.
 
