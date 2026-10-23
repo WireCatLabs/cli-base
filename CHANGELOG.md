@@ -31,6 +31,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   critical gate missed high findings and newer transitive resolutions. Update the reusable workflow pin to adopt
   the checks; fix high findings before releasing. Package packing and resolution disable lifecycle scripts.
 
+### Changed — may break callers
+
+- **Every handwritten list needs a query declaration.** The command lint checks lists that lack answer metadata too. Release this with the matching cli-core list-query changes and consumer updates.
+
 ## 0.50.3 — 23.10.2026
 
 ### Added
