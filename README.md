@@ -26,6 +26,7 @@ the command tree as data — the parts every CLI needs and nobody should write t
 | [Conventions](docs/dev/CONVENTIONS.md) | How code here is written |
 | [Standards handbook](docs/standards/README.md) | The rules every WireCat CLI follows, one page per area (a skeleton for now) |
 | [CLI standard](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md) | The rules every WireCat CLI follows; this package holds them as data |
+| [Roadmap](docs/roadmap.md) | What is being built next for developers on this package |
 | [Changelog](CHANGELOG.md) | What each version changed, and what may break callers |
 
 ## What it is
