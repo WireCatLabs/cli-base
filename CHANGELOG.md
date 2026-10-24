@@ -8,6 +8,21 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **Shared command contracts require explicit overrides before host edits.** `sharedCommand`, `assertSharedContracts`, `overrideSharedContract` and `customizeSharedCommand` live in `/commands`; original definitions and exact accepted edits remain available for audits. Provider additions are allowed; inherited subcommands cannot disappear silently. `/commands` now loads Commander at runtime.
+
+- **Cross-CLI contract drift cannot be accepted through a lint baseline.** Declare intentional differences with
+  their exact expected values and a specific reason; a changed or stale exemption fails. `audit --complete`
+  collects actual schemas and error reasons from `commands info --json` and refuses missing coverage. Canonical capability manifests and validated inherited definitions distinguish explicit provider variants from drift. Global
+  options satisfy matching command-local controls, so their placement alone is no longer a divergence.
+
+### Fixed
+
+- **Command lint distinguishes list filters from computation and output controls.** Ranking weights, timezone, output context and byte pagination remain controls even when an answer exposes similarly named fields; singleton targets are not list filters. Native query fields and id/time filtering remain checked.
+
 ## 0.50.4 — 24.10.2026
 
 ### Added
