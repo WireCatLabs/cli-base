@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Comparison pages live in the site repository, and our marks are re-checked at each release** (`WC-CMP-11`, [Comparisons](docs/standards/comparisons.md)). The page is written in `cli-docs` (wirecat.dev) because a comparison changes when other tools change, not when we release; the CLI repository keeps a short `docs/compare.md` that links to it. The release report lists the compare page as checked. Nothing changes in code.
+
 ## 0.50.4 — 24.10.2026
 
 ### Added

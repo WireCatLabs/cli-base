@@ -38,7 +38,7 @@ rules it keeps. A new CLI is ready for its first release when every check under 
 | [Testing](testing.md) | `TEST` | 17 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity |
 | [Security](security.md) | `SECR` | 20 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting |
 | [Documents](docs.md) | `DOC` | 20 | User pages and developer pages, generated pages, current facts, changelog |
-| [Comparisons](comparisons.md) | `CMP` | 10 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
+| [Comparisons](comparisons.md) | `CMP` | 11 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
 | [Releases](releases.md) | `REL` | 16 | `bin/release`, the release lock, versions, release reports, trusted publishing |
 | [CI](ci.md) | `CI` | 12 | Hooks, the pull request budget, full validation, monthly runs |
 | [Time](time.md) | `TIME` | 6 | UTC in the store and in answers, the zone at input and display edges, date-only filters, tests in another zone |

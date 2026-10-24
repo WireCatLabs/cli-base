@@ -2,9 +2,13 @@
 
 ## Scope
 
-How a CLI's comparison page (`docs/compare.md`) is written: which tools it compares, which rows it has, how a mark is
-proven, and what it says about the places where another tool is better. The page is read by someone choosing a tool
-for a job, not by someone reviewing our code.
+How a CLI's comparison page is written: which tools it compares, which rows it has, how a mark is proven, and what it
+says about the places where another tool is better. The page is read by someone choosing a tool for a job, not by
+someone reviewing our code.
+
+The page lives in the site repository (`cli-docs`, published on wirecat.dev), not in the CLI repository, because a
+comparison changes when the other tools change, not when we release. The CLI repository keeps a short
+`docs/compare.md` that links to the site page, and its other docs link there too.
 
 Rule ids on this page are `WC-CMP-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). The general rules for user pages are in [Documents](docs.md).
@@ -112,7 +116,18 @@ Rule ids on this page are `WC-CMP-<n>`. How to read a rule, how ids work and whi
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.50.4. **Rulings:** owner, 2026-10-24.
 
+### WC-CMP-11 · Our marks are re-checked at each release
+
+- **Why:** our own marks go stale with every release, and a mark that says we lack something we have shipped, or the
+  reverse, is the error a reader finds first.
+- **Enforced by:** review only.
+- **Example:** the release report lists the compare page as checked. Before a release, each ✅, 🟡 and ❌ for the CLI is re-proven against the release build, the check date
+  and version in the intro are updated in the site repository, and the release report names the page.
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.50.5. **Rulings:** owner, 2026-10-24.
+
 ## Sources
 
 - Owner review of the max, zm and memo comparison pages, 2026-10-24.
-- The tg comparison page, `tg-cli/docs/compare.md`, the first page written this way.
+- The tg comparison page, the first page written this way.
+- Owner decision, 2026-10-24: comparison pages live in `cli-docs`; each CLI's docs link to them.
