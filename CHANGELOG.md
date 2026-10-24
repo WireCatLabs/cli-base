@@ -12,6 +12,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **The shared vocabulary covers knowledge-work resources and receipt delivery.** Registers agents,
+  reminders, key documents, evidence answers and the mail archive, with distinct assignment, decision reversal,
+  evidence invalidation and receipt acknowledgement actions. Registers the four missing stored meeting
+  selector ID flags with target roles. Existing canonical verbs still replace overlapping Memo spellings;
+  forum `--topic <id>` keeps its existing meaning, while meeting tags/topics use native query terms.
+
+### Added
+
 - **A standard for comparison pages** ([Comparisons](docs/standards/comparisons.md), `WC-CMP-1` to `WC-CMP-10`). A CLI's `docs/compare.md` compares it with the tools a reader would pick for the same job, lists user tasks rather than implementation details, always has an "Agents and safety" group and says where another tool is better (owner, 2026-10-24). Nothing changes in code.
 
 ### Fixed
