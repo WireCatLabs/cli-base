@@ -356,6 +356,64 @@ describe("lint rules", () => {
     ])
   })
 
+  it("distinguishes computation, output and paging controls from list filters and singleton targets", () => {
+    const root = clean()
+    ran(
+      root
+        .command("reports")
+        .command("list")
+        .option("--model <model>", "compute with this model")
+        .option("--context <n>", "lines around a hit")
+        .option("--offset-bytes <n>", "chunk start")
+        .option("--timezone <zone>", "date interpretation"),
+      { output: { entity: "report" } },
+    )
+    ran(root.command("files").command("show").option("--attachment <n>", "which one file"), {
+      output: { entity: "file" },
+    })
+    const document = commandsDocument(root, { cli: "tool", version: "1", contract: 0 })
+    const found = lintCommands(document, vocabulary, LINT_RULES, {
+      schemas: {
+        report: { type: "object", properties: { model: {}, context: {}, offset_bytes: {}, timezone: {} } },
+        file: { type: "object", properties: { attachment: {} } },
+      },
+    })
+    expect(found.filter((one) => one.rule === "filter-flag")).toEqual([])
+  })
+
+  it("does not infer a filter from a derived collection or an unrelated source time", () => {
+    const root = clean()
+    ran(
+      root
+        .command("agenda")
+        .command("list")
+        .option("--waiting <duration>", "threshold for a waiting group")
+        .option("--since-time <time>", "meeting source window"),
+      {
+        output: { entity: "agenda" },
+        query: {
+          entity: "agenda",
+          backend: "native",
+          fields: [{ name: "project", type: "kw", operators: ["term"], example: "project:RES", native: true }],
+        },
+      },
+    )
+    const document = commandsDocument(root, { cli: "tool", version: "1", contract: 0 })
+    expect(
+      lintCommands(document, vocabulary, LINT_RULES, {
+        schemas: {
+          agenda: {
+            type: "object",
+            properties: {
+              waiting: { type: "array", items: { type: "object" } },
+              first_at: { type: "string", format: "date-time" },
+            },
+          },
+        },
+      }).filter((one) => one.rule === "filter-flag"),
+    ).toEqual([])
+  })
+
   it("passes a resource or all under search, at the root or under bot, and nothing else there", () => {
     const root = clean()
     const search = root.command("search").description("searches across resources")

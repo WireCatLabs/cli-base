@@ -216,14 +216,16 @@ const filteredBy = (flag: string): { field?: string; window?: "time" | "id" } =>
   return { field: bare.replace(/-(time|id|n)$/, "").replaceAll("-", "_") }
 }
 
-/** An entity's fields: the query's, then its registered schema's properties; `time` for a date-time. */
+/** A declared query is authoritative; without one, scalar schema fields reveal legacy list filters. */
 const entityFields = (command: CommandInfo, context: LintContext): Map<string, string> => {
   const fields = new Map<string, string>((command.query?.fields ?? []).map((field) => [field.name, field.type]))
-  const entity = command.output?.entity ?? command.query?.entity
+  if (command.query) return fields
+  const entity = command.output?.entity
   const schema = entity === undefined ? undefined : context.schemas?.[entity]
   const properties = isObject(schema) && isObject(schema.properties) ? schema.properties : {}
   for (const [name, property] of Object.entries(properties))
-    if (!fields.has(name)) fields.set(name, isObject(property) && property.format === "date-time" ? "time" : "other")
+    if (!fields.has(name) && !typesOf(property).includes("array"))
+      fields.set(name, isObject(property) && property.format === "date-time" ? "time" : "other")
   return fields
 }
 
@@ -358,12 +360,26 @@ const CHECKS: Record<string, Check> = {
     const roles = new Map(vocabulary.flags.map((flag) => [flag.name, flag.role]))
     return walk(document.commands)
       .filter(
-        (command) => command.origin === "handwritten" && !declaredWrite(command) && (command.query || command.output),
+        (command) =>
+          command.origin === "handwritten" &&
+          !declaredWrite(command) &&
+          (command.query || (["list", "events", "runs"].includes(command.name) && command.output)),
       )
       .flatMap((command) => {
         const fields = entityFields(command, context)
         return command.options
-          .filter((option) => roles.get(longName(option.flags)) !== "scope")
+          .filter((option) => {
+            const flag = longName(option.flags),
+              role = roles.get(flag)
+            if (role === "scope") return false
+            const { field, window } = filteredBy(flag)
+            const queryField = command.query?.fields.some((one) => one.name === field)
+            return (
+              window !== undefined ||
+              queryField ||
+              !["paging", "output", "sort", "mode", "budget", "action"].includes(role ?? "")
+            )
+          })
           .flatMap((option) => {
             const { field, window } = filteredBy(longName(option.flags))
             const hit =

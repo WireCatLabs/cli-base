@@ -450,6 +450,12 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "override one permission for this run; repeat it for more",
   },
   { name: "--read-only", role: "mode", type: "switch", meaning: "refuse every write, local and remote" },
+  {
+    name: "--append",
+    role: "mode",
+    type: "switch",
+    meaning: "keep existing entries and add the explicitly named one beside them",
+  },
   { name: "--replace", role: "mode", type: "switch", meaning: "overwrite an existing one of the same name" },
   {
     name: "--rescan",
