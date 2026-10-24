@@ -14,6 +14,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **`sync` covers a two-way mirror.** The vocabulary's meaning of `sync` now says a mirror syncs both ways, so drive's `mirrors sync`, which also writes changes back to Google, uses the verb as defined (owner, 2026-10-24). Nothing changes for one-way syncs.
 
+- **Release checks reject high production dependency findings and audit a fresh npm resolution.** The lockfile-only
+  critical gate missed high findings and newer transitive resolutions. Update the reusable workflow pin to adopt
+  the checks; fix high findings before releasing. Package packing and resolution disable lifecycle scripts.
+
 ## 0.50.3 â€” 23.10.2026
 
 ### Added

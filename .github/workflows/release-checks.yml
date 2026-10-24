@@ -50,7 +50,27 @@ jobs:
           node-version: ${{ inputs.node-version || '24' }}
           package-manager-cache: false
       # The audit reads only the lockfile; installing would run dependency lifecycle scripts for nothing.
-      - run: pnpm audit --prod --audit-level critical
+      - run: pnpm audit --prod --audit-level high
+
+  resolved-dependencies:
+    if: inputs.dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version || '24' }}
+          package-manager-cache: false
+      - name: Audit a fresh production install of the package
+        run: |
+          audit_dir=$(mktemp -d)
+          npm pack --ignore-scripts --pack-destination "$audit_dir" > /dev/null
+          cd "$audit_dir"
+          npm init --yes > /dev/null
+          npm install --package-lock-only --ignore-scripts --omit=dev --no-audit --no-fund "$audit_dir"/*.tgz
+          npm audit --omit=dev --audit-level=high
 
   go-dependencies:
     if: inputs.govulncheck
