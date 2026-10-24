@@ -174,6 +174,14 @@ export const customizeSharedCommand = (
   assertSharedContracts(command)
   const pending: { command: Command; record: Protected }[] = []
   const edits: SharedContractOverride[] = []
+  const bindingPath = (own: Command): string[] => {
+    const path = [own.name()]
+    for (let at = own.parent; at && own !== command; at = at.parent) {
+      path.unshift(at.name())
+      if (at === command) break
+    }
+    return path
+  }
   const adopt = (shared: Command, own: Command) => {
     const inherited = protectedCommands.get(shared)
     if (!inherited) return
@@ -181,7 +189,7 @@ export const customizeSharedCommand = (
       const originalChildren = own.commands.filter((child) => inherited.reference.children.includes(child.name()))
       const actual = snapshot(own, originalChildren)
       const overrides = differences(inherited.contract, actual).map((field) => ({
-        command: pathOf(own),
+        command: bindingPath(own),
         field,
         before: inherited.contract[field as keyof Contract] ?? null,
         after: actual[field as keyof Contract] ?? null,

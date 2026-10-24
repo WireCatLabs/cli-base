@@ -1,14 +1,14 @@
 import type { SharedContractOverride } from "./contracts.js"
 export const TASK_SHELL: readonly SharedContractOverride[] = [
   {
-    command: ["show"],
+    command: ["tasks", "show"],
     field: "description",
     before: "show one task",
     after: "show an imported task",
     reason: "This provider reads imported task rows from an explicit source.",
   },
   {
-    command: ["show"],
+    command: ["tasks", "show"],
     field: "effects",
     before: {
       local: "read",
@@ -18,7 +18,7 @@ export const TASK_SHELL: readonly SharedContractOverride[] = [
     reason: "This provider reads imported task rows from an explicit source.",
   },
   {
-    command: ["show"],
+    command: ["tasks", "show"],
     field: "output",
     before: {
       entity: "task",
@@ -27,7 +27,7 @@ export const TASK_SHELL: readonly SharedContractOverride[] = [
     reason: "This provider reads imported task rows from an explicit source.",
   },
   {
-    command: ["show"],
+    command: ["tasks", "show"],
     field: "options",
     before: [
       {
