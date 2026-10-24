@@ -2,8 +2,7 @@
 
 ## Scope
 
-How a CLI serves agents over MCP: the tools it exposes, how they are built from the command tree, and what each
-permission level makes visible.
+How a CLI serves agents over MCP: the tools it exposes, how they are built from the command tree, and how permission levels control availability and execution.
 
 **MCP** (Model Context Protocol) is how an AI agent asks a program what it can do (`tools/list`) and then calls it. A
 **tool** is a name, a description, an input schema and the code that runs when it is called.
@@ -83,18 +82,25 @@ Both declare the answer envelope (a list `{ items, page, … }` or one thing `{ 
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-MCP-6 · The profile's permissions decide what is offered and what runs
+<a id="wc-mcp-6--the-profiles-permissions-decide-what-is-offered-and-what-runs"></a>
 
-A command whose level is `deny` is not offered. Under `readonly`, writing commands are not offered. A command is also
-not offered when a key it reads, such as `messages`, is `deny`. The list is built when the server starts. The personal
-server reads the permissions again on every call, so a stricter level refuses the next call at once; a command allowed
-after start-up appears only after a restart.
+### WC-MCP-6 · Permissions change availability, not command existence
 
-- **Why:** an agent is not handed a tool that cannot work, and the owner narrows an agent without touching code.
-- **Enforced by:** `cli-core: src/mcp/mcp.test.ts`.
-- **Example:** with `{ "messages.send": "deny" }`, `tools_search` does not list `messages send`.
-- **Exceptions:** the bot server reads the permissions once, at start-up; a change needs a restart.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-772.
+CLI help and discovery retain commands regardless of profile permissions. MCP listings and searches also
+retain commands whose own permission, a required read permission or a process read-only lock prevents execution.
+They report current `availability`: `available: false`, a reason and the permission key where applicable.
+Permitted commands report `available: true`. Arguments and answer schemas remain discoverable either way.
+
+Availability is permission information, not an execution grant. Every call rechecks the current rules before
+performing work. Changes to profile levels update discovery availability without erasing commands or requiring
+agents to conclude that a capability does not exist. With a named profile, CLI help and discovery annotate the
+same local permission decision; discovery without a profile remains independent of account configuration.
+
+- **Why:** an agent must distinguish a supported capability that is currently blocked from an unknown command.
+- **Enforced by:** `cli-core: src/mcp/mcp.test.ts`; custom servers need the same contract.
+- **Example:** `{ "messages.send": "deny" }` leaves `messages send` searchable with `availability: { available: false, reason: "the profile denies messages.send", permission: "messages.send" }`; calling it returns `permission_error`.
+- **Exceptions:** transport exclusions, such as an interactive login or an unbounded process, are independent of permissions and remain documented.
+- **Applies to:** all CLIs. **Since:** cli-core 0.408.0. **Rulings:** owner, 2026-10-24.
 
 ### WC-MCP-7 · Over MCP, `ask` counts as `allow`, and no server shows a form
 
