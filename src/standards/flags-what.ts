@@ -440,6 +440,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   },
   { name: "--task", value: "<id>", role: "target", type: "id", meaning: "a task, by id" },
   { name: "--to", value: "<chat>", role: "target", type: "id", meaning: "the chat it goes to" },
+  {
+    name: "--topic-name",
+    value: "<name>",
+    role: "target",
+    type: "string",
+    meaning: "a stored meeting topic label, by name or alias",
+  },
   { name: "--topic", value: "<id>", role: "target", type: "id", meaning: "the forum topic, in a chat that has topics" },
   { name: "--transcript-id", value: "<id>", role: "target", type: "id", meaning: "one transcript version, by id" },
   { name: "--until-id", value: "<id>", role: "target", type: "id", meaning: "up to and including this message id" },

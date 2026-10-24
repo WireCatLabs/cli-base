@@ -14,6 +14,19 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 - **Comparison pages live in the site repository, and our marks are re-checked at each release** (`WC-CMP-11`, [Comparisons](docs/standards/comparisons.md)). The page is written in `cli-docs` (wirecat.dev) because a comparison changes when other tools change, not when we release; the CLI repository keeps a short `docs/compare.md` that links to it. The release report lists the compare page as checked. Nothing changes in code.
 
+### Changed — may break callers
+
+- **Shared command contracts require explicit overrides before host edits.** `sharedCommand`, `assertSharedContracts`, `overrideSharedContract` and `customizeSharedCommand` live in `/commands`; original definitions and exact accepted edits remain available for audits. Provider additions are allowed; inherited subcommands cannot disappear silently. `/commands` now loads Commander at runtime.
+
+- **Cross-CLI contract drift cannot be accepted through a lint baseline.** Declare intentional differences with
+  their exact expected values and a specific reason; a changed or stale exemption fails. `audit --complete`
+  collects actual schemas and error reasons from `commands info --json` and refuses missing coverage. Canonical capability manifests and validated inherited definitions distinguish explicit provider variants from drift. Global
+  options satisfy matching command-local controls, so their placement alone is no longer a divergence.
+
+### Fixed
+
+- **Command lint distinguishes list filters from computation and output controls.** Ranking weights, timezone, output context and byte pagination remain controls even when an answer exposes similarly named fields; singleton targets are not list filters. Native query fields and id/time filtering remain checked.
+
 ## 0.50.4 — 24.10.2026
 
 ### Added

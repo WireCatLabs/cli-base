@@ -358,12 +358,26 @@ const CHECKS: Record<string, Check> = {
     const roles = new Map(vocabulary.flags.map((flag) => [flag.name, flag.role]))
     return walk(document.commands)
       .filter(
-        (command) => command.origin === "handwritten" && !declaredWrite(command) && (command.query || command.output),
+        (command) =>
+          command.origin === "handwritten" &&
+          !declaredWrite(command) &&
+          (command.query || (["list", "events", "runs"].includes(command.name) && command.output)),
       )
       .flatMap((command) => {
         const fields = entityFields(command, context)
         return command.options
-          .filter((option) => roles.get(longName(option.flags)) !== "scope")
+          .filter((option) => {
+            const flag = longName(option.flags),
+              role = roles.get(flag)
+            if (role === "scope") return false
+            const { field, window } = filteredBy(flag)
+            const queryField = command.query?.fields.some((one) => one.name === field)
+            return (
+              window !== undefined ||
+              queryField ||
+              !["paging", "output", "sort", "mode", "budget", "action"].includes(role ?? "")
+            )
+          })
           .flatMap((option) => {
             const { field, window } = filteredBy(longName(option.flags))
             const hit =

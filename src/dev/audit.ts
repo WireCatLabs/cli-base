@@ -4,7 +4,9 @@ import { AUDIT_RULES, type AuditRule, type ParityGroup, type RequiredRoot } from
 import { BASE_REASONS, type ErrorReason } from "../standards/errors.js"
 import { LINT_RULES, OVERRIDE_BUDGET, type Override } from "../standards/lint.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
+import { type Capabilities, capabilityDifference } from "./capabilities.js"
 import { judge, kindOf, lintCommands, longName, summaryOf, walk } from "./lint.js"
+import { type ContractEdit, sharedContractProblems } from "./shared-contracts.js"
 
 export interface AuditInput {
   document: CommandsDocument
@@ -12,6 +14,8 @@ export interface AuditInput {
   raw: unknown
   schemas?: Readonly<Record<string, unknown>>
   reasons?: readonly ErrorReason[]
+  contracts?: Readonly<Record<string, Readonly<Record<string, unknown>>>>
+  overrides?: readonly ContractEdit[]
   /** The CLI's own `lint/` baseline and overrides; its lint rules are then judged by them, not the audit's. */
   lint?: { baseline: Readonly<Record<string, readonly string[]>>; overrides: readonly Override[]; budget: number }
 }
@@ -43,6 +47,7 @@ export interface AuditOptions {
   vocabulary: Vocabulary
   /** `audit/baseline/<rule>.json`, by rule. */
   baseline: Readonly<Record<string, readonly string[]>>
+  capabilities?: Capabilities
   blocks: "new" | "never"
   /** Only new findings that name this CLI block: the one being released. */
   only?: string
@@ -57,6 +62,15 @@ export interface AuditResult {
   nextBaseline: Record<string, string[]>
   problems: string[]
 }
+
+const STRICT_CONTRACT_RULES = new Set([
+  "shared-command-contract",
+  "same-path-contract",
+  "same-flag-meaning",
+  "same-entity-schema",
+  "same-error-reason",
+  "required-root",
+])
 
 const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 
@@ -138,8 +152,18 @@ const samePathContract = (inputs: readonly AuditInput[], groups: readonly Parity
           message: describe(values),
         })
     }
-    const kinds = new Map([...commands].map(([cli, command]) => [cli, optionKinds(command.options)]))
-    const flags = [...new Set([...kinds.values()].flatMap((one) => [...one.keys()]))].sort(byText)
+    const kinds = new Map(
+      [...commands].map(([cli, command]) => [
+        cli,
+        optionKinds([
+          ...(inputs.find((input) => input.document.cli === cli)?.document.global_options ?? []),
+          ...command.options,
+        ]),
+      ]),
+    )
+    const flags = [
+      ...new Set([...commands.values()].flatMap((command) => [...optionKinds(command.options).keys()])),
+    ].sort(byText)
     for (const flag of flags) push(` ${flag}`, new Map([...kinds].map(([cli, one]) => [cli, shownKind(one.get(flag))])))
     push(
       ": output",
@@ -255,6 +279,21 @@ const sameErrorReason = (inputs: readonly AuditInput[]): Finding[] => {
 }
 
 const CROSS: Record<string, (inputs: readonly AuditInput[], options: AuditOptions) => Finding[]> = {
+  "shared-command-contract": (inputs) =>
+    inputs.flatMap((input) =>
+      input.contracts
+        ? sharedContractProblems(
+            (snakeKeys(input.raw) as CommandsDocument).commands,
+            input.contracts,
+            input.overrides,
+          ).map((problem) => ({
+            rule: "shared-command-contract",
+            clis: [input.document.cli],
+            target: `${input.document.cli} ${problem.path}`,
+            message: problem.message,
+          }))
+        : [],
+    ),
   "required-root": (inputs, options) => requiredRoots(inputs, options.roots),
   "same-path-contract": (inputs, options) => samePathContract(inputs, options.groups),
   "same-flag-meaning": (inputs) => sameFlagMeaning(inputs),
@@ -263,6 +302,7 @@ const CROSS: Record<string, (inputs: readonly AuditInput[], options: AuditOption
 }
 
 const measuredBy: Record<string, (input: AuditInput) => boolean> = {
+  "shared-command-contract": (input) => input.contracts !== undefined,
   "same-entity-schema": (input) => input.schemas !== undefined,
   "same-error-reason": (input) => input.reasons !== undefined,
 }
@@ -306,18 +346,67 @@ export const auditClis = (
     }),
   ]
 
+  const protectedInputs = new Set(
+    inputs
+      .filter(
+        (input) =>
+          input.contracts &&
+          sharedContractProblems((snakeKeys(input.raw) as CommandsDocument).commands, input.contracts, input.overrides)
+            .length === 0,
+      )
+      .map((input) => input.document.cli),
+  )
+  const inheritedAccepted = new Set(
+    findings
+      .filter((finding) => {
+        if (finding.rule !== "same-path-contract" || finding.target.endsWith(": presence")) return false
+        const path = finding.target.slice(finding.target.indexOf(" ") + 1).split(/ --|: /)[0] ?? ""
+        return finding.clis.every(
+          (cli) => protectedInputs.has(cli) && inputs.find((input) => input.document.cli === cli)?.contracts?.[path],
+        )
+      })
+      .map((finding) => `${finding.rule} ${finding.target}`),
+  )
+  const capabilityAccepted = new Set(
+    findings
+      .filter(
+        (finding) =>
+          finding.rule === "same-path-contract" &&
+          options.capabilities &&
+          capabilityDifference(
+            finding.target,
+            finding.clis,
+            inputs.map((input) => input.document),
+            options.capabilities,
+          ),
+      )
+      .map((finding) => `${finding.rule} ${finding.target}`),
+  )
   const declared = new Map(
     options.groups.flatMap((group) => group.differences.map((entry) => [`${entry.rule} ${entry.target}`, group.name])),
   )
   const found = new Set(findings.map((finding) => `${finding.rule} ${finding.target}`))
   for (const [key, group] of declared)
     if (!found.has(key)) problems.push(`stale difference in ${group}, no such divergence — remove it: ${key}`)
+  for (const group of options.groups) {
+    for (const difference of group.differences) {
+      const finding = findings.find((one) => one.rule === difference.rule && one.target === difference.target)
+      if (finding && difference.expected !== finding.message) {
+        declared.delete(`${difference.rule} ${difference.target}`)
+        problems.push(
+          `difference in ${group.name} must match the exact current values: ${difference.rule} ${difference.target}`,
+        )
+      }
+    }
+  }
   for (const group of options.groups)
     if (group.differences.length > OVERRIDE_BUDGET)
       problems.push(`${group.name} declares ${group.differences.length} differences; the budget is ${OVERRIDE_BUDGET}`)
 
   const baselined = new Set(
-    Object.entries(options.baseline).flatMap(([rule, targets]) => targets.map((target) => `${rule} ${target}`)),
+    Object.entries(options.baseline)
+      .filter(([rule]) => !STRICT_CONTRACT_RULES.has(rule))
+      .flatMap(([rule, targets]) => targets.map((target) => `${rule} ${target}`)),
   )
   // A cross-CLI entry names every CLI it compared; a run without one of them can neither see it nor fix it.
   const judged = (target: string) => clisOf(target).every((cli) => clis.includes(cli))
@@ -348,7 +437,12 @@ export const auditClis = (
         }
         blocking.push(...mine.filter((finding) => row.new_targets.includes(finding.target)))
       } else {
-        const open = mine.filter((finding) => !declared.has(`${rule} ${finding.target}`))
+        const open = mine.filter(
+          (finding) =>
+            !declared.has(`${rule} ${finding.target}`) &&
+            !capabilityAccepted.has(`${rule} ${finding.target}`) &&
+            !inheritedAccepted.has(`${rule} ${finding.target}`),
+        )
         const fresh = open.filter((finding) => !baselined.has(`${rule} ${finding.target}`))
         const here = new Set(mine.map((finding) => finding.target))
         row = {
@@ -379,10 +473,16 @@ export const auditClis = (
     [...lintIds, ...rules.map((rule) => rule.id)].map((rule) => {
       const kept = (options.baseline[rule] ?? []).filter((target) => !judged(target))
       const now = findings
-        .filter((finding) => finding.rule === rule && !declared.has(`${rule} ${finding.target}`))
+        .filter(
+          (finding) =>
+            finding.rule === rule &&
+            !declared.has(`${rule} ${finding.target}`) &&
+            !capabilityAccepted.has(`${rule} ${finding.target}`) &&
+            !inheritedAccepted.has(`${rule} ${finding.target}`),
+        )
         .filter((finding) => !(lintIds.includes(rule) && selfJudged.has(finding.clis[0] ?? "")))
         .map((finding) => finding.target)
-      return [rule, [...new Set([...kept, ...now])].sort(byText)]
+      return [rule, STRICT_CONTRACT_RULES.has(rule) ? kept : [...new Set([...kept, ...now])].sort(byText)]
     }),
   )
 
