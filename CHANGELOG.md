@@ -16,6 +16,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **Denied commands remain discoverable.** The MCP and permission standards require current availability metadata instead of hiding denied commands. CLI help retains the same capabilities; execution still enforces the permission. This records the owner's discovery rule for every CLI.
+
+
 - **`sync` covers a two-way mirror.** The vocabulary's meaning of `sync` now says a mirror syncs both ways, so drive's `mirrors sync`, which also writes changes back to Google, uses the verb as defined (owner, 2026-10-24). Nothing changes for one-way syncs.
 
 - **Release checks reject high production dependency findings and audit a fresh npm resolution.** The lockfile-only

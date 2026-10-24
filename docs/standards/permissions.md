@@ -47,7 +47,7 @@ way for a command the owner types and for an agent over MCP. A config file that 
 ### WC-PERM-2 · There are four levels: `deny`, `readonly`, `ask`, `allow`
 
 - `deny` — nothing, not even a read. The command answers `permission_error` (exit 5) before it connects, and an agent
-  is not offered the command.
+  still discovers the command, marked unavailable with its permission reason ([WC-MCP-6](mcp.md)).
 - `readonly` — reads work, writes answer `permission_error`. On a key that only writes, such as `messages.delete`, it
   is the same as `deny`.
 - `ask` — a write asks first. See WC-PERM-9 for a terminal and [WC-MCP-7](mcp.md) for an agent.
