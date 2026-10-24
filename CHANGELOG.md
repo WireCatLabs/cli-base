@@ -10,6 +10,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **A standard for comparison pages** ([Comparisons](docs/standards/comparisons.md), `WC-CMP-1` to `WC-CMP-10`). A CLI's `docs/compare.md` compares it with the tools a reader would pick for the same job, lists user tasks rather than implementation details, always has an "Agents and safety" group and says where another tool is better (owner, 2026-10-24). Nothing changes in code.
+
 ### Fixed
 
 - **`sync` covers a two-way mirror.** The vocabulary's meaning of `sync` now says a mirror syncs both ways, so drive's `mirrors sync`, which also writes changes back to Google, uses the verb as defined (owner, 2026-10-24). Nothing changes for one-way syncs.
