@@ -107,7 +107,8 @@ Rule ids on this page are `WC-CMP-<n>`. How to read a rule, how ids work and whi
 
 - **Why:** past about 25 rows the reader stops scanning, and the rows that matter are lost.
 - **Enforced by:** review only.
-- **Example:** 15 to 25 rows and 3 to 6 tools. A row where every tool has the same mark is dropped.
+- **Example:** one feature table, with each group as a bold row inside it; 15 to 25 rows and 3 to 6 tools. A row
+  where every tool has the same mark is dropped.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.50.4. **Rulings:** owner, 2026-10-24.
 
