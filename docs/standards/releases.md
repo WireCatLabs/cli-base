@@ -88,29 +88,17 @@ on the [CI](ci.md) page.
 - **Exceptions:** a pre-release version (`0.41.0-rc.1`) is chosen by hand.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-REL-8 · A messenger CLI waits two hours between releases; a shared library does not wait
+### WC-REL-8 · Any package may release at any time
 
-- **Why:** a broken CLI release must be noticed before the next one lands on top of it. Every CLI waits for a library
-  release, so a gap there only delays them.
-- **Enforced by:** `<app>: bin/release`.
-- **Example:** tg-cli, max-cli and whatsapp-cli's `bin/release` refuse to start within two hours of the last version
-  on npm. cli-base and cli-core release one after another with no gap.
-- **Exceptions:** memo, drive and zoom have no gap in their `bin/release` today.
-- **Applies to:** messenger CLIs (gap); shared libraries (no gap). **Since:** cli-base 0.41.0. **Rulings:** NEED-854.
+- **Why:** a wait between releases or a weekly limit on breaking changes only delays a fix; the owner removed both
+  limits on 2026-10-24.
+- **Enforced by:** review only.
+- **Example:** tg-cli can release an hour after its last version, and cli-core can ship a breaking change on the same
+  day as the previous one. Bump the library in every CLI that uses it on the day it ships.
+- **Exceptions:** none. The release lock (WC-REL-3) still keeps two releases on one machine from running at once.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.52.0. **Rulings:** NEED-1741.
 
-### WC-REL-9 · A change to a stable shared-library export that makes a CLI change its code ships at most once a week
-
-- **Why:** the limit keeps the CLIs from chasing versions; a change that no CLI has to follow gives them nothing to
-  chase.
-- **Enforced by:** `cli-core: parity.yml` (it decides which changes count; review keeps the week).
-- **Example:** cli-core's parity jobs build tg-cli, max-cli and whatsapp-cli from their `main` against every pull
-  request. A change to a stable export counts unless all three jobs pass with each CLI's `main` unchanged; its
-  changelog still lists it under "Changed — may break callers" for outside users. It counts when a job fails, when it
-  passes only against a CLI branch made for the change, and when it compiles but changes behaviour that any CLI must
-  adapt to. Parity cannot see that last case, so when in doubt the change counts. Gather the changes that count into
-  one release a week, and bump the library in every CLI that uses it on the same day.
-- **Exceptions:** none.
-- **Applies to:** shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-473, NEED-1552.
+### WC-REL-9 · Merged into [WC-REL-8](#wc-rel-8--any-package-may-release-at-any-time)
 
 ### WC-REL-10 · A messenger CLI is released only with a release report the owner signed for that commit
 
