@@ -47,9 +47,10 @@ other CLI reads them. Transient state is never a core entity.
 - **Enforced by:** review only.
 - **Example:** calendars, calendar entries, events, persons, contacts, documents and files are core; drive's sync
   checkpoint is drive's own.
-- **Exceptions:** none. Where a CLI's private tables live is an open question (cli-private NEED-1737); until it is
-  answered, a CLI keeps no tables of its own in the shared store ([WC-STORE-5](store.md)).
-- **Applies to:** cli-core and every CLI. **Since:** cli-base 0.52.0. **Rulings:** NEED-1730.
+- **Exceptions:** none. A CLI's own tables live in the shared store under its prefix (`drive_…`), with a migration
+  track of its own (NEED-1737). cli-core does not run such a track yet; until it does, a CLI keeps no tables of its
+  own and [WC-STORE-5](store.md) holds unchanged.
+- **Applies to:** cli-core and every CLI. **Since:** cli-base 0.52.0. **Rulings:** NEED-1730, NEED-1737.
 
 ### WC-DATA-2 · Keep a source's records apart from the owner's entities, and link them
 
@@ -142,7 +143,11 @@ link is made and the pair goes to the owner's review list. Title or time overlap
 
 From the Wave 3 requirements (cli-private `plans/2026-10-24-open-cli-core-design.md`, under the owner's review):
 
-- a `files` table as the source record of `documents`, with `path` for folder structure and find-by-path;
+- a `files` table as the source record of `documents`: a materialised `path` plus `parent_id` to the folder's own
+  row, so a folder is found by path prefix and a document by part of its path (NEED-1739);
+- memo's vault files as documents from a local source; `notes` are only the owner's notes on entities (NEED-1738);
+- a migration track per CLI for its own prefixed tables, with the matching exception to WC-STORE-5 and WC-STORE-7
+  (NEED-1737);
 - `calendars`, `calendar_entries` and `calendar_attendees` on the `events` hub;
 - an `email` column on contacts, so one address joins one person across sources;
 - one link log for events and documents, and one review list for ambiguous pairs;
