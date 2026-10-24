@@ -15,13 +15,13 @@ review guidelines for module size. The entry-point map below applies it to this 
 |---|---|---|
 | `@wirecat/cli-base` | streams, renderer, pretty, errors, exit codes, keyring, credentials, config, paths, logging, retry, time, sanitize, field projection, output buffering, deadlines | `cli-table3`, `picocolors`; `@napi-rs/keyring` loaded on first use |
 | `/http` | status → error code, `Retry-After` and rate-limit parsing, bounded UTF-8 JSON response reads, the `fetch` seam | the error model and `WallClock` type |
-| `/commands` | the command tree as data (`describeProgram`, `annotate`, `flatten`), the `commands --json` document and its schema (`commandsDocument`), and the reference page written from it (`commandsPage`) | Commander, as a type only; `valibot` |
+| `/commands` | the command tree as data (`describeProgram`, `annotate`, `flatten`), protected shared definitions and explicit overrides (`sharedCommand`, `overrideSharedContract`, `customizeSharedCommand`), the `commands --json` document and its schema (`commandsDocument`), and the reference page written from it (`commandsPage`) | Commander at runtime for contract guards; `valibot` |
 | `/completion` | shell completion over that tree | `/commands` types |
 | `/update` | which installer put the CLI there, the daily notice, running the update | `config` (the state file), `/http`'s `FetchLike` |
 | `/codegen` | build time: an OpenAPI document → `ApiModel` → types, Valibot schemas, manifest, coverage page | nothing at run time |
 | `/codegen/runtime` | the number helpers generated schemas import | `valibot` |
 | `/release` | release checks a CLI runs before it publishes: `releaseCheck` and the checks it runs (changelog shape, document links, versions in step, package contents) | Node built-ins only |
-| `/skill` | the CLI's SKILL.md for agents: the `skill` command, the daily hint, the MCP resource | Commander **at run time** (the only entry point that is), `/update`'s state file, the root's `Renderer` and `Streams` types |
+| `/skill` | the CLI's SKILL.md for agents: the `skill` command, the daily hint, the MCP resource | Commander at runtime, `/update`'s state file, the root's `Renderer` and `Streams` types |
 | `/mcp` | local stdio MCP entry setup and a handshake probe | Node child processes; no messenger or MCP SDK dependency |
 | `/standards` | the registries of the shared standard: vocabulary, envelope, error object and reasons, next steps, log record, lint rules | `valibot`, `@valibot/to-json-schema`; the root's error codes |
 | `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock`, `allowNetwork` | the root |

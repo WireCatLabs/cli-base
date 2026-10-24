@@ -6,7 +6,7 @@
  * a command came from, whether it changes anything, whether it is on its way out — is attached with
  * `annotate`, and to an option with `annotateOption`.
  *
- * Behind its own entry point for the same reason `/http` is: Commander is only a type here, and the
+ * Behind its own entry point for the same reason `/http` is: Commander is loaded by contract guards here, and the
  * root of this package stays free of any command-line framework.
  */
 import type { Command } from "commander"
@@ -52,3 +52,14 @@ export const refuseJoinedPath = (root: Command, args: readonly string[], prefix:
     command = next
   }
 }
+
+export {
+  assertSharedContracts,
+  customizeSharedCommand,
+  hasSharedContract,
+  overrideSharedContract,
+  type SharedContractOverride,
+  sharedCommand,
+  sharedContractOverrides,
+  sharedContracts,
+} from "./contracts.js"

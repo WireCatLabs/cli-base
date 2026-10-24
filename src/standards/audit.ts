@@ -19,6 +19,11 @@ export const defineAuditRules = (input: unknown): AuditRule[] =>
 /** The rules that compare CLIs; each CLI is also judged alone by every lint rule. */
 export const AUDIT_RULES: AuditRule[] = defineAuditRules([
   {
+    id: "shared-command-contract",
+    severity: "high",
+    summary: "core-owned command definitions change only through exact, reasoned overrides",
+  },
+  {
     id: "required-root",
     severity: "high",
     summary: "every CLI has the required root commands",
@@ -56,7 +61,12 @@ const parityGroupSchema = v.strictObject({
   covers: v.union([v.literal("tree"), v.pipe(v.array(segment), v.minLength(1))]),
   /** Permanent differences, each with its reason; they count against the override budget of the group. */
   differences: v.array(
-    v.strictObject({ rule: word, target: text, reason: v.pipe(text, v.minLength(10, "say why, in a sentence")) }),
+    v.strictObject({
+      rule: word,
+      target: text,
+      expected: v.optional(text),
+      reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
+    }),
   ),
 })
 

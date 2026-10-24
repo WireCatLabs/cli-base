@@ -10,6 +10,7 @@ import { parseArgs } from "node:util"
 import spawn from "cross-spawn"
 import * as v from "valibot"
 import { parseCommandsDocument } from "../commands/document.js"
+import type { CommandInfo } from "../commands/registry.js"
 import {
   type ChangelogRules,
   changelogProblems,
@@ -21,7 +22,8 @@ import {
   structureProblems,
   versionScript,
 } from "../release/index.js"
-import { AUDIT_BLOCKS, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
+import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
+import type { ErrorReason } from "../standards/errors.js"
 import { defineReasons } from "../standards/errors.js"
 import {
   baselineProblems,
@@ -37,9 +39,11 @@ import {
 import { issuesOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
+import { readCapabilities } from "./capabilities.js"
 import { changelogChange, landFold, processShell } from "./land.js"
 import { baselineOf, judge, lintCommands } from "./lint.js"
 import { nextVersion } from "./next-version.js"
+import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
 import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested } from "./test-matrix.js"
 
@@ -77,7 +81,7 @@ const USAGE = `usage: cli-dev <command> [options]
                                        lint/baseline/<rule>.json to today's violations. --schemas
                                        is a JSON object of the CLI's own JSON Schemas by name
   audit (--cli <bin> | --commands <file>)... [--schemas <cli>=<file>]... [--reasons <cli>=<file>]...
-        [--lint <cli>=<dir>]... [--baseline <dir>] [--for <cli>] [--json] [--write-baseline]
+        [--lint <cli>=<dir>]... [--capabilities <file>] [--complete] [--differences <file>] [--baseline <dir>] [--for <cli>] [--json] [--write-baseline]
                                        several CLIs against every lint rule and against each other:
                                        required roots, same path same contract, same flag same
                                        meaning, same entity same schema, same failure same reason.
@@ -221,11 +225,16 @@ const readJson = (path: string): unknown => {
   }
 }
 
-const commandsJson = (io: DevIo, cli: string | undefined, file: string | undefined): unknown => {
+const commandsJson = (
+  io: DevIo,
+  cli: string | undefined,
+  file: string | undefined,
+  commandArgs = ["commands", "--json"],
+): unknown => {
   if (file) return readJson(isAbsolute(file) ? file : join(io.cwd, file))
   const bin = cli ?? ""
   const script = /\.[cm]?js$/.test(bin)
-  const run = spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), "commands", "--json"], {
+  const run = spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), ...commandArgs], {
     cwd: io.cwd,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
@@ -374,6 +383,9 @@ const auditRun = (args: string[], io: DevIo) => {
       cli: { type: "string", multiple: true },
       commands: { type: "string", multiple: true },
       schemas: { type: "string", multiple: true },
+      capabilities: { type: "string" },
+      complete: { type: "boolean", default: false },
+      differences: { type: "string" },
       reasons: { type: "string", multiple: true },
       lint: { type: "string", multiple: true },
       baseline: { type: "string", default: "audit/baseline" },
@@ -395,6 +407,27 @@ const auditRun = (args: string[], io: DevIo) => {
   const reasons = byCli(values.reasons, "--reasons")
   const lintDirs = byCli(values.lint, "--lint")
   const problems: string[] = []
+  const evidence = new Map<
+    string,
+    {
+      schemas?: Record<string, unknown>
+      reasons?: ErrorReason[]
+      contracts?: Record<string, Record<string, unknown>>
+      overrides?: ContractEdit[]
+    }
+  >()
+  if (values.complete) {
+    for (const [index, bin] of (values.cli ?? []).entries()) {
+      const raw = raws[index] as { cli?: string }
+      const data = commandsJson(io, bin, undefined, ["commands", "info", "--json"]) as {
+        schemas?: Record<string, unknown>
+        reasons?: ErrorReason[]
+        contracts?: Record<string, Record<string, unknown>>
+        overrides?: ContractEdit[]
+      }
+      if (typeof raw.cli === "string") evidence.set(raw.cli, data)
+    }
+  }
 
   const inputs = raws.map((raw): AuditInput => {
     const parsed = parseCommandsDocument(snakeKeys(raw))
@@ -403,11 +436,44 @@ const auditRun = (args: string[], io: DevIo) => {
         `a commands document is not the shape cli-base's commandsDocument() writes: ${parsed.problems[0]}`,
       )
     const cli = parsed.document.cli
-    const input: AuditInput = { document: parsed.document, raw }
+    const input: AuditInput = { document: parsed.document, raw, ...evidence.get(cli) }
     const schemaFile = schemas.get(cli)
     if (schemaFile) input.schemas = readJson(at(schemaFile)) as Record<string, unknown>
     const reasonFile = reasons.get(cli)
     if (reasonFile) input.reasons = defineReasons(readJson(at(reasonFile)))
+    if (values.complete) {
+      if (
+        !input.contracts ||
+        typeof input.contracts !== "object" ||
+        Array.isArray(input.contracts) ||
+        Object.keys(input.contracts).length === 0
+      )
+        problems.push(`${cli}: complete audit needs core contract references from commands info`)
+      if (
+        !input.schemas ||
+        typeof input.schemas !== "object" ||
+        Array.isArray(input.schemas) ||
+        Object.keys(input.schemas).length === 0
+      )
+        problems.push(`${cli}: complete audit needs nonempty entity schemas from commands info or --schemas`)
+      if (!Array.isArray(input.reasons) || input.reasons.length === 0)
+        problems.push(`${cli}: complete audit needs declared error reasons from commands info or --reasons`)
+      if (input.reasons) input.reasons = defineReasons(input.reasons)
+      if (input.schemas) {
+        const visit = (commands: readonly CommandInfo[]) => {
+          for (const command of commands) {
+            const names = [command.output?.entity, command.query?.entity].filter(
+              (name): name is string => name !== undefined,
+            )
+            for (const name of names)
+              if (input.schemas?.[name] === undefined)
+                problems.push(`${cli}: complete audit has no schema for ${name} (${command.path.join(" ")})`)
+            visit(command.commands)
+          }
+        }
+        visit(input.document.commands)
+      }
+    }
     const dir = lintDirs.get(cli)
     if (dir) {
       const overridesPath = join(at(dir), "overrides.json")
@@ -440,8 +506,35 @@ const auditRun = (args: string[], io: DevIo) => {
 
   const baselineDir = at(values.baseline)
   const baseline = readBaseline(baselineDir, values.baseline, problems)
+  let groups = PARITY_GROUPS
+  if (values.differences) {
+    const schema = v.array(
+      v.strictObject({
+        group: v.string(),
+        rule: v.string(),
+        target: v.string(),
+        expected: v.string(),
+        reason: v.string(),
+      }),
+    )
+    const parsed = v.safeParse(schema, readJson(at(values.differences)))
+    if (!parsed.success) throw new Error(`${values.differences}: ${issuesOf(parsed.issues).join("; ")}`)
+    for (const entry of parsed.output)
+      if (!groups.some((group) => group.name === entry.group))
+        throw new Error(`${values.differences}: unknown group ${entry.group}`)
+    groups = defineParityGroups(
+      groups.map((group) => ({
+        ...group,
+        differences: [
+          ...group.differences,
+          ...parsed.output.filter((entry) => entry.group === group.name).map(({ group: _, ...entry }) => entry),
+        ],
+      })),
+    )
+  }
   const result = auditClis(inputs, {
-    groups: PARITY_GROUPS,
+    ...(values.capabilities ? { capabilities: readCapabilities(readJson(at(values.capabilities))) } : {}),
+    groups,
     roots: REQUIRED_ROOTS,
     vocabulary: VOCABULARY,
     baseline,

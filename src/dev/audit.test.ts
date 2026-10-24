@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { Command } from "commander"
@@ -67,6 +67,9 @@ const cross = (inputs: AuditInput[], rule: string, more: Partial<AuditOptions> =
 const clean = () => [tool("a", notes("list notes")), tool("b", notes("list notes")), tool("c", notes("list notes"))]
 
 const failing: Record<string, () => AuditInput[]> = {
+  "shared-command-contract": () => [
+    inputOf(tool("a"), { contracts: { doctor: { name: "doctor", description: "a different doctor" } } }),
+  ],
   "required-root": () => [inputOf(tool("a")), inputOf(new Command("b").description("no roots"))],
   "same-path-contract": () => [
     inputOf(tool("a", notes("list notes", [["--limit <n>", "how many"]]))),
@@ -101,6 +104,33 @@ describe("audit rules", () => {
       ).toEqual([])
       expect(cross(failing[rule]?.() ?? [], rule).length, rule).toBeGreaterThan(0)
     }
+  })
+
+  it("accepts core-owned provider variants only while their exact inherited definitions remain intact", () => {
+    const left = inputOf(tool("a", notes("list stored notes")))
+    const right = inputOf(tool("b", notes("list imported notes")))
+    const reference = (input: AuditInput) => {
+      const command = input.document.commands.find((command) => command.name === "notes")?.commands[0]
+      if (!command) throw new Error("missing fixture command")
+      const { path: _, usage: __, commands: ___, ...fields } = command
+      return { "notes list": fields }
+    }
+    left.contracts = reference(left)
+    right.contracts = reference(right)
+    expect(cross([left, right], "same-path-contract")).toHaveLength(1)
+    expect(
+      auditClis([left, right], options()).blocking.filter((finding) => finding.rule === "same-path-contract"),
+    ).toEqual([])
+    right.contracts = {
+      ...right.contracts,
+      "notes list": { ...right.contracts["notes list"], description: "the original imported notes" },
+    }
+    expect(
+      auditClis([left, right], options()).blocking.some((finding) => finding.rule === "shared-command-contract"),
+    ).toBe(true)
+    expect(auditClis([left, right], options()).blocking.some((finding) => finding.rule === "same-path-contract")).toBe(
+      true,
+    )
   })
 
   it("names the missing root and the CLI that lacks it", () => {
@@ -200,10 +230,10 @@ describe("judging an audit", () => {
   const diverging = () => failing["same-path-contract"]?.() ?? []
   const target = "a+b notes list --limit"
 
-  it("blocks a new divergence, not a baselined one, and counts a baseline entry with no finding as fixed", () => {
+  it("blocks contract drift even in a historical baseline, and counts resolved entries as fixed", () => {
     expect(auditClis(diverging(), options()).blocking.map((one) => one.target)).toContain(target)
     const baselined = auditClis(diverging(), options({ baseline: { "same-path-contract": [target] } }))
-    expect(baselined.blocking.map((one) => one.target)).not.toContain(target)
+    expect(baselined.blocking.map((one) => one.target)).toContain(target)
     const fixed = auditClis(
       clean().map((root) => inputOf(root)),
       options({ baseline: { "same-path-contract": [target] } }),
@@ -219,10 +249,10 @@ describe("judging an audit", () => {
     const wider = "a+b+c notes list --limit"
     const result = auditClis(diverging().slice(0, 2), options({ baseline: { "same-path-contract": [wider, target] } }))
     expect(result.rows.find((one) => one.cli === "a" && one.rule === "same-path-contract")).toMatchObject({
-      baseline: 1,
+      baseline: 0,
       fixed: 0,
     })
-    expect(result.nextBaseline["same-path-contract"]).toEqual([target, wider])
+    expect(result.nextBaseline["same-path-contract"]).toEqual([wider])
   })
 
   it("does not block on a cross-CLI divergence when blocking is off, but still on a lint violation", () => {
@@ -252,7 +282,12 @@ describe("judging an audit", () => {
         ? {
             ...group,
             differences: [
-              { rule: "same-path-contract", target, reason: "the value names a count in b's provider" },
+              {
+                rule: "same-path-contract",
+                target,
+                expected: "a: <n>, b: <count>",
+                reason: "the value names a count in b's provider",
+              },
               { rule: "same-path-contract", target: "a+b gone", reason: "a divergence fixed long ago" },
             ],
           }
@@ -301,19 +336,21 @@ describe("judging an audit", () => {
     expect(
       scorecardTable(result.rows.filter((row) => !row.rule.startsWith("option") && row.rule !== "key-casing")),
     ).toMatchInlineSnapshot(`
-        "cli  rule                found  baseline  overridden  new  fixed
-        a    same-path-contract      1         0           0    1      0
-        a    same-flag-meaning       1         0           0    1      0
-        a    same-entity-schema    n/a       n/a         n/a  n/a    n/a
-        a    same-error-reason     n/a       n/a         n/a  n/a    n/a
-        b    flag-two-meanings       1         0           0    1      0
-        b    same-path-contract      1         0           0    1      0
-        b    same-flag-meaning       1         0           0    1      0
-        b    same-entity-schema    n/a       n/a         n/a  n/a    n/a
-        b    same-error-reason     n/a       n/a         n/a  n/a    n/a
-        a    total                   2         0           0    2      0
-        b    total                   3         0           0    3      0"
-      `)
+      "cli  rule                     found  baseline  overridden  new  fixed
+      a    shared-command-contract    n/a       n/a         n/a  n/a    n/a
+      a    same-path-contract           1         0           0    1      0
+      a    same-flag-meaning            1         0           0    1      0
+      a    same-entity-schema         n/a       n/a         n/a  n/a    n/a
+      a    same-error-reason          n/a       n/a         n/a  n/a    n/a
+      b    flag-two-meanings            1         0           0    1      0
+      b    shared-command-contract    n/a       n/a         n/a  n/a    n/a
+      b    same-path-contract           1         0           0    1      0
+      b    same-flag-meaning            1         0           0    1      0
+      b    same-entity-schema         n/a       n/a         n/a  n/a    n/a
+      b    same-error-reason          n/a       n/a         n/a  n/a    n/a
+      a    total                        2         0           0    2      0
+      b    total                        3         0           0    3      0"
+    `)
   })
 })
 
@@ -339,14 +376,17 @@ describe("cli-dev audit", () => {
     write("max.json", tool("max", notes("list notes", [["--limit <count>", "how many"]])))
   })
 
-  it("fails a new finding, then passes once the baseline holds today's", async () => {
+  it("cannot bless contract drift by writing a baseline", async () => {
     expect(await audit()).toBe(1)
-    expect(err).toContain("new  same-path-contract  max+tg notes list --limit: max: <count>, tg: <n>")
+    expect(err.join("\n")).toContain("new  same-path-contract  max+tg notes list --limit: max: <count>, tg: <n>")
     expect(await audit("--write-baseline")).toBe(0)
-    expect(JSON.parse(readFileSync(join(root, "audit/baseline/same-path-contract.json"), "utf8"))).toEqual([
-      "max+tg notes list --limit",
-    ])
-    expect(await audit()).toBe(0)
+    expect(await audit()).toBe(1)
+  })
+
+  it("requires both schemas and reasons for a complete file-based audit", async () => {
+    expect(await audit("--complete")).toBe(1)
+    expect(err.join("\n")).toContain("complete audit needs nonempty entity schemas")
+    expect(err.join("\n")).toContain("complete audit needs declared error reasons")
   })
 
   it("prints the scorecard as the list envelope with --json", async () => {
