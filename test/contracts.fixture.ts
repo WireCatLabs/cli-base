@@ -1,4 +1,4 @@
-import type { SharedContractOverride } from "./contracts.js"
+import type { SharedContractOverride } from "../src/commands/contracts.js"
 export const TASK_SHELL: readonly SharedContractOverride[] = [
   {
     command: ["tasks", "show"],

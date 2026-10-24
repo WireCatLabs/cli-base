@@ -1,6 +1,6 @@
 import { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
-import { TASK_SHELL } from "./contracts.fixture.js"
+import { TASK_SHELL } from "../../test/contracts.fixture.js"
 import {
   assertSharedContracts,
   customizeSharedCommand,
