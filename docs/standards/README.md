@@ -1,7 +1,7 @@
 # WireCat CLI standards
 
 This handbook holds the rules every WireCat CLI follows: tools, layout, commands, output, MCP, accounts,
-permissions, architecture, time, tests, security, documents, releases and CI. Read this page first. Then read the page
+permissions, architecture, the data model, time, tests, security, documents, releases and CI. Read this page first. Then read the page
 for the area you are about to change.
 
 It ships in the `@wirecat/cli-base` package. A CLI that depends on cli-base has it at
@@ -35,6 +35,7 @@ rules it keeps. A new CLI is ready for its first release when every check under 
 | [Architecture](architecture.md) | `ARCH` | 16 | Layers, dependency direction, vendor types, what goes in which package |
 | [Lifecycle](lifecycle.md) | `LIFE` | 13 | Opening late, who closes, one-shot exits, long-running commands, the `serve` relay, resumable syncs |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
+| [Data model](data-model.md) | `DATA` | 7 | Core entities, entities and source records, `external_id`, field names, links and duplicates |
 | [Testing](testing.md) | `TEST` | 17 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity |
 | [Security](security.md) | `SECR` | 20 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting |
 | [Documents](docs.md) | `DOC` | 20 | User pages and developer pages, generated pages, current facts, changelog |
