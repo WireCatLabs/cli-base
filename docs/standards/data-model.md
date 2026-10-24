@@ -39,6 +39,7 @@ is rewritten only to follow it:
   (WC-DATA-6).
 - `documents` keeps its source columns (`account_id`, `external_id`, `url`, `mime`, `front_matter`…) next to the
   entity's own fields (WC-DATA-2).
+- `meeting_participants` is unique on the meeting and the contact; its `external_id` is in no unique key (WC-DATA-3).
 
 ## Rules
 
