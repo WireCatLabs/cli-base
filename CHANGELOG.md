@@ -10,7 +10,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
-### Changed
+### Added
 
 - **Comparison pages live in the site repository, and our marks are re-checked at each release** (`WC-CMP-11`, [Comparisons](docs/standards/comparisons.md)). The page is written in `cli-docs` (wirecat.dev) because a comparison changes when other tools change, not when we release; the CLI repository keeps a short `docs/compare.md` that links to it. The release report lists the compare page as checked. Nothing changes in code.
 
