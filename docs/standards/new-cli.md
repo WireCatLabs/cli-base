@@ -92,8 +92,8 @@ whatsapp-cli is the worked example: it has every file below. Compare with it whe
 8. **`SECURITY.md`**: how to report a vulnerability, linking cli-testing's security method. See
    [Security](security.md).
 9. **`bin/release`**, **`release.yml`** and a release skill, copied from the nearest CLI. `bin/release` takes the
-   release lock (WC-REL-3) and npm's trusted publisher settings name `release.yml`. A messenger CLI also waits two
-   hours between releases and checks a signed release report (WC-REL-8, WC-REL-10). See [Releases](releases.md).
+   release lock (WC-REL-3) and npm's trusted publisher settings name `release.yml`. A messenger CLI also checks a signed
+   release report (WC-REL-10). See [Releases](releases.md).
 10. **`src/version.ts`** kept in step with `package.json`. Proved by: `pnpm version:check`.
 
 ## Done when

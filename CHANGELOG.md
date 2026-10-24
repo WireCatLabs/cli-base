@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Removed
+
+- **No wait between releases and no weekly limit on breaking changes** (`WC-REL-8`, [Releases](docs/standards/releases.md)). A messenger CLI no longer waits two hours after its last version, and a shared library may ship a change that makes the CLIs change their code at any time. `WC-REL-9` is merged into `WC-REL-8`. The release lock stays. Nothing changes in code.
+
 ## 0.51.0 — 24.10.2026
 
 ### Added
