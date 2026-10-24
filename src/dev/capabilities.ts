@@ -27,7 +27,11 @@ export const capabilityDifference = (
   const words = target.slice(target.indexOf(" ") + 1)
   if (words.endsWith(": presence")) {
     const path = words.slice(0, -10)
-    const policy = manifest.commands[path]
+    const ancestor = path
+      .split(" ")
+      .map((_, index, parts) => parts.slice(0, parts.length - index).join(" "))
+      .find((name) => manifest.commands[name] !== undefined)
+    const policy = ancestor ? manifest.commands[ancestor] : undefined
     if (!policy || policy.in === "all" || (!policy.reason && !policy.planned)) return false
     return clis.every(
       (cli) =>

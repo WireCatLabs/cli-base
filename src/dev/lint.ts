@@ -216,14 +216,16 @@ const filteredBy = (flag: string): { field?: string; window?: "time" | "id" } =>
   return { field: bare.replace(/-(time|id|n)$/, "").replaceAll("-", "_") }
 }
 
-/** An entity's fields: the query's, then its registered schema's properties; `time` for a date-time. */
+/** A declared query is authoritative; without one, scalar schema fields reveal legacy list filters. */
 const entityFields = (command: CommandInfo, context: LintContext): Map<string, string> => {
   const fields = new Map<string, string>((command.query?.fields ?? []).map((field) => [field.name, field.type]))
-  const entity = command.output?.entity ?? command.query?.entity
+  if (command.query) return fields
+  const entity = command.output?.entity
   const schema = entity === undefined ? undefined : context.schemas?.[entity]
   const properties = isObject(schema) && isObject(schema.properties) ? schema.properties : {}
   for (const [name, property] of Object.entries(properties))
-    if (!fields.has(name)) fields.set(name, isObject(property) && property.format === "date-time" ? "time" : "other")
+    if (!fields.has(name) && !typesOf(property).includes("array"))
+      fields.set(name, isObject(property) && property.format === "date-time" ? "time" : "other")
   return fields
 }
 

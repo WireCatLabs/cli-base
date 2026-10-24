@@ -40,3 +40,35 @@ it("refuses an unexplained absence declaration", () => {
     capabilityDifference("a+b links: presence", ["a", "b"], [document("a", true), document("b", false)], unexplained),
   ).toBe(false)
 })
+
+it("inherits a provider-only family declaration while preserving specific child restrictions", () => {
+  const root = new Command("a")
+  root.command("links").command("list")
+  const documents = [commandsDocument(root, { cli: "a", version: "1", contract: 0 }), document("b", false)]
+  expect(capabilityDifference("a+b links list: presence", ["a", "b"], documents, manifest)).toBe(true)
+  const restricted = readCapabilities({
+    ...manifest,
+    commands: {
+      ...manifest.commands,
+      "links list": { in: [], reason: "This operation is not implemented by either source." },
+    },
+  })
+  expect(capabilityDifference("a+b links list: presence", ["a", "b"], documents, restricted)).toBe(false)
+})
+it("does not accept value-type drift as a provider availability difference", () => {
+  const left = new Command("a"),
+    right = new Command("b")
+  left.command("create").option("--approval", "require approval")
+  right.command("create").option("--approval <mode>", "approval mode")
+  const documents = [left, right].map((root) => commandsDocument(root, { cli: root.name(), version: "1", contract: 0 }))
+  const both = readCapabilities({
+    clis: ["a", "b"],
+    commands: {
+      create: {
+        in: "all",
+        options: { "--approval": { in: ["a", "b"], reason: "Both providers support approval-based joining." } },
+      },
+    },
+  })
+  expect(capabilityDifference("a+b create --approval", ["a", "b"], documents, both)).toBe(false)
+})
