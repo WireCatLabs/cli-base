@@ -204,6 +204,24 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Exceptions:** none.
 - **Applies to:** cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-15.
 
+### WC-ARCH-21 · A CLI registers its provider in the store; an unknown provider's rows are skipped, never guessed
+
+Every run, a CLI writes its provider's entry — `{ name, kind, aliases, command }` — with `registerProvider` from
+`@wirecat/cli-core/store`. cli-core reads its built-in providers plus the stored entries when the store opens, so
+every other CLI knows the new provider's kind without a cli-core release. A row whose provider no entry names is left
+out of search and listed under `skipped`, with the hint to run that CLI once.
+
+- **Why:** a new source joins search and memo without editing cli-core, and a provider nobody described is never read
+  as something it is not (until this rule, an unlisted provider was searched as a messenger).
+- **Enforced by:** `cli-core: src/store/sqlite/providers.test.ts`.
+- **Example:** cal registers `{ name: "google-calendar", kind: "events", aliases: ["cal"], command: "cal" }` each
+  time it starts. On a machine where cal has never run, a search across accounts lists cal's accounts under
+  `skipped` instead of reading their rows as messages.
+- **Exceptions:** the built-in providers of cli-core need no entry. Two entries that disagree on a kind are an error
+  naming both.
+- **Applies to:** cli-core and every CLI with a provider of its own. **Since:** cli-base 0.52.0. **Rulings:** none
+  (Wave 3 requirements 3.2).
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

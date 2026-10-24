@@ -22,6 +22,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`cli-dev <command> --help`** prints the usage, as `cli-dev --help` does, instead of failing on an unknown option.
 
 - **A data-model page in the standards** (`WC-DATA-1` to `WC-DATA-7`, [Data model](docs/standards/data-model.md)). It says which records cli-core owns and which stay private to a CLI, keeps a source's records (a calendar entry, a Drive file, a mail contact) apart from the owner's entities (an event, a document, a person), puts every provider id in `external_id`, lists the standard field names, and makes every link record how it was made, with no link when two candidates tie. Nothing changes in code; older tables follow the rules when they next change.
+- **A rule for the provider registry** (`WC-ARCH-21`, [Architecture](docs/standards/architecture.md)): a CLI registers its provider in the store on every run, and a row whose provider no one registered is skipped, never searched as messages. It matches cli-core's stored registry. The Data model, Store and Security pages also list what the approved Wave 3 design adds and is not built yet: files, calendars, contacts by address, one link log and review list, a CLI's own SQLite file, and the sign-in module. The Data model page now names the attendee table `calendar_entry_participants`.
+
 ## 0.51.1 â€” 24.10.2026
 
 ### Fixed

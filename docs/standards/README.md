@@ -32,7 +32,7 @@ rules it keeps. A new CLI is ready for its first release when every check under 
 | [MCP](mcp.md) | `MCP` | 13 | The MCP tools, how they come from commands, what each permission shows |
 | [Accounts](accounts.md) | `ACCT` | 11 | The explicit profile, reads across accounts, scope flags, linked identities |
 | [Permissions](permissions.md) | `PERM` | 21 | Levels, keys, defaults, hard limits, the write guard and its journal |
-| [Architecture](architecture.md) | `ARCH` | 16 | Layers, dependency direction, vendor types, what goes in which package |
+| [Architecture](architecture.md) | `ARCH` | 17 | Layers, dependency direction, vendor types, what goes in which package |
 | [Lifecycle](lifecycle.md) | `LIFE` | 13 | Opening late, who closes, one-shot exits, long-running commands, the `serve` relay, resumable syncs |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
 | [Data model](data-model.md) | `DATA` | 7 | Core entities, entities and source records, `external_id`, field names, links and duplicates |

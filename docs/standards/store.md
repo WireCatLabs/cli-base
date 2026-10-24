@@ -185,6 +185,17 @@ messages), or other people's data.
 - **Exceptions:** none.
 - **Applies to:** all CLIs that use the store, and cli-core. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+## Planned — not built yet
+
+From the Wave 3 requirements, approved by the owner on 2026-10-24 (NEED-1737). It moves into the rules in the pull
+request that builds the helper.
+
+- **A CLI's own tables live in its own SQLite file**, next to the shared store, with its own migrations. They refer to
+  core rows by id only, and no other CLI opens that file. A cli-core helper opens it (the path, the migrations, the
+  same driver); it is built when the first CLI needs private tables.
+- **WC-STORE-5 gets a check:** a grit plugin, `no-sqlite-driver`, that refuses a CLI's import of a SQLite driver or
+  of `drizzle-orm`. cli-core, which owns the store, turns it off.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
