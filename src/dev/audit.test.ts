@@ -383,6 +383,42 @@ describe("cli-dev audit", () => {
     expect(await audit()).toBe(1)
   })
 
+  it("compares the CLIs by the parity groups of a --groups file, and --differences adds to them", async () => {
+    write("max.json", tool("max", notes("list the notes", [["--limit <n>", "how many"]])))
+    writeFileSync(
+      join(root, "groups.json"),
+      JSON.stringify([{ name: "outside", members: ["tg", "max"], covers: ["notes"], differences: [] }]),
+    )
+    writeFileSync(
+      join(root, "differences.json"),
+      JSON.stringify([
+        {
+          group: "outside",
+          rule: "same-path-contract",
+          target: "max+tg notes list: summary",
+          expected: 'max: "list the notes", tg: "list notes"',
+          reason: "the two tools word the summary differently on purpose",
+        },
+      ]),
+    )
+    expect(await audit("--groups", "groups.json")).toBe(1)
+    expect(err.join("\n")).toContain("new  same-path-contract  max+tg notes list: summary")
+    expect(await audit("--groups", "groups.json", "--differences", "differences.json")).toBe(0)
+    expect(await audit("--differences", "differences.json")).toBe(2)
+    expect(err.at(-1)).toBe("differences.json: unknown group outside")
+  })
+
+  it("lists --groups in its help", async () => {
+    expect(await main(["audit", "--help"], io)).toBe(0)
+    expect(out.join("\n")).toContain("--groups <file>")
+  })
+
+  it("refuses a --groups file that is not a list of parity groups", async () => {
+    writeFileSync(join(root, "groups.json"), JSON.stringify([{ name: "alone", members: ["tg"], covers: "tree" }]))
+    expect(await audit("--groups", "groups.json")).toBe(2)
+    expect(err.at(-1)).toMatch(/^groups\.json: .*members/)
+  })
+
   it("requires both schemas and reasons for a complete file-based audit", async () => {
     expect(await audit("--complete")).toBe(1)
     expect(err.join("\n")).toContain("complete audit needs nonempty entity schemas")

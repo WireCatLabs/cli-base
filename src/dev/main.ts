@@ -36,7 +36,7 @@ import {
   overridesSchema,
   rulesForReview,
 } from "../standards/lint.js"
-import { issuesOf } from "../standards/registry.js"
+import { issuesOf, RegistryError } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
@@ -81,14 +81,17 @@ const USAGE = `usage: cli-dev <command> [options]
                                        lint/baseline/<rule>.json to today's violations. --schemas
                                        is a JSON object of the CLI's own JSON Schemas by name
   audit (--cli <bin> | --commands <file>)... [--schemas <cli>=<file>]... [--reasons <cli>=<file>]...
-        [--lint <cli>=<dir>]... [--capabilities <file>] [--complete] [--differences <file>] [--baseline <dir>] [--for <cli>] [--json] [--write-baseline]
+        [--lint <cli>=<dir>]... [--capabilities <file>] [--complete] [--groups <file>] [--differences <file>]
+        [--baseline <dir>] [--for <cli>] [--json] [--write-baseline]
                                        several CLIs against every lint rule and against each other:
                                        required roots, same path same contract, same flag same
                                        meaning, same entity same schema, same failure same reason.
                                        Prints the scorecard; fails on a new finding (one naming
                                        --for's CLI, when given). --lint judges that CLI's lint
                                        rules by its own lint/ folder; the rest by --baseline
-                                       (audit/baseline)`
+                                       (audit/baseline). --groups replaces PARITY_GROUPS with the
+                                       JSON list of parity groups in that file; --differences adds
+                                       to the groups in use`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -386,6 +389,7 @@ const auditRun = (args: string[], io: DevIo) => {
       capabilities: { type: "string" },
       complete: { type: "boolean", default: false },
       differences: { type: "string" },
+      groups: { type: "string" },
       reasons: { type: "string", multiple: true },
       lint: { type: "string", multiple: true },
       baseline: { type: "string", default: "audit/baseline" },
@@ -512,6 +516,14 @@ const auditRun = (args: string[], io: DevIo) => {
   const baselineDir = at(values.baseline)
   const baseline = readBaseline(baselineDir, values.baseline, problems)
   let groups = PARITY_GROUPS
+  if (values.groups) {
+    try {
+      groups = defineParityGroups(readJson(at(values.groups)))
+    } catch (error) {
+      if (error instanceof RegistryError) throw new Error(`${values.groups}: ${error.problems.join("; ")}`)
+      throw error
+    }
+  }
   if (values.differences) {
     const schema = v.array(
       v.strictObject({
@@ -581,6 +593,10 @@ const auditRun = (args: string[], io: DevIo) => {
 
 export const main = async (argv: readonly string[], io: DevIo): Promise<number> => {
   const [command, ...args] = argv
+  if (args.includes("--help")) {
+    io.out(USAGE)
+    return 0
+  }
   switch (command) {
     case "slow-tests": {
       const [file = "coverage/tests.json", count = "20"] = args

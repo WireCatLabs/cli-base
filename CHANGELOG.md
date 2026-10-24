@@ -12,6 +12,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`cli-dev audit --groups <file>`** compares the CLIs by the parity groups in that file instead of `PARITY_GROUPS`. The file is a JSON list in the shape `defineParityGroups` takes (`name`, `members`, `covers`, `differences`) and is checked the same way; a bad file stops the run with exit 2 and names the file. A CLI outside WireCatLabs keeps this file in its own repository and lists itself next to our CLIs, with no pull request here. `--differences` still adds to the groups in use, so with both flags it adds to the file's groups. Without the flag nothing changes.
+- **`cli-dev <command> --help`** prints the usage, as `cli-dev --help` does, instead of failing on an unknown option.
+
 - **A data-model page in the standards** (`WC-DATA-1` to `WC-DATA-7`, [Data model](docs/standards/data-model.md)). It says which records cli-core owns and which stay private to a CLI, keeps a source's records (a calendar entry, a Drive file, a mail contact) apart from the owner's entities (an event, a document, a person), puts every provider id in `external_id`, lists the standard field names, and makes every link record how it was made, with no link when two candidates tie. Nothing changes in code; older tables follow the rules when they next change.
 ## 0.51.1 â€” 24.10.2026
 
