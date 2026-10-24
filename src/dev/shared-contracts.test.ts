@@ -24,6 +24,22 @@ describe("core contract evidence", () => {
     expect(sharedContractProblems(commands, reference)).toEqual([])
     expect(sharedContractProblems(commands, Object.fromEntries(Object.entries(reference).reverse()))).toEqual([])
   })
+  it("keeps runtime availability separate from the inherited command definition", () => {
+    const { commands, reference } = fixture()
+    const discovered = commands.map((command) => ({
+      ...command,
+      availability: { available: true },
+      commands: command.commands.map((child) => ({
+        ...child,
+        availability: { available: false, reason: "owner permission required" },
+      })),
+    }))
+    expect(sharedContractProblems(discovered, reference)).toEqual([])
+    const child = discovered[0]?.commands[0]
+    if (!child) throw new Error("missing fixture child")
+    child.description = "an undeclared change"
+    expect(sharedContractProblems(discovered, reference)[0]?.message).toContain("description")
+  })
   it("requires an exact reasoned edit and rejects stale, vague and no-op edits", () => {
     const { root, group, reference } = fixture()
     group.commands[0]?.description("list imported notes")

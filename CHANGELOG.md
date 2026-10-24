@@ -25,6 +25,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **Complete audits keep runtime availability separate from static contracts.** A currently denied or available command retains the same protected grammar and output definition.
+
 - **Command lint distinguishes list filters from computation and output controls.** Ranking weights, timezone, output context and byte pagination remain controls even when an answer exposes similarly named fields; singleton targets are not list filters. Native query fields and id/time filtering remain checked.
 
 ## 0.50.4 â€” 24.10.2026

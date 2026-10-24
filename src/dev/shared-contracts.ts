@@ -84,7 +84,10 @@ export const sharedContractProblems = (
         }
         const wanted: Record<string, unknown> = { ...expected, ...inherited }
         const changed = [...new Set([...Object.keys(actual), ...Object.keys(wanted)])].filter(
-          (field) => field !== "aliases" && !same((actual as Record<string, unknown>)[field], wanted[field]),
+          (field) =>
+            field !== "aliases" &&
+            field !== "availability" &&
+            !same((actual as Record<string, unknown>)[field], wanted[field]),
         )
         if (changed.length)
           problems.push({ path, message: `core contract differs without an exact override: ${changed.join(", ")}` })
