@@ -23,7 +23,7 @@ None open.
 
 ## Next (P2)
 
-- **BASE-3** · P2 · The audit never measures `same-entity-schema` and `same-error-reason`: both need inputs the
+- **BASE-3** · P2 · 🚧 `fix/shared-contract-audit` The audit never measures `same-entity-schema` and `same-error-reason`: both need inputs the
   weekly run and `cli-dev audit --cli` do not pass, so every CLI shows `n/a` (`src/dev/audit.ts:265`).
 - **BASE-4** · P2 · A new CLI from a template: [new-cli.md](../standards/new-cli.md) is about 25 manual steps and
   copies `bin/release`, `release.yml` and the release skill "from the nearest CLI". The Slack, Google Meet and
