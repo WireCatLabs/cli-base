@@ -77,7 +77,10 @@ a group covering the whole tree has the same paths), `same-flag-meaning`, `same-
 <cli>=<file>`) and `same-error-reason` (from `--reasons <cli>=<file>`, a JSON list of `defineReasons` entries). The two
 last rules print `n/a` for a CLI that gave no such file. `PARITY_GROUPS` names who is compared where — `messengers`
 (tg, max) over the whole tree, `all` over the shared roots — and each group's declared `differences`, each with a reason,
-at most 10. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
+at most 10. `--groups <file>` replaces `PARITY_GROUPS` with the JSON list of groups in that file, in the same shape and
+checked the same way, so a CLI outside WireCatLabs keeps its own groups in its repository and lists itself next to
+ours; `--differences <file>` (entries of `group`, `rule`, `target`, `expected`, `reason`) then adds to whichever groups
+are in use. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
 (`max+tg chats list --limit`, `tg: chats grab` for a lint violation); `--write-baseline` rewrites them. `--lint
 <cli>=<dir>` judges that CLI's lint rules by its own `lint/` folder instead. A new finding fails the run — only one
 naming `--for <cli>` when given — and a fixed one is reported, not failed. `AUDIT_BLOCKS` decides whether a new
