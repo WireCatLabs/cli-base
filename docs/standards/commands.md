@@ -287,10 +287,10 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 ### WC-CMD-27 · Refuse a command path that arrived as one word
 
 - **Why:** a shell loop that quotes `"projects add"` would otherwise get the root help and no reason.
-- **Enforced by:** `src/commands/commands.test.ts` · `cli-memo: src/program.test.ts`.
+- **Enforced by:** `src/commands/commands.test.ts` · `cli-memo: src/program.test.ts` · `cli-core: src/cli/program.ts`.
 - **Example:** call `refuseJoinedPath(program, args)` before `parseAsync`. It throws a `validation_error` that names
   the words to type.
-- **Exceptions:** none. Only memo calls `refuseJoinedPath` today; cli-core and the other CLIs do not yet.
+- **Exceptions:** none. memo and cli-core call `refuseJoinedPath` before parsing.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## External references

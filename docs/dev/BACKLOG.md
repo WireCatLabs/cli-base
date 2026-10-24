@@ -19,15 +19,7 @@ developers can build on today and what comes next is the [roadmap](../roadmap.md
 
 ## Launch blockers (P1)
 
-- **BASE-1** · P1 · README statements that are no longer true: the handbook is "a skeleton for now" (`README.md:27`;
-  it has 17 area pages and the new-CLI checklist), cli-core's STANDARD.md holds the rules of every CLI (`:28`; it
-  keeps only the messenger rules), `cli-dev lint` has 15 rules (`:115`; `LINT_RULES` has 19), and the audit checks
-  entity schemas and error reasons (`:120`; see BASE-3).
-- **BASE-2** · P1 · Handbook notes that are out of date: "Planned — not built yet" in
-  [mcp.md](../standards/mcp.md#planned--not-built-yet) says no MCP server reads `mcp: false`, but cli-core's servers
-  build their tools from the commands and honour it (cli-core `src/mcp/agent.ts:194`, `:239`); "all three pin
-  0.321.0" (`docs/standards/accounts.md:16`); "only memo calls `refuseJoinedPath`" (`docs/standards/commands.md:293`;
-  cli-core calls it in `src/cli/program.ts:443`).
+None open.
 
 ## Next (P2)
 

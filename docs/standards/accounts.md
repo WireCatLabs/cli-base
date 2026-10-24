@@ -13,8 +13,7 @@ Rule ids on this page are `WC-ACCT-<n>`. How to read a rule, how ids work and wh
 
 ### Who follows these rules today
 
-cli-core resolves the profile for tg, max and wa. WC-ACCT-1 needs cli-core 0.319.0 or newer, and all three pin
-0.321.0. memo has no messenger profile: its shared commands run without one, and they pick accounts with `--provider`
+cli-core resolves the profile for tg, max and wa. WC-ACCT-1 needs cli-core 0.319.0 or newer. memo has no messenger profile: its shared commands run without one, and they pick accounts with `--provider`
 and `--account` (WC-ACCT-7). zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
 `ZM_PROFILE_LOCK`) from zoom-cli 0.35.0, with cli-core's `liftProfile` and `usableProfileName`. drive still has its own
 profile code: it registers its own profiles. That is a known gap, not an exception.
