@@ -98,7 +98,8 @@ Rule ids on this page are `WC-CMP-<n>`. How to read a rule, how ids work and whi
 - **Enforced by:** review only.
 - **Example:** our marks are checked against the code on `main` or by running the tool. A competitor mark links to
   its own documentation or source. A mark that cannot be proven is ➖ ("not in its documentation"). The intro names the
-  check date. The legend is ✅ yes · 🟡 partly · ❌ no · ➖ not in its documentation.
+  check date. The legend is ✅ yes · 🟡 partly · ❌ no · ➖ not in its documentation, plus "n/a" where
+  a row cannot apply to a tool (an MCP row for a connector that is itself the agent).
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.50.4. **Rulings:** none.
 
