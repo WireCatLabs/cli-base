@@ -10,6 +10,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Fixed
+
+- The shared vocabulary recognizes `--draft` as a switch that saves text for review without sending. Enabling an adapterâ€™s draft capability no longer creates an unknown-option-role lint failure.
+
 ### Removed
 
 - **No wait between releases and no weekly limit on breaking changes** (`WC-REL-8`, [Releases](docs/standards/releases.md)). A messenger CLI no longer waits two hours after its last version, and a shared library may ship a change that makes the CLIs change their code at any time. `WC-REL-9` is merged into `WC-REL-8`. The release lock stays. Nothing changes in code.

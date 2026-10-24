@@ -293,6 +293,12 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "duration",
     meaning: "how old a stored snapshot may be and still count as fresh",
   },
+  {
+    name: "--draft",
+    role: "mode",
+    type: "switch",
+    meaning: "save text for the owner to review and send, without sending a message",
+  },
   { name: "--md", role: "mode", type: "switch", meaning: "the text is the messenger's Markdown" },
   { name: "--no-backup", role: "mode", type: "switch", meaning: "do not back the file up before deleting it" },
   { name: "--no-input", role: "mode", type: "switch", meaning: "never prompt or open an interactive login" },
