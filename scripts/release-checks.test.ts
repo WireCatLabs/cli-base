@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
@@ -96,5 +96,49 @@ describe("release-checks critical source findings", () => {
   it("fails when there is no report or it is not SARIF", () => {
     expect(gate().status).toBe(1)
     expect(gate({ version: "2.1.0" }).status).toBe(1)
+  })
+})
+
+describe("release-checks fresh dependency resolution", () => {
+  const start = workflow.indexOf("      - name: Audit a fresh production install of the package")
+  const script =
+    workflow
+      .slice(start)
+      .split("        run: |\n")[1]
+      ?.split("\n  go-dependencies:")[0]
+      ?.split("\n")
+      .map((line) => line.slice(10))
+      .join("\n") ?? ""
+
+  it.each([0, 1])("propagates npm audit status %s after packing and resolving outside the checkout", (status) => {
+    const root = mkdtempSync(join(tmpdir(), "dependency-gate-"))
+    const bin = join(root, "bin")
+    mkdirSync(bin)
+    const log = join(root, "calls")
+    const npm = join(bin, "npm")
+    writeFileSync(
+      npm,
+      `#!/bin/sh
+printf '%s|%s\\n' "$PWD" "$*" >> "$CALLS"
+case "$1" in
+  pack) touch "$4/package.tgz" ;;
+  audit) exit "$AUDIT_STATUS" ;;
+esac
+`,
+    )
+    chmodSync(npm, 0o755)
+    const run = spawnSync("sh", ["-eu", "-c", script], {
+      cwd: root,
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, CALLS: log, AUDIT_STATUS: String(status) },
+      encoding: "utf8",
+    })
+    expect(run.stderr).toBe("")
+    expect(run.status).toBe(status)
+    const calls = readFileSync(log, "utf8").trim().split("\n")
+    expect(calls[0]).toMatch(/pack --ignore-scripts --pack-destination /)
+    expect(calls[1]).not.toMatch(new RegExp(`^${root}\\|`))
+    expect(calls[2]).toContain("install --package-lock-only --ignore-scripts --omit=dev --no-audit --no-fund")
+    expect(calls[2]).toContain("/package.tgz")
+    expect(calls[3]).toContain("audit --omit=dev --audit-level=high")
   })
 })
