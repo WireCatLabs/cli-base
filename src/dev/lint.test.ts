@@ -20,9 +20,17 @@ const ran = <T extends Command>(command: T, meta: CommandMeta = {}): T => annota
 const clean = (): Command => {
   const root = new Command("tool").description("a tool").option("--json", "print JSON")
   const chats = root.command("chats").description("chats in the messenger")
-  ran(chats.command("list").description("list chats").option("--limit <n>", "how many chats"), {
-    examples: ["tool chats list", "tool work chats list --limit=5 --json"],
-  })
+  ran(
+    chats
+      .command("list")
+      .description("list chats")
+      .argument("[query...]", "field:value terms")
+      .option("--limit <n>", "how many chats"),
+    {
+      examples: ["tool chats list", "tool work chats list --limit=5 --json"],
+      query: { entity: "chat", backend: "native", fields: [] },
+    },
+  )
   ran(chats.command("show").description("show one chat").argument("<chat>", "chat id or name"), {
     examples: ["tool work chats show 'Kai Sample'"],
   })
@@ -69,6 +77,7 @@ const failing: Record<string, (root: Command) => void> = {
         .description("list it"),
       {
         examples: ["tool unregistered-things list"],
+        query: { entity: "chat", backend: "native", fields: [] },
       },
     ),
   "flag-two-meanings": (root) =>
@@ -134,6 +143,22 @@ const failing: Record<string, (root: Command) => void> = {
 }
 
 describe("lint rules", () => {
+  it("requires a list query even when its answer entity has not been declared", () => {
+    const root = clean()
+    const list = ran(
+      root.command("recipients").description("recipients").command("list").description("list recipients"),
+      {
+        examples: ["tool recipients list"],
+      },
+    )
+    expect(lintOf(root).filter((finding) => finding.rule === "list-without-query")).toEqual([
+      { rule: "list-without-query", target: "recipients list", message: "list declares no query" },
+    ])
+    list.argument("[query...]", "field:value terms")
+    annotate(list, { query: { entity: "recipient", backend: "native", fields: [] } })
+    expect(lintOf(root).filter((finding) => finding.rule === "list-without-query")).toEqual([])
+  })
+
   it("has a check for every rule in the registry, and a failing fixture for each", () => {
     expect(lintRuleIds().sort()).toEqual(LINT_RULES.map((rule) => rule.id).sort())
     expect(Object.keys(failing).sort()).toEqual(
