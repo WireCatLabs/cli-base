@@ -389,6 +389,49 @@ describe("cli-dev audit", () => {
     expect(err.join("\n")).toContain("complete audit needs declared error reasons")
   })
 
+  it("measures complete runtime evidence and refuses an unowned required root", async () => {
+    const binary = (cli: string, omitDoctor = false) => {
+      const document = inputOf(tool(cli)).document
+      const contracts: Record<string, unknown> = {}
+      const capture = (commands: Readonly<typeof document.commands>) => {
+        for (const command of commands) {
+          const { path, usage: _, commands: children, ...contract } = command
+          if (!omitDoctor || path.join(" ") !== "doctor") contracts[path.join(" ")] = contract
+          capture(children)
+        }
+      }
+      capture(document.commands)
+      const evidence = {
+        contracts,
+        schemas: { fixture: { type: "object" } },
+        reasons: [
+          { reason: "fixture.invalid", code: "validation_error", message: "invalid fixture request", details: [] },
+        ],
+      }
+      const file = join(root, cli + ".mjs")
+      writeFileSync(
+        file,
+        `process.stdout.write(JSON.stringify(process.argv.includes("info") ? ${JSON.stringify(evidence)} : ${JSON.stringify(document)}))`,
+      )
+      return file
+    }
+    const left = binary("tg"),
+      right = binary("max")
+    await main(["audit", "--cli", left, "--cli", right, "--complete", "--json"], io)
+    expect(err.join("\n")).not.toContain("complete audit needs")
+    const rows = JSON.parse(out.join("")).items as { rule: string; measured: boolean; new: number }[]
+    expect(
+      rows
+        .filter((row) => ["shared-command-contract", "same-entity-schema", "same-error-reason"].includes(row.rule))
+        .every((row) => row.measured && row.new === 0),
+    ).toBe(true)
+    out.length = 0
+    err.length = 0
+    binary("max", true)
+    expect(await main(["audit", "--cli", left, "--cli", right, "--complete"], io)).toBe(1)
+    expect(err.join("\n")).toContain("complete audit needs an inherited contract reference for doctor")
+  })
+
   it("prints the scorecard as the list envelope with --json", async () => {
     await audit("--json")
     const row = v.strictObject({

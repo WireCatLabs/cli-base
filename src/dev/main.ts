@@ -449,6 +449,11 @@ const auditRun = (args: string[], io: DevIo) => {
         Object.keys(input.contracts).length === 0
       )
         problems.push(`${cli}: complete audit needs core contract references from commands info`)
+      for (const root of REQUIRED_ROOTS) {
+        const path = root.path.join(" ")
+        if (!input.contracts?.[path])
+          problems.push(`${cli}: complete audit needs an inherited contract reference for ${path}`)
+      }
       if (
         !input.schemas ||
         typeof input.schemas !== "object" ||
