@@ -8,11 +8,8 @@ permission level makes visible.
 **MCP** (Model Context Protocol) is how an AI agent asks a program what it can do (`tools/list`) and then calls it. A
 **tool** is a name, a description, an input schema and the code that runs when it is called.
 
-This page has two parts:
-
-1. **Rules** — what is true on cli-core 0.321.0, the version these rules were checked against. Each has a `WC-MCP` id.
-2. **[Planned — not built yet](#planned--not-built-yet)** — the approved design that replaces hand-written tools. It
-   has no ids, because it is not true yet. Do not write code that expects it.
+The rules below define the MCP contract. [Tools generated from commands](#tools-generated-from-commands)
+explains how cli-core builds and filters the catalogue.
 
 Rule ids on this page are `WC-MCP-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md).
@@ -187,26 +184,22 @@ and every write goes through the write guard ([WC-PERM-13](permissions.md#wc-per
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
 
-## Planned — not built yet
+<a id="planned--not-built-yet"></a>
 
-The owner chose this design on 2026-10-17 (NEED-1408, NEED-1411). It is being built in cli-core. Until a cli-core
-release says it is done, the rules above describe what runs.
+## Tools generated from commands
 
-What will change:
+cli-core builds its personal and bot MCP catalogues from the command tree with `toolsFromCommands`
+(`src/mcp/agent.ts`). Permission keys limit what each profile can call, including writes.
 
 - **Tools come from commands.** The catalogue is generated from the command tree, the same data as `commands --json`.
   A call runs the command itself, in-process, and hands back the answer object. Permissions, `ask`, effects, answers
-  and errors are then the CLI's own, because they are the same code. Hand-written tools are deleted.
+  and errors are the CLI's own, because they are the same code. Calls share the CLI execution path.
 - **`mcp: false` hides a command from MCP servers.** It is set on a command or a group and covers everything below it.
   Agents that use the CLI directly are not affected.
-  - **Built today:** the field exists in cli-base's `CommandMeta` since cli-base 0.40.4, and `commands --json` shows
-    `mcp: false` on each command it reaches.
-  - **Not built today:** no MCP server reads it yet, so setting it hides nothing.
+  `commands --json` shows `mcp: false` on each command it reaches, and cli-core omits it from the catalogue.
 - **`mcp: false` on an option** leaves that option out of the tool's input. The first use is
   `messages delete --for-everyone`, because an agent never deletes for everyone ([WC-PERM-11](permissions.md)).
-  - **Built today:** cli-base's `annotateOption(option, { mcp: false })` sets it, and `commands --json` shows
-    `mcp: false` on that option alone.
-  - **Not built today:** no MCP server reads it yet, so setting it hides nothing.
+  cli-base's `annotateOption(option, { mcp: false })` sets it; cli-core omits that option from the tool input.
 - **Never offered, by rule:** a command with a `lifetime` (`persistent`, such as `serve` and `watch`, or `interactive`,
   such as `session start`). An agent call must return.
 - **One server per subtree.** The personal server is built from the program without its `bot` group; the bot server
@@ -214,7 +207,6 @@ What will change:
 - **The profile still decides at run time** what is listed (WC-MCP-6).
 - **The whole catalogue is pinned** in each CLI's `contracts/mcp-tools.json`, so a command that becomes visible to
   agents shows up as a diff in its pull request.
-- **Every surface moves**, in this order: drive, the bot servers, memo, zoom, then the tg and max personal servers.
 
 ## Sources
 
