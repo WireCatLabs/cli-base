@@ -96,7 +96,7 @@ cli-testing, cli-docs, plus community itself.
   cli-docs validates its site before each deployment instead, and community has no build. Third-party security apps
   may post their own checks.
 - **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli, cli-core
-  cli-memo and zoom-cli have `pr.yml`; drive-cli and cli-testing do not have it yet. **Since:**
+  cli-memo, zoom-cli and drive-cli have `pr.yml`; cli-testing does not have it yet. **Since:**
   cli-base 0.41.0 (pull request validation since cli-base 0.44.6). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
@@ -168,9 +168,10 @@ cli-testing, cli-docs, plus community itself.
 - **Why:** a red merge breaks `main` for every parallel branch, and an admin merge skips the only gate there is.
 - **Enforced by:** `whatsapp-cli: main ruleset required checks` · `cli-core: main ruleset required checks` ·
   `tg-cli: main ruleset required checks` · `max-cli: main ruleset required checks` ·
-  `cli-memo: main ruleset required checks`, plus the main ruleset of cli-base itself. In each repository with pr.yml,
-  the ruleset requires the pull request validation jobs besides the standards job. drive-cli, cli-testing and cli-docs
-  have no pr.yml, so their rulesets require only the standards job, and review covers the rest. zoom-cli has pr.yml,
+  `cli-memo: main ruleset required checks` · `drive-cli: main ruleset required checks`, plus the main ruleset of
+  cli-base itself. In each repository with pr.yml, the ruleset requires the pull request validation jobs besides the
+  standards job. cli-testing and cli-docs have no pr.yml, so their rulesets require only the standards job, and
+  review covers the rest. zoom-cli has pr.yml,
   but its ruleset still requires only the standards job.
 - **Example:** `gh pr checks <number>` shows every line as pass before `gh pr merge`. Never merge with `--admin`. A
   release changes `main` the same way
