@@ -131,7 +131,7 @@ const verbs: [string, string][] = [
   ["cancel", "stop a job or a pending thing"],
   [
     "sync",
-    "bring the local store up to date from the source: only what changed, or the whole list where the source cannot say",
+    "bring the local store up to date from the source: only what changed, or the whole list where the source cannot say; a mirror syncs both ways",
   ],
   ["fetch", "one bounded pull of one named thing into the store, not a catch-up"],
   ["export", "write from the store to a file"],
