@@ -47,9 +47,9 @@ other CLI reads them. Transient state is never a core entity.
 - **Enforced by:** review only.
 - **Example:** calendars, calendar entries, events, persons, contacts, documents and files are core; drive's sync
   checkpoint is drive's own.
-- **Exceptions:** none. A CLI's own tables live in the shared store under its prefix (`drive_…`), with a migration
-  track of its own (NEED-1737). cli-core does not run such a track yet; until it does, a CLI keeps no tables of its
-  own and [WC-STORE-5](store.md) holds unchanged.
+- **Exceptions:** none. A CLI's own tables live in its own SQLite file next to the shared store, with its own
+  migrations, and refer to core rows by id only; no other CLI opens that file (NEED-1737). The shared store stays
+  cli-core's alone ([WC-STORE-5](store.md)).
 - **Applies to:** cli-core and every CLI. **Since:** cli-base 0.52.0. **Rulings:** NEED-1730, NEED-1737.
 
 ### WC-DATA-2 · Keep a source's records apart from the owner's entities, and link them
@@ -145,9 +145,9 @@ From the Wave 3 requirements (cli-private `plans/2026-10-24-open-cli-core-design
 
 - a `files` table as the source record of `documents`: a materialised `path` plus `parent_id` to the folder's own
   row, so a folder is found by path prefix and a document by part of its path (NEED-1739);
-- memo's vault files as documents from a local source; `notes` are only the owner's notes on entities (NEED-1738);
-- a migration track per CLI for its own prefixed tables, with the matching exception to WC-STORE-5 and WC-STORE-7
-  (NEED-1737);
+- memo's vault files as documents; an Obsidian vault is provider `obsidian` with its own metadata (tags, aliases,
+  wiki links), a plain folder is `local`; `notes` are only the owner's notes on entities (NEED-1738);
+- a cli-core helper that opens a CLI's own SQLite file (NEED-1737);
 - `calendars`, `calendar_entries` and `calendar_attendees` on the `events` hub;
 - an `email` column on contacts, so one address joins one person across sources;
 - one link log for events and documents, and one review list for ambiguous pairs;
