@@ -4,7 +4,7 @@ import { CliError } from "../errors.js"
 import { type CommandInfo, describeProgram } from "./registry.js"
 
 export interface SharedContractOverride {
-  command: string[]
+  command: readonly string[]
   field: string
   before: unknown
   after: unknown
@@ -22,7 +22,7 @@ const protectedCommands = new WeakMap<Command, Protected>()
 
 export const hasSharedContract = (command: Command): boolean => protectedCommands.has(command)
 
-const snapshot = (command: Command): Contract => {
+const snapshot = (command: Command, children?: readonly Command[]): Contract => {
   const root = new Command("contract")
   const parent = command.parent
   root.addCommand(command)
@@ -33,7 +33,7 @@ const snapshot = (command: Command): Contract => {
   return structuredClone({
     ...contract,
     aliases: [...command.aliases()],
-    children: (protectedCommands.get(command)?.originalChildren ?? command.commands)
+    children: (children ?? protectedCommands.get(command)?.originalChildren ?? command.commands)
       .filter((child) => command.commands.includes(child) && !(child as Command & { _hidden?: boolean })._hidden)
       .map((child) => child.name()),
   })
@@ -160,39 +160,42 @@ export const sharedCommand =
     return result
   }
 
-/** Bind a provider-owned shell before building it, retaining the shared defaults and every exact intentional edit. */
-export const customizeSharedCommand = (reference: Command, reason: string, build: () => Command): Command => {
+/** Bind a provider shell only when its exact, reviewed differences still match Core. */
+export const customizeSharedCommand = (
+  reference: Command,
+  reason: string,
+  build: () => Command,
+  expectedOverrides: readonly SharedContractOverride[],
+): Command => {
   if (reason.trim().length < 10) throw new Error("a shared contract override needs a specific reason")
   assertSharedContracts(reference)
   if (!hasSharedContract(reference)) throw new Error("a provider shell needs a protected shared definition")
   const command = build()
   assertSharedContracts(command)
+  const pending: { command: Command; record: Protected }[] = []
+  const edits: SharedContractOverride[] = []
   const adopt = (shared: Command, own: Command) => {
     const inherited = protectedCommands.get(shared)
     if (!inherited) return
     if (!protectedCommands.has(own)) {
       const originalChildren = own.commands.filter((child) => inherited.reference.children.includes(child.name()))
-      const record: Protected = {
-        reference: structuredClone(inherited.reference),
-        contract: inherited.contract,
-        overrides: structuredClone(inherited.overrides),
-        originalChildren,
-      }
-      protectedCommands.set(own, record)
-      const actual = snapshot(own)
-      for (const field of differences(inherited.contract, actual))
-        record.overrides.push({
-          command: pathOf(own),
-          field,
-          before: inherited.contract[field as keyof Contract] ?? null,
-          after: actual[field as keyof Contract] ?? null,
-          reason: reason.trim(),
-        })
-      record.contract = actual
-      own.hook("preAction", () => {
-        let root = own
-        while (root.parent) root = root.parent
-        assertSharedContracts(root)
+      const actual = snapshot(own, originalChildren)
+      const overrides = differences(inherited.contract, actual).map((field) => ({
+        command: pathOf(own),
+        field,
+        before: inherited.contract[field as keyof Contract] ?? null,
+        after: actual[field as keyof Contract] ?? null,
+        reason: reason.trim(),
+      }))
+      for (const edit of overrides) edits.push(edit)
+      pending.push({
+        command: own,
+        record: {
+          reference: structuredClone(inherited.reference),
+          contract: actual,
+          overrides: [...structuredClone(inherited.overrides), ...overrides],
+          originalChildren,
+        },
       })
     }
     for (const child of shared.commands) {
@@ -201,6 +204,24 @@ export const customizeSharedCommand = (reference: Command, reason: string, build
     }
   }
   adopt(reference, command)
+  const ordered = (records: readonly SharedContractOverride[]) =>
+    [...records].sort((a, b) =>
+      JSON.stringify([a.command, a.field]).localeCompare(JSON.stringify([b.command, b.field])),
+    )
+  if (!Array.isArray(expectedOverrides) || !same(ordered(edits), ordered(expectedOverrides)))
+    throw new CliError(
+      "configuration_error",
+      `provider shell ${command.name()} differs from its reviewed shared contract overrides; review Core and provider definitions before updating the explicit declarations`,
+      { reason: "contract.unacknowledged-override", expected: expectedOverrides ?? null, actual: edits },
+    )
+  for (const { command: own, record } of pending) {
+    protectedCommands.set(own, record)
+    own.hook("preAction", () => {
+      let root = own
+      while (root.parent) root = root.parent
+      assertSharedContracts(root)
+    })
+  }
   assertSharedContracts(command)
   return command
 }

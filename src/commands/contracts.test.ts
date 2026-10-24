@@ -1,8 +1,10 @@
 import { Command } from "commander"
 import { describe, expect, it, vi } from "vitest"
+import { TASK_SHELL } from "./contracts.fixture.js"
 import {
   assertSharedContracts,
   customizeSharedCommand,
+  hasSharedContract,
   overrideSharedContract,
   sharedCommand,
   sharedContractOverrides,
@@ -91,6 +93,7 @@ describe("core-owned command contracts", () => {
             .description("show an imported task")
             .option("--source <account>", "explicit stored source"),
         ),
+      TASK_SHELL,
     )
     const root = new Command("tool").addCommand(adapted)
     expect(sharedContracts(root)["tasks show"]).toMatchObject({ description: "show one task" })
@@ -106,16 +109,50 @@ describe("core-owned command contracts", () => {
     expect(() => assertSharedContracts(root)).toThrow("without an explicit override")
   })
 
+  it("rejects stale, absent and widened shell declarations without installing guards", () => {
+    const reason = "This provider reads imported task rows from an explicit source."
+    const native = () =>
+      new Command("tasks").addCommand(
+        new Command("show").description("show an imported task").option("--source <account>", "explicit stored source"),
+      )
+    const reference = () => sharedCommand(() => new Command("tasks").addCommand(factory()))()
+    const own = native()
+    expect(() => customizeSharedCommand(reference(), reason, () => own, [])).toThrow("reviewed shared contract")
+    expect(hasSharedContract(own)).toBe(false)
+    const ownChild = own.commands[0]
+    if (!ownChild) throw new Error("missing test child")
+    expect(hasSharedContract(ownChild)).toBe(false)
+    const changedCore = reference()
+    const coreChild = changedCore.commands[0]
+    if (!coreChild) throw new Error("missing reference child")
+    overrideSharedContract(coreChild, "Core now exposes an additional standard flag.", (one) => {
+      one.option("--new-default", "a new Core default")
+    })
+    expect(() => customizeSharedCommand(changedCore, reason, native, TASK_SHELL)).toThrow("reviewed shared contract")
+    expect(() =>
+      customizeSharedCommand(
+        reference(),
+        reason,
+        () => native().option("--surprise", "an unreviewed provider option"),
+        TASK_SHELL,
+      ),
+    ).toThrow("reviewed shared contract")
+    expect(() => customizeSharedCommand(reference(), reason, native, [...TASK_SHELL, ...TASK_SHELL])).toThrow(
+      "reviewed shared contract",
+    )
+  })
+
   it("cannot use provider composition to acknowledge an already changed inherited command", () => {
     const existing = factory().description("an implicit change")
     expect(() =>
-      customizeSharedCommand(factory(), "This provider has a deliberate independent transport.", () => existing),
+      customizeSharedCommand(factory(), "This provider has a deliberate independent transport.", () => existing, []),
     ).toThrow("without an explicit override")
     expect(() =>
       customizeSharedCommand(
         new Command("show"),
         "This has no shared definition to inherit.",
         () => new Command("show"),
+        [],
       ),
     ).toThrow("protected shared definition")
   })

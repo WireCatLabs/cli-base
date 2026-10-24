@@ -16,7 +16,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed â€” may break callers
 
-- **Shared command contracts require explicit overrides before host edits.** `sharedCommand`, `assertSharedContracts`, `overrideSharedContract` and `customizeSharedCommand` live in `/commands`; original definitions and exact accepted edits remain available for audits. Provider additions are allowed; inherited subcommands cannot disappear silently. `/commands` now loads Commander at runtime.
+- **Shared command contracts require explicit overrides before host edits.** `sharedCommand`, `assertSharedContracts`, `overrideSharedContract` and `customizeSharedCommand` live in `/commands`; original definitions and exact accepted edits remain available for audits. Independent shell replacements must supply static, exact before/after declarations; a new Core default or a changed provider builder fails until those declarations are reviewed. Provider additions are allowed; inherited subcommands cannot disappear silently. `/commands` now loads Commander at runtime.
 
 - **Cross-CLI contract drift cannot be accepted through a lint baseline.** Declare intentional differences with
   their exact expected values and a specific reason; a changed or stale exemption fails. `audit --complete`
