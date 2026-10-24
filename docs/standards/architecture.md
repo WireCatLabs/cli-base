@@ -219,7 +219,7 @@ out of search and listed under `skipped`, with the hint to run that CLI once.
   `skipped` instead of reading their rows as messages.
 - **Exceptions:** the built-in providers of cli-core need no entry. Two entries that disagree on a kind are an error
   naming both.
-- **Applies to:** cli-core and every CLI with a provider of its own. **Since:** cli-base 0.52.0. **Rulings:** none
+- **Applies to:** cli-core and every CLI with a provider of its own. **Since:** cli-base 0.53.1. **Rulings:** none
   (Wave 3 requirements 3.2).
 
 ## Sources
