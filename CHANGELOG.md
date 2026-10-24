@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed
+
+- **Comparison pages live in the site repository, and our marks are re-checked at each release** (`WC-CMP-11`, [Comparisons](docs/standards/comparisons.md)). The page is written in `cli-docs` (wirecat.dev) because a comparison changes when other tools change, not when we release; the CLI repository keeps a short `docs/compare.md` that links to it. The release report lists the compare page as checked. Nothing changes in code.
+
 ## 0.50.4 — 24.10.2026
 
 ### Added
@@ -18,7 +24,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   selector ID flags with target roles. Existing canonical verbs still replace overlapping Memo spellings;
   forum `--topic <id>` keeps its existing meaning, while meeting tags/topics use native query terms.
 
-- **A standard for comparison pages** ([Comparisons](docs/standards/comparisons.md), `WC-CMP-1` to `WC-CMP-11`). A CLI's comparison page, written in the `cli-docs` site repository, with a short `docs/compare.md` in the CLI repository that links to it, compares it with the tools a reader would pick for the same job, lists user tasks rather than implementation details, always has an "Agents and safety" group and says where another tool is better (owner, 2026-10-24). Nothing changes in code.
+- **A standard for comparison pages** ([Comparisons](docs/standards/comparisons.md), `WC-CMP-1` to `WC-CMP-10`). A CLI's `docs/compare.md` compares it with the tools a reader would pick for the same job, lists user tasks rather than implementation details, always has an "Agents and safety" group and says where another tool is better (owner, 2026-10-24). Nothing changes in code.
 
 ### Fixed
 

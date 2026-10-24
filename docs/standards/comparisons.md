@@ -124,7 +124,7 @@ Rule ids on this page are `WC-CMP-<n>`. How to read a rule, how ids work and whi
 - **Example:** the release report lists the compare page as checked. Before a release, each ✅, 🟡 and ❌ for the CLI is re-proven against the release build, the check date
   and version in the intro are updated in the site repository, and the release report names the page.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.50.4. **Rulings:** owner, 2026-10-24.
+- **Applies to:** all CLIs. **Since:** cli-base 0.50.5. **Rulings:** owner, 2026-10-24.
 
 ## Sources
 
