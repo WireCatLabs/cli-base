@@ -66,7 +66,7 @@ to its entity. One entity may combine source records from several sources and ac
 
 - **Why:** the same meeting in two calendars and in Zoom is one event to the owner; the same document in Drive and on
   disk is one document.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`, for the entity tables only; which table is which kind is review.
 - **Example:** a Google Calendar entry is a `calendar_entries` row with `event_id`; the Zoom recording of that meeting
   is a `meetings` row with the same `event_id`.
 - **Exceptions:** an entity the owner makes has no source record; a source record may wait unlinked until matching
@@ -80,7 +80,7 @@ record has no account). Never in a column named after the provider (`google_id`,
 `metadata`. A second id the provider also uses gets a named column of its own (`ical_uid`).
 
 - **Why:** one place to look for every provider's id, and one unique key to update a record by.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`.
 - **Example:** a Drive file: `files.external_id = '<Drive file id>'`; a Google calendar entry:
   `calendar_entries.external_id = '<event id>'`, `ical_uid = '<iCalUID>'`.
 - **Exceptions:** a local file has no provider id; its `external_id` is its path relative to its folder root.
@@ -110,7 +110,7 @@ Times are UTC milliseconds ([Time](time.md)).
 
 - **Why:** a reader of any table knows what a field holds, and a new table does not invent a third name for "edited
   at".
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`.
 - **Example:** `files.external_updated_at`, not `modified_at` or `modifiedAt` in JSON.
 - **Exceptions:** existing columns keep their names until their table changes for another reason.
 - **Applies to:** cli-core. **Since:** cli-base 0.52.0. **Rulings:** NEED-1732.
