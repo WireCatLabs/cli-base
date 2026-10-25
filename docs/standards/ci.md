@@ -97,7 +97,7 @@ cli-testing, cli-docs, plus community itself.
   may post their own checks.
 - **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli, cli-core
   cli-memo, zoom-cli and drive-cli have `pr.yml`; cli-testing does not have it yet. **Since:**
-  cli-base 0.41.0 (pull request validation since cli-base 0.44.6). **Rulings:** none.
+  cli-base 0.41.0 (pull request validation since cli-base 0.45.0). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
 
@@ -125,6 +125,14 @@ cli-testing, cli-docs, plus community itself.
 
 ### WC-CI-8 · Call cli-base `node-ci.yml` from `ci.yml`, pinned to a tag or commit
 
+The pin and the installed package move apart. The shared workflows run the repository's own checkout and its
+`pnpm` scripts, with the `@wirecat/cli-base` the lockfile installs; only the changelog guard runs a script from the
+pinned commit. So the pin needs no fixed relation to the installed version. It may be newer, for example while
+cli-core's peer range holds the installed package back; in a repository made from cli-template, Dependabot's weekly
+`github-actions` update moves it like any other pinned action. The rules
+that apply are those of the handbook in the installed package. A newer `node-ci.yml` may run a step the repository
+cannot pass yet; the `skip` input names it.
+
 - **Why:** one shared workflow keeps the full suite the same everywhere, and a pin keeps a cli-base change from
   breaking ten repositories at once.
 - **Enforced by:** `ci.yml:ci`.
@@ -140,7 +148,9 @@ cli-testing, cli-docs, plus community itself.
 - **Why:** a repository with no merges for weeks still meets new advisories, new runner images and expired pins.
 - **Enforced by:** `monthly.yml:validation` · `monthly.yml:security`.
 - **Example:** `monthly.yml`, from the community template, calls the repository's `ci.yml` and the pinned cli-base
-  `release-checks.yml`. Each repository has its own minute, between 02:17 and 03:20 UTC, so runs do not overlap.
+  `release-checks.yml`. Each repository has its own minute, between 02:17 and 03:20 UTC, so runs do not overlap. No
+  check compares the minutes across repositories; review keeps them apart. A CLI made from cli-template starts with
+  the template's own minute and changes it (see [New CLI](new-cli.md)).
 - **Exceptions:** cli-core also builds and probes its native packages in their own workflows, after the window:
   `onnx.yml` at 03:27 and `sqlite.yml` at 03:37 UTC. A scheduled run of either never publishes; only a manual run
   with `publish` does. community has no build, so it runs only the release security checks, at 03:47 UTC. A monthly

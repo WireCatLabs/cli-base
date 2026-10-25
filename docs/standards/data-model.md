@@ -66,7 +66,8 @@ to its entity. One entity may combine source records from several sources and ac
 
 - **Why:** the same meeting in two calendars and in Zoom is one event to the owner; the same document in Drive and on
   disk is one document.
-- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`, for the entity tables only; which table is which kind is review.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts` (the entity tables only; which table is which kind is
+  review).
 - **Example:** a Google Calendar entry is a `calendar_entries` row with `event_id`; the Zoom recording of that meeting
   is a `meetings` row with the same `event_id`.
 - **Exceptions:** an entity the owner makes has no source record; a source record may wait unlinked until matching

@@ -132,6 +132,12 @@ cli-testing, cli-docs, plus community itself.
 
 ### WC-TOOL-11 · Keep the three grit plugins that block unsafe calls
 
+The shared Biome preset loads six grit plugins. This rule covers the three that block unsafe calls. The other
+three have their own rules: no-deep-wirecat-import
+([WC-ARCH-8](architecture.md#wc-arch-8--cross-a-module-boundary-only-through-the-modules-entry-point)),
+no-sqlite-driver ([WC-STORE-5](store.md#wc-store-5--a-cli-writes-no-sql-against-the-shared-store)) and
+no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data-into-call-arguments)).
+
 - **Why:** a shell or an evaluated string built from input is how a command line tool runs an attacker's code.
 - **Enforced by:** `pnpm lint` · `standards.yml:standards`.
 - **Example:** these plugins report at error. no-shell-true reports `shell: true` in `spawn`, `exec`, `execFile` or

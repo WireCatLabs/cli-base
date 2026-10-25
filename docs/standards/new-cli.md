@@ -71,8 +71,10 @@ See [Kit surface](kit-surface.md#how-your-cli-stays-current).
    check names exist only once CI has run. See [Releases](releases.md).
 2. **Set npm trusted publishing** for the new package, naming `release.yml`, and add any secrets the CI needs. See
    [WC-REL-11](releases.md#wc-rel-11--publish-from-github-actions-with-npm-trusted-publishing).
-3. **Pick a monthly cron day** no other repository uses. `.github/workflows/monthly.yml` holds a placeholder that CI
-   rejects. See [CI](ci.md).
+3. **Pick a monthly cron minute** between 02:17 and 03:20 UTC that no other repository uses. The copy of
+   `.github/workflows/monthly.yml` keeps the template's own minute, 03:02, and no check compares minutes across
+   repositories, so change it by hand. See
+   [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing).
 4. **WireCat CLIs only: join the shared lists.** A pull request to cli-base's `PARITY_GROUPS` (at least the `all`
    group, which compares the shared root commands), a line in cli-core's `WIRECAT_TOOLS` and a line in cli-docs'
    `tools.json`. A messenger also joins cli-core's `parity.json`. A CLI outside WireCatLabs keeps its parity groups
@@ -99,3 +101,23 @@ All of these pass on `main`, before the first release:
 The last test is a fresh agent. Give it only this handbook's [index](README.md) and the new repository, and ask it to
 audit the CLI. Every gap it lists is either a gap in the CLI, to fix before the first release, or a hole in the
 handbook, to fix here.
+
+## The template repository itself
+
+cli-template is a WireCat repository, and the rules for CLIs apply to it, with the few exemptions below. It holds two
+programs. The skeleton CLI (`clidev`, under `src/`) is the code `new` copies, and it follows every rule for a CLI. The
+copy tool (`new` and `upgrade`, under `kit/`) is the package's own `bin`; people run it by hand, once per CLI or per
+upgrade, and no script or agent reads its answers.
+
+| Rule | In cli-template | Why |
+|---|---|---|
+| [WC-LAY-2](layout.md) | The skeleton keeps it in `src/bin/clidev.ts`. The package's `"bin"` names the copy tool, `kit/dist/main.js`. | `new` writes the CLI's own `"bin"` entry into the copy. |
+| [WC-OUT-18](output.md#wc-out-18--exit-with-cli-bases-code-for-each-kind-of-failure), [WC-OUT-19](output.md#wc-out-19--report-a-wrong-command-line-as-validation_error-exit-2) | The copy tool is exempt: it exits 1 with a plain sentence. The skeleton follows them. | People run the copy tool by hand; nothing branches on its exit code or parses its errors (owner, ASK-349). |
+| [WC-TOOL-4](toolchain.md#wc-tool-4--extend-the-shared-typescript-config-and-do-not-loosen-it), [WC-TEST-11](testing.md#wc-test-11--keep-a-coverage-floor-and-raise-it-never-lower-it) | Both programs follow them: `kit/tsconfig.json` extends the shared base, and `kit/src` has its own coverage floor. | The copy tool writes into a person's new repository, so it gets the same build-time and test checks (owner, ASK-349). |
+| [WC-TEST-14](testing.md#wc-test-14--check-the-upgrade-from-the-previous-published-version) | Exempt: `ci.yml` skips `contracts:upgrade`. | The skeleton is never published under its own name, so there is no earlier package to upgrade from. A CLI made from the template turns the step on after its first release. |
+| [WC-DOC-12](docs.md#wc-doc-12--a-runnable-command-in-a-document-has-no-placeholder-in-it) | Exempt only for the placeholder names `clidev`, `clidev-cli`, `@wirecat/clidev-cli` and `WireCatLabs/clidev-cli`. | `new` replaces each of them with the CLI's own name. Any other placeholder is still a gap. |
+| [WC-DOC-17](docs.md#wc-doc-17--each-entry-says-what-changed-for-the-caller-why-and-what-to-watch-for) | A changelog entry may name a file path. | The template's readers are CLI authors, who edit those files or take them with `upgrade`; for them a path is what they see. |
+| [WC-DOC-7](docs.md#wc-doc-7--readmemd-is-the-full-introduction-to-the-tool) | The README may leave out "why this tool" and "the main features". It keeps every other section. | It is the seed of the CLI's README: only the CLI's author can say why the tool exists and what it does best. |
+| [WC-SECR-18](security.md#wc-secr-18--report-a-vulnerability-privately) | `SECURITY.md` and `docs/security.md` link the placeholder repository, `WireCatLabs/clidev-cli`. The address and the rest of the page follow the rule. | `new` rewrites the link to the CLI's own repository; a link to cli-template would not be rewritten. |
+
+Every other rule that applies to all CLIs, or to the ten repositories, applies to cli-template as it is written.

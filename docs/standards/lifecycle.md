@@ -163,7 +163,7 @@ provider's limit as often as it ends. These three rules make the next run carry 
 - **Example:** each page of a chat's history goes into the store in its own transaction as it arrives, and the
   position moves with it. drive saves its first folder walk in its state file as it goes.
 - **Exceptions:** none.
-- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.43.0. **Rulings:** none.
 
 ### WC-LIFE-13 · A rerun goes on from where the last run stopped, and starting over is an option
 
@@ -178,7 +178,7 @@ provider's limit as often as it ends. These three rules make the next run carry 
   never a failed run. Starting over is `--rescan`, as in `drive personal sync --rescan`; it is in the cli-base flag
   registry.
 - **Exceptions:** none. No CLI uses the checkpoint file yet; drive keeps its position in its own state file.
-- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.43.0. **Rulings:** none.
 
 ### WC-LIFE-14 · A sync's status command says how far it is, in one shape
 
@@ -191,7 +191,7 @@ provider's limit as often as it ends. These three rules make the next run carry 
   `progress`.
 - **Exceptions:** none. drive and zm print no progress shape yet; that is a known gap. Whether the last scheduled run
   failed is a different question, answered by `recordRun` and `failingNotice` in cli-core's schedules.
-- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.43.0. **Rulings:** none.
 
 ## Runs
 

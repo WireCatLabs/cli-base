@@ -101,7 +101,7 @@ on the [CI](ci.md) page.
   day as the previous one. Bump the library in every CLI that uses it on the day it ships.
 - **Exceptions:** none. The release lock (WC-REL-3) still keeps two releases of one package on one machine from
   running at once.
-- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.52.0. **Rulings:** NEED-1741.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.51.1. **Rulings:** NEED-1741.
 
 ### WC-REL-9 · Merged into [WC-REL-8](#wc-rel-8--any-package-may-release-at-any-time)
 
