@@ -165,13 +165,37 @@ export const skillCommand = (
   const show = annotate(command.command("show"), { effects: { remote: "none", local: "read" } })
     .summary("print the tool's instructions for AI agents")
     .description(
-      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it`,
+      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it; --for prints the copy already there`,
     )
   if (named.length > 0) show.argument("[name]", `one of the skills shipped for a task: ${named.join(", ")}`)
+  show.addOption(
+    new Option("--for <agents>", "print the copy installed for these agents instead of this version's").choices(
+      SKILL_TARGETS,
+    ),
+  )
   show.action(function (this: Command, given: unknown) {
     // Without a declared argument Commander passes the options here, not a name.
     const name = typeof given === "string" ? given : undefined
-    const { renderer, streams } = environment(this)
+    const { renderer, streams, env } = environment(this)
+    const { for: target } = this.opts<{ for?: SkillTarget }>()
+    if (target !== undefined) {
+      if (name !== undefined)
+        throw new CliError("validation_error", `only ${app.appName} is installed; leave out "${name}" with --for`)
+      const path = skillPath(target, app.appName, env ?? process.env)
+      let content: string
+      try {
+        content = readFileSync(path, "utf8").trimEnd()
+      } catch {
+        throw new CliError(
+          "not_found",
+          `no skill is installed for ${target} at ${path} — \`${app.command} skill install --for ${target}\` writes it`,
+        )
+      }
+      if (machine(this))
+        renderer.result({ name: app.appName, target, path, installed: skillVersion(content) ?? null, content })
+      else streams.data(content)
+      return
+    }
     const source = name === undefined ? skill : more[name]
     if (!source) {
       throw new CliError("validation_error", `no skill "${name}" — there are: ${named.join(", ")}`)

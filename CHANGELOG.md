@@ -12,6 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`<cli> skill show --for claude|agents` prints the copy installed for that agent** instead of this version's
+  SKILL.md, as text or `{ name, target, path, installed, content }` with `--json`. A host could show only the bundled
+  copy and `skill status`'s version numbers, so it could not show what `skill install` would change; now it reads
+  both and compares them. It reads only, fails with `not_found` and the install command when the agent has no copy,
+  and refuses a shipped skill by name, which is never installed.
+
 - **Every CLI keeps a run log: `WC-LIFE-15` and the `missing-run-log` lint rule**
   ([Lifecycle](docs/standards/lifecycle.md#wc-life-15--keep-a-run-log-through-cli-core-and-read-it-back-with-runs)).
   The handbook described what a log may hold but never required one, and drive, memo and zm shipped without a run

@@ -220,7 +220,7 @@ holding somebody's credentials must not change itself unasked.
 
 **A CLI's guide for coding agents is `@wirecat/cli-base/skill`.** `skillCommand(app, skillUrl,
 environment)` is `<cli> skill show` — SKILL.md on stdout, even into a pipe, or `{ name, content }`
-with `--json` — and `<cli> skill install [--for claude|agents|all]`, which writes it to
+with `--json`; `--for claude|agents` prints the copy installed there instead, `{ name, target, path, installed, content }` with `--json`, so a host can show what an update would change — and `<cli> skill install [--for claude|agents|all]`, which writes it to
 `~/.claude/skills/<appName>/` and `~/.agents/skills/<appName>/` with the CLI's version as
 `metadata.version` in the frontmatter, refusing a file whose `name` is not `<appName>`. `<cli> skill status` reads both places and changes nothing: `{ name, version, targets }`, each target `{ target, path, installed, state }` with `state` one of `current`, `stale`, `missing` or `unversioned`; `skillStatus(app, env)` is the same list for a host that shows it itself. `environment` is the host's own renderer, streams and `env` for that invocation.
 `skillHint` is one line, or `undefined`, for an agent (`AI_AGENT` or `CLAUDECODE` set) with no copy
