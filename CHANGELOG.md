@@ -15,6 +15,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **The kit surface page links the two cli-template jobs** (cli-base's `template.yml`, cli-core's `parity.yml`), and
   the roadmap no longer lists "a new CLI from a template" as next: it is `npx @wirecat/cli-template new`.
 
+### Added
+
+- **`WC-STORE-5` is checked** ([Store](docs/standards/store.md)): the shared `no-sqlite-driver` lint plugin, now in every repository's `config/wirecat/`, refuses a CLI's import of a SQLite driver or `drizzle-orm` outside tests and tooling scripts. cli-core turns it off. `WC-ARCH-21` now says it is in the handbook since 0.53.0, the first release that carried it.
+
 ## 0.54.0 â€” 25.10.2026
 
 ### Added

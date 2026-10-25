@@ -69,11 +69,12 @@ Related pages: which account a read covers, and how a read across accounts is as
 ### WC-STORE-5 · A CLI writes no SQL against the shared store
 
 - **Why:** the schema belongs to cli-core; SQL in a CLI breaks on the next migration.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: biome no-sqlite-driver`.
 - **Example:** a CLI that needs a new query asks cli-core for an area method, and the method lands in cli-core with
   its test. drive and zoom state "no SQL here" in their own architecture pages.
 - **Exceptions:** a provider engine's own file of keys and device state, outside `wirecat.db`
-  ([WC-STORE-13](#wc-store-13--keep-keys-and-device-state-out-of-the-shared-store)).
+  ([WC-STORE-13](#wc-store-13--keep-keys-and-device-state-out-of-the-shared-store)). The check skips tests and tooling
+  (`scripts/`, `bench/`, `performance/`, `contracts/`, `testing/`), and cli-core, which owns the store, turns it off.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-383.
 
 ### WC-STORE-6 · One store method is one whole operation, with no `await` inside a transaction
@@ -193,8 +194,6 @@ request that builds the helper.
 - **A CLI's own tables live in its own SQLite file**, next to the shared store, with its own migrations. They refer to
   core rows by id only, and no other CLI opens that file. A cli-core helper opens it (the path, the migrations, the
   same driver); it is built when the first CLI needs private tables.
-- **WC-STORE-5 gets a check:** a grit plugin, `no-sqlite-driver`, that refuses a CLI's import of a SQLite driver or
-  of `drizzle-orm`. cli-core, which owns the store, turns it off.
 
 ## Sources
 
