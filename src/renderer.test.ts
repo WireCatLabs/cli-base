@@ -113,6 +113,14 @@ describe("pretty", () => {
 
     expect(streams.stdout.join("")).not.toMatch(ANSI)
   })
+
+  it("paints when colour is on, though the process stdout is not a terminal", () => {
+    const { streams, renderer } = render("pretty", true)
+
+    renderer.result([{ a: 1 }])
+
+    expect(streams.stdout.join("")).toContain("\u001b[1ma\u001b[22m")
+  })
 })
 
 describe("text from elsewhere, shown to a person", () => {

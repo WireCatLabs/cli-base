@@ -1,5 +1,5 @@
+import { styleText } from "node:util"
 import Table from "cli-table3"
-import pc from "picocolors"
 import { visibleControls } from "./sanitize.js"
 
 export interface PrettyOptions {
@@ -41,10 +41,14 @@ export const indent = (text: string, spaces: number): string =>
 
 type Row = Record<string, unknown>
 
+// The caller has already decided on color from its own stream and flags; styleText must not re-check process.stdout.
+const paint = (format: "dim" | "bold" | "cyan", color: boolean) => (text: string) =>
+  color ? styleText(format, text, { validateStream: false }) : text
+
 const palette = (color: boolean) => ({
-  dim: (text: string) => (color ? pc.dim(text) : text),
-  bold: (text: string) => (color ? pc.bold(text) : text),
-  label: (text: string) => (color ? pc.cyan(text) : text),
+  dim: paint("dim", color),
+  bold: paint("bold", color),
+  label: paint("cyan", color),
 })
 
 const isPlainObject = (value: unknown): value is Row =>

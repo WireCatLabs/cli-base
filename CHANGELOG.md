@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **Pretty output colours with `node:util` `styleText`, and `picocolors` is no longer a dependency.** One less package
+  in every CLI's install; the escape codes for dim, bold and cyan are the same. Colour still follows the `color`
+  option alone, never the state of `process.stdout`. A CLI that imported `picocolors` through cli-base's install
+  must now depend on it itself.
+- **The shared toolchain pins move to Biome 2.6.2, markdownlint-cli2 0.24.0, cspell 10.4.0, lefthook 2.2.2 and
+  pnpm 11.28.8** (`config/wirecat/manifest.json`). Biome 2.6 formats and lints Markdown by default, without GitHub
+  tables; this repository turns that off in its own `biome.json` and leaves Markdown to markdownlint. A CLI that
+  syncs the new manifest needs the same pins and the same switch.
+
 ## 0.55.0 — 25.10.2026
 
 ### Added
