@@ -18,6 +18,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   both and compares them. It reads only, fails with `not_found` and the install command when the agent has no copy,
   and refuses a shipped skill by name, which is never installed.
 
+- **`removeStdioEntry` and `stdioEntryStatus` in `@wirecat/cli-base/mcp`** undo and read what `installStdioEntry`
+  writes. A CLI could add itself to Codex or Claude Code, but not take itself out or say whether it is there, so a
+  host such as WireCat Desktop had to read each client's configuration on its own. `removeStdioEntry(client, name)`
+  runs the client's own `mcp remove`, for Claude Code with `--scope user` (the scope `add` uses), so a project's entry
+  with the same name stays; a name the client does not have returns `removed: false`. `stdioEntryStatus(client,
+  name)` returns `registered`, `missing`, or `unavailable` when the client is not installed. Both go through the
+  client's `mcp get` first and refuse a name that is not letters, digits, `_` or `-`.
+
 - **Every CLI keeps a run log: `WC-LIFE-15` and the `missing-run-log` lint rule**
   ([Lifecycle](docs/standards/lifecycle.md#wc-life-15--keep-a-run-log-through-cli-core-and-read-it-back-with-runs)).
   The handbook described what a log may hold but never required one, and drive, memo and zm shipped without a run
