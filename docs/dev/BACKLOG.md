@@ -31,6 +31,9 @@ None open.
 - **BASE-5** · P2 · A warning-only helper that names the handles keeping a one-shot command alive (WC-LIFE-1), so
   tg can drop its `process.exit` backstop. [Issue #268](https://github.com/WireCatLabs/cli-base/issues/268).
 - **BASE-6** · P2 · 🚧 `fix/standards-list-query-lint` Every hand-written list needs a query (#288).
+- **BASE-10** · P2 · Two Base copies in one `node_modules` break every command of a CLI: protected commands live in a
+  module-level WeakMap (`src/commands/contracts.ts:21`), so a copy that Core did not bind to finds none. The owner
+  ruled one CLI per install: document it, and fail at startup naming both copies' paths and versions.
 - **BASE-7** · P2 · Windows: the last platform run failed 14 tests there (file modes, spawning `npm` and `tsc`;
   `README.md`, "Secrets in the OS keyring"), and no CI job runs on Windows, while the keyring promises Credential
   Manager.
