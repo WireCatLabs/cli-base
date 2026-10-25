@@ -20,6 +20,20 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `<job> / ci / coverage` to its required checks. Not with `cli: true`: `test:matrix:check` reads the argv log of
   an unsharded run. Default 1: the tests stay in `check`, as before.
 
+## 0.59.0 — 26.10.2026
+
+### Added
+
+- **`skill install --for hermes` gives Hermes Agent the skill, and `skill status` reports what Hermes reads.** It writes
+  the `~/.agents/skills` copy, then adds that folder to Hermes's `skills.external_dirs` through Hermes's own
+  `hermes config set`, keeping every folder already listed. When Hermes is not on PATH or refuses, it copies the file
+  into `$HERMES_HOME/skills/<app>/` and says why; with neither `hermes` on PATH nor a Hermes home folder it fails
+  with `not_found` and writes nothing. `--for all` stays Claude Code and `~/.agents/skills`: it is the
+  default, and a bare `skill install` must not change another program's settings. `skill status --json` gains
+  `hermes: { path, installed, state, via }` beside `targets`, which keeps its two entries. It runs
+  `hermes config get` only when `HERMES_HOME` (else `~/.hermes`) exists, so a test with a temporary `HOME` starts no
+  Hermes unless its environment sets `HERMES_HOME`.
+
 ## 0.58.0 — 25.10.2026
 
 ### Changed — may break callers
@@ -259,7 +273,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 ### Fixed
 
 - **Denied commands remain discoverable.** The MCP and permission standards require current availability metadata instead of hiding denied commands. CLI help retains the same capabilities; execution still enforces the permission. This records the owner's discovery rule for every CLI.
-
 
 - **`sync` covers a two-way mirror.** The vocabulary's meaning of `sync` now says a mirror syncs both ways, so drive's `mirrors sync`, which also writes changes back to Google, uses the verb as defined (owner, 2026-10-24). Nothing changes for one-way syncs.
 
@@ -744,7 +757,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   older `tg` than the one installed — while the update notice named the newest. `updateCommand("pnpm", …)` now adds
   `--config.minimumReleaseAgeExclude=<scope>/*` for the package's own scope; every other dependency keeps pnpm's wait.
 
-
 ## 0.40.1 — 17.10.2026
 
 ### Added
@@ -1048,7 +1060,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 - **`Streams.drain(signal?)`.** A caller that wrote a lot of output can wait until stdout and stderr have flushed, or
   give up when the signal aborts. Optional on `Streams`; `processStreams` implements it.
 
-
 - **JSON lines with an end line:** `jsonlOf(envelope)` prints `{"type":"item","data":…}` per item, then
   `{"type":"end","complete":…,"issues"?:…,"page":…}`, so a reader tells a finished stream from a cut one;
   `jsonlItemSchema` and `jsonlEndSchema` describe them, and `key-casing` checks both.
@@ -1335,7 +1346,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 ### Fixed
 
 - Package references, documentation and fixtures use the WireCat namespace throughout.
-
 
 - The owner-migration helper covers meetings, testing, Zoom and the shared organization repositories, so their links and package names migrate with the original CLIs.
 
