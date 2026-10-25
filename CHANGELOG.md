@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`WC-ARCH-21` names the call that exists** ([Architecture](docs/standards/architecture.md)): a CLI registers its provider with `store.accounts.registerProvider(entry)`. The rule named a `registerProvider` import from `@wirecat/cli-core/store`, which cli-core 0.421.0 does not export.
+
 ## 0.55.0 — 25.10.2026
 
 ### Added
