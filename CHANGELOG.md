@@ -20,6 +20,17 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   them, so the pages now state them as rules. What is still planned: a CLI's own SQLite file, and two persons with one
   address going to the review list.
 
+### Changed â€” may break callers
+
+- **Pretty output colours with `node:util` `styleText`, and `picocolors` is no longer a dependency.** One less package
+  in every CLI's install; the escape codes for dim, bold and cyan are the same. Colour still follows the `color`
+  option alone, never the state of `process.stdout`. A CLI that imported `picocolors` through cli-base's install
+  must now depend on it itself.
+- **The shared standards are re-adopted from community: Biome 2.6, markdownlint-cli2 0.24.0, cspell 10.4.0,
+  lefthook 2.2.2 and pnpm 11.28.8** (`config/wirecat/`). Biome 2.6 formats and lints Markdown by default, without
+  GitHub tables, so the shared `biome.base.json` now turns Markdown off and leaves it to markdownlint. This
+  repository pins Biome 2.6.3, as cli-core does. A CLI that adopts the new standards needs the same pins.
+
 ### Fixed
 
 - **The handbook says which rules cli-template keeps and which it is exempt from by design**

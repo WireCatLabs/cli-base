@@ -85,7 +85,7 @@ Three lines this package does not cross:
 - **It logs nothing and prints nothing by itself.** It hands the host a `Logger` interface, a Pino adapter and a
   renderer; what is written, and where, is the host's call.
 
-Five runtime dependencies: valibot and its JSON Schema converter, cli-table3, picocolors and cross-spawn. Commander is
+Four runtime dependencies: valibot and its JSON Schema converter, cli-table3 and cross-spawn; colour is `node:util`. Commander is
 an optional peer: `/commands` and `/completion` use only its types, and `/skill` needs it installed at run time.
 
 ## Features
