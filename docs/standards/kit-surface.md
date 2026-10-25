@@ -30,8 +30,11 @@ A change that makes a CLI change its code for one of these exports ships with tw
 
 1. **A migration note in the changelog**, under "Changed — may break callers": what to change in your code, step by
    step. See [Documents](docs.md) for the changelog's shape.
-2. **A green cli-template job before the pull request merges.** cli-base and cli-core build the template against
-   each pull request, so the template is updated in the same change, and `upgrade` has the new version to bring.
+2. **A green cli-template job before the pull request merges.** cli-base
+   ([`template.yml`](https://github.com/WireCatLabs/cli-base/blob/main/.github/workflows/template.yml)) and cli-core
+   (the `template` job in [`parity.yml`](https://github.com/WireCatLabs/cli-core/blob/main/.github/workflows/parity.yml))
+   build the template against each pull request, so the template is updated in the same change, and `upgrade` has
+   the new version to bring.
 
 ## How your CLI stays current
 
