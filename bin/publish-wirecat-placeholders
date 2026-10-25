@@ -17,13 +17,11 @@ tg-cli tg-cli release.yml -
 max-cli max-cli release.yml -
 cli-memo cli-memo release.yml -"
 
-if [ -z "${NPM_TOKEN:-}" ]; then
-  NPM_TOKEN=$(secret-tool lookup service npm account leemour 2>/dev/null) || {
-    echo "no npm token: export NPM_TOKEN, or store one with: secret-tool store --label=npm service npm account leemour" >&2
-    exit 1
-  }
+if [ -z "${NPM_TOKEN:-}" ] && [ -n "${NPM_KEYRING_ACCOUNT:-}" ]; then
+  NPM_TOKEN=$(secret-tool lookup service npm account "$NPM_KEYRING_ACCOUNT" 2>/dev/null) ||
+    { echo "no npm token in the keyring for service npm, account $NPM_KEYRING_ACCOUNT" >&2; exit 1; }
 fi
-[ -n "$NPM_TOKEN" ] || { echo "the npm token is empty" >&2; exit 1; }
+[ -n "${NPM_TOKEN:-}" ] || { echo "no npm token: export NPM_TOKEN, or NPM_KEYRING_ACCOUNT naming its keyring entry" >&2; exit 1; }
 export NPM_TOKEN
 
 work=$(mktemp -d)

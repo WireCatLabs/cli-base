@@ -424,15 +424,15 @@ describe("lint registry", () => {
   it("refuses a baseline that lists a target twice, and an override with no reason, owner or review date", () => {
     expect(baselineProblems(["chats list", "chats list"])).toEqual(['"chats list" is listed twice'])
     const kept = { rule: "unknown-verb", target: "bot api", reason: "mirrors the official Bot API" }
-    const owned = { ...kept, owner: "@leemour", review_after: "2027-01-01" }
+    const owned = { ...kept, owner: "@octocat", review_after: "2027-01-01" }
     expect(v.is(overridesSchema, [{ ...owned, reason: "" }])).toBe(false)
     expect(v.is(overridesSchema, [kept])).toBe(false)
     expect(v.is(overridesSchema, [{ ...owned, review_after: "soon" }])).toBe(false)
-    expect(v.is(overridesSchema, [{ ...owned, owner: "leemour" }])).toBe(false)
+    expect(v.is(overridesSchema, [{ ...owned, owner: "octocat" }])).toBe(false)
     expect(v.is(overridesSchema, [owned, { ...owned, owner: "@WireCatLabs/cli" }])).toBe(true)
     expect(overridesProblems([owned], "2027-01-01")).toEqual([])
     expect(overridesProblems([owned], "2027-01-02")).toEqual([
-      '"unknown-verb bot api" was due for review on 2027-01-01; ask @leemour',
+      '"unknown-verb bot api" was due for review on 2027-01-01; ask @octocat',
     ])
   })
 

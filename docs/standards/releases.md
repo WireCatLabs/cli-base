@@ -45,9 +45,9 @@ on the [CI](ci.md) page.
   ```
 
   The helper comes from the community presets (`adopt-standards.py --only release-lock`). It holds
-  `${XDG_RUNTIME_DIR:-/tmp}/leemour-release-<key>.lock` with `flock` on file descriptor 9 until the release ends.
+  `${XDG_RUNTIME_DIR:-/tmp}/wirecat-release-<key>.lock` with `flock` on file descriptor 9 until the release ends.
   `<key>` is the `name` in `package.json`, made safe for a file name: `@wirecat/cli-core` locks
-  `leemour-release-wirecat-cli-core.lock`. The key is the package, not the folder, so every checkout and worktree
+  `wirecat-release-wirecat-cli-core.lock`. The key is the package, not the folder, so every checkout and worktree
   of one package shares the lock. A `package.json` without a name refuses the release.
 - **Exceptions:** none.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-854, ASK-336.

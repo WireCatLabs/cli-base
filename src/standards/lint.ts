@@ -139,8 +139,8 @@ export const overridesSchema = v.array(
     rule: word,
     target: text,
     reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
-    /** A GitHub handle or a team, `@leemour`. */
-    owner: v.pipe(v.string(), v.regex(/^@[\w.-]+(\/[\w.-]+)?$/, "a GitHub handle or team, such as @leemour")),
+    /** A GitHub handle or a team, `@octocat`. */
+    owner: v.pipe(v.string(), v.regex(/^@[\w.-]+(\/[\w.-]+)?$/, "a GitHub handle or team, such as @octocat")),
     review_after: v.pipe(v.string(), v.isoDate("a date, YYYY-MM-DD")),
   }),
 )

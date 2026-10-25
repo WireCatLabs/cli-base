@@ -1,9 +1,9 @@
 {
   "source": "https://github.com/WireCatLabs/community",
-  "revision": "2963cda0f28eda3f731fe5edbf935d017d51ddf3",
+  "revision": "c846abf63807a478277fc61e6989742a81e7c21c",
   "files": {
     "biome.base.json": "f65d5754b03a4b7a3de08706e80b7b7a3f44df3218d7a573271195c2a3b3bfa0",
-    "cspell.json": "8241122ed4d461976a838099b265ef8f2689a066608257b6fdc250d9b49b58aa",
+    "cspell.json": "fb47520d0b8847fe3928adfd88d2a28ad9283faaa58a3cea9cf9a4e534fb423e",
     "lefthook.yml": "2f65a2e3103006d43f6d6f0a07ab333c132286157763222a59a5a22676acd391",
     "markdownlint.json": "5ed7d6980054c539f3f3c0e47a090f1a725b15be2c486a769a836bc6cd48ad2d",
     "no-deep-wirecat-import.grit": "b9cb69b9ae125604c951cd924941ab089af32f9fa91f072e34531ca861ed125d",
@@ -13,7 +13,7 @@
     "no-sqlite-driver.grit": "19e1f510a88ddd9df44d6db43c1c9b603c3e5bbec03a3f65305b72eac7f09389",
     "no-unbounded-spread.grit": "f4178e5b74212fef58fec8916b6783d9f4f192ac618aa4ced041c4167bfbf81b",
     "release-lock-info.mjs": "4abab1f01ceee7d4c709222e923c9a6fc634bcf7b8b64d745a9ac495993310e0",
-    "release-lock.sh": "bef364092c4ab595f3b9b4130e23570c8306223228cdfa3e9384230f3b7f4a49",
+    "release-lock.sh": "6c0b35a2ca0e7c53f6a5c23dcfe6edb62d565c9e402d4eab3071a6f7c4d57dbb",
     "rumdl.toml": "048b929176f13234324f5825d1e811397f1491b9cb6684a1953e268e2c2ed863",
     "check.mjs": "34b266411eaab7707030915f645308e86784b1574b21fa44ca974861a90c9ce1"
   },

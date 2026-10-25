@@ -17,7 +17,7 @@ wirecat_release_lock() {
     echo "release locking needs a package name in ./package.json" >&2
     return 1
   }
-  _wirecat_release_lock="${XDG_RUNTIME_DIR:-/tmp}/leemour-release-$_wirecat_release_key.lock"
+  _wirecat_release_lock="${XDG_RUNTIME_DIR:-/tmp}/wirecat-release-$_wirecat_release_key.lock"
   exec 9>>"$_wirecat_release_lock"
   if flock -E 75 -w "$_wirecat_release_wait" 9; then
     printf '%s pid %s since %s\n' "$(basename "$PWD")" "$$" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$_wirecat_release_lock.who"
