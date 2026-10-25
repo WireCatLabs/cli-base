@@ -1,6 +1,6 @@
 # Security
 
-<!-- cspell:words zizmor -->
+<!-- cspell:words zizmor PKCE -->
 
 ## Scope
 
@@ -270,6 +270,21 @@ not carried out. A name that matches is not proof of who someone is.
   [WC-SECR-11](#wc-secr-11--text-from-outside-is-made-safe-before-a-terminal-or-an-agent-sees-it); what an MCP server
   tells an agent about it is [WC-MCP-11](mcp.md#wc-mcp-11--the-server-tells-the-agent-that-message-text-is-data).
 - **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+
+## Planned — not built yet
+
+From the Wave 3 requirements, approved by the owner on 2026-10-24 (sections 3.4 and 3.7). Each item moves into the
+rules in the pull request that builds it.
+
+- **One sign-in module** in cli-core, `@wirecat/cli-core/oauth`, with no store and no search: authorize (a loopback
+  address on `127.0.0.1` or a relay page, `state`, PKCE S256, a timeout, cancel, a paste fallback), exchange, refresh
+  and revoke, and a token keeper with a lock per profile across processes. A CLI declares its provider and may
+  replace any step, but keeps the explicit profile, the lock, and tokens that are never printed (NEED-1734).
+- **Keys in one place:** one keyring naming scheme for new entries; today's entries of drive and zm are read as they
+  are, so no one signs in again.
+- **Meeting secrets never reach the store:** passcodes, PINs, passwords and access codes from a calendar's conference
+  data, and the query string of any join URL. Lines of a description that carry a passcode, password or PIN are
+  removed.
 
 ## Sources
 

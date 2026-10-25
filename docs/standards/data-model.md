@@ -33,6 +33,13 @@ is rewritten only to follow it:
   and nothing joins the two (WC-DATA-6).
 - `events` rows made from Zoom meetings have no source record of their own besides the meeting (WC-DATA-2 holds:
   `meetings` is that record).
+- Local folders are accounts with provider `folder` (an Obsidian vault and a plain folder look the same), and Drive's
+  stand-in account uses it too (WC-DATA-3).
+- Contacts live in `identities`, with no address column: an address is only the `external_id` of provider `email`
+  (WC-DATA-6).
+- `documents` keeps its source columns (`account_id`, `external_id`, `url`, `mime`, `front_matter`…) next to the
+  entity's own fields (WC-DATA-2).
+- `meeting_participants` is unique on the meeting and the contact; its `external_id` is in no unique key (WC-DATA-3).
 
 ## Rules
 
@@ -59,7 +66,7 @@ to its entity. One entity may combine source records from several sources and ac
 
 - **Why:** the same meeting in two calendars and in Zoom is one event to the owner; the same document in Drive and on
   disk is one document.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`, for the entity tables only; which table is which kind is review.
 - **Example:** a Google Calendar entry is a `calendar_entries` row with `event_id`; the Zoom recording of that meeting
   is a `meetings` row with the same `event_id`.
 - **Exceptions:** an entity the owner makes has no source record; a source record may wait unlinked until matching
@@ -73,7 +80,7 @@ record has no account). Never in a column named after the provider (`google_id`,
 `metadata`. A second id the provider also uses gets a named column of its own (`ical_uid`).
 
 - **Why:** one place to look for every provider's id, and one unique key to update a record by.
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`.
 - **Example:** a Drive file: `files.external_id = '<Drive file id>'`; a Google calendar entry:
   `calendar_entries.external_id = '<event id>'`, `ical_uid = '<iCalUID>'`.
 - **Exceptions:** a local file has no provider id; its `external_id` is its path relative to its folder root.
@@ -103,7 +110,7 @@ Times are UTC milliseconds ([Time](time.md)).
 
 - **Why:** a reader of any table knows what a field holds, and a new table does not invent a third name for "edited
   at".
-- **Enforced by:** review only.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`.
 - **Example:** `files.external_updated_at`, not `modified_at` or `modifiedAt` in JSON.
 - **Exceptions:** existing columns keep their names until their table changes for another reason.
 - **Applies to:** cli-core. **Since:** cli-base 0.52.0. **Rulings:** NEED-1732.
@@ -141,17 +148,32 @@ link is made and the pair goes to the owner's review list. Title or time overlap
 
 ## Planned — not built yet
 
-From the Wave 3 requirements (cli-private `plans/2026-10-24-open-cli-core-design.md`, under the owner's review):
+From the Wave 3 requirements, approved by the owner on 2026-10-24 (cli-private
+`plans/2026-10-24-open-cli-core-design.md`, sections 3.3–3.6). Each item moves into the rules in the pull request that
+builds it.
 
-- a `files` table as the source record of `documents`: a materialised `path` plus `parent_id` to the folder's own
-  row, so a folder is found by path prefix and a document by part of its path (NEED-1739);
-- memo's vault files as documents; an Obsidian vault is provider `obsidian` with its own metadata (tags, aliases,
-  wiki links), a plain folder is `local`; `notes` are only the owner's notes on entities (NEED-1738);
-- a cli-core helper that opens a CLI's own SQLite file (NEED-1737);
-- `calendars`, `calendar_entries` and `calendar_attendees` on the `events` hub;
-- an `email` column on contacts, so one address joins one person across sources;
-- one link log for events and documents, and one review list for ambiguous pairs;
-- renaming `identities` to `contacts`.
+- **Files.** A `files` table holds the source records of `documents`: one row per item in one place (a local file, a
+  Drive file or folder, later a Notion page). It has `account_id`, `external_id` (a local file's path relative to its
+  root), `kind` (`file`, `folder`, `page`), `name`, `path` and `path_folded` from the account root, `parent_id` to the
+  folder's own row, `document_id`, the file facts and the provider's times (NEED-1739).
+- **Matching a file to a document:** the same account and `external_id` is the same file; a `content_hash` equal to
+  the preferred file of exactly one live document joins that document; more than one candidate goes to the review
+  list; otherwise a new document. The document shows its most recently changed file, unless the owner pins one.
+- **Folder accounts by kind.** Provider `obsidian` for a vault (front matter, tags, aliases and wiki links kept as
+  Obsidian's own metadata), `local` for a plain folder; Drive files under a real `google-drive` account. memo's vault
+  files are documents; `notes` are only the owner's notes on entities (NEED-1738).
+- **Calendars.** `calendars` and `calendar_entries` (source records) feed `events` and `event_series` (entities).
+  Attendees are `calendar_entry_participants`; changes to tracked fields go to `calendar_entry_revisions` first. An
+  entry joins an event by, in order: the same Google id; the same series slot (`original_starts_at`); the same
+  `ical_uid` in another calendar; a Zoom event with the same `join_key` and an overlapping time; else a new event.
+- **History on delete.** An event deleted in Google keeps its past occurrences with `source_deleted_at`; future ones
+  become `cancelled`. Nothing is removed without an explicit owner command (NEED-1764).
+- **Contacts by address.** A lower-cased `identities.email` column; contacts with the same address link to one
+  person (method `email`) unless the owner said otherwise; two persons with one address go to the review list.
+- **One link log and one review list.** `entity_link_events` logs link changes for events and documents in the shape
+  of `identity_link_events`; one review list of ambiguous pairs for every entity, resolved by the owner.
+- **A CLI's own SQLite file**, opened through a cli-core helper ([Store](store.md), NEED-1737).
+- **Later:** renaming `identities` to `contacts`; dropping `documents`' source columns once nothing reads them.
 
 ## Sources
 
