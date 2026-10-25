@@ -83,12 +83,17 @@ const entries = (section: Section) =>
     return found
   })
 
+/** The `## <version> — ` section of a changelog, or `undefined` when it has none. */
+export const taggedSection = (text: string, version: string) =>
+  text.split(/\n(?=## )/).find((block) => block.startsWith(`## ${version} — `))
+
 /**
  * Puts the section of `version`, the newest tagged one, back to its text in that tag. A pull request
  * checked before the version was dated or tagged and merged after it adds its entry there with no
  * guard to see it, though that code ships only in the next version: each such entry moves to the unreleased
  * section, after its entries under the same `###` heading. `undefined` when the section matches the tag the
- * way the changelog guard compares them.
+ * way the changelog guard compares them, or when the tag's changelog has no section for `version`: nothing was
+ * released under that heading, so there is nothing to restore.
  */
 export const restoreReleased = (
   text: string,
@@ -97,8 +102,8 @@ export const restoreReleased = (
   unreleased = "Unreleased",
 ): { text: string; moved: string[] } | undefined => {
   const dated = (block: string) => block.startsWith(`## ${version} — `)
-  const tagged = tagText.split(/\n(?=## )/).find(dated)
-  if (!tagged) throw new Error(`the v${version} tag's changelog has no "## ${version} — " section`)
+  const tagged = taggedSection(tagText, version)
+  if (!tagged) return undefined
   const blocks = text.split(/\n(?=## )/)
   const index = blocks.findIndex(dated)
   if (index < 0) throw new Error(`no "## ${version} — " section to compare with the v${version} tag`)
