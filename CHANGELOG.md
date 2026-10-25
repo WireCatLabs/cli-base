@@ -10,6 +10,16 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ## Unreleased
 
+### Added
+
+- **Four handbook rules for what cli-core has built since the Wave 3 design.** `WC-SECR-22`: a CLI that signs in
+  with OAuth uses `@wirecat/cli-core/oauth`. `WC-SECR-23`: meeting passcodes and the query of a join link never reach
+  the store. `WC-DATA-8`: a file joins a document by its place, then by the content of exactly one document.
+  `WC-DATA-9`: a calendar entry joins an event by fixed rules, and a deleted one keeps its past. `WC-DATA-6` names
+  the link log, the review list and the join by address. They were listed as "not built yet"; cli-core releases
+  them, so the pages now state them as rules. What is still planned: a CLI's own SQLite file, and two persons with one
+  address going to the review list.
+
 ### Changed — may break callers
 
 - **Pretty output colours with `node:util` `styleText`, and `picocolors` is no longer a dependency.** One less package
@@ -20,6 +30,91 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   pnpm 11.28.8** (`config/wirecat/manifest.json`). Biome 2.6 formats and lints Markdown by default, without GitHub
   tables; this repository turns that off in its own `biome.json` and leaves Markdown to markdownlint. A CLI that
   syncs the new manifest needs the same pins and the same switch.
+
+### Fixed
+
+- **The handbook says which rules cli-template keeps and which it is exempt from by design**
+  ([New CLI](docs/standards/new-cli.md#the-template-repository-itself)). Two audits of the template read the CLI
+  rules as gaps where the template differs on purpose: its README and `SECURITY.md` are seeds that `new` fills in, and
+  its copy tool is run by hand. Each exemption names its rule and reason; every other CLI rule applies to the template.
+- **The monthly run takes a minute, not a day, and nothing checks it.** New CLI's third step said to pick a cron day
+  and that CI rejects a placeholder; no check exists, and the template ships its own minute, 03:02 UTC. A CLI made
+  from the template changes that minute by hand (`WC-CI-9`).
+- **`WC-CI-8` says how the shared workflows' pin relates to the installed cli-base:** it does not have to match. The
+  workflows run the repository's own scripts with its installed packages, and the rules that apply are those of the
+  installed handbook.
+- **`WC-ACCT-3` no longer assumes every CLI has `setup`.** With no profile on the computer, cli-core suggests `setup`
+  only to a CLI that has it, and otherwise the typed command with a profile added.
+- **Smaller corrections.** `WC-MCP-11` covers every kind of text from other people, not only messages. The
+  changelog rule says a `WC-` rule id is not an internal id. `WC-TEST-1`, `WC-TEST-3` and `WC-STORE-14` say every CLI loads the
+  shared test setup. `WC-TOOL-11` names all six grit plugins. A comparison page's `docs/compare.md` waits for its site
+  page. A bare path under "Enforced by" is a cli-base file. Thirteen "Since" lines now name the release that first
+  carried the rule, which is a published version in every case.
+
+## 0.57.0 — 25.10.2026
+
+### Changed — may break callers
+
+- **`saveConfigFile` writes `config.json` as `0600`, owner-only, instead of `0644`.** A config names the owner's
+  accounts, profiles and paths, and cli-core already created the first one as `0600` — so the first `config set`
+  turned a private file into one every user on the computer could read. A save now replaces the file with an
+  owner-only one, whatever mode it had. A folder that already exists keeps its mode; a CLI's `doctor` reports one
+  others can enter. Watch for: anything that reads the config as a different user — a system-wide service, a
+  container running under another uid, a second account sharing the file — can no longer read it after the next
+  save. Run it as the owner, or give it its own config. Windows is unchanged: Node sets only the read-only bit there.
+
+## 0.56.0 — 25.10.2026
+
+### Added
+
+- **`<cli> skill show --for claude|agents` prints the copy installed for that agent** instead of this version's
+  SKILL.md, as text or `{ name, target, path, installed, content }` with `--json`. A host could show only the bundled
+  copy and `skill status`'s version numbers, so it could not show what `skill install` would change; now it reads
+  both and compares them. It reads only, fails with `not_found` and the install command when the agent has no copy,
+  and refuses a shipped skill by name, which is never installed.
+
+- **`removeStdioEntry` and `stdioEntryStatus` in `@wirecat/cli-base/mcp`** undo and read what `installStdioEntry`
+  writes. A CLI could add itself to Codex or Claude Code, but not take itself out or say whether it is there, so a
+  host such as WireCat Desktop had to read each client's configuration on its own. `removeStdioEntry(client, name)`
+  runs the client's own `mcp remove`, for Claude Code with `--scope user` (the scope `add` uses), so a project's entry
+  with the same name stays; a name the client does not have returns `removed: false`. `stdioEntryStatus(client,
+  name)` returns `registered`, `missing`, or `unavailable` when the client is not installed. Both go through the
+  client's `mcp get` first and refuse a name that is not letters, digits, `_` or `-`.
+
+- **Every CLI keeps a run log: `WC-LIFE-15` and the `missing-run-log` lint rule**
+  ([Lifecycle](docs/standards/lifecycle.md#wc-life-15--keep-a-run-log-through-cli-core-and-read-it-back-with-runs)).
+  The handbook described what a log may hold but never required one, and drive, memo and zm shipped without a run
+  log. `cli-dev lint` now fails a CLI whose command tree has no `runs list` or `runs show`, or no global `--record` or
+  `--no-record`. With `--cli`, it also runs the built CLI once with an unknown flag, in a new empty home with none of
+  the caller's environment but `PATH`, and fails when `runs list --json` then shows no failed run. A CLI without
+  `runs` gets the finding on its next cli-base bump: register cli-core's `runsCommand(app)`, or baseline the
+  finding with `cli-dev lint --write-baseline` until it does. The weekly cross-CLI audit lists it too.
+
+- **`<cli> skill status` says whether the installed SKILL.md is current, for each agent.** It reads
+  `~/.claude/skills/<appName>/SKILL.md` and `~/.agents/skills/<appName>/SKILL.md` and prints, per place, the absolute
+  path, the version installed there (`null` when there is none) and a `state`: `current`, `stale` (older than the
+  CLI), `missing` or `unversioned`. It writes nothing. A desktop app or a setup script could tell this only by reading
+  the files itself. `skillStatus(app, env)` returns the same list, and the daily skill hint now decides from it, with
+  the same outcome as before. A CLI on cli-core gets the command when cli-core picks up this release.
+
+- **The collection noun `tables`: "the tables of the local store, with their kind, row count and size".** cli-core's
+  `store tables list` uses it to answer which tables the shared archive holds, so a desktop app or an agent can see
+  them without opening the file. `copies` keeps its narrower meaning, the tables a repair kept aside.
+
+## 0.55.1 — 25.10.2026
+
+### Fixed
+
+- **`WC-ARCH-21` names the call that exists** ([Architecture](docs/standards/architecture.md)): a CLI registers its provider with `store.accounts.registerProvider(entry)`. The rule named a `registerProvider` import from `@wirecat/cli-core/store`, which cli-core 0.421.0 does not export.
+
+- **`cli-dev changelog restore` no longer stops a release when the newest tag has no section of its own**
+  ([releases standard](docs/standards/releases.md#wc-rel-15--fold-a-late-pending-section-into-the-unpublished-version-before-publishing)).
+  A raise that renamed the previous section instead of dating `## Unreleased` leaves a tag whose changelog has no
+  `## <version> — ` heading, and the command threw on every later `bin/release`. Nothing was released under that
+  heading, so there is nothing to restore: the command now prints why on stderr and changes nothing.
+  `restoreReleased` from `@wirecat/cli-base/release` returns `undefined` in that case instead of throwing; a
+  changelog with no section for the tagged version still throws. A CLI that skipped the restore for this case can
+  drop the skip and pin this version.
 
 ## 0.55.0 — 25.10.2026
 

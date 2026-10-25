@@ -14,6 +14,16 @@ A "one-shot" command does one job and ends: most commands. A "long-running" comm
 `lifetime: "persistent"` (it runs until it is stopped, such as `serve` or `watch`) or `lifetime: "interactive"` (it
 waits for a person, such as a login).
 
+A "run" is one command's record: what it was, how it ended, and its events, never content. The rules on what a
+run's events may hold are [WC-SECR-1](security.md#wc-secr-1--private-data-and-secrets-never-reach-a-log-a-fixture-or-a-committed-document)
+and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and-hides-content-keys).
+
+### Who follows these rules today
+
+- **WC-LIFE-15:** tg, max, wa and the template. drive, memo and zm do not keep runs yet; each is adding them on a
+  `feat/runs` branch (2026-10-25). zm's `resolveSettings` also returns `keepFailedRuns: false`, which turns off the
+  failure log cli-core's `run` would keep.
+
 ## One-shot commands
 
 ### WC-LIFE-1 · The code that opens a resource closes it, so a one-shot command exits when it has answered
@@ -153,7 +163,7 @@ provider's limit as often as it ends. These three rules make the next run carry 
 - **Example:** each page of a chat's history goes into the store in its own transaction as it arrives, and the
   position moves with it. drive saves its first folder walk in its state file as it goes.
 - **Exceptions:** none.
-- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.43.0. **Rulings:** none.
 
 ### WC-LIFE-13 · A rerun goes on from where the last run stopped, and starting over is an option
 
@@ -168,7 +178,7 @@ provider's limit as often as it ends. These three rules make the next run carry 
   never a failed run. Starting over is `--rescan`, as in `drive personal sync --rescan`; it is in the cli-base flag
   registry.
 - **Exceptions:** none. No CLI uses the checkpoint file yet; drive keeps its position in its own state file.
-- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.43.0. **Rulings:** none.
 
 ### WC-LIFE-14 · A sync's status command says how far it is, in one shape
 
@@ -181,7 +191,30 @@ provider's limit as often as it ends. These three rules make the next run carry 
   `progress`.
 - **Exceptions:** none. drive and zm print no progress shape yet; that is a known gap. Whether the last scheduled run
   failed is a different question, answered by `recordRun` and `failingNotice` in cli-core's schedules.
-- **Applies to:** every CLI with a sync. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.43.0. **Rulings:** none.
+
+## Runs
+
+### WC-LIFE-15 · Keep a run log through cli-core, and read it back with `runs`
+
+A failed command is always kept as a run, unless the person turned recording off with `--no-record` or
+`record: false` in the config. `--record` keeps every run of a command that does its work inside cli-core's run
+(`context.run`, or `startRecording` in a program of its own). A run is a folder `<state>/runs/<day>/<run_id>/` with
+`run.json` and `events.jsonl`, one log record per line. `runs list` and `runs show` read it.
+
+- A CLI that runs its program through cli-core's `run` gets the failure log and `--record`/`--no-record` from it,
+  and adds `runsCommand(app)` to its commands. Its configuration is `settingsFor(app)`, or a `resolveSettings` that
+  returns the owner's `record` and `keep_runs_for_days` as `keepFailedRuns` and `keepRunsForDays`, never fixed values.
+- A CLI with a program of its own opens each command's run with `startRecording` from `@wirecat/cli-core/cli`,
+  ends it with `succeed` or `fail`, adds `--record` and `--no-record` at the root and registers `runsCommand(app)`.
+
+- **Why:** when a command fails, a person or an agent needs to see what it did, in the same place and shape in every
+  CLI. Without the rule, three CLIs shipped with no run log, and one switched cli-core's off.
+- **Enforced by:** `missing-run-log`.
+- **Example:** `tg --bogus` fails, `tg runs list` shows that run as `failed`, and `tg runs show <run_id>` shows its
+  events.
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.56.0. **Rulings:** none.
 
 ## Sources
 

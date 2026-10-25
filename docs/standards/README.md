@@ -20,6 +20,8 @@ the four steps that need a person. A new CLI is ready for its first release when
    rule is not.
 3. **Product rules stay local.** A rule that only makes sense for one CLI lives in that CLI's `CLAUDE.md`, under
    "Local rules", below a link to this page.
+4. **cli-template follows the CLI rules, with a few exemptions by design.** They are listed, with the reason for
+   each, on the [New CLI](new-cli.md#the-template-repository-itself) page.
 
 ## Areas
 
@@ -33,11 +35,11 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Accounts](accounts.md) | `ACCT` | 11 | The explicit profile, reads across accounts, scope flags, linked identities |
 | [Permissions](permissions.md) | `PERM` | 21 | Levels, keys, defaults, hard limits, the write guard and its journal |
 | [Architecture](architecture.md) | `ARCH` | 17 | Layers, dependency direction, vendor types, what goes in which package |
-| [Lifecycle](lifecycle.md) | `LIFE` | 13 | Opening late, who closes, one-shot exits, long-running commands, the `serve` relay, resumable syncs |
+| [Lifecycle](lifecycle.md) | `LIFE` | 14 | Opening late, who closes, one-shot exits, long-running commands, the `serve` relay, resumable syncs, the run log |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
-| [Data model](data-model.md) | `DATA` | 7 | Core entities, entities and source records, `external_id`, field names, links and duplicates |
+| [Data model](data-model.md) | `DATA` | 9 | Core entities, entities and source records, `external_id`, field names, links and duplicates, files, calendar entries |
 | [Testing](testing.md) | `TEST` | 17 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity |
-| [Security](security.md) | `SECR` | 20 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting |
+| [Security](security.md) | `SECR` | 22 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting, OAuth sign-in, meeting secrets |
 | [Documents](docs.md) | `DOC` | 20 | User pages and developer pages, generated pages, current facts, changelog |
 | [Comparisons](comparisons.md) | `CMP` | 11 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
 | [Releases](releases.md) | `REL` | 15 | `bin/release`, the release lock, versions, release reports, trusted publishing |
@@ -76,8 +78,10 @@ Every rule has the same shape. A rule may add a sentence or a short list under i
 ```
 
 - **Enforced by** names checks in one of these forms:
-  - a check in this repository: a `cli-dev lint` or `cli-dev audit` rule (`flag-synonym`), a workflow (`ci.yml`, or
-    `ci.yml:ci` for one job), a `pnpm` script (`pnpm standards:check`) or a file by its path (`src/keyring.test.ts`);
+  - a check in this repository, cli-base: a `cli-dev lint` or `cli-dev audit` rule (`flag-synonym`), a workflow
+    (`ci.yml`, or `ci.yml:ci` for one job), a `pnpm` script (`pnpm standards:check`) or a file by its path
+    (`src/keyring.test.ts`). A bare path is always a cli-base file, even when you read this handbook from your own
+    CLI's `node_modules`;
   - a check in another repository, as `<repo>: <check>`, such as `cli-core: pnpm parity:check` or
     `cli-core: biome noRestrictedImports`. `<repo>` is the repository's name on GitHub: `cli-core`, `cli-testing`,
     `cli-docs`, `community`, `tg-cli`, `max-cli`, `cli-memo`, `drive-cli`, `zoom-cli` or `whatsapp-cli`. `<app>`

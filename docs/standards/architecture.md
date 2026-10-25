@@ -206,8 +206,8 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 
 ### WC-ARCH-21 · A CLI registers its provider in the store; an unknown provider's rows are skipped, never guessed
 
-Every run, a CLI writes its provider's entry — `{ name, kind, aliases, command }` — with `registerProvider` from
-`@wirecat/cli-core/store`. cli-core reads its built-in providers plus the stored entries when the store opens, so
+Every run, a CLI writes its provider's entry — `{ name, kind, aliases, command }` — with
+`store.accounts.registerProvider(entry)` on the store from `openStore()` (`@wirecat/cli-core/store`). cli-core reads its built-in providers plus the stored entries when the store opens, so
 every other CLI knows the new provider's kind without a cli-core release. A row whose provider no entry names is left
 out of search and listed under `skipped`, with the hint to run that CLI once.
 

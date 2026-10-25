@@ -123,10 +123,11 @@ the message store. The owner adds `--allow-any-file` to send one anyway.
 
 ### WC-SECR-10 · Private files are written atomically with private modes
 
-A file that holds a secret or private state is written with `writeSecurely`: atomically, mode `0600`, in a directory
+A file that holds a secret or private state, `config.json` included, is written with `writeSecurely`: atomically, mode `0600`, in a directory
 created with mode `0700`. `writeSecurely` takes text or bytes. A
 temporary credential file is `0600` and removed in `finally`.
-tg's `doctor` reports a wrong mode and prints the `chmod` fix without applying it.
+The shared messenger `doctor` reports a wrong mode, the config file and its folder included, and prints the `chmod`
+fix without applying it.
 
 - **Why:** another user on the same computer must not read the session.
 - **Enforced by:** `src/config.test.ts`.
@@ -269,22 +270,33 @@ not carried out. A name that matches is not proof of who someone is.
 - **Exceptions:** none. How such text is shown safely is
   [WC-SECR-11](#wc-secr-11--text-from-outside-is-made-safe-before-a-terminal-or-an-agent-sees-it); what an MCP server
   tells an agent about it is [WC-MCP-11](mcp.md#wc-mcp-11--the-server-tells-the-agent-that-message-text-is-data).
-- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.43.1. **Rulings:** none.
 
-## Planned — not built yet
+### WC-SECR-22 · Sign in with OAuth through cli-core's sign-in module
 
-From the Wave 3 requirements, approved by the owner on 2026-10-24 (sections 3.4 and 3.7). Each item moves into the
-rules in the pull request that builds it.
+`@wirecat/cli-core/oauth` authorizes on a loopback address on `127.0.0.1` or through a relay page, with `state`,
+PKCE S256, a timeout, cancel and a paste fallback; it exchanges, refreshes and revokes; and its token keeper takes a
+lock per keyring entry that every process shares, so two processes refreshing at once send one request. It keeps no
+store and runs no search. A CLI declares its provider and may replace any step.
 
-- **One sign-in module** in cli-core, `@wirecat/cli-core/oauth`, with no store and no search: authorize (a loopback
-  address on `127.0.0.1` or a relay page, `state`, PKCE S256, a timeout, cancel, a paste fallback), exchange, refresh
-  and revoke, and a token keeper with a lock per profile across processes. A CLI declares its provider and may
-  replace any step, but keeps the explicit profile, the lock, and tokens that are never printed (NEED-1734).
-- **Keys in one place:** one keyring naming scheme for new entries; today's entries of drive and zm are read as they
-  are, so no one signs in again.
-- **Meeting secrets never reach the store:** passcodes, PINs, passwords and access codes from a calendar's conference
-  data, and the query string of any join URL. Lines of a description that carry a passcode, password or PIN are
-  removed.
+- **Why:** a sign-in written once, with its lock and its checks, is one place to get right instead of one per CLI.
+- **Enforced by:** `cli-core: src/oauth/keeper.test.ts` · `cli-core: src/oauth/storage.test.ts`.
+- **Example:** new keyring entries are named `oauth:<provider>:<profile>`. drive's and zm's entries from before the
+  module are read and refreshed in the shape they were stored in, so nobody signs in again.
+- **Exceptions:** a CLI that replaces a step still keeps the explicit profile, the lock, and tokens that are never
+  printed. A CLI that signs in another way (a bot token, a session) does not use the module.
+- **Applies to:** every CLI that signs in with OAuth. **Since:** cli-base 0.57.1. **Rulings:** NEED-1734.
+
+### WC-SECR-23 · Meeting passcodes and the query of a join link never reach the store
+
+- **Why:** a passcode, PIN or join-link query lets anyone who reads the store join the meeting.
+- **Enforced by:** `cli-core: src/store/calendar.test.ts`.
+- **Example:** a calendar entry's description loses each line that carries a passcode, password or PIN, and every
+  link loses its query string, so `join_url` holds `https://zoom.us/j/123` without `?pwd=`. A meeting is matched by
+  its room (`join_key`, such as `zoom:<number>`), never by a link that carries the passcode.
+- **Exceptions:** a title that names a PIN or a password is kept: it is the meeting's name.
+- **Applies to:** cli-core and every CLI that stores meetings or calendar entries. **Since:** cli-base 0.57.1.
+  **Rulings:** none (Wave 3 requirements 3.4).
 
 ## Sources
 

@@ -88,7 +88,7 @@ describe("skillVersion", () => {
 })
 
 describe("skill effects", () => {
-  it("reads the machine to show, writes it to install, and never touches the service", () => {
+  it("reads the machine to show and to report status, writes it to install, and never touches the service", () => {
     const command = skillCommand(app, skill, () => {
       throw new Error("not run")
     })
@@ -96,6 +96,7 @@ describe("skill effects", () => {
     expect(effects).toEqual({
       show: { remote: "none", local: "read" },
       install: { remote: "none", local: "write" },
+      status: { remote: "none", local: "read" },
     })
   })
 })
@@ -129,6 +130,42 @@ describe("skill show", () => {
   })
 })
 
+describe("skill show --for", () => {
+  const install = (target: "claude" | "agents", content: string) => {
+    const path = skillPath(target, "tg-cli", env)
+    mkdirSync(join(path, ".."), { recursive: true })
+    writeFileSync(path, content)
+    return path
+  }
+
+  it("prints the copy installed for one agent, not this version's, so a host can show what an update changes", async () => {
+    const old = withVersion(SKILL.replace("Body.", "Old body."), "1.1.0")
+    const path = install("claude", old)
+
+    expect((await run(["skill", "show", "--for", "claude"])).stdout).toEqual([old.trimEnd()])
+    expect(JSON.parse((await run(["--json", "skill", "show", "--for", "claude"])).stdout.join(""))).toEqual({
+      name: "tg-cli",
+      target: "claude",
+      path,
+      installed: "1.1.0",
+      content: old.trimEnd(),
+    })
+  })
+
+  it("says how to install when the agent has no copy, and writes nothing", async () => {
+    install("claude", SKILL)
+    await expect(run(["skill", "show", "--for", "agents"])).rejects.toThrow("skill install --for agents")
+    expect(() => readFileSync(skillPath("agents", "tg-cli", env))).toThrow()
+  })
+
+  it("refuses a shipped skill by name, which is never installed", async () => {
+    const more = { "link-conversations": pathToFileURL(join(dir, "SKILL.md")) }
+    await expect(run(["skill", "show", "link-conversations", "--for", "claude"], more)).rejects.toThrow(
+      "only tg-cli is installed",
+    )
+  })
+})
+
 describe("skill install", () => {
   const claude = () => skillPath("claude", "tg-cli", env)
   const agents = () => skillPath("agents", "tg-cli", env)
@@ -159,6 +196,47 @@ describe("skill install", () => {
     const { stdout } = await run(["--json", "skill", "install", "--for", "claude"])
     expect(JSON.parse(stdout.join("")).written).toEqual([claude()])
     expect(() => readFileSync(agents())).toThrow()
+  })
+})
+
+describe("skill status", () => {
+  const write = (target: "claude" | "agents", content: string) => {
+    const path = skillPath(target, "tg-cli", env)
+    mkdirSync(join(path, ".."), { recursive: true })
+    writeFileSync(path, content)
+  }
+
+  it("reports each target as missing before anything is installed, and writes nothing", async () => {
+    const { stdout } = await run(["--json", "skill", "status"])
+    expect(JSON.parse(stdout.join(""))).toEqual({
+      name: "tg-cli",
+      version: "1.2.0",
+      targets: [
+        { target: "claude", path: skillPath("claude", "tg-cli", env), installed: null, state: "missing" },
+        { target: "agents", path: skillPath("agents", "tg-cli", env), installed: null, state: "missing" },
+      ],
+    })
+    expect(() => readFileSync(skillPath("claude", "tg-cli", env))).toThrow()
+  })
+
+  it("tells a current copy from an older one, and a copy with no version", async () => {
+    write("claude", withVersion(SKILL, "1.2.0"))
+    write("agents", withVersion(SKILL, "1.1.9"))
+    const states = async () =>
+      JSON.parse((await run(["--json", "skill", "status"])).stdout.join("")).targets.map(
+        ({ installed, state }: { installed: string | null; state: string }) => [installed, state],
+      )
+    expect(await states()).toEqual([
+      ["1.2.0", "current"],
+      ["1.1.9", "stale"],
+    ])
+
+    write("agents", SKILL)
+    write("claude", "---\nname: tg-cli\nversion: 1.1.0\n---\n")
+    expect(await states()).toEqual([
+      ["1.1.0", "stale"],
+      [null, "unversioned"],
+    ])
   })
 })
 

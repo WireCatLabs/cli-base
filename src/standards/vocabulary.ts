@@ -229,6 +229,7 @@ const collections: [string, string][] = [
   ["tags", "labels the owner puts on things"],
   ["searches", "the owner's saved searches"],
   ["copies", "tables kept aside by a repair"],
+  ["tables", "the tables of the local store, with their kind, row count and size"],
   ["attachments", "files of stored messages"],
   ["tasks", "what waits on the owner"],
   ["members", "people in a chat"],

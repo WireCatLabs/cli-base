@@ -101,7 +101,7 @@ on the [CI](ci.md) page.
   day as the previous one. Bump the library in every CLI that uses it on the day it ships.
 - **Exceptions:** none. The release lock (WC-REL-3) still keeps two releases of one package on one machine from
   running at once.
-- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.52.0. **Rulings:** NEED-1741.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.51.1. **Rulings:** NEED-1741.
 
 ### WC-REL-9 · Merged into [WC-REL-8](#wc-rel-8--any-package-may-release-at-any-time)
 
@@ -173,7 +173,9 @@ on the [CI](ci.md) page.
   section, through a pull request. Then, while npm does not have the version, `bin/release` runs
   `cli-dev changelog fold --land --version <x.y.z>`. It folds the pending section into the dated one, and merges any
   repeated `###` heading, through a pull request.
-- **Exceptions:** only the newest tag is compared; an older section that differs from its tag stays as it is.
+- **Exceptions:** only the newest tag is compared; an older section that differs from its tag stays as it is. A
+  newest tag whose changelog has no section of its own has nothing to restore: the command says so and changes
+  nothing.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-16 · The package ships only the files it names

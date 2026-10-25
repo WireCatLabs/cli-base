@@ -116,6 +116,31 @@ export const installSkill = (
   })
 }
 
+export type SkillState = "current" | "stale" | "missing" | "unversioned"
+
+export interface SkillTargetStatus {
+  target: SkillTarget
+  path: string
+  /** The `metadata.version` of the installed copy; `null` when there is none or it has no version. */
+  installed: string | null
+  state: SkillState
+}
+
+/** Each target's installed copy against this CLI's version; reads only, and an unreadable file is missing. */
+export const skillStatus = (app: SkillApp, env: Env = process.env): SkillTargetStatus[] =>
+  SKILL_TARGETS.map((target) => {
+    const path = skillPath(target, app.appName, env)
+    let content: string
+    try {
+      content = readFileSync(path, "utf8")
+    } catch {
+      return { target, path, installed: null, state: "missing" }
+    }
+    const installed = skillVersion(content)
+    if (installed === undefined) return { target, path, installed: null, state: "unversioned" }
+    return { target, path, installed, state: isNewer(app.version, installed) ? "stale" : "current" }
+  })
+
 /** What the command writes to and where home is, for this invocation — the host's own output resolution. */
 export type SkillEnvironment = (command: Command) => { renderer: Renderer; streams: Streams; env?: Env }
 
@@ -140,13 +165,37 @@ export const skillCommand = (
   const show = annotate(command.command("show"), { effects: { remote: "none", local: "read" } })
     .summary("print the tool's instructions for AI agents")
     .description(
-      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it`,
+      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it; --for prints the copy already there`,
     )
   if (named.length > 0) show.argument("[name]", `one of the skills shipped for a task: ${named.join(", ")}`)
+  show.addOption(
+    new Option("--for <agents>", "print the copy installed for these agents instead of this version's").choices(
+      SKILL_TARGETS,
+    ),
+  )
   show.action(function (this: Command, given: unknown) {
     // Without a declared argument Commander passes the options here, not a name.
     const name = typeof given === "string" ? given : undefined
-    const { renderer, streams } = environment(this)
+    const { renderer, streams, env } = environment(this)
+    const { for: target } = this.opts<{ for?: SkillTarget }>()
+    if (target !== undefined) {
+      if (name !== undefined)
+        throw new CliError("validation_error", `only ${app.appName} is installed; leave out "${name}" with --for`)
+      const path = skillPath(target, app.appName, env ?? process.env)
+      let content: string
+      try {
+        content = readFileSync(path, "utf8").trimEnd()
+      } catch {
+        throw new CliError(
+          "not_found",
+          `no skill is installed for ${target} at ${path} — \`${app.command} skill install --for ${target}\` writes it`,
+        )
+      }
+      if (machine(this))
+        renderer.result({ name: app.appName, target, path, installed: skillVersion(content) ?? null, content })
+      else streams.data(content)
+      return
+    }
     const source = name === undefined ? skill : more[name]
     if (!source) {
       throw new CliError("validation_error", `no skill "${name}" — there are: ${named.join(", ")}`)
@@ -177,6 +226,20 @@ export const skillCommand = (
       renderer.success(`${app.appName} ${app.version} skill installed: ${written.join(", ")}`)
     })
 
+  annotate(command.command("status"), {
+    effects: { remote: "none", local: "read" },
+    examples: [`${app.command} skill status`, `${app.command} skill status --json`],
+  })
+    .summary("whether the installed instructions for AI agents match this version")
+    .description(
+      `for each place \`${app.command} skill install\` writes to: the path, the version installed there, and whether it is current, stale, missing or unversioned`,
+    )
+    .action(function (this: Command) {
+      const { renderer, env } = environment(this)
+      const targets = skillStatus(app, env ?? process.env)
+      renderer.result({ name: app.appName, version: app.version, targets })
+    })
+
   return command
 }
 
@@ -195,15 +258,11 @@ export interface SkillHintRequest {
 const isAgent = (env: Env): boolean => Boolean(env.AI_AGENT || env.CLAUDECODE)
 
 const needsInstall = (app: SkillApp, env: Env): boolean => {
-  const installed = SKILL_TARGETS.flatMap((target) => {
-    try {
-      return [skillVersion(readFileSync(skillPath(target, app.appName, env), "utf8"))]
-    } catch {
-      return []
-    }
-  })
+  const states = skillStatus(app, env).map(({ state }) => state)
   // A location never installed to is a choice (`--for claude`); only no copy at all, or an old one, is worth a line.
-  return installed.length === 0 || installed.some((version) => version === undefined || isNewer(app.version, version))
+  return (
+    states.every((state) => state === "missing") || states.some((state) => state === "stale" || state === "unversioned")
+  )
 }
 
 /**

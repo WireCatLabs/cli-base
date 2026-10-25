@@ -66,7 +66,10 @@ or default term that does not run. `missing-command-effects` reports a command t
 an action of its own (`runnable` in the document) — and declares no `effects`. `--schemas <file>` names a JSON object of the CLI's own JSON Schemas by name; `key-casing` checks their
 keys, cli-base's envelope, error, log record and commands document schemas, and the document as printed. Its entry
 `log_attributes` (`logAttributesJsonSchema(allow)`) is the CLI's log allow-list instead: `log-attribute-key` fails a
-key that names message text, a token or a phone number.
+key that names message text, a token or a phone number. `missing-run-log` reports a tree with no `runs list`,
+`runs show`, global `--record` or `--no-record`. With `--cli` and a `runs list`, it also runs the CLI once with an
+unknown flag, with a new empty home and only `PATH` from the environment, and reports it when `runs list --json` then
+shows no failed run.
 
 `cli-dev audit` reads two or more commands documents (`--cli <bin>` or `--commands <file>`, repeated) and prints a
 scorecard: per CLI and rule, what it found, what the baseline holds, what is overridden, what is new and what was

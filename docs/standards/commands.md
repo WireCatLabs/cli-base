@@ -333,7 +333,7 @@ The references, each for its own part:
 - **Exceptions:** the CLI Agent Spec's rule that help goes to stderr when stdout is not a terminal is not adopted. The
   Agent Client Protocol links an editor to a coding agent; a WireCat CLI is a tool an agent calls, so it adds no
   requirement.
-- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.43.0. **Rulings:** none.
 
 ## Sources
 

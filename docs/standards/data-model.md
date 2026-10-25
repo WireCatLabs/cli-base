@@ -29,14 +29,10 @@ is rewritten only to follow it:
 
 - Drive files are `documents` rows under a folder account, with Google's facts in `front_matter` JSON and the folder
   tree in `metadata.catalog` (WC-DATA-3, WC-DATA-5).
-- Drive owners are linked by Google's user id under provider `google-drive`, mail senders by address under `email`,
-  and nothing joins the two (WC-DATA-6).
 - `events` rows made from Zoom meetings have no source record of their own besides the meeting (WC-DATA-2 holds:
   `meetings` is that record).
-- Local folders are accounts with provider `folder` (an Obsidian vault and a plain folder look the same), and Drive's
-  stand-in account uses it too (WC-DATA-3).
-- Contacts live in `identities`, with no address column: an address is only the `external_id` of provider `email`
-  (WC-DATA-6).
+- Drive's stand-in folder account still has provider `folder`; an Obsidian vault is `obsidian` and a plain folder is
+  `local` (WC-DATA-3).
 - `documents` keeps its source columns (`account_id`, `external_id`, `url`, `mime`, `front_matter`…) next to the
   entity's own fields (WC-DATA-2).
 - `meeting_participants` is unique on the meeting and the contact; its `external_id` is in no unique key (WC-DATA-3).
@@ -66,7 +62,8 @@ to its entity. One entity may combine source records from several sources and ac
 
 - **Why:** the same meeting in two calendars and in Zoom is one event to the owner; the same document in Drive and on
   disk is one document.
-- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts`, for the entity tables only; which table is which kind is review.
+- **Enforced by:** `cli-core: src/store/sqlite/schema.test.ts` (the entity tables only; which table is which kind is
+  review).
 - **Example:** a Google Calendar entry is a `calendar_entries` row with `event_id`; the Zoom recording of that meeting
   is a `meetings` row with the same `event_id`.
 - **Exceptions:** an entity the owner makes has no source record; a source record may wait unlinked until matching
@@ -131,9 +128,13 @@ time, and every change is logged. A rule never replaces an owner's link. When tw
 link is made and the pair goes to the owner's review list. Title or time overlap alone never links records.
 
 - **Why:** a wrong automatic merge is worse than a duplicate, and the owner must be able to see and undo it.
-- **Enforced by:** review only.
-- **Example:** `identity_links` and `identity_link_events` (contacts to persons); a Zoom meeting at 11:00 next to a
-  10–11 and an 11–12 event links to neither by time alone.
+- **Enforced by:** `cli-core: src/store/same-email-join.test.ts` · `cli-core: src/store/files-match.test.ts` ·
+  `cli-core: src/store/calendar.test.ts`.
+- **Example:** `identity_links` and `identity_link_events` link contacts to persons; `entity_link_events` logs each
+  change of the document a file belongs to and of the event a calendar entry or meeting belongs to, and
+  `link_reviews` is the owner's review list. A contact saved with an address joins the mail contact of that exact
+  address (method `same-email`, the address in `identities.email`), unless the owner separated the two. A Zoom
+  meeting at 11:00 next to a 10–11 and an 11–12 event links to neither by time alone.
 - **Exceptions:** none.
 - **Applies to:** cli-core. **Since:** cli-base 0.52.0. **Rulings:** NEED-1731.
 
@@ -146,32 +147,47 @@ link is made and the pair goes to the owner's review list. Title or time overlap
 - **Exceptions:** an entity with no live source record and no owner link may be removed by an explicit owner command.
 - **Applies to:** cli-core. **Since:** cli-base 0.52.0. **Rulings:** none.
 
+### WC-DATA-8 · A file joins a document by its place first, then by the content of exactly one document
+
+A `files` row is one item in one place: a file under a local folder or an Obsidian vault, or a Drive file or
+folder. It is the source record of a `document` (WC-DATA-2). The same account and `external_id` is the same file. A
+new file whose `content_hash` equals that of exactly one document joins it; with two or more such documents, the
+file gets a new document and the pair goes to the owner's review list; otherwise it gets a new document.
+
+- **Why:** a file copied or moved between folders stays the one document the owner tagged and linked, and a guess
+  between two documents is never made for the owner.
+- **Enforced by:** `cli-core: src/store/files-match.test.ts` · `cli-core: src/store/files-area.test.ts`.
+- **Example:** a note moved from one vault folder to another keeps its document and its tags, in whichever order
+  the two folders sync. The document shows the file the owner pinned, else the one changed most recently.
+- **Exceptions:** empty text never joins. A file renamed and edited in one sync is a new document; the old one is
+  kept, deleted.
+- **Applies to:** cli-core. **Since:** cli-base 0.57.1. **Rulings:** NEED-1731, NEED-1739.
+
+### WC-DATA-9 · A calendar entry joins an event by fixed rules, in order; a deleted one keeps its past
+
+A `calendar_entries` row is one calendar's copy of a single event, a series or one occurrence; it is the source
+record of an `event` or `event_series`. An entry joins, in this order: the entry with the same calendar and id; the
+same series slot (`original_starts_at`), so an occurrence and its exception are one entry; another calendar's copy
+with the same `ical_uid`; a Zoom meeting's event with the same room (`join_key`) at an overlapping time; else a new
+event. A calendar the owner owns syncs; one shared with them is listed and does not.
+
+- **Why:** the same meeting in two calendars and in Zoom is one event to the owner, and its history must survive a
+  deletion in Google.
+- **Enforced by:** `cli-core: src/store/calendar.test.ts`.
+- **Example:** a series deleted in Google keeps its past occurrences, marked with `source_deleted_at`; its future
+  occurrences are cancelled. Nothing is removed without an explicit owner command.
+- **Exceptions:** two Zoom events in one room at that time make no link and one review entry (WC-DATA-6). The
+  owner's unlink holds: no rule links the entry again.
+- **Applies to:** cli-core. **Since:** cli-base 0.57.1. **Rulings:** NEED-1731, NEED-1764.
+
 ## Planned — not built yet
 
 From the Wave 3 requirements, approved by the owner on 2026-10-24 (cli-private
 `plans/2026-10-24-open-cli-core-design.md`, sections 3.3–3.6). Each item moves into the rules in the pull request that
 builds it.
 
-- **Files.** A `files` table holds the source records of `documents`: one row per item in one place (a local file, a
-  Drive file or folder, later a Notion page). It has `account_id`, `external_id` (a local file's path relative to its
-  root), `kind` (`file`, `folder`, `page`), `name`, `path` and `path_folded` from the account root, `parent_id` to the
-  folder's own row, `document_id`, the file facts and the provider's times (NEED-1739).
-- **Matching a file to a document:** the same account and `external_id` is the same file; a `content_hash` equal to
-  the preferred file of exactly one live document joins that document; more than one candidate goes to the review
-  list; otherwise a new document. The document shows its most recently changed file, unless the owner pins one.
-- **Folder accounts by kind.** Provider `obsidian` for a vault (front matter, tags, aliases and wiki links kept as
-  Obsidian's own metadata), `local` for a plain folder; Drive files under a real `google-drive` account. memo's vault
-  files are documents; `notes` are only the owner's notes on entities (NEED-1738).
-- **Calendars.** `calendars` and `calendar_entries` (source records) feed `events` and `event_series` (entities).
-  Attendees are `calendar_entry_participants`; changes to tracked fields go to `calendar_entry_revisions` first. An
-  entry joins an event by, in order: the same Google id; the same series slot (`original_starts_at`); the same
-  `ical_uid` in another calendar; a Zoom event with the same `join_key` and an overlapping time; else a new event.
-- **History on delete.** An event deleted in Google keeps its past occurrences with `source_deleted_at`; future ones
-  become `cancelled`. Nothing is removed without an explicit owner command (NEED-1764).
-- **Contacts by address.** A lower-cased `identities.email` column; contacts with the same address link to one
-  person (method `email`) unless the owner said otherwise; two persons with one address go to the review list.
-- **One link log and one review list.** `entity_link_events` logs link changes for events and documents in the shape
-  of `identity_link_events`; one review list of ambiguous pairs for every entity, resolved by the owner.
+- **Two persons with one address go to the owner's review list.** Contacts with the same address already join one
+  person ([WC-DATA-6](#wc-data-6--every-link-records-how-it-was-made-the-owners-link-wins-ambiguity-makes-no-link)).
 - **A CLI's own SQLite file**, opened through a cli-core helper ([Store](store.md), NEED-1737).
 - **Later:** renaming `identities` to `contacts`; dropping `documents`' source columns once nothing reads them.
 
