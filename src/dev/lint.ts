@@ -407,10 +407,10 @@ const CHECKS: Record<string, Check> = {
   },
   "list-without-query": (document) =>
     handwrittenLeaves(document)
-      .filter((command) => command.name === "list" && command.output !== undefined && command.query === undefined)
+      .filter((command) => command.name === "list" && command.query === undefined)
       .map((command) => ({
         target: label(command),
-        message: `answers with ${command.output?.entity} but takes no query`,
+        message: "list declares no query",
       })),
   "query-example": (document) =>
     walk(document.commands).flatMap((command) =>

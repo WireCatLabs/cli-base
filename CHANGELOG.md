@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **Every handwritten list needs a query declaration.** The command lint checks lists that lack answer metadata too. Release this with the matching cli-core list-query changes and consumer updates.
+
 ## 0.52.0 — 25.10.2026
 
 ### Added

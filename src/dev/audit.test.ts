@@ -50,11 +50,17 @@ const options = (more: Partial<AuditOptions> = {}): AuditOptions => ({
 const notes =
   (summary: string, flags: [string, string][] = [], output?: string) =>
   (root: Command) => {
-    const command = root.command("notes").description("notes").command("list").description(summary)
+    const command = root
+      .command("notes")
+      .description("notes")
+      .command("list")
+      .description(summary)
+      .argument("[query...]", "field:value terms")
     for (const [flag, about] of flags) command.option(flag, about)
     annotate(command, {
       effects: READS,
       examples: [`${root.name()} notes list`],
+      query: { entity: "note", backend: "native", fields: [] },
       ...(output ? { output: { entity: output } } : {}),
     })
   }
@@ -180,10 +186,18 @@ describe("audit rules", () => {
       "a+b chats list: presence: only in a",
     ])
     const summaries = (summary: string) => (root: Command) => {
-      annotate(root.command("chats").description(summary).command("list").description(summary), {
-        effects: READS,
-        examples: [`${root.name()} chats list`],
-      })
+      annotate(
+        root
+          .command("chats")
+          .description(summary)
+          .command("list")
+          .description(summary)
+          .argument("[query...]", "field:value terms"),
+        {
+          effects: READS,
+          examples: [`${root.name()} chats list`],
+        },
+      )
     }
     expect(
       cross([inputOf(tool("a", summaries("one"))), inputOf(tool("c", summaries("two")))], "same-path-contract"),
