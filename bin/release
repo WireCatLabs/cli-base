@@ -2,7 +2,8 @@
 # Publishes the version in package.json and tags it. Run on a clean `main`. When npm already has that
 # version, or a higher one, it lands the next free version on `main` through a pull request, with the
 # CHANGELOG heading renamed to match, and publishes that. An Unreleased section left above the dated,
-# unpublished version is folded into it first, through a pull request too.
+# unpublished version is folded into it first, through a pull request too, after the last release's section is
+# put back to its tag.
 #
 #   bin/release           # publishes from GitHub Actions (.github/workflows/release.yml)
 #   bin/release --local   # publishes from this machine with the npm token from the keyring
@@ -47,6 +48,11 @@ version=$(node -p 'require("./package.json").version')
 published() {
   npm view "@wirecat/cli-base@$version" version --prefer-online >/dev/null 2>&1
 }
+# A pull request checked before the last release and merged after it put its entry in that release's section;
+# restore moves it to Unreleased, so the fold below brings it into this version.
+restored=$(pnpm build >/dev/null && node dist/dev/bin.js changelog restore --land)
+[ -z "$restored" ] || echo "$restored"
+rerun_if_changed "$@"
 # A session that merges after the version was dated, but before it was published, adds Unreleased above it.
 # --land folds on a fresh main through its own pull request, and folds again once if main moves under it.
 if ! published; then

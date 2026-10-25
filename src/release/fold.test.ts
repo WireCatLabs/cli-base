@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { foldUnreleased, mergeRepeatedHeadings } from "./fold.js"
+import { foldUnreleased, mergeRepeatedHeadings, restoreReleased } from "./fold.js"
 
 const changelog = `# Changelog
 
@@ -155,5 +155,37 @@ describe("mergeRepeatedHeadings", () => {
     expect(mergeRepeatedHeadings(mergeRepeatedHeadings(landed, "0.294.0") ?? "", "0.294.0")).toBeUndefined()
     expect(mergeRepeatedHeadings(landed, "0.295.0")).toBeUndefined()
     expect(mergeRepeatedHeadings(changelog, "0.9.0")).toBeUndefined()
+  })
+})
+
+describe("restoreReleased", () => {
+  const tagged = changelog
+  const late = "- **Late.** Merged after the tag,\n  on two lines."
+  const drifted = changelog.replace("- Older fix.", `- Older fix.\n${late}`)
+
+  it("puts the tagged section back and moves the entry the tag lacks to Unreleased", () => {
+    const restored = restoreReleased(drifted, tagged, "0.9.0")
+    expect(restored?.moved).toEqual(["- **Late.** Merged after the tag,"])
+    expect(restored?.text).toBe(changelog.replace("- Newer fix.", `- Newer fix.\n${late}`))
+    expect(restoreReleased(restored?.text ?? "", tagged, "0.9.0")).toBeUndefined()
+  })
+
+  it("opens the unreleased section, by the caller's title, when there is none", () => {
+    const noTop = drifted.replace(/## Unreleased[\s\S]*?(?=## 0\.9\.0)/, "")
+    const restored = restoreReleased(
+      noTop,
+      tagged.replace(/## Unreleased[\s\S]*?(?=## 0\.9\.0)/, ""),
+      "0.9.0",
+      "Не выпущено",
+    )
+    expect(restored?.text).toContain(`Intro.\n\n## Не выпущено\n\n### Fixed\n\n${late}\n\n## 0.9.0 — 14.10.2026`)
+  })
+
+  it("ignores trailing spaces and blank lines, as the changelog guard does", () => {
+    expect(restoreReleased(changelog.replace("- Older fix.", "- Older fix.  \n\n"), tagged, "0.9.0")).toBeUndefined()
+  })
+
+  it("refuses a tag whose changelog has no section for it", () => {
+    expect(() => restoreReleased(changelog, "# Changelog\n", "0.9.0")).toThrow(/tag's changelog has no/)
   })
 })

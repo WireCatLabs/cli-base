@@ -62,3 +62,61 @@ export const mergeRepeatedHeadings = (text: string, version: string): string | u
   if (!section.repeated) return undefined
   return [preamble, render(section.title, [section]), ...rest].join("\n")
 }
+
+const body = (block: string) =>
+  block
+    .split("\n")
+    .slice(1)
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .trim()
+
+const entries = (section: Section) =>
+  [...section.headings].flatMap(([heading, lines]) => {
+    const found: { heading: string; text: string }[] = []
+    for (const line of lines) {
+      if (!line.trim()) continue
+      const last = found.at(-1)
+      if (line.startsWith("- ") || !last) found.push({ heading, text: line })
+      else last.text += `\n${line}`
+    }
+    return found
+  })
+
+/**
+ * Puts the section of `version`, the newest tagged one, back to its text in that tag. A pull request
+ * checked before the version was dated or tagged and merged after it adds its entry there with no
+ * guard to see it, though that code ships only in the next version: each such entry moves to the unreleased
+ * section, after its entries under the same `###` heading. `undefined` when the section matches the tag the
+ * way the changelog guard compares them.
+ */
+export const restoreReleased = (
+  text: string,
+  tagText: string,
+  version: string,
+  unreleased = "Unreleased",
+): { text: string; moved: string[] } | undefined => {
+  const dated = (block: string) => block.startsWith(`## ${version} — `)
+  const tagged = tagText.split(/\n(?=## )/).find(dated)
+  if (!tagged) throw new Error(`the v${version} tag's changelog has no "## ${version} — " section`)
+  const blocks = text.split(/\n(?=## )/)
+  const index = blocks.findIndex(dated)
+  if (index < 0) throw new Error(`no "## ${version} — " section to compare with the v${version} tag`)
+  const current = blocks[index] ?? ""
+  if (current.split("\n")[0]?.trimEnd() === tagged.split("\n")[0]?.trimEnd() && body(current) === body(tagged))
+    return undefined
+
+  const shipped = new Set(entries(parseSection(tagged)).map((entry) => entry.text))
+  const missed = entries(parseSection(current)).filter((entry) => !shipped.has(entry.text))
+  blocks[index] = tagged.replace(/\n+$/, current.endsWith("\n") ? "\n" : "")
+  if (missed.length > 0) {
+    const headings = new Map<string, string[]>()
+    for (const { heading, text: entry } of missed) headings.set(heading, [...(headings.get(heading) ?? []), entry])
+    const moved: Section = { title: "", headings, repeated: false }
+    const top = blocks[1]
+    const open = top === `## ${unreleased}` || top?.startsWith(`## ${unreleased}\n`)
+    const section = render(`## ${unreleased}`, open && top ? [parseSection(top), moved] : [moved])
+    blocks.splice(1, open ? 1 : 0, section)
+  }
+  return { text: blocks.join("\n"), moved: missed.map((entry) => entry.text.split("\n")[0] ?? "") }
+}

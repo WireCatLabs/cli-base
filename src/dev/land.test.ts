@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { beforeEach, describe, expect, it } from "vitest"
-import { landFold, type Shell } from "./land.js"
+import { landChange, landFold, restoreChange, type Shell } from "./land.js"
 
 const dated = "# Changelog\n\n## 0.9.0 — 14.10.2026\n\n### Fixed\n\n- Older fix.\n"
 const stacked = dated.replace("## 0.9.0", "## Unreleased\n\n### Fixed\n\n- Newer fix.\n\n## 0.9.0")
@@ -101,5 +101,21 @@ describe("landFold", () => {
     const shell = fakeShell((c) => (c.includes("--jq length") ? { out: "1" } : undefined))
     expect(land(shell)).toBe(`merged repeated headings in 0.9.0 (${PR})`)
     expect(readFileSync(file, "utf8")).toBe(dated.replace("- Older fix.", "- Older fix.\n- Oldest fix."))
+  })
+
+  it("lands a restore that names the entries it moved", () => {
+    writeFileSync(file, `${dated}- Late fix.\n`)
+    const shell = fakeShell((c) => (c.includes("--jq length") ? { out: "1" } : undefined))
+    const landed = landChange({
+      file,
+      branch: "release/restore-0.9.0",
+      change: (text) => restoreChange(text, dated, "0.9.0", "Unreleased"),
+      done: "nothing",
+      shell,
+      log: (t) => logs.push(t),
+    })
+    expect(landed).toBe(`restored 0.9.0's notes to its tag; moved to Unreleased:\n- Late fix. (${PR})`)
+    expect(readFileSync(file, "utf8")).toContain("## Unreleased\n\n### Fixed\n\n- Late fix.\n\n## 0.9.0")
+    expect(calls.find((c) => c.startsWith("gh pr create"))).toContain("1 entry that missed 0.9.0 moved to Unreleased")
   })
 })
