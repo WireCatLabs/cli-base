@@ -17,7 +17,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `hermes config set`, keeping every folder already listed. When Hermes is not on PATH or refuses, it copies the file
   into `$HERMES_HOME/skills/<app>/` and says why. `--for all` stays Claude Code and `~/.agents/skills`: it is the
   default, and a bare `skill install` must not change another program's settings. `skill status --json` gains a last
-  target, `hermes`, with `via`; a host that matches targets by name and ignores unknown ones needs no change.
+  target, `hermes`, with `via`; a host that matches targets by name and ignores unknown ones needs no change. A test
+  that asserts exactly two targets needs the third. `skill status` runs `hermes config get` only when `HERMES_HOME`
+  (else `~/.hermes`) exists, so a test with a temporary `HOME` starts no Hermes unless its environment sets
+  `HERMES_HOME`.
+
 ## 0.58.0 — 25.10.2026
 
 ### Changed — may break callers

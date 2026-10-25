@@ -5,7 +5,7 @@
  * Nothing here prints by itself. The command writes through the renderer and streams the host hands
  * it, and the hint is a string the host puts on stderr — never stdout, which an agent parses.
  */
-import { mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { Command, Option } from "commander"
@@ -276,7 +276,8 @@ export interface HermesSkillStatus extends Omit<SkillTargetStatus, "target"> {
 
 /**
  * The copy Hermes reads: its own `skills/<app>` first, as Hermes scans it first, else the `~/.agents/skills` one when
- * `skills.external_dirs` lists that folder. Asks Hermes through `config get`, so a host calls it only when asked.
+ * `skills.external_dirs` lists that folder. Asks Hermes through `config get` when its home exists, so a host calls it
+ * only when asked.
  */
 export const hermesSkillStatus = (
   app: SkillApp,
@@ -285,7 +286,8 @@ export const hermesSkillStatus = (
   const own = copyStatus(app, hermesCopyPath(app.appName, env))
   if (own) return { target: "hermes", ...own, via: "copy" }
   const shared = skillPath("agents", app.appName, env)
-  const dirs = externalDirs(env, run)
+  // Asked with no home of its own, Hermes creates one: a status that only reads never starts it there.
+  const dirs = existsSync(hermesHome(env)) ? externalDirs(env, run) : undefined
   const read = dirs !== undefined && lists(dirs, dirname(dirname(shared)), env) ? copyStatus(app, shared) : undefined
   if (read) return { target: "hermes", ...read, via: "external_dirs" }
   return { target: "hermes", path: shared, installed: null, state: "missing", via: null }

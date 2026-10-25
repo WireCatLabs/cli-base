@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -245,6 +245,7 @@ describe.skipIf(process.platform === "win32")("skill install --for hermes", () =
   const listed = () => JSON.parse(readFileSync(join(dir, "dirs.json"), "utf8"))
   // Answers `config get` from dirs.json and writes `config set` to it, with shell builtins alone: PATH is this folder.
   const stubHermes = ({ dirs, failSet = false }: { dirs?: string; failSet?: boolean } = {}) => {
+    mkdirSync(hermesDir(), { recursive: true })
     if (dirs !== undefined) writeFileSync(join(dir, "dirs.json"), dirs)
     const stub = join(dir, "bin", "hermes")
     writeFileSync(
@@ -343,6 +344,15 @@ describe.skipIf(process.platform === "win32")("skill install --for hermes", () =
     stubHermes({ dirs: "[]" })
     await run(["skill", "install"])
     skillHint({ app, argv: ["chats"], env: { ...env, CLAUDECODE: "1" }, statePath: join(dir, "state.json") })
+    expect(calls()).toEqual([])
+  })
+
+  it("never starts Hermes for a status where Hermes has no home, as asking would create one", async () => {
+    stubHermes({ dirs: "[]" })
+    await install()
+    rmSync(hermesDir(), { recursive: true })
+    rmSync(join(dir, "calls"))
+    expect(hermesSkillStatus(app, { env })).toMatchObject({ state: "missing", via: null })
     expect(calls()).toEqual([])
   })
 
