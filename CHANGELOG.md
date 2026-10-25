@@ -21,6 +21,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `runs` gets the finding on its next cli-base bump: register cli-core's `runsCommand(app)`, or baseline the
   finding with `cli-dev lint --write-baseline` until it does. The weekly cross-CLI audit lists it too.
 
+- **`<cli> skill status` says whether the installed SKILL.md is current, for each agent.** It reads
+  `~/.claude/skills/<appName>/SKILL.md` and `~/.agents/skills/<appName>/SKILL.md` and prints, per place, the absolute
+  path, the version installed there (`null` when there is none) and a `state`: `current`, `stale` (older than the
+  CLI), `missing` or `unversioned`. It writes nothing. A desktop app or a setup script could tell this only by reading
+  the files itself. `skillStatus(app, env)` returns the same list, and the daily skill hint now decides from it, with
+  the same outcome as before. A CLI on cli-core gets the command when cli-core picks up this release.
+
 ## 0.55.1 â€” 25.10.2026
 
 ### Fixed
