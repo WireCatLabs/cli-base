@@ -269,7 +269,6 @@ export const installHermesSkill = (
 }
 
 export interface HermesSkillStatus extends Omit<SkillTargetStatus, "target"> {
-  target: "hermes"
   /** How Hermes reads the copy reported; `null` when it reads none. */
   via: HermesRoute | null
 }
@@ -284,13 +283,13 @@ export const hermesSkillStatus = (
   { env = process.env, run = runProgram }: { env?: Env; run?: RunProgram } = {},
 ): HermesSkillStatus => {
   const own = copyStatus(app, hermesCopyPath(app.appName, env))
-  if (own) return { target: "hermes", ...own, via: "copy" }
+  if (own) return { ...own, via: "copy" }
   const shared = skillPath("agents", app.appName, env)
   // Asked with no home of its own, Hermes creates one: a status that only reads never starts it there.
   const dirs = existsSync(hermesHome(env)) ? externalDirs(env, run) : undefined
   const read = dirs !== undefined && lists(dirs, dirname(dirname(shared)), env) ? copyStatus(app, shared) : undefined
-  if (read) return { target: "hermes", ...read, via: "external_dirs" }
-  return { target: "hermes", path: shared, installed: null, state: "missing", via: null }
+  if (read) return { ...read, via: "external_dirs" }
+  return { path: shared, installed: null, state: "missing", via: null }
 }
 
 /** What the command writes to and where home is, for this invocation — the host's own output resolution. */
@@ -397,12 +396,15 @@ export const skillCommand = (
   })
     .summary("whether the installed instructions for AI agents match this version")
     .description(
-      `for each place \`${app.command} skill install\` writes to, and the copy Hermes reads: the path, the version installed there, and whether it is current, stale, missing or unversioned`,
+      `for each place \`${app.command} skill install\` writes to, and for the copy Hermes reads: the path, the version installed there, and whether it is current, stale, missing or unversioned`,
     )
     .action(function (this: Command) {
       const { renderer, env } = environment(this)
-      const targets = [...skillStatus(app, env ?? process.env), hermesSkillStatus(app, env ? { env } : {})]
-      renderer.result({ name: app.appName, version: app.version, targets })
+      // Hermes is its own key, not a third target: it is no folder `skill install` writes, and a caller that
+      // expects the two targets keeps working.
+      const targets = skillStatus(app, env ?? process.env)
+      const hermes = hermesSkillStatus(app, env ? { env } : {})
+      renderer.result({ name: app.appName, version: app.version, targets, hermes })
     })
 
   return command

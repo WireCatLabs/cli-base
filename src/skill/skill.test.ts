@@ -362,7 +362,6 @@ describe.skipIf(process.platform === "win32")("skill install --for hermes", () =
     stubHermes({ dirs: "[]" })
     await install()
     expect(hermesSkillStatus(app, { env })).toEqual({
-      target: "hermes",
       path: skillPath("agents", "tg-cli", env),
       installed: "1.2.0",
       state: "current",
@@ -390,8 +389,8 @@ describe("skill status", () => {
       targets: [
         { target: "claude", path: skillPath("claude", "tg-cli", env), installed: null, state: "missing" },
         { target: "agents", path: skillPath("agents", "tg-cli", env), installed: null, state: "missing" },
-        { target: "hermes", path: skillPath("agents", "tg-cli", env), installed: null, state: "missing", via: null },
       ],
+      hermes: { path: skillPath("agents", "tg-cli", env), installed: null, state: "missing", via: null },
     })
     expect(() => readFileSync(skillPath("claude", "tg-cli", env))).toThrow()
   })
@@ -406,7 +405,6 @@ describe("skill status", () => {
     expect(await states()).toEqual([
       ["1.2.0", "current"],
       ["1.1.9", "stale"],
-      [null, "missing"],
     ])
 
     write("agents", SKILL)
@@ -414,7 +412,6 @@ describe("skill status", () => {
     expect(await states()).toEqual([
       ["1.1.0", "stale"],
       [null, "unversioned"],
-      [null, "missing"],
     ])
   })
 })
