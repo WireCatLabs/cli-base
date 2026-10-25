@@ -9,8 +9,8 @@ It ships in the `@wirecat/cli-base` package. A CLI that depends on cli-base has 
 
 ## How to use this for a new CLI
 
-Start with the [New CLI](new-cli.md) checklist. Each step names the check that proves it and the area page whose
-rules it keeps. A new CLI is ready for its first release when every check under "Done when" passes.
+Start with the [New CLI](new-cli.md) page: `npx @wirecat/cli-template new` makes the repository, and the page lists
+the four steps that need a person. A new CLI is ready for its first release when every check under "Done when" passes.
 
 ## Which rule wins
 
@@ -44,7 +44,8 @@ rules it keeps. A new CLI is ready for its first release when every check under 
 | [CI](ci.md) | `CI` | 12 | Hooks, the pull request budget, full validation, monthly runs |
 | [Time](time.md) | `TIME` | 6 | UTC in the store and in answers, the zone at input and display edges, date-only filters, tests in another zone |
 | [Style](style.md) | `STYLE` | 10 | Comments, TypeScript habits, commit messages |
-| [New CLI](new-cli.md) | — | — | The checklist for starting a new CLI |
+| [New CLI](new-cli.md) | — | — | Starting a new CLI from the template: the command, the four manual steps, the checks |
+| [Kit surface](kit-surface.md) | — | — | The cli-base and cli-core exports the template is built on, and how a change to one reaches you |
 
 Each count leaves out the ids that moved or merged (see "How ids work").
 

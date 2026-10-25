@@ -10,6 +10,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **A Kit surface page in the standards** ([Kit surface](docs/standards/kit-surface.md)) lists the cli-base and cli-core exports that `@wirecat/cli-template` is built on. A change that makes a CLI change its code for one of them ships with a migration note here and with the template already updated, so `npx @wirecat/cli-template upgrade` brings it. Nothing changes in code.
+- **The New CLI page starts with `npx @wirecat/cli-template new`** ([New CLI](docs/standards/new-cli.md)). It gives the command with every flag, the four steps that still need a person, and the same "Done when" checks. A CLI started by hand still passes the same checks.
+
 ### Changed â€” may break callers
 
 - **The release lock is one per package, not one per machine** (`WC-REL-3`, [Releases](docs/standards/releases.md)). Two releases of the same package still never run at once on one machine, from any checkout or worktree; releases of different packages now run side by side. The lock is `leemour-release-<package>.lock`, named from `package.json`, so a `package.json` without a name refuses the release. A CLI picks this up by re-running community's `adopt-standards.py --only release-lock`; until then it keeps the old shared lock.
