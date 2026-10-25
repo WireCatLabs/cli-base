@@ -66,8 +66,8 @@ cli-testing, cli-docs, plus community itself.
 
 - **Why:** a pull request that lowers coverage or breaks a contract must fail before it merges; once on `main` it
   blocks every other branch and the next release. It costs 2–3 minutes per pull request in the CLIs (measured: wa
-  2.9, tg 2.2, max 3.0) and about 8 in cli-core, where `test:coverage` alone takes 5m46s; splitting that job into
-  shards would need a new `node-ci.yml` input.
+  2.9, tg 2.2, max 3.0) and about 5 in cli-core, where `test:coverage` alone takes about 4; `node-ci.yml`'s
+  `test-shards` input splits it across runners.
 - **Enforced by:** `pr.yml:validation`.
 - **Example:** `pr.yml` runs on `pull_request` and calls the repository's own `ci.yml`, the same full validation as
   `main` (WC-CI-7): lint, typecheck, `test:coverage` with the coverage floor, build, the contracts, the test matrix,

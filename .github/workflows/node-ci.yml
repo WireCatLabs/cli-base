@@ -68,6 +68,12 @@ on:
         description: Shell lines the platforms job runs after the build, such as commands that need no login
         type: string
         default: ""
+      test-shards:
+        description: >-
+          2 to 8 runs test:coverage on that many runners instead of in `check`, and the `coverage` job merges them and
+          enforces the coverage floor; not with cli, whose test:matrix:check reads the unsharded run
+        type: number
+        default: 1
 
 permissions:
   contents: read
@@ -86,10 +92,15 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: pnpm
+      - if: inputs.cli && inputs.test-shards > 1
+        run: |
+          echo "::error::test-shards needs cli: false — test:matrix:check reads the argv log of an unsharded test:coverage"
+          exit 1
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test:coverage
+      - if: inputs.test-shards <= 1
+        run: pnpm test:coverage
         env:
           TZ: Asia/Vladivostok
       - run: pnpm build
@@ -163,6 +174,79 @@ jobs:
           path: ./*.tgz
           if-no-files-found: error
           retention-days: 7
+
+  test:
+    if: inputs.test-shards > 1
+    name: test (${{ matrix.shard }}/${{ inputs.test-shards }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Expressions have no range(); the index is the shard count, and 0 and 1 stay valid for the skipped job.
+        shard: ${{ fromJSON('[[1],[1],[1,2],[1,2,3],[1,2,3,4],[1,2,3,4,5],[1,2,3,4,5,6],[1,2,3,4,5,6,7],[1,2,3,4,5,6,7,8]]')[inputs.test-shards] }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The floor is for all shards together, checked in `coverage`: one shard alone covers a fraction of the code
+      # and fails it, silently under the blob reporter (measured with Vitest 5.0, 2026-10-26).
+      - name: test:coverage, one shard
+        env:
+          TZ: Asia/Vladivostok
+          SHARD: ${{ matrix.shard }}/${{ inputs.test-shards }}
+        run: >-
+          pnpm test:coverage --shard="$SHARD" --reporter=blob --coverage.reporter=text-summary
+          --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0
+          --coverage.thresholds.branches=0 --coverage.thresholds.perFile=false
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: node-ci-test-shard-${{ matrix.shard }}
+          path: .vitest/blob
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  coverage:
+    needs: test
+    # Not skipped when a shard fails: a skipped required check counts as passed.
+    if: ${{ !cancelled() && inputs.test-shards > 1 }}
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.test.result != 'success'
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          echo "::error::a test shard did not pass: $RESULT"
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: node-ci-test-shard-*
+          path: .vitest/blob
+          merge-multiple: true
+      # A missing shard would merge into a smaller, still passing report.
+      - env:
+          SHARDS: ${{ inputs.test-shards }}
+        run: |
+          found=$(find .vitest/blob -type f | wc -l)
+          [ "$found" -eq "$SHARDS" ] || { echo "::error::$found blob reports, expected $SHARDS"; exit 1; }
+      - run: pnpm test:coverage --merge-reports
+        env:
+          TZ: Asia/Vladivostok
 
   bun:
     if: inputs.bun
