@@ -37,9 +37,9 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Architecture](architecture.md) | `ARCH` | 17 | Layers, dependency direction, vendor types, what goes in which package |
 | [Lifecycle](lifecycle.md) | `LIFE` | 14 | Opening late, who closes, one-shot exits, long-running commands, the `serve` relay, resumable syncs, the run log |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
-| [Data model](data-model.md) | `DATA` | 7 | Core entities, entities and source records, `external_id`, field names, links and duplicates |
+| [Data model](data-model.md) | `DATA` | 9 | Core entities, entities and source records, `external_id`, field names, links and duplicates, files, calendar entries |
 | [Testing](testing.md) | `TEST` | 17 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity |
-| [Security](security.md) | `SECR` | 20 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting |
+| [Security](security.md) | `SECR` | 22 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting, OAuth sign-in, meeting secrets |
 | [Documents](docs.md) | `DOC` | 20 | User pages and developer pages, generated pages, current facts, changelog |
 | [Comparisons](comparisons.md) | `CMP` | 11 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
 | [Releases](releases.md) | `REL` | 15 | `bin/release`, the release lock, versions, release reports, trusted publishing |
