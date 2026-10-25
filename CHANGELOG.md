@@ -8,6 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`saveConfigFile` writes `config.json` as `0600`, owner-only, instead of `0644`.** A config names the owner's
+  accounts, profiles and paths, and cli-core already created the first one as `0600` — so the first `config set`
+  turned a private file into one every user on the computer could read. A save now replaces the file with an
+  owner-only one, whatever mode it had. A folder that already exists keeps its mode; a CLI's `doctor` reports one
+  others can enter. Watch for: anything that reads the config as a different user — a system-wide service, a
+  container running under another uid, a second account sharing the file — can no longer read it after the next
+  save. Run it as the owner, or give it its own config. Windows is unchanged: Node sets only the read-only bit there.
+
 ## 0.56.0 — 25.10.2026
 
 ### Added
