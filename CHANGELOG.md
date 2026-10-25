@@ -38,7 +38,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `store tables list` uses it to answer which tables the shared archive holds, so a desktop app or an agent can see
   them without opening the file. `copies` keeps its narrower meaning, the tables a repair kept aside.
 
-
 ## 0.55.1 â€” 25.10.2026
 
 ### Fixed
