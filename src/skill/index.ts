@@ -116,6 +116,31 @@ export const installSkill = (
   })
 }
 
+export type SkillState = "current" | "stale" | "missing" | "unversioned"
+
+export interface SkillTargetStatus {
+  target: SkillTarget
+  path: string
+  /** The `metadata.version` of the installed copy; `null` when there is none or it has no version. */
+  installed: string | null
+  state: SkillState
+}
+
+/** Each target's installed copy against this CLI's version; reads only, and an unreadable file is missing. */
+export const skillStatus = (app: SkillApp, env: Env = process.env): SkillTargetStatus[] =>
+  SKILL_TARGETS.map((target) => {
+    const path = skillPath(target, app.appName, env)
+    let content: string
+    try {
+      content = readFileSync(path, "utf8")
+    } catch {
+      return { target, path, installed: null, state: "missing" }
+    }
+    const installed = skillVersion(content)
+    if (installed === undefined) return { target, path, installed: null, state: "unversioned" }
+    return { target, path, installed, state: isNewer(app.version, installed) ? "stale" : "current" }
+  })
+
 /** What the command writes to and where home is, for this invocation — the host's own output resolution. */
 export type SkillEnvironment = (command: Command) => { renderer: Renderer; streams: Streams; env?: Env }
 
@@ -177,6 +202,17 @@ export const skillCommand = (
       renderer.success(`${app.appName} ${app.version} skill installed: ${written.join(", ")}`)
     })
 
+  annotate(command.command("status"), { effects: { remote: "none", local: "read" } })
+    .summary("whether the installed instructions for AI agents match this version")
+    .description(
+      `for each place \`${app.command} skill install\` writes to: the path, the version installed there, and whether it is current, stale, missing or unversioned`,
+    )
+    .action(function (this: Command) {
+      const { renderer, env } = environment(this)
+      const targets = skillStatus(app, env ?? process.env)
+      renderer.result({ name: app.appName, version: app.version, targets })
+    })
+
   return command
 }
 
@@ -195,15 +231,11 @@ export interface SkillHintRequest {
 const isAgent = (env: Env): boolean => Boolean(env.AI_AGENT || env.CLAUDECODE)
 
 const needsInstall = (app: SkillApp, env: Env): boolean => {
-  const installed = SKILL_TARGETS.flatMap((target) => {
-    try {
-      return [skillVersion(readFileSync(skillPath(target, app.appName, env), "utf8"))]
-    } catch {
-      return []
-    }
-  })
+  const states = skillStatus(app, env).map(({ state }) => state)
   // A location never installed to is a choice (`--for claude`); only no copy at all, or an old one, is worth a line.
-  return installed.length === 0 || installed.some((version) => version === undefined || isNewer(app.version, version))
+  return (
+    states.every((state) => state === "missing") || states.some((state) => state === "stale" || state === "unversioned")
+  )
 }
 
 /**

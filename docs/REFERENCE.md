@@ -222,7 +222,7 @@ holding somebody's credentials must not change itself unasked.
 environment)` is `<cli> skill show` — SKILL.md on stdout, even into a pipe, or `{ name, content }`
 with `--json` — and `<cli> skill install [--for claude|agents|all]`, which writes it to
 `~/.claude/skills/<appName>/` and `~/.agents/skills/<appName>/` with the CLI's version as
-`metadata.version` in the frontmatter, refusing a file whose `name` is not `<appName>`. `environment` is the host's own renderer, streams and `env` for that invocation.
+`metadata.version` in the frontmatter, refusing a file whose `name` is not `<appName>`. `<cli> skill status` reads both places and changes nothing: `{ name, version, targets }`, each target `{ target, path, installed, state }` with `state` one of `current`, `stale`, `missing` or `unversioned`; `skillStatus(app, env)` is the same list for a host that shows it itself. `environment` is the host's own renderer, streams and `env` for that invocation.
 `skillHint` is one line, or `undefined`, for an agent (`AI_AGENT` or `CLAUDECODE` set) with no copy
 installed or an older one, at most once a day, through the same state file as `updateNotice`; the
 host prints it on stderr. `skillResource` is what an MCP server registers to serve the file as

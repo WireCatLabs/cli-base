@@ -180,7 +180,8 @@ operation and never falls back to `any`. 64-bit integers stay exact.
 
 ### Built for agents and for keeping installs current
 
-- **`skill show` and `skill install`** give a coding agent the CLI's own guide, versioned with the CLI.
+- **`skill show` and `skill install`** give a coding agent the CLI's own guide, versioned with the CLI; `skill status`
+  says whether each installed copy matches it.
 - **MCP setup** for Codex and Claude Code, with a read-only handshake probe.
 - **Shell completion** from the command tree, answered from local data only — a shell asks on every Tab.
 - **Update checks that never update unasked.** Which package manager installed the CLI, the command that updates it,

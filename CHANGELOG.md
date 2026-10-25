@@ -21,6 +21,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `runs` gets the finding on its next cli-base bump: register cli-core's `runsCommand(app)`, or baseline the
   finding with `cli-dev lint --write-baseline` until it does. The weekly cross-CLI audit lists it too.
 
+- **`<cli> skill status` says whether the installed SKILL.md is current, for each agent.** It reads
+  `~/.claude/skills/<appName>/SKILL.md` and `~/.agents/skills/<appName>/SKILL.md` and prints, per place, the absolute
+  path, the version installed there (`null` when there is none) and a `state`: `current`, `stale` (older than the
+  CLI), `missing` or `unversioned`. It writes nothing. A desktop app or a setup script could tell this only by reading
+  the files itself. `skillStatus(app, env)` returns the same list, and the daily skill hint now decides from it, with
+  the same outcome as before. A CLI on cli-core gets the command when cli-core picks up this release.
+
 ## 0.55.1 â€” 25.10.2026
 
 ### Fixed
@@ -142,7 +149,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 ### Fixed
 
 - **Denied commands remain discoverable.** The MCP and permission standards require current availability metadata instead of hiding denied commands. CLI help retains the same capabilities; execution still enforces the permission. This records the owner's discovery rule for every CLI.
-
 
 - **`sync` covers a two-way mirror.** The vocabulary's meaning of `sync` now says a mirror syncs both ways, so drive's `mirrors sync`, which also writes changes back to Google, uses the verb as defined (owner, 2026-10-24). Nothing changes for one-way syncs.
 
@@ -627,7 +633,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   older `tg` than the one installed â€” while the update notice named the newest. `updateCommand("pnpm", â€¦)` now adds
   `--config.minimumReleaseAgeExclude=<scope>/*` for the package's own scope; every other dependency keeps pnpm's wait.
 
-
 ## 0.40.1 â€” 17.10.2026
 
 ### Added
@@ -931,7 +936,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`Streams.drain(signal?)`.** A caller that wrote a lot of output can wait until stdout and stderr have flushed, or
   give up when the signal aborts. Optional on `Streams`; `processStreams` implements it.
 
-
 - **JSON lines with an end line:** `jsonlOf(envelope)` prints `{"type":"item","data":â€¦}` per item, then
   `{"type":"end","complete":â€¦,"issues"?:â€¦,"page":â€¦}`, so a reader tells a finished stream from a cut one;
   `jsonlItemSchema` and `jsonlEndSchema` describe them, and `key-casing` checks both.
@@ -1218,7 +1222,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 ### Fixed
 
 - Package references, documentation and fixtures use the WireCat namespace throughout.
-
 
 - The owner-migration helper covers meetings, testing, Zoom and the shared organization repositories, so their links and package names migrate with the original CLIs.
 
