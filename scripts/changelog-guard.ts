@@ -6,6 +6,9 @@
 // 2. A section whose version is already tagged `v<version>` is not edited. A dated heading alone does
 //    not mean released: a release is dated in a pull request, merged, and tagged only after npm has it,
 //    and that window still takes changelog fixes. An incorrect historical section may only be restored to its tag.
+//    Only a title with the `release` or `changelog` scope adds lines to a dated section the base already had: a
+//    rebase onto a just-dated release moves a feature's new entries there silently, and bin/release folds Unreleased
+//    into the dated version only if it still publishes this commit.
 // 3. No `###` heading repeats inside a section the pull request leaves untagged: an entry belongs under the
 //    section's existing heading. Only a repeat the base did not have fails, so an old one does not block others.
 import { execFileSync } from "node:child_process"
@@ -13,6 +16,7 @@ import { execFileSync } from "node:child_process"
 type Sections = Map<string, string[]>
 
 const BREAKING_TITLE = /^\w+(\([^)]*\))?!:/
+const CHANGELOG_TITLE = /^\w+\((release|changelog)\)!?:/
 const UNRELEASED = /^## (Unreleased|Не выпущено)\s*$/i
 const DATED = /^## v?(\d+\.\d+\.\d+\S*) [—–-] \S/
 
@@ -77,6 +81,17 @@ export function checkChangelog(input: {
           : [...sections(taggedText)].find(([name]) => DATED.exec(name)?.[1] === version)
       if (!original || head.get(original[0])?.join("\n").trim() !== original[1].join("\n").trim())
         return `CHANGELOG.md: "${heading}" is already released (tag v${version}); put the change under the unreleased heading`
+    }
+  }
+
+  if (!CHANGELOG_TITLE.test(input.title)) {
+    for (const [heading, body] of head) {
+      const version = DATED.exec(heading)?.[1]
+      const old = base.get(heading)
+      if (!version || tagged.has(version) || !old) continue
+      const kept = new Set(old)
+      if (body.some((line) => line.trim() !== "" && !kept.has(line)))
+        return `CHANGELOG.md: "${heading}" is dated for release; put the entry under the unreleased heading, and the release folds it in (only a \`release\` or \`changelog\` scope adds to a dated section)`
     }
   }
 

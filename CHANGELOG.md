@@ -10,6 +10,16 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ## Unreleased
 
+### Changed — may break callers
+
+- **The changelog guard fails a pull request that adds a line to a dated section with no tag yet**
+  ([a released section is frozen](docs/standards/docs.md#wc-doc-20--a-released-section-is-frozen-and-a-new-entry-goes-under-an-existing-heading)),
+  unless its title has the `release` or `changelog` scope. Between the release pull request and the tag, a rebase onto
+  main puts a branch's new entries under the dated heading with no conflict, and when the release already runs
+  without that branch the note ships under the wrong version. Put the entry under the unreleased heading:
+  `bin/release` folds it into the dated version if it still publishes that commit (`chore(release): fold …`). A
+  repository picks this up when it moves its `changelog-guard.yml` pin to this version.
+
 ### Fixed
 
 - **The kit surface page links the two cli-template jobs** (cli-base's `template.yml`, cli-core's `parity.yml`), and
