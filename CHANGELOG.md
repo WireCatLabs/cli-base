@@ -13,6 +13,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 ### Added
 
 - **A rule for the provider registry** (`WC-ARCH-21`, [Architecture](docs/standards/architecture.md)): a CLI registers its provider in the store on every run, and a row whose provider no one registered is skipped, never searched as messages. It matches cli-core's stored registry. The Data model, Store and Security pages also list what the approved Wave 3 design adds and is not built yet: files, calendars, contacts by address, one link log and review list, a CLI's own SQLite file, and the sign-in module. The Data model page now names the attendee table `calendar_entry_participants`, lists `meeting_participants` among the known gaps, and names cli-core's schema test as the check of `WC-DATA-2` to `WC-DATA-4`.
+
 ## 0.53.0 — 25.10.2026
 
 ### Changed — may break callers
