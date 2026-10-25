@@ -202,7 +202,10 @@ export const skillCommand = (
       renderer.success(`${app.appName} ${app.version} skill installed: ${written.join(", ")}`)
     })
 
-  annotate(command.command("status"), { effects: { remote: "none", local: "read" } })
+  annotate(command.command("status"), {
+    effects: { remote: "none", local: "read" },
+    examples: [`${app.command} skill status`, `${app.command} skill status --json`],
+  })
     .summary("whether the installed instructions for AI agents match this version")
     .description(
       `for each place \`${app.command} skill install\` writes to: the path, the version installed there, and whether it is current, stale, missing or unversioned`,
