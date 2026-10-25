@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Every CLI keeps a run log: `WC-LIFE-15` and the `missing-run-log` lint rule**
+  ([Lifecycle](docs/standards/lifecycle.md#wc-life-15--keep-a-run-log-through-cli-core-and-read-it-back-with-runs)).
+  The handbook described what a log may hold but never required one, and drive, memo and zm shipped without a run
+  log. `cli-dev lint` now fails a CLI whose command tree has no `runs list` or `runs show`, or no global `--record` or
+  `--no-record`. With `--cli`, it also runs the built CLI once with an unknown flag, in a new empty home with none of
+  the caller's environment but `PATH`, and fails when `runs list --json` then shows no failed run. A CLI without
+  `runs` gets the finding on its next cli-base bump: register cli-core's `runsCommand(app)`, or baseline the
+  finding with `cli-dev lint --write-baseline` until it does. The weekly cross-CLI audit lists it too.
+
 ## 0.55.1 — 25.10.2026
 
 ### Fixed

@@ -3,7 +3,8 @@
  * reads and writes under `cwd` and reports through `out` and `err`; `main` returns the exit code.
  */
 import { randomUUID } from "node:crypto"
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { isAbsolute, join, relative } from "node:path"
 import { pathToFileURL } from "node:url"
 import { parseArgs } from "node:util"
@@ -42,7 +43,7 @@ import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
-import { baselineOf, judge, lintCommands } from "./lint.js"
+import { baselineOf, judge, lintCommands, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
 import { nextVersion } from "./next-version.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
@@ -279,6 +280,52 @@ const commandsJson = (
   return JSON.parse(String(run.stdout))
 }
 
+const PROBE_FLAG = "--cli-dev-run-log-probe"
+
+/**
+ * Makes the built CLI fail once on an unknown flag and asks its own `runs list --json` whether that failure was
+ * kept. The CLI sees a new empty home and nothing else from this environment: a stray `*_STATE_DIR` or
+ * `XDG_STATE_HOME` would point it at the owner's real runs.
+ */
+export const probeRunLog = (cwd: string, bin: string, environment: NodeJS.ProcessEnv = process.env): RunLogProbe => {
+  const home = mkdtempSync(join(tmpdir(), "cli-dev-run-log-"))
+  const env: NodeJS.ProcessEnv = {
+    PATH: environment.PATH ?? "",
+    HOME: home,
+    USERPROFILE: home,
+    APPDATA: join(home, "AppData", "Roaming"),
+    LOCALAPPDATA: join(home, "AppData", "Local"),
+    CI: "true",
+    ...(environment.SystemRoot ? { SystemRoot: environment.SystemRoot } : {}),
+  }
+  const script = /\.[cm]?js$/.test(bin)
+  const call = (args: string[]) =>
+    spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), ...args], {
+      cwd,
+      env,
+      encoding: "utf8",
+      timeout: 60_000,
+      maxBuffer: 16 * 1024 * 1024,
+    })
+  try {
+    const failed = call([PROBE_FLAG])
+    if (failed.status === 0) return { kept: false, detail: `\`${PROBE_FLAG}\` did not fail, so nothing could be kept` }
+    const listed = call(["runs", "list", "--json"])
+    if (listed.status !== 0)
+      return { kept: false, detail: `\`runs list --json\` exited ${listed.status ?? listed.error?.message}` }
+    let items: unknown
+    try {
+      items = (JSON.parse(String(listed.stdout)) as { items?: unknown }).items
+    } catch {
+      return { kept: false, detail: "`runs list --json` did not print JSON" }
+    }
+    const kept = Array.isArray(items) && items.some((item) => (item as { status?: unknown })?.status === "failed")
+    return kept ? { kept } : { kept, detail: `\`runs list --json\` shows no failed run after \`${PROBE_FLAG}\`` }
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+}
+
 const readBaseline = (dir: string, label: string, problems: string[]) => {
   const baseline: Record<string, string[]> = {}
   if (existsSync(dir))
@@ -357,9 +404,12 @@ const lintRun = (args: string[], io: DevIo) => {
     io.err(`${values.schemas}: a JSON object of JSON Schemas by name`)
     return 2
   }
+  const paths = new Set(walk(parsed.document.commands).map((command) => command.path.join(" ")))
+  const hasRuns = RUN_LOG_COMMANDS.every((path) => paths.has(path))
   const violations = lintCommands(parsed.document, VOCABULARY, LINT_RULES, {
     raw,
     schemas: schemas as Record<string, unknown> | undefined,
+    ...(values.cli && hasRuns ? { runLog: probeRunLog(io.cwd, values.cli) } : {}),
   })
   const severity = new Map(LINT_RULES.map((rule) => [rule.id, rule.severity]))
 

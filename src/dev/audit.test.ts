@@ -15,7 +15,20 @@ import { type DevIo, main } from "./main.js"
 const READS = { remote: "read", local: "none" } as const
 
 const tool = (cli: string, build: (root: Command) => void = () => {}): Command => {
-  const root = new Command(cli).description("a tool")
+  const root = new Command(cli)
+    .description("a tool")
+    .option("--record", "keep this run")
+    .option("--no-record", "do not keep it")
+  const runs = root.command("runs").description("recorded runs")
+  annotate(runs.command("list").description("recorded runs").argument("[query...]", "field:value terms"), {
+    effects: READS,
+    examples: [`${cli} runs list`],
+    query: { entity: "run", backend: "native", fields: [] },
+  })
+  annotate(runs.command("show").description("one run").argument("<run>", "run id"), {
+    effects: READS,
+    examples: [`${cli} runs show 20261025T141828Z-a-202e1f`],
+  })
   for (const name of ["commands", "doctor", "mcp", "upgrade"])
     annotate(root.command(name).description(`the ${name} command`), { effects: READS, examples: [`${cli} ${name}`] })
   const skill = root.command("skill").description("the agent skill")
