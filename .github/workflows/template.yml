@@ -1,0 +1,73 @@
+name: Template
+
+# Builds and tests cli-template against this checkout, so a cli-base change that breaks a new CLI goes red before
+# it merges. A pull request builds cli-template's branch named like its own when one exists: the author fixes the
+# template there, and both go green together.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: template-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cli-template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: base
+          persist-credentials: false
+      - id: app
+        run: |
+          ref=main
+          if [ -n "$PR_BRANCH" ] && [ "$PR_BRANCH" != main ]; then
+            status=0
+            git ls-remote --exit-code --heads https://github.com/WireCatLabs/cli-template.git \
+              "refs/heads/$PR_BRANCH" >/dev/null || status=$?
+            case $status in
+              0) ref=$PR_BRANCH ;;
+              2) ;;
+              *) echo "::error title=cli-template::cannot list the branches of WireCatLabs/cli-template"; exit 1 ;;
+            esac
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: WireCatLabs/cli-template
+          ref: ${{ steps.app.outputs.ref }}
+          path: cli
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: base/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          # No store cache: this job builds another repository's branches, so a cache it saved would feed their
+          # dependencies to the next run.
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile && pnpm build && pnpm pack --out ../cli-base.tgz
+        working-directory: base
+      - name: Build cli-template ${{ steps.app.outputs.ref }} against this cli-base
+        working-directory: cli
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm add @wirecat/cli-base@file:../cli-base.tgz
+          # cli-core is the template's released pin; a second, released cli-base under it would hide this change.
+          pinned=$(pnpm list @wirecat/cli-base --depth Infinity --parseable | grep '/@wirecat/cli-base$' \
+            | grep -v '@file+' || true)
+          if [ -n "$pinned" ]; then
+            echo "::error title=cli-template::cli-template still resolves a released cli-base: $pinned"
+            exit 1
+          fi
+          pnpm ci:quick
+      - name: Test cli-template against this cli-base
+        run: pnpm test
+        working-directory: cli
