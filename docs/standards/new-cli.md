@@ -50,7 +50,8 @@ Give the agent `docs/dev/DESIGN.md` next. Every example passes a profile explici
 The reference CLI is the one to compare with when a step is unclear.
 
 The copy already holds every file this handbook asks for: the required root commands (`commands`, `doctor`,
-`skill show`, `skill install`, `mcp`, `upgrade`) and `config` from cli-core, the MCP server with a tool for every
+`skill show`, `skill install`, `mcp`, `upgrade`) and `config` from cli-core, the run log and its `runs` commands
+([WC-LIFE-15](lifecycle.md#wc-life-15--keep-a-run-log-through-cli-core-and-read-it-back-with-runs)), the MCP server with a tool for every
 command, writes included, the community presets in `config/wirecat/`, the TypeScript, Biome and vitest setup,
 `contracts/`, `lint/`, the test matrix, the user pages, `CHANGELOG.md`, `SECURITY.md`, `bin/release`, and the
 `pr.yml`, `ci.yml`, `main.yml`, `standards.yml`, `changelog-guard.yml`, `monthly.yml` and `release.yml` workflows.
@@ -83,7 +84,8 @@ All of these pass on `main`, before the first release:
 
 - `pnpm standards:check`
 - `pnpm typecheck`, `pnpm lint` and `pnpm test` with coverage
-- `cli-dev lint` against the built CLI
+- `cli-dev lint` against the built CLI. It also makes the CLI fail once in an empty home and checks that
+  `runs list` shows the failed run
 - `cli-dev audit --for <cli> --lint <cli>=lint` with no new finding, run with the command trees of the CLIs in
   the same parity groups. `--lint` judges the CLI's lint rules by its own `lint/` folder. What it shares with the
   other CLIs is judged by cli-base's `audit/baseline`; the pull request that adds the CLI to a parity group adds its

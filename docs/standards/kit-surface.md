@@ -18,7 +18,7 @@ The list is what the template's `src/` imports today, type imports included.
 |---|---|
 | `@wirecat/cli-base` | `catchCrashes`, `CliError`, `configFilePath`, `mcpErrorResult`, `resolvePaths` |
 | `@wirecat/cli-base/commands` | `annotate`, `CommandInfo`, `describeProgram` |
-| `@wirecat/cli-core/cli` | `AppIdentity`, `changesAuthorityAt`, `commandsCommand`, `configCommand`, `Configuration`, `createProgram`, `environmentOf`, `GlobalFlags`, `itemOf`, `LOCAL_READ`, `outputFor`, `ProgramDefinition`, `ProgramOptions`, `readOnlyLockOf`, `REMOTE_WRITE`, `renderAnswer`, `rootOf`, `run`, `RunOptions`, `settingsFor`, `skillCommand`, `upgradeCommand` |
+| `@wirecat/cli-core/cli` | `AppIdentity`, `changesAuthorityAt`, `commandsCommand`, `configCommand`, `Configuration`, `createProgram`, `environmentOf`, `GlobalFlags`, `itemOf`, `LOCAL_READ`, `outputFor`, `ProgramDefinition`, `ProgramOptions`, `readOnlyLockOf`, `REMOTE_WRITE`, `renderAnswer`, `rootOf`, `run`, `RunOptions`, `runsCommand`, `settingsFor`, `skillCommand`, `upgradeCommand` |
 | `@wirecat/cli-core/mcp` | `McpCommand`, `registerCommands`, `runCommandForAgent`, `toolsFromCommands` |
 | `@wirecat/cli-core/sends` | `Level` |
 | `@wirecat/cli-core/update` | `appUpdate` |

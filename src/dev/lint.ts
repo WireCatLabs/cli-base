@@ -51,7 +51,19 @@ export interface LintContext {
    * `log_attributes` (`logAttributesJsonSchema(allow)`) is the CLI's log allow-list, for `log-attribute-key`.
    */
   schemas?: Readonly<Record<string, unknown>>
+  /** What `cli-dev lint --cli` saw when it made the built CLI fail once in an empty home; absent with `--commands`. */
+  runLog?: RunLogProbe
 }
+
+export interface RunLogProbe {
+  kept: boolean
+  /** Why no failed run was found, when none was. */
+  detail?: string
+}
+
+/** The run log's reader and its switches; what `runsCommand` and cli-core's shared program add. */
+export const RUN_LOG_COMMANDS = ["runs list", "runs show"] as const
+export const RUN_LOG_FLAGS = ["--record", "--no-record"] as const
 
 /** The `--schemas` entry holding the CLI's log allow-list; its keys are camelCase, so `key-casing` skips it. */
 const LOG_ATTRIBUTES = "log_attributes"
@@ -467,6 +479,28 @@ const CHECKS: Record<string, Check> = {
         target: `schema ${LOG_ATTRIBUTES}: ${path}`,
         message: `"${key}" names content or a secret, which no log may carry`,
       }))
+  },
+  "missing-run-log": (document, _vocabulary, context) => {
+    const paths = new Set(walk(document.commands).map(label))
+    const flags = new Set(document.global_options.flatMap(optionNames))
+    return [
+      ...RUN_LOG_COMMANDS.filter((path) => !paths.has(path)).map((path) => ({
+        target: path,
+        message: `no \`${path}\`: register cli-core's \`runsCommand(app)\`, so a person can read what a run did`,
+      })),
+      ...RUN_LOG_FLAGS.filter((flag) => !flags.has(flag)).map((flag) => ({
+        target: flag,
+        message: `no global ${flag}: run the program through cli-core's \`run\`, or add the flag at the root`,
+      })),
+      ...(context.runLog && !context.runLog.kept
+        ? [
+            {
+              target: "runs",
+              message: `a failing command left no failed run: ${context.runLog.detail ?? "none listed"}`,
+            },
+          ]
+        : []),
+    ]
   },
 }
 

@@ -12,13 +12,25 @@ import { logAttributesJsonSchema } from "../standards/log.js"
 import { jsonSchemaOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
-import { type DevIo, main } from "./main.js"
+import { type DevIo, main, probeRunLog } from "./main.js"
 
 const READS = { remote: "read", local: "none" } as const
 const ran = <T extends Command>(command: T, meta: CommandMeta = {}): T => annotate(command, { effects: READS, ...meta })
 
 const clean = (): Command => {
-  const root = new Command("tool").description("a tool").option("--json", "print JSON")
+  const root = new Command("tool")
+    .description("a tool")
+    .option("--json", "print JSON")
+    .option("--record", "keep this run")
+    .option("--no-record", "do not keep it")
+  const runs = root.command("runs").description("recorded runs")
+  ran(runs.command("list").description("recorded runs, newest first").argument("[query...]", "field:value terms"), {
+    examples: ["tool runs list"],
+    query: { entity: "run", backend: "native", fields: [] },
+  })
+  ran(runs.command("show").description("one run").argument("<run>", "run id"), {
+    examples: ["tool runs show 20261025T141828Z-tg-202e1f"],
+  })
   const chats = root.command("chats").description("chats in the messenger")
   ran(
     chats
@@ -66,6 +78,13 @@ const KEPT = { owner: "@leemour", review_after: "2099-01-01" }
 const chatsOf = (root: Command): Command => root.commands.find((one) => one.name() === "chats") ?? root
 
 const failing: Record<string, (root: Command) => void> = {
+  "missing-run-log": (root) => {
+    const runs = root.commands.find((one) => one.name() === "runs")?.commands as Command[]
+    runs.splice(
+      runs.findIndex((one) => one.name() === "show"),
+      1,
+    )
+  },
   "unknown-verb": (root) =>
     ran(chatsOf(root).command("grab").description("grab a chat"), { examples: ["tool chats grab"] }),
   "unknown-resource": (root) =>
@@ -738,5 +757,41 @@ describe("cli-dev lint", () => {
     expect(await main(["lint", "--cli", "bin.mjs", "--write-baseline"], io)).toBe(0)
     expect(await main(["lint"], io)).toBe(2)
     expect(err).toContain("lint needs one of --cli <bin> or --commands <file>")
+  })
+
+  const fakeCli = (keeps: boolean) => {
+    const tree = JSON.stringify(commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 }))
+    writeFileSync(
+      join(root, "bin.mjs"),
+      `import { existsSync, writeFileSync } from "node:fs"
+const kept = process.env.HOME + "/kept"
+const [first, second] = process.argv.slice(2)
+if (first === "commands") process.stdout.write(${JSON.stringify(tree)})
+else if (first === "runs" && second === "list")
+  process.stdout.write(JSON.stringify({ items: existsSync(kept) ? [{ status: "failed" }] : [] }))
+else {
+  if (${keeps} && !process.env.XDG_STATE_HOME && !process.env.WIRECAT_STATE_DIR) writeFileSync(kept, "")
+  process.exitCode = 2
+}
+`,
+    )
+  }
+
+  it("passes missing-run-log when a failing run of the built CLI shows in its runs list", async () => {
+    fakeCli(true)
+    await main(["lint", "--cli", "bin.mjs"], io)
+    expect(err.join("\n")).not.toContain("missing-run-log")
+  })
+
+  it("fails missing-run-log when the built CLI keeps no failed run", async () => {
+    fakeCli(false)
+    await main(["lint", "--cli", "bin.mjs"], io)
+    expect(err.join("\n")).toContain("missing-run-log  runs: a failing command left no failed run")
+  })
+
+  it("probes the run log in a new empty home, with none of the caller's state variables", () => {
+    fakeCli(true)
+    const env = { PATH: process.env.PATH, XDG_STATE_HOME: "/owner/state", WIRECAT_STATE_DIR: "/owner/wirecat" }
+    expect(probeRunLog(root, "bin.mjs", env)).toEqual({ kept: true })
   })
 })

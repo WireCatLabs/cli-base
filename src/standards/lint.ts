@@ -121,6 +121,13 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     scope: "key",
     summary: "no log attribute key on the allow-list names message text, a token or a phone number",
   },
+  {
+    id: "missing-run-log",
+    severity: "high",
+    scope: "group",
+    summary:
+      "the CLI keeps a failed run and reads it back: `runs list`, `runs show`, global `--record` and `--no-record`",
+  },
 ])
 
 /** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */
