@@ -3,9 +3,5 @@
   "extends": ["./config/wirecat/biome.base.json"],
   "files": {
     "includes": ["**", "!**/dist", "!**/node_modules", "!pnpm-lock.yaml", "!.worktrees", "!config/wirecat"]
-  },
-  "markdown": {
-    "formatter": { "enabled": false },
-    "linter": { "enabled": false }
   }
 }

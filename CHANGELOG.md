@@ -26,10 +26,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   in every CLI's install; the escape codes for dim, bold and cyan are the same. Colour still follows the `color`
   option alone, never the state of `process.stdout`. A CLI that imported `picocolors` through cli-base's install
   must now depend on it itself.
-- **The shared toolchain pins move to Biome 2.6.2, markdownlint-cli2 0.24.0, cspell 10.4.0, lefthook 2.2.2 and
-  pnpm 11.28.8** (`config/wirecat/manifest.json`). Biome 2.6 formats and lints Markdown by default, without GitHub
-  tables; this repository turns that off in its own `biome.json` and leaves Markdown to markdownlint. A CLI that
-  syncs the new manifest needs the same pins and the same switch.
+- **The shared standards are re-adopted from community: Biome 2.6, markdownlint-cli2 0.24.0, cspell 10.4.0,
+  lefthook 2.2.2 and pnpm 11.28.8** (`config/wirecat/`). Biome 2.6 formats and lints Markdown by default, without
+  GitHub tables, so the shared `biome.base.json` now turns Markdown off and leaves it to markdownlint. This
+  repository pins Biome 2.6.3, as cli-core does. A CLI that adopts the new standards needs the same pins.
 
 ### Fixed
 
