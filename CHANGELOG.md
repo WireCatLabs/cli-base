@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **The release lock is one per package, not one per machine** (`WC-REL-3`, [Releases](docs/standards/releases.md)). Two releases of the same package still never run at once on one machine, from any checkout or worktree; releases of different packages now run side by side. The lock is `leemour-release-<package>.lock`, named from `package.json`, so a `package.json` without a name refuses the release. A CLI picks this up by re-running community's `adopt-standards.py --only release-lock`; until then it keeps the old shared lock.
+
 ## 0.53.0 — 25.10.2026
 
 ### Added
