@@ -8,6 +8,31 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **The release lock file is now `wirecat-release-<package>.lock`, not `leemour-release-<package>.lock`**
+  (`WC-REL-3`, [Releases](docs/standards/releases.md)). The shared standards no longer carry one person's account
+  name. It is still one lock per npm package. A repository picks the new name up at its next standards sync from
+  community. During the rollout two names never guard the same package: each package is released from one repository,
+  and every `bin/release` checks out a fresh `origin/main` before it takes the lock, so all checkouts of a repository
+  use one name. The one exception: a release that already holds the old lock when that repository's sync merges, and
+  a second one started after it. Do not merge the sync while that repository is releasing. An old
+  `leemour-release-*.lock` file left in `$XDG_RUNTIME_DIR` is harmless.
+- **The shared spelling list no longer allows `leemour`**, in `config/wirecat/cspell.json` and in the
+  `@wirecat/cli-base/cspell` preset. No repository spells the name in a checked page outside code or a link target.
+  A page that does now fails `docs:spell`; put the name in backticks or in the repository's own `words`.
+
+### Fixed
+
+- **A `cli-dev lint` override's `owner` error names a neutral example, `@octocat`**, not the maintainer's handle.
+- **The handbook no longer exempts cli-template from the README rule and the private vulnerability report rule**
+  ([New CLI](docs/standards/new-cli.md#the-template-repository-itself)). Since cli-template 0.1.7 its README has
+  "Why this template" and "Main features", and `new` writes the CLI its own README. Its `SECURITY.md` and
+  `docs/security.md` link cli-template, where a report about the template belongs, and `new` rewrites both links to
+  the CLI's repository. Both rules now apply to the template as written.
+
 ## 0.57.1 — 25.10.2026
 
 ### Added

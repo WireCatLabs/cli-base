@@ -73,7 +73,7 @@ const messageQuery: QueryRegistry = {
   defaults: ["-kind:dialog"],
 }
 
-const KEPT = { owner: "@leemour", review_after: "2099-01-01" }
+const KEPT = { owner: "@octocat", review_after: "2099-01-01" }
 
 const chatsOf = (root: Command): Command => root.commands.find((one) => one.name() === "chats") ?? root
 

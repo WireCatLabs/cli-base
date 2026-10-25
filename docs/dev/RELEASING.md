@@ -17,6 +17,7 @@ token in GitHub, and npm attaches provenance — and tags `v<version>` only once
 npm trusts the workflow **by file name**: the package's Trusted Publisher settings on npmjs.com name
 `WireCatLabs` / `cli-base` / `release.yml`. Rename the file and publishing stops until they are updated.
 
-`bin/release --local` is the fallback: it runs the same checks here and publishes with the npm token
-from the keyring (`secret-tool`, service `npm`, account `leemour`) without printing it. The token
-must be allowed to write `@wirecat/cli-base`, not only `@wirecat/max-cli`.
+`bin/release --local` is the fallback: it runs the same checks here and publishes with your own npm login. With
+`NPM_KEYRING_ACCOUNT` set, it reads the token from the keyring (`secret-tool`, service `npm`, that account) and hands
+it to `pnpm publish` as `NPM_TOKEN`, without printing it; a missing entry stops it. The token must be allowed to write
+`@wirecat/cli-base`, not only `@wirecat/max-cli`.

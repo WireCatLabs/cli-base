@@ -54,7 +54,7 @@ judges it by `LINT_RULES` and `VOCABULARY` from `/standards/tables`. Known viola
 `lint/baseline/<rule-id>.json`, one file per rule, and may only shrink: an entry with no violation left
 fails the run. `--write-baseline` rewrites those files to today's violations. Permanent exceptions go in
 `lint/overrides.json` — `[{ "rule", "target", "reason", "owner", "review_after" }]`, `owner` a GitHub handle
-(`@leemour`), `review_after` a date — and more than `--budget` (10) of them fails, as does one past its
+(`@octocat`), `review_after` a date — and more than `--budget` (10) of them fails, as does one past its
 `review_after`. `cli-dev audit` names a rule overridden more than three times across the CLIs it reads, for review.
 `flag-synonym` reports another name for a vocabulary flag (`--take` for `--limit`, from the flag's `replaces`), and
 `identifier-name` an identifier key the glossary (`IDENTIFIERS`) names another way (`execution_id` for `run_id`).
