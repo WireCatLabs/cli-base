@@ -14,6 +14,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 - **`WC-ARCH-21` names the call that exists** ([Architecture](docs/standards/architecture.md)): a CLI registers its provider with `store.accounts.registerProvider(entry)`. The rule named a `registerProvider` import from `@wirecat/cli-core/store`, which cli-core 0.421.0 does not export.
 
+- **`cli-dev changelog restore` no longer stops a release when the newest tag has no section of its own**
+  ([releases standard](docs/standards/releases.md#wc-rel-15--fold-a-late-pending-section-into-the-unpublished-version-before-publishing)).
+  A raise that renamed the previous section instead of dating `## Unreleased` leaves a tag whose changelog has no
+  `## <version> — ` heading, and the command threw on every later `bin/release`. Nothing was released under that
+  heading, so there is nothing to restore: the command now prints why on stderr and changes nothing.
+  `restoreReleased` from `@wirecat/cli-base/release` returns `undefined` in that case instead of throwing; a
+  changelog with no section for the tagged version still throws. A CLI that skipped the restore for this case can
+  drop the skip and pin this version.
+
 ## 0.55.0 — 25.10.2026
 
 ### Added

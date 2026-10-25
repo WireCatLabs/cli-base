@@ -185,7 +185,11 @@ describe("restoreReleased", () => {
     expect(restoreReleased(changelog.replace("- Older fix.", "- Older fix.  \n\n"), tagged, "0.9.0")).toBeUndefined()
   })
 
-  it("refuses a tag whose changelog has no section for it", () => {
-    expect(() => restoreReleased(changelog, "# Changelog\n", "0.9.0")).toThrow(/tag's changelog has no/)
+  it("leaves the changelog alone when the tag's changelog has no section for it", () => {
+    expect(restoreReleased(changelog, "# Changelog\n", "0.9.0")).toBeUndefined()
+  })
+
+  it("refuses a changelog with no section for the tagged version", () => {
+    expect(() => restoreReleased("# Changelog\n", changelog, "0.9.0")).toThrow(/no "## 0.9.0 — " section/)
   })
 })

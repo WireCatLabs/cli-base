@@ -11,6 +11,7 @@ import spawn from "cross-spawn"
 import * as v from "valibot"
 import { parseCommandsDocument } from "../commands/document.js"
 import type { CommandInfo } from "../commands/registry.js"
+import { taggedSection } from "../release/fold.js"
 import {
   type ChangelogRules,
   changelogProblems,
@@ -161,6 +162,10 @@ const changelog = (args: string[], io: DevIo) => {
     if (action === "restore") {
       const shell = processShell(io.cwd)
       const tag = newestTag(shell, relative(io.cwd, file))
+      if (!taggedSection(tag.text, tag.version)) {
+        io.err(`v${tag.version}'s changelog has no section of its own; nothing to restore`)
+        return 0
+      }
       const change = (text: string) => restoreChange(text, tag.text, tag.version, values.unreleased)
       if (values.land) {
         const landed = landChange({

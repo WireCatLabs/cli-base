@@ -173,7 +173,9 @@ on the [CI](ci.md) page.
   section, through a pull request. Then, while npm does not have the version, `bin/release` runs
   `cli-dev changelog fold --land --version <x.y.z>`. It folds the pending section into the dated one, and merges any
   repeated `###` heading, through a pull request.
-- **Exceptions:** only the newest tag is compared; an older section that differs from its tag stays as it is.
+- **Exceptions:** only the newest tag is compared; an older section that differs from its tag stays as it is. A
+  newest tag whose changelog has no section of its own has nothing to restore: the command says so and changes
+  nothing.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-16 · The package ships only the files it names
