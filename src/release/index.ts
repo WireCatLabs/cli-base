@@ -7,7 +7,7 @@ import { spawnSync } from "node:child_process"
 import { readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
-export { foldUnreleased, mergeRepeatedHeadings } from "./fold.js"
+export { foldUnreleased, mergeRepeatedHeadings, restoreReleased } from "./fold.js"
 export {
   type ChangelogRules,
   changelogProblems,

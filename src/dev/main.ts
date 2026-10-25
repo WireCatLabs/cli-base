@@ -4,7 +4,7 @@
  */
 import { randomUUID } from "node:crypto"
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { isAbsolute, join } from "node:path"
+import { isAbsolute, join, relative } from "node:path"
 import { pathToFileURL } from "node:url"
 import { parseArgs } from "node:util"
 import spawn from "cross-spawn"
@@ -40,7 +40,7 @@ import { issuesOf, RegistryError } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
-import { changelogChange, landFold, processShell } from "./land.js"
+import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
 import { baselineOf, judge, lintCommands } from "./lint.js"
 import { nextVersion } from "./next-version.js"
 import type { ContractEdit } from "./shared-contracts.js"
@@ -68,6 +68,11 @@ const USAGE = `usage: cli-dev <command> [options]
                                        it changed the file, nothing otherwise. --land lands it on main
                                        through a pull request, folding again on the new main once if
                                        main moved under it. Run it only while that version is not on npm
+  changelog restore [--unreleased <title>] [--file <path>] [--land]
+                                       puts the newest tagged version's section back to its text in
+                                       the tag; an entry the tag lacks missed that release and moves
+                                       to the unreleased section. Prints a line when it changed the
+                                       file. --land lands it on main through a pull request
   docs-check [--rules <module>] [--ids <A,B>] [--pages]
                                        links, anchors and the changelog's shape; --pages also
                                        docs/ against docs/meta.json, the docs portal's structure
@@ -138,8 +143,8 @@ const docsCheck = async (args: string[], io: DevIo) => {
 
 const changelog = (args: string[], io: DevIo) => {
   const [action, ...rest] = args
-  if (action !== "fold") {
-    io.err(`cli-dev changelog: no action "${action ?? ""}" — the one there is: fold`)
+  if (action !== "fold" && action !== "restore") {
+    io.err(`cli-dev changelog: no action "${action ?? ""}" — the ones there are: fold, restore`)
     return 2
   }
   const { values } = parseArgs({
@@ -152,8 +157,30 @@ const changelog = (args: string[], io: DevIo) => {
     },
   })
   const file = isAbsolute(values.file) ? values.file : join(io.cwd, values.file)
-  const version = values.version ?? packageVersion(io.cwd)
   try {
+    if (action === "restore") {
+      const shell = processShell(io.cwd)
+      const tag = newestTag(shell, relative(io.cwd, file))
+      const change = (text: string) => restoreChange(text, tag.text, tag.version, values.unreleased)
+      if (values.land) {
+        const landed = landChange({
+          file,
+          branch: `release/restore-${tag.version}`,
+          change,
+          done: `main already has ${tag.version}'s notes as tagged`,
+          shell,
+          log: io.err,
+        })
+        if (landed) io.out(landed)
+        return 0
+      }
+      const restored = change(readFileSync(file, "utf8"))
+      if (!restored) return 0
+      writeFileSync(file, restored.text)
+      io.out(restored.line)
+      return 0
+    }
+    const version = values.version ?? packageVersion(io.cwd)
     if (values.land) {
       const landed = landFold({
         file,

@@ -167,9 +167,13 @@ on the [CI](ci.md) page.
 - **Why:** a pull request merged after the version was dated adds a pending section above it, and that change must
   ship in the version it lands in.
 - **Enforced by:** review only.
-- **Example:** `bin/release` runs `cli-dev changelog fold --land --version <x.y.z>` while npm does not have the version.
-  It folds the pending section into the dated one, and merges any repeated `###` heading, through a pull request.
-- **Exceptions:** none.
+- **Example:** `bin/release` first runs `cli-dev changelog restore --land`. It compares the newest tagged version's
+  section with its text in the tag: a pull request checked before that release and merged after it put its entry
+  there, though its code ships only now. The section goes back to the tag's text and the entry moves to the pending
+  section, through a pull request. Then, while npm does not have the version, `bin/release` runs
+  `cli-dev changelog fold --land --version <x.y.z>`. It folds the pending section into the dated one, and merges any
+  repeated `###` heading, through a pull request.
+- **Exceptions:** only the newest tag is compared; an older section that differs from its tag stays as it is.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-16 · The package ships only the files it names

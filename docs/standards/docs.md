@@ -202,6 +202,7 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
   the base already had: a rebase onto a just-dated release moves its new entries there with no conflict.
 - **Exceptions:** a dated section with no tag is still open to fixes from a title with the `release` or `changelog`
   scope (`chore(release): fold …`, `docs(changelog): …`); a release is tagged only after npm has it.
+  Sections that already differed from their tag on 25.10.2026 stay as they are, and nothing reports them.
 - **Applies to:** every repository that calls the changelog guard. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Sources
