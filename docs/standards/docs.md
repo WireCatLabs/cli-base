@@ -198,7 +198,10 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Enforced by:** `changelog-guard.yml`.
 - **Example:** the guard fails a change to a section whose `v<version>` tag exists, unless the change restores the
   exact text in that tag. It also fails a new repeated `###` heading in any section that has no tag yet.
-- **Exceptions:** a dated section with no tag is still open to fixes; a release is tagged only after npm has it.
+  A pull request whose title has no `release` or `changelog` scope also fails when it adds a line to a dated section
+  the base already had: a rebase onto a just-dated release moves its new entries there with no conflict.
+- **Exceptions:** a dated section with no tag is still open to fixes from a title with the `release` or `changelog`
+  scope (`chore(release): fold …`, `docs(changelog): …`); a release is tagged only after npm has it.
 - **Applies to:** every repository that calls the changelog guard. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Sources

@@ -89,6 +89,21 @@ describe("changelog guard", () => {
     expect(run("docs(changelog): 0.52.0 carries more", head, "Unreleased", ["v0.51.0"])).toBeUndefined()
   })
 
+  it("rejects a feature entry that a rebase moved into a dated section with no tag yet", () => {
+    const head = base("Unreleased").replace("- **Added.** Shipped.", `- **Added.** Shipped.\n${entry}`)
+    expect(run("feat(mail): rules", head, "Unreleased", ["v0.51.0"])).toMatch(
+      /"## 0\.52\.0 — 14\.10\.2026" is dated for release; put the entry under the unreleased heading/,
+    )
+  })
+
+  it.each(["chore(release): fold Unreleased into 0.52.0", "fix(changelog): one Added in 0.52.0"])(
+    "lets %s add to a dated section with no tag yet",
+    (title) => {
+      const head = base("Unreleased").replace("- **Added.** Shipped.", `- **Added.** Shipped.\n${entry}`)
+      expect(run(title, head, "Unreleased", ["v0.51.0"])).toBeUndefined()
+    },
+  )
+
   it("rejects a second Fixed heading in the unreleased section", () => {
     const head = base("Unreleased").replace("## Unreleased", `## Unreleased\n\n### Fixed\n\n${entry}`)
     expect(run("perf(mail): faster", head)).toMatch(/"Fixed" twice in "Unreleased"/)
