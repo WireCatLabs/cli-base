@@ -13,7 +13,10 @@ pnpm test:slow       # the 20 slowest tests and the 10 slowest files
 
 CI runs all but the last, plus a secret scan over the whole history —
 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), which calls the same reusable
-[`node-ci.yml`](../../.github/workflows/node-ci.yml) the other CLIs call.
+[`node-ci.yml`](../../.github/workflows/node-ci.yml) the other CLIs call. Each pull request also builds and tests
+[cli-template](https://github.com/WireCatLabs/cli-template) against the branch
+([`.github/workflows/template.yml`](../../.github/workflows/template.yml)), at its branch with the same name when
+it has one and at its `main` otherwise.
 
 ## The tests are typechecked
 
