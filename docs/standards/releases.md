@@ -32,9 +32,10 @@ on the [CI](ci.md) page.
 - **Exceptions:** none.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-REL-3 · `bin/release` takes the machine release lock before it builds or publishes
+### WC-REL-3 · `bin/release` takes its package's release lock before it builds or publishes
 
-- **Why:** two sessions published at the same time on one machine; one release at a time, across every package.
+- **Why:** two sessions published the same package at the same time on one machine. Different packages do not
+  conflict, so each package has its own lock and they release side by side.
 - **Enforced by:** `<app>: bin/release`.
 - **Example:**
 
@@ -44,9 +45,12 @@ on the [CI](ci.md) page.
   ```
 
   The helper comes from the community presets (`adopt-standards.py --only release-lock`). It holds
-  `${XDG_RUNTIME_DIR:-/tmp}/leemour-release.lock` with `flock` on file descriptor 9 until the release ends.
-- **Exceptions:** none. cli-testing still opens the lock with its own `flock` line and moves to the helper.
-- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-854.
+  `${XDG_RUNTIME_DIR:-/tmp}/leemour-release-<key>.lock` with `flock` on file descriptor 9 until the release ends.
+  `<key>` is the `name` in `package.json`, made safe for a file name: `@wirecat/cli-core` locks
+  `leemour-release-wirecat-cli-core.lock`. The key is the package, not the folder, so every checkout and worktree
+  of one package shares the lock. A `package.json` without a name refuses the release.
+- **Exceptions:** none.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** NEED-854, ASK-336.
 
 ### WC-REL-4 · Never break the release lock; wait for the holder and try again
 
@@ -95,7 +99,8 @@ on the [CI](ci.md) page.
 - **Enforced by:** review only.
 - **Example:** tg-cli can release an hour after its last version, and cli-core can ship a breaking change on the same
   day as the previous one. Bump the library in every CLI that uses it on the day it ships.
-- **Exceptions:** none. The release lock (WC-REL-3) still keeps two releases on one machine from running at once.
+- **Exceptions:** none. The release lock (WC-REL-3) still keeps two releases of one package on one machine from
+  running at once.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.52.0. **Rulings:** NEED-1741.
 
 ### WC-REL-9 · Merged into [WC-REL-8](#wc-rel-8--any-package-may-release-at-any-time)
