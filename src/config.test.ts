@@ -83,3 +83,12 @@ describe("writeSecurely", () => {
     expect(readFileSync(join(base, "config.json"), "utf8")).toBe("{}")
   })
 })
+
+describe("saveConfigFile", () => {
+  it("saves the config owner-only, replacing a file others could read", () => {
+    const path = join(dir(), "config.json")
+    writeSecurely(path, "{}", 0o644)
+    saveConfigFile(path, { version: 1 })
+    expect(statSync(path).mode & 0o777).toBe(0o600)
+  })
+})

@@ -61,7 +61,10 @@ export const loadConfigFile = <TSchema extends v.GenericSchema>(
   return result.output
 }
 
-/** Config is not a secret, so it is `0644`; the credential file next to it is not. */
+/**
+ * Owner-only, `0600`: a config names the owner's accounts and paths, and a save replaces a file any
+ * other user could read. A folder that already exists keeps its mode; `doctor` reports an open one.
+ */
 export const saveConfigFile = (path: string, config: unknown): void => {
-  writeSecurely(path, `${JSON.stringify(config, null, 2)}\n`, 0o644)
+  writeSecurely(path, `${JSON.stringify(config, null, 2)}\n`, 0o600)
 }

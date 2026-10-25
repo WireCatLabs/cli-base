@@ -123,10 +123,11 @@ the message store. The owner adds `--allow-any-file` to send one anyway.
 
 ### WC-SECR-10 · Private files are written atomically with private modes
 
-A file that holds a secret or private state is written with `writeSecurely`: atomically, mode `0600`, in a directory
+A file that holds a secret or private state, `config.json` included, is written with `writeSecurely`: atomically, mode `0600`, in a directory
 created with mode `0700`. `writeSecurely` takes text or bytes. A
 temporary credential file is `0600` and removed in `finally`.
-tg's `doctor` reports a wrong mode and prints the `chmod` fix without applying it.
+The shared messenger `doctor` reports a wrong mode, the config file and its folder included, and prints the `chmod`
+fix without applying it.
 
 - **Why:** another user on the same computer must not read the session.
 - **Enforced by:** `src/config.test.ts`.
