@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The kit surface page links the two cli-template jobs** (cli-base's `template.yml`, cli-core's `parity.yml`), and
+  the roadmap no longer lists "a new CLI from a template" as next: it is `npx @wirecat/cli-template new`.
+
 ## 0.54.0 — 25.10.2026
 
 ### Added
