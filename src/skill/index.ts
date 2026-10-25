@@ -249,13 +249,16 @@ const readFolder = (folder: string, env: Env, run: RunProgram): string | undefin
 /**
  * Writes the skill to `~/.agents/skills`, then has Hermes read that folder by adding it to `skills.external_dirs`
  * with Hermes's own `config set`, keeping every folder already listed. When Hermes is not on PATH, cannot be asked,
- * or does not keep the folder, the skill is copied into `$HERMES_HOME/skills` instead.
+ * or does not keep the folder, the skill is copied into `$HERMES_HOME/skills` instead — but only when that home exists:
+ * with neither the program nor its home, Hermes is not installed, and nothing is written.
  */
 export const installHermesSkill = (
   app: SkillApp,
   skill: URL,
   { env = process.env, run = runProgram }: { env?: Env; run?: RunProgram } = {},
 ): { written: string[]; hermes: HermesInstall } => {
+  if (!existsSync(hermesHome(env)) && run("hermes", ["--version"], env).error)
+    throw new CliError("not_found", "Hermes is not installed here; install Hermes first, or set HERMES_HOME")
   const [shared] = installSkill(app, skill, { targets: ["agents"], env }) as [string]
   const reason = readFolder(dirname(dirname(shared)), env, run)
   if (reason === undefined) {

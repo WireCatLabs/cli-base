@@ -297,7 +297,16 @@ describe.skipIf(process.platform === "win32")("skill install --for hermes", () =
     expect(listed()).toEqual(["/team/skills", agentsFolder()])
   })
 
-  it("copies the skill into HERMES_HOME when Hermes is not on PATH, and says why", async () => {
+  it("refuses and writes nothing when Hermes is neither on PATH nor has a home", async () => {
+    await expect(run(["--json", "skill", "install", "--for", "hermes"])).rejects.toThrow(
+      "Hermes is not installed here; install Hermes first, or set HERMES_HOME",
+    )
+    expect(existsSync(hermesDir())).toBe(false)
+    expect(existsSync(join(env.HOME as string, ".agents"))).toBe(false)
+  })
+
+  it("copies the skill into HERMES_HOME when Hermes has a home but is not on PATH, and says why", async () => {
+    mkdirSync(hermesDir())
     const { result, stderr } = await install()
     const copy = join(hermesDir(), "skills", "tg-cli", "SKILL.md")
 
@@ -324,6 +333,7 @@ describe.skipIf(process.platform === "win32")("skill install --for hermes", () =
   })
 
   it("takes out its own earlier copy once Hermes reads the folder, since Hermes refuses a name it finds twice", async () => {
+    mkdirSync(hermesDir())
     await install()
     stubHermes({ dirs: "[]" })
     const { result } = await install()
@@ -333,6 +343,7 @@ describe.skipIf(process.platform === "win32")("skill install --for hermes", () =
   })
 
   it("leaves a copy alone when its folder holds anything else", async () => {
+    mkdirSync(hermesDir())
     await install()
     writeFileSync(join(hermesDir(), "skills", "tg-cli", "notes.md"), "mine")
     stubHermes({ dirs: "[]" })

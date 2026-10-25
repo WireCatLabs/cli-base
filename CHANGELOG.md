@@ -15,7 +15,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`skill install --for hermes` gives Hermes Agent the skill, and `skill status` reports what Hermes reads.** It writes
   the `~/.agents/skills` copy, then adds that folder to Hermes's `skills.external_dirs` through Hermes's own
   `hermes config set`, keeping every folder already listed. When Hermes is not on PATH or refuses, it copies the file
-  into `$HERMES_HOME/skills/<app>/` and says why. `--for all` stays Claude Code and `~/.agents/skills`: it is the
+  into `$HERMES_HOME/skills/<app>/` and says why; with neither `hermes` on PATH nor a Hermes home folder it fails
+  with `not_found` and writes nothing. `--for all` stays Claude Code and `~/.agents/skills`: it is the
   default, and a bare `skill install` must not change another program's settings. `skill status --json` gains
   `hermes: { path, installed, state, via }` beside `targets`, which keeps its two entries. It runs
   `hermes config get` only when `HERMES_HOME` (else `~/.hermes`) exists, so a test with a temporary `HOME` starts no
