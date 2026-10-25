@@ -1,15 +1,25 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Command } from "commander"
 import { beforeEach, describe, expect, it } from "vitest"
+import { parse } from "yaml"
 import { metaOf } from "../commands/index.js"
 import { CliError } from "../errors.js"
 import { createRenderer } from "../renderer.js"
 import { captureStreams, fakeClock } from "../testing/index.js"
 import { readUpdateState, writeUpdateState } from "../update/index.js"
-import { skillCommand, skillHint, skillPath, skillResource, skillVersion, withVersion } from "./index.js"
+import {
+  hermesCopyPath,
+  hermesSkillStatus,
+  skillCommand,
+  skillHint,
+  skillPath,
+  skillResource,
+  skillVersion,
+  withVersion,
+} from "./index.js"
 
 const SKILL = "---\nname: tg-cli\ndescription: Read Telegram.\n---\n\n# tg\n\nBody.\n"
 const app = { command: "tg", appName: "tg-cli", version: "1.2.0" }
@@ -20,7 +30,8 @@ let skill: URL
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "skill-"))
-  env = { HOME: join(dir, "home") }
+  mkdirSync(join(dir, "bin"))
+  env = { HOME: join(dir, "home"), HERMES_HOME: join(dir, "hermes"), PATH: join(dir, "bin") }
   writeFileSync(join(dir, "SKILL.md"), SKILL)
   skill = pathToFileURL(join(dir, "SKILL.md"))
 })
@@ -74,6 +85,33 @@ describe("withVersion", () => {
   it("gives a file with no frontmatter one", () => {
     expect(withVersion("# tg\n", "1.2.0")).toBe('---\nmetadata:\n  version: "1.2.0"\n---\n# tg\n')
     expect(skillVersion("# tg\n")).toBeUndefined()
+  })
+
+  it("keeps a nested metadata.openclaw block whole, as YAML reads it", () => {
+    const own = [
+      "---",
+      "name: tg-cli",
+      "metadata:",
+      "  openclaw:",
+      "    requires:",
+      "      bins: [tg]",
+      "    install:",
+      "      - kind: node",
+      '        package: "@wirecat/tg-cli"',
+      "        bins: [tg]",
+      "---",
+      "# tg",
+      "",
+    ].join("\n")
+    const stamped = withVersion(withVersion(own, "1.0.0"), "1.2.0")
+    expect(skillVersion(stamped)).toBe("1.2.0")
+    expect(parse(stamped.split("---")[1] as string)).toEqual({
+      name: "tg-cli",
+      metadata: {
+        version: "1.2.0",
+        openclaw: { requires: { bins: ["tg"] }, install: [{ kind: "node", package: "@wirecat/tg-cli", bins: ["tg"] }] },
+      },
+    })
   })
 
   it("refuses metadata written on one line", () => {
@@ -199,6 +237,154 @@ describe("skill install", () => {
   })
 })
 
+describe.skipIf(process.platform === "win32")("skill install --for hermes", () => {
+  const hermesDir = () => join(dir, "hermes")
+  const agentsFolder = () => join(env.HOME as string, ".agents", "skills")
+  const calls = () =>
+    existsSync(join(dir, "calls")) ? readFileSync(join(dir, "calls"), "utf8").trim().split("\n") : []
+  const listed = () => JSON.parse(readFileSync(join(dir, "dirs.json"), "utf8"))
+  // Answers `config get` from dirs.json and writes `config set` to it, with shell builtins alone: PATH is this folder.
+  const stubHermes = ({ dirs, failSet = false }: { dirs?: string; failSet?: boolean } = {}) => {
+    mkdirSync(hermesDir(), { recursive: true })
+    if (dirs !== undefined) writeFileSync(join(dir, "dirs.json"), dirs)
+    const stub = join(dir, "bin", "hermes")
+    writeFileSync(
+      stub,
+      [
+        "#!/bin/sh",
+        `echo "$*" >> "${join(dir, "calls")}"`,
+        'case "$1 $2" in',
+        `  "config get") if [ -f "${join(dir, "dirs.json")}" ]; then IFS= read -r line < "${join(dir, "dirs.json")}"; printf '%s' "$line"; else echo "[]"; fi ;;`,
+        failSet
+          ? '  "config set") exit 1 ;;'
+          : `  "config set") printf '%s' "$4" > "${join(dir, "dirs.json")}"; echo "✓ Set $3" ;;`,
+        "  *) exit 2 ;;",
+        "esac",
+      ].join("\n"),
+    )
+    chmodSync(stub, 0o755)
+  }
+  const install = async () => {
+    const { stdout, stderr } = await run(["--json", "skill", "install", "--for", "hermes"])
+    return { result: JSON.parse(stdout.join("")), stderr }
+  }
+
+  it("has Hermes read ~/.agents/skills, keeping the folders it already lists, and prints only the result", async () => {
+    stubHermes({ dirs: '["/team/skills"]' })
+    const { result } = await install()
+
+    expect(result).toEqual({
+      name: "tg-cli",
+      version: "1.2.0",
+      written: [skillPath("agents", "tg-cli", env)],
+      hermes: { via: "external_dirs", path: skillPath("agents", "tg-cli", env) },
+    })
+    expect(listed()).toEqual(["/team/skills", agentsFolder()])
+    expect(existsSync(hermesCopyPath("tg-cli", env))).toBe(false)
+  })
+
+  it("changes nothing in Hermes when it already lists the folder, however it is written", async () => {
+    stubHermes({ dirs: '["~/.agents/skills"]' })
+    expect((await install()).result.hermes.via).toBe("external_dirs")
+    stubHermes({ dirs: '"$HOME/.agents/skills"' })
+    expect((await install()).result.hermes.via).toBe("external_dirs")
+    expect(calls().filter((call) => call.startsWith("config set"))).toEqual([])
+  })
+
+  it("turns one folder written as a string into a list of two", async () => {
+    stubHermes({ dirs: '"/team/skills"' })
+    await install()
+    expect(listed()).toEqual(["/team/skills", agentsFolder()])
+  })
+
+  it("refuses and writes nothing when Hermes is neither on PATH nor has a home", async () => {
+    await expect(run(["--json", "skill", "install", "--for", "hermes"])).rejects.toThrow(
+      "Hermes is not installed here; install Hermes first, or set HERMES_HOME",
+    )
+    expect(existsSync(hermesDir())).toBe(false)
+    expect(existsSync(join(env.HOME as string, ".agents"))).toBe(false)
+  })
+
+  it("copies the skill into HERMES_HOME when Hermes has a home but is not on PATH, and says why", async () => {
+    mkdirSync(hermesDir())
+    const { result, stderr } = await install()
+    const copy = join(hermesDir(), "skills", "tg-cli", "SKILL.md")
+
+    expect(result.written).toEqual([skillPath("agents", "tg-cli", env), copy])
+    expect(result.hermes).toEqual({
+      via: "copy",
+      path: copy,
+      reason: "Hermes could not be asked for skills.external_dirs",
+    })
+    expect(readFileSync(copy, "utf8")).toBe(withVersion(SKILL, "1.2.0"))
+    expect(stderr.join("")).toContain("a copy for Hermes")
+  })
+
+  it("copies the skill when Hermes refuses the change, and leaves its list as it was", async () => {
+    stubHermes({ dirs: '["/team/skills"]', failSet: true })
+    expect((await install()).result.hermes).toMatchObject({ via: "copy", reason: "hermes config set failed" })
+    expect(listed()).toEqual(["/team/skills"])
+  })
+
+  it("never overwrites a setting that is neither a list nor one folder", async () => {
+    stubHermes({ dirs: '{"a": 1}' })
+    expect((await install()).result.hermes.via).toBe("copy")
+    expect(calls().filter((call) => call.startsWith("config set"))).toEqual([])
+  })
+
+  it("takes out its own earlier copy once Hermes reads the folder, since Hermes refuses a name it finds twice", async () => {
+    mkdirSync(hermesDir())
+    await install()
+    stubHermes({ dirs: "[]" })
+    const { result } = await install()
+
+    expect(result.hermes.removed).toBe(hermesCopyPath("tg-cli", env))
+    expect(existsSync(join(hermesDir(), "skills", "tg-cli"))).toBe(false)
+  })
+
+  it("leaves a copy alone when its folder holds anything else", async () => {
+    mkdirSync(hermesDir())
+    await install()
+    writeFileSync(join(hermesDir(), "skills", "tg-cli", "notes.md"), "mine")
+    stubHermes({ dirs: "[]" })
+    expect((await install()).result.hermes.removed).toBeUndefined()
+    expect(existsSync(hermesCopyPath("tg-cli", env))).toBe(true)
+  })
+
+  it("is never part of all, and the daily hint never asks Hermes", async () => {
+    stubHermes({ dirs: "[]" })
+    await run(["skill", "install"])
+    skillHint({ app, argv: ["chats"], env: { ...env, CLAUDECODE: "1" }, statePath: join(dir, "state.json") })
+    expect(calls()).toEqual([])
+  })
+
+  it("never starts Hermes for a status where Hermes has no home, as asking would create one", async () => {
+    stubHermes({ dirs: "[]" })
+    await install()
+    rmSync(hermesDir(), { recursive: true })
+    rmSync(join(dir, "calls"))
+    expect(hermesSkillStatus(app, { env })).toMatchObject({ state: "missing", via: null })
+    expect(calls()).toEqual([])
+  })
+
+  it("reports the copy Hermes reads: none, the shared folder, or its own copy", async () => {
+    expect(hermesSkillStatus(app, { env })).toMatchObject({ state: "missing", via: null })
+
+    stubHermes({ dirs: "[]" })
+    await install()
+    expect(hermesSkillStatus(app, { env })).toEqual({
+      path: skillPath("agents", "tg-cli", env),
+      installed: "1.2.0",
+      state: "current",
+      via: "external_dirs",
+    })
+
+    mkdirSync(join(hermesDir(), "skills", "tg-cli"), { recursive: true })
+    writeFileSync(hermesCopyPath("tg-cli", env), withVersion(SKILL, "1.1.0"))
+    expect(hermesSkillStatus(app, { env })).toMatchObject({ installed: "1.1.0", state: "stale", via: "copy" })
+  })
+})
+
 describe("skill status", () => {
   const write = (target: "claude" | "agents", content: string) => {
     const path = skillPath(target, "tg-cli", env)
@@ -215,6 +401,7 @@ describe("skill status", () => {
         { target: "claude", path: skillPath("claude", "tg-cli", env), installed: null, state: "missing" },
         { target: "agents", path: skillPath("agents", "tg-cli", env), installed: null, state: "missing" },
       ],
+      hermes: { path: skillPath("agents", "tg-cli", env), installed: null, state: "missing", via: null },
     })
     expect(() => readFileSync(skillPath("claude", "tg-cli", env))).toThrow()
   })
