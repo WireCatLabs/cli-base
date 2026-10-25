@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { installStdioEntry, probeStdio, type StdioEntry, setupArguments } from "./index.js"
+import {
+  installStdioEntry,
+  probeStdio,
+  type RunCommand,
+  removeStdioEntry,
+  type StdioEntry,
+  setupArguments,
+  stdioEntryStatus,
+} from "./index.js"
 
 const entry: StdioEntry = {
   type: "stdio",
@@ -66,6 +74,71 @@ describe("local MCP setup", () => {
       ["mcp", "get"],
       ["mcp", "add"],
     ])
+  })
+})
+
+const missing = { status: 1, stdout: 'No MCP server named "tg"', stderr: "" }
+const recording = (answers: ReturnType<RunCommand>[]) => {
+  const calls: string[][] = []
+  const run: RunCommand = (_file, args) => {
+    calls.push(args)
+    return answers[calls.length - 1] ?? { status: 0, stdout: "", stderr: "" }
+  }
+  return { calls, run }
+}
+
+describe("local MCP removal", () => {
+  it("removes Claude Code's user entry only, never a project's entry of the same name", () => {
+    const { calls, run } = recording([{ status: 0, stdout: "tg:", stderr: "" }])
+    expect(removeStdioEntry("claude-code", "tg", { run })).toEqual({ client: "claude-code", name: "tg", removed: true })
+    expect(calls).toEqual([
+      ["mcp", "get", "tg"],
+      ["mcp", "remove", "--scope", "user", "tg"],
+    ])
+  })
+
+  it("removes a Codex entry by name", () => {
+    const { calls, run } = recording([{ status: 0, stdout: "{}", stderr: "" }])
+    expect(removeStdioEntry("codex", "tg-work", { run }).removed).toBe(true)
+    expect(calls.at(-1)).toEqual(["mcp", "remove", "tg-work"])
+  })
+
+  it("leaves a name the client does not have and says nothing was removed", () => {
+    const { calls, run } = recording([missing])
+    expect(removeStdioEntry("codex", "tg", { run }).removed).toBe(false)
+    expect(calls).toHaveLength(1)
+  })
+
+  it("fails when the client refuses the removal", () => {
+    const { run } = recording([
+      { status: 0, stdout: "{}", stderr: "" },
+      { status: 1, stdout: "", stderr: "" },
+    ])
+    expect(() => removeStdioEntry("codex", "tg", { run })).toThrow("could not remove tg")
+  })
+
+  it("refuses a name that could reach the client as an option", () => {
+    expect(() => removeStdioEntry("codex", "--all", { run: recording([]).run })).toThrow("letters, digits")
+  })
+})
+
+describe("local MCP status", () => {
+  it("says registered, missing or unavailable for each client", () => {
+    expect(stdioEntryStatus("codex", "tg", recording([{ status: 0, stdout: "{}", stderr: "" }])).state).toBe(
+      "registered",
+    )
+    expect(stdioEntryStatus("claude-code", "tg", recording([missing])).state).toBe("missing")
+    const absent = recording([{ status: null, error: new Error("ENOENT"), stdout: "", stderr: "" }])
+    expect(stdioEntryStatus("claude-code", "tg", absent)).toEqual({
+      client: "claude-code",
+      name: "tg",
+      state: "unavailable",
+    })
+  })
+
+  it("fails on an answer it cannot read rather than guess", () => {
+    const { run } = recording([{ status: 1, stdout: "", stderr: "config is broken" }])
+    expect(() => stdioEntryStatus("codex", "tg", { run })).toThrow("could not check")
   })
 })
 
