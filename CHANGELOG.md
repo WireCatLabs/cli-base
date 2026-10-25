@@ -10,6 +10,16 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **Four handbook rules for what cli-core has built since the Wave 3 design.** `WC-SECR-22`: a CLI that signs in
+  with OAuth uses `@wirecat/cli-core/oauth`. `WC-SECR-23`: meeting passcodes and the query of a join link never reach
+  the store. `WC-DATA-8`: a file joins a document by its place, then by the content of exactly one document.
+  `WC-DATA-9`: a calendar entry joins an event by fixed rules, and a deleted one keeps its past. `WC-DATA-6` names
+  the link log, the review list and the join by address. They were listed as "not built yet"; cli-core releases
+  them, so the pages now state them as rules. What is still planned: a CLI's own SQLite file, and two persons with one
+  address going to the review list.
+
 ### Fixed
 
 - **The handbook says which rules cli-template keeps and which it is exempt from by design**
