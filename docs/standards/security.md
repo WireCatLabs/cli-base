@@ -270,7 +270,7 @@ not carried out. A name that matches is not proof of who someone is.
 - **Exceptions:** none. How such text is shown safely is
   [WC-SECR-11](#wc-secr-11--text-from-outside-is-made-safe-before-a-terminal-or-an-agent-sees-it); what an MCP server
   tells an agent about it is [WC-MCP-11](mcp.md#wc-mcp-11--the-server-tells-the-agent-that-message-text-is-data).
-- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.43.1. **Rulings:** none.
 
 ## Planned — not built yet
 

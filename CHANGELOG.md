@@ -8,6 +8,28 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The handbook says which rules cli-template keeps and which it is exempt from by design**
+  ([New CLI](docs/standards/new-cli.md#the-template-repository-itself)). Two audits of the template read the CLI
+  rules as gaps where the template differs on purpose: its README and `SECURITY.md` are seeds that `new` fills in, and
+  its copy tool is run by hand. Each exemption names its rule and reason; every other CLI rule applies to the template.
+- **The monthly run takes a minute, not a day, and nothing checks it.** New CLI's third step said to pick a cron day
+  and that CI rejects a placeholder; no check exists, and the template ships its own minute, 03:02 UTC. A CLI made
+  from the template changes that minute by hand (`WC-CI-9`).
+- **`WC-CI-8` says how the shared workflows' pin relates to the installed cli-base:** it does not have to match. The
+  workflows run the repository's own scripts with its installed packages, and the rules that apply are those of the
+  installed handbook.
+- **`WC-ACCT-3` no longer assumes every CLI has `setup`.** With no profile on the computer, cli-core suggests `setup`
+  only to a CLI that has it, and otherwise the typed command with a profile added.
+- **Smaller corrections.** `WC-MCP-11` covers every kind of text from other people, not only messages. The
+  changelog rule says a `WC-` rule id is not an internal id. `WC-TEST-1`, `WC-TEST-3` and `WC-STORE-14` say every CLI loads the
+  shared test setup. `WC-TOOL-11` names all six grit plugins. A comparison page's `docs/compare.md` waits for its site
+  page. A bare path under "Enforced by" is a cli-base file. Thirteen "Since" lines now name the release that first
+  carried the rule, which is a published version in every case.
+
 ## 0.57.0 — 25.10.2026
 
 ### Changed — may break callers

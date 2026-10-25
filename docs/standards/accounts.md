@@ -50,13 +50,16 @@ profile.
 ### WC-ACCT-3 · A missing profile is an error that lists the choices
 
 When a command needs a profile and none is named, it fails with `validation_error`. The message and
-`details.profiles` list the profiles on this computer. With no profile at all, the message says how to create one by
-name.
+`details.profiles` list the profiles on this computer. With no profile at all, the message says how to name one: a
+CLI with a `setup` command suggests it, and any other CLI suggests the command that was typed, with a profile added.
 
 - **Why:** the owner, or an agent, can fix the command from the error alone.
-- **Enforced by:** `cli-core: src/cli/settings.test.ts`.
+- **Enforced by:** `cli-core: src/cli/settings.test.ts` · `cli-core: src/cli/program.test.ts`.
 - **Example:** ``name a profile: `tg <profile> …` — profiles here: personal, work (or set TG_PROFILE)``. With none,
-  the message says to ``create one with `tg personal setup` (any name in place of personal)``.
+  tg, which has `setup`, says to ``create one with `tg personal setup` (any name in place of personal)``. A CLI
+  without `setup`, such as one made from cli-template, answers `cal events list` with ``name a profile: there is none
+  on this computer yet — any name works, such as `cal personal events list` (or set CAL_PROFILE)`` (cli-core 0.424.0
+  and later).
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -150,7 +153,7 @@ inferred from a matching name, and `unlink` undoes it.
 - **Enforced by:** `cli-core: src/services/person-context.test.ts`.
 - **Example:** `tg personal contacts link Ana max:Ana`. Until then, a Telegram Ana and a MAX Ana stay two people.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.43.1. **Rulings:** none.
 
 ## Sources
 

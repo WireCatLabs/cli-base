@@ -44,8 +44,8 @@ and which run after merge is in [CI](ci.md).
   file, listed after the shared one, adds only what is its own, such as a default profile.
 - **Exceptions:** keep coverage reports and debug traces outside the sandbox, with bounded retention. Never clean
   another session's scratch directory as test teardown.
-- **Applies to:** all CLIs and the shared packages. cli-base uses the shared setup; the CLIs keep their own sandboxes
-  for now. drive has none yet, and zoom's moves only the temporary directory. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs and the shared packages. cli-base, cli-core, the six CLIs and cli-template load the shared
+  setup first in `setupFiles`; cli-testing does not use it yet. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-2 · No test opens a real credential store
 
@@ -65,7 +65,7 @@ and which run after merge is in [CI](ci.md).
 ### WC-TEST-3 · No test contacts a provider or the network
 
 - **Why:** a test that reaches the network is slow, flaky, and can act on a real account.
-- **Enforced by:** `src/testing/network.test.ts`, `max-cli: src/testing/unscripted.ts`.
+- **Enforced by:** `src/testing/network.test.ts` · `max-cli: src/testing/unscripted.ts`.
 - **Example:** the shared setup
   ([WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory)) refuses every connection
   to anything but `localhost`, any `127.x.x.x` address and `::1` before a name is looked up: `net` and `tls` connects,
@@ -74,8 +74,8 @@ and which run after merge is in [CI](ci.md).
   refusal, or silence to test a timeout, and a request with no scripted answer fails the test that sent it. tg's
   `scripted({...})` adapter does the same job.
 - **Exceptions:** a test whose subject is the network itself calls `onTestFinished(allowNetwork())`, with
-  `allowNetwork` from `@wirecat/cli-base/testing`; the guard is back for the next test. Until a CLI adopts the shared
-  setup it has no global guard; max's unscripted check and tg's scripted adapter cover only their own service.
+  `allowNetwork` from `@wirecat/cli-base/testing`; the guard is back for the next test. A repository that does not
+  load the shared setup has no global guard.
 - **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-4 · Give a command that must not connect an adapter that throws

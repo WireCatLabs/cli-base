@@ -108,7 +108,7 @@ JSON Schema 2020-12.
   answer's command step also has `line`, the whole command with the profile (`tg personal mcp config`), because
   `command` is the bare path an MCP router takes and a copied path without the profile fails.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (`line`: next release). **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (`line`: cli-base 0.47.0). **Rulings:** none.
 
 ### WC-OUT-10 · Answer a write with what it did and its `operation_id`
 
@@ -273,7 +273,7 @@ Three things follow from it:
   key. A write whose outcome is unknown fails with `outcome_unknown` and `retry.safe: false`
   ([WC-OUT-20](#wc-out-20--mark-a-failure-safe-to-retry-only-when-repeating-it-cannot-do-harm)).
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.44.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.43.1. **Rulings:** none.
 
 ## Sources
 

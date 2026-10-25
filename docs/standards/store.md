@@ -179,8 +179,8 @@ messages), or other people's data.
 - **Enforced by:** `src/testing/sandbox.test.ts`.
 - **Example:** the shared setup, `setupFiles: ["@wirecat/cli-base/testing/setup"]`, points `MESSAGING_STORE`,
   `WIRECAT_STATE_DIR` and every `<APP>_CONFIG_DIR`, `_STATE_DIR` and `_CACHE_DIR` that is set at a temporary
-  directory before any test runs, and the home folder with them, so one that is not set lands there too. No CLI
-  uses it yet: cli-core's own sandbox still sets these variables for each app prefix its tests define. A test that needs its own store is
+  directory before any test runs, and the home folder with them, so one that is not set lands there too. cli-core and
+  every CLI load it first, then their own setup file for what is theirs alone. A test that needs its own store is
   [WC-TEST-9](testing.md#wc-test-9--give-each-test-its-own-profile-or-its-own-store). The rest of the sandbox is
   [WC-TEST-1](testing.md#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory).
 - **Exceptions:** none.

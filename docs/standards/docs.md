@@ -179,7 +179,11 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 
 - **Why:** a journal, backlog or ruling id means nothing to a reader outside the project.
 - **Enforced by:** `pnpm docs:check`.
-- **Example:** `cli-dev docs-check` fails on `NEED-12` or `TASK-3` anywhere in `CHANGELOG.md`.
+- **Example:** `cli-dev docs-check` fails on `NEED-12` or `TASK-3` anywhere in `CHANGELOG.md`. A `WC-` rule id is
+  not an internal id: this handbook is public and ships in `@wirecat/cli-base`, so an entry may cite a rule, such as
+  `WC-OUT-3`, best with a link to it. Cite only a rule that is in the cli-base version the CLI installs. A repository
+  that adds an area's prefix to its own ids, as cli-base adds `DOC`, names those rules by their page instead: the
+  check reads `DOC-18` inside `WC-DOC-18`.
 - **Exceptions:** none.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 

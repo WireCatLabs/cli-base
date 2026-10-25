@@ -7,8 +7,11 @@ says about the places where another tool is better. The page is read by someone 
 someone reviewing our code.
 
 The page lives in the site repository (`cli-docs`, published on wirecat.dev), not in the CLI repository, because a
-comparison changes when the other tools change, not when we release. The CLI repository keeps a short
-`docs/compare.md` that links to the site page, and its other docs link there too.
+comparison changes when the other tools change, not when we release. Once the site has a page for the CLI, the CLI
+repository keeps a short `docs/compare.md` that links to it, and its other docs link there too. `docs/compare.md` is
+not in the shared page set
+([WC-DOC-6](docs.md#wc-doc-6--the-docs-folder-matches-docsmetajson-and-has-the-shared-page-set)), so a new CLI has
+none until its site page exists.
 
 Rule ids on this page are `WC-CMP-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). The general rules for user pages are in [Documents](docs.md).
@@ -124,7 +127,7 @@ Rule ids on this page are `WC-CMP-<n>`. How to read a rule, how ids work and whi
 - **Example:** the release report lists the compare page as checked. Before a release, each ✅, 🟡 and ❌ for the CLI is re-proven against the release build, the check date
   and version in the intro are updated in the site repository, and the release report names the page.
 - **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.50.5. **Rulings:** owner, 2026-10-24.
+- **Applies to:** all CLIs. **Since:** cli-base 0.51.0. **Rulings:** owner, 2026-10-24.
 
 ## Sources
 
