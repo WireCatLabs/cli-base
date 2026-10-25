@@ -5,12 +5,14 @@
  * Nothing here prints by itself. The command writes through the renderer and streams the host hands
  * it, and the hint is a string the host puts on stderr — never stdout, which an agent parses.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { dirname, join } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { Command, Option } from "commander"
+import crossSpawn from "cross-spawn"
 import { annotate } from "../commands/index.js"
 import { CliError } from "../errors.js"
+import { executableEnvironment, executableOnPath } from "../executable.js"
 import type { Renderer } from "../renderer.js"
 import type { Streams } from "../streams.js"
 import { CHECK_EVERY_MS, isNewer, readNoticeState, writeUpdateState } from "../update/index.js"
@@ -130,16 +132,164 @@ export interface SkillTargetStatus {
 export const skillStatus = (app: SkillApp, env: Env = process.env): SkillTargetStatus[] =>
   SKILL_TARGETS.map((target) => {
     const path = skillPath(target, app.appName, env)
-    let content: string
-    try {
-      content = readFileSync(path, "utf8")
-    } catch {
-      return { target, path, installed: null, state: "missing" }
-    }
-    const installed = skillVersion(content)
-    if (installed === undefined) return { target, path, installed: null, state: "unversioned" }
-    return { target, path, installed, state: isNewer(app.version, installed) ? "stale" : "current" }
+    return { target, ...(copyStatus(app, path) ?? { path, installed: null, state: "missing" }) }
   })
+
+const copyStatus = (app: SkillApp, path: string): Omit<SkillTargetStatus, "target"> | undefined => {
+  let content: string
+  try {
+    content = readFileSync(path, "utf8")
+  } catch {
+    return undefined
+  }
+  const installed = skillVersion(content)
+  if (installed === undefined) return { path, installed: null, state: "unversioned" }
+  return { path, installed, state: isNewer(app.version, installed) ? "stale" : "current" }
+}
+
+export interface ProgramResult {
+  status: number | null
+  error?: Error
+  stdout: string
+}
+
+/** Runs a program with no shell, found and started with the `env` given, never `process.env`. */
+export type RunProgram = (file: string, args: readonly string[], env: Env) => ProgramResult
+
+const runProgram: RunProgram = (file, args, env) => {
+  const result = crossSpawn.sync(executableOnPath(file, env), [...args], {
+    encoding: "utf8",
+    timeout: 30_000,
+    maxBuffer: 256_000,
+    env: executableEnvironment(env),
+  })
+  return { status: result.status, ...(result.error ? { error: result.error } : {}), stdout: result.stdout ?? "" }
+}
+
+/** How Hermes reads the skill: the `~/.agents/skills` folder listed in its `skills.external_dirs`, or a copy of its own. */
+export type HermesRoute = "external_dirs" | "copy"
+
+/** `HERMES_HOME`, else the folder Hermes itself defaults to. */
+export const hermesHome = (env: Env, platform: NodeJS.Platform = process.platform): string => {
+  const set = env.HERMES_HOME?.trim()
+  if (set) return set
+  if (platform === "win32") return join(env.LOCALAPPDATA || join(homeOf(env), "AppData", "Local"), "hermes")
+  return join(homeOf(env), ".hermes")
+}
+
+export const hermesCopyPath = (appName: string, env: Env): string =>
+  join(hermesHome(env), "skills", appName, "SKILL.md")
+
+const EXTERNAL_DIRS = "skills.external_dirs"
+
+/**
+ * The folders Hermes lists in `skills.external_dirs`, as its own `config get` answers, or `undefined` when Hermes
+ * cannot be asked or the setting is neither a list nor one folder — a value this code must never overwrite.
+ */
+const externalDirs = (env: Env, run: RunProgram): string[] | undefined => {
+  const answer = run("hermes", ["config", "get", EXTERNAL_DIRS, "--json"], env)
+  if (answer.error || answer.status !== 0) return undefined
+  let value: unknown
+  try {
+    value = JSON.parse(answer.stdout)
+  } catch {
+    return undefined
+  }
+  if (value === null) return []
+  if (typeof value === "string") return [value]
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string") ? value : undefined
+}
+
+/** Hermes expands `~` and environment variables in each entry before it resolves the path. */
+const expanded = (entry: string, env: Env): string =>
+  resolve(
+    entry
+      .replace(/^~(?=$|[\\/])/, homeOf(env))
+      .replace(/\$\{(\w+)\}|\$(\w+)/g, (whole, braced?: string, bare?: string) => env[braced ?? bare ?? ""] ?? whole),
+  )
+
+const lists = (dirs: readonly string[], folder: string, env: Env): boolean =>
+  dirs.some((entry) => expanded(entry, env) === resolve(folder))
+
+export interface HermesInstall {
+  via: HermesRoute
+  /** The file Hermes reads. */
+  path: string
+  /** Why the copy was written instead, when it was. */
+  reason?: string
+  /** An earlier copy this CLI wrote, taken out because Hermes refuses a skill name it finds twice. */
+  removed?: string
+}
+
+/** Our own earlier copy, alone in its folder: anything else there was put by someone else and stays. */
+const removeOwnCopy = (appName: string, env: Env): string | undefined => {
+  const path = hermesCopyPath(appName, env)
+  try {
+    if (readdirSync(dirname(path)).join() !== "SKILL.md") return undefined
+    if (skillName(readFileSync(path, "utf8")) !== appName) return undefined
+    rmSync(path)
+    rmdirSync(dirname(path))
+    return path
+  } catch {
+    return undefined
+  }
+}
+
+/** Has Hermes list `folder` in `skills.external_dirs`, keeping the folders there; why not, when it does not. */
+const readFolder = (folder: string, env: Env, run: RunProgram): string | undefined => {
+  const dirs = externalDirs(env, run)
+  if (dirs === undefined) return "Hermes could not be asked for skills.external_dirs"
+  if (lists(dirs, folder, env)) return undefined
+  const set = run("hermes", ["config", "set", EXTERNAL_DIRS, JSON.stringify([...dirs, folder])], env)
+  if (set.error || set.status !== 0) return "hermes config set failed"
+  const after = externalDirs(env, run)
+  return after !== undefined && lists(after, folder, env) ? undefined : "Hermes did not keep the folder"
+}
+
+/**
+ * Writes the skill to `~/.agents/skills`, then has Hermes read that folder by adding it to `skills.external_dirs`
+ * with Hermes's own `config set`, keeping every folder already listed. When Hermes is not on PATH, cannot be asked,
+ * or does not keep the folder, the skill is copied into `$HERMES_HOME/skills` instead.
+ */
+export const installHermesSkill = (
+  app: SkillApp,
+  skill: URL,
+  { env = process.env, run = runProgram }: { env?: Env; run?: RunProgram } = {},
+): { written: string[]; hermes: HermesInstall } => {
+  const [shared] = installSkill(app, skill, { targets: ["agents"], env }) as [string]
+  const reason = readFolder(dirname(dirname(shared)), env, run)
+  if (reason === undefined) {
+    const removed = removeOwnCopy(app.appName, env)
+    return { written: [shared], hermes: { via: "external_dirs", path: shared, ...(removed ? { removed } : {}) } }
+  }
+  const copy = hermesCopyPath(app.appName, env)
+  mkdirSync(dirname(copy), { recursive: true })
+  writeFileSync(copy, readFileSync(shared))
+  return { written: [shared, copy], hermes: { via: "copy", path: copy, reason } }
+}
+
+export interface HermesSkillStatus extends Omit<SkillTargetStatus, "target"> {
+  target: "hermes"
+  /** How Hermes reads the copy reported; `null` when it reads none. */
+  via: HermesRoute | null
+}
+
+/**
+ * The copy Hermes reads: its own `skills/<app>` first, as Hermes scans it first, else the `~/.agents/skills` one when
+ * `skills.external_dirs` lists that folder. Asks Hermes through `config get`, so a host calls it only when asked.
+ */
+export const hermesSkillStatus = (
+  app: SkillApp,
+  { env = process.env, run = runProgram }: { env?: Env; run?: RunProgram } = {},
+): HermesSkillStatus => {
+  const own = copyStatus(app, hermesCopyPath(app.appName, env))
+  if (own) return { target: "hermes", ...own, via: "copy" }
+  const shared = skillPath("agents", app.appName, env)
+  const dirs = externalDirs(env, run)
+  const read = dirs !== undefined && lists(dirs, dirname(dirname(shared)), env) ? copyStatus(app, shared) : undefined
+  if (read) return { target: "hermes", ...read, via: "external_dirs" }
+  return { target: "hermes", path: shared, installed: null, state: "missing", via: null }
+}
 
 /** What the command writes to and where home is, for this invocation — the host's own output resolution. */
 export type SkillEnvironment = (command: Command) => { renderer: Renderer; streams: Streams; env?: Env }
@@ -213,13 +363,26 @@ export const skillCommand = (
   annotate(command.command("install"), { effects: { remote: "none", local: "write" } })
     .summary("install the tool's instructions for AI agents")
     .description(
-      `write SKILL.md to ~/.claude/skills/${app.appName}/ (Claude Code) and ~/.agents/skills/${app.appName}/ (Codex, Gemini CLI)`,
+      `write SKILL.md to ~/.claude/skills/${app.appName}/ (Claude Code) and ~/.agents/skills/${app.appName}/ (Codex, Gemini CLI, OpenClaw); --for hermes also has Hermes read ~/.agents/skills, which changes Hermes's own settings, so all leaves it out`,
     )
     .addOption(
-      new Option("--for <agents>", "which agents to install for").choices(["claude", "agents", "all"]).default("all"),
+      new Option("--for <agents>", "which agents to install for")
+        .choices(["claude", "agents", "hermes", "all"])
+        .default("all"),
     )
-    .action(function (this: Command, { for: chosen }: { for: "claude" | "agents" | "all" }) {
+    .action(function (this: Command, { for: chosen }: { for: "claude" | "agents" | "hermes" | "all" }) {
       const { renderer, env } = environment(this)
+      if (chosen === "hermes") {
+        const { written, hermes } = installHermesSkill(app, skill, env ? { env } : {})
+        renderer.result({ name: app.appName, version: app.version, written, hermes })
+        renderer.success(
+          hermes.via === "external_dirs"
+            ? `${app.appName} ${app.version} skill installed: ${hermes.path}; Hermes reads ${dirname(dirname(hermes.path))} (skills.external_dirs)`
+            : `${app.appName} ${app.version} skill installed: ${hermes.path}, a copy for Hermes (${hermes.reason})`,
+        )
+        if (hermes.removed) renderer.note(`removed the earlier copy Hermes would also have found: ${hermes.removed}`)
+        return
+      }
       const targets = chosen === "all" ? SKILL_TARGETS : [chosen]
       const written = installSkill(app, skill, { targets, ...(env ? { env } : {}) })
       renderer.result({ name: app.appName, version: app.version, written })
@@ -232,11 +395,11 @@ export const skillCommand = (
   })
     .summary("whether the installed instructions for AI agents match this version")
     .description(
-      `for each place \`${app.command} skill install\` writes to: the path, the version installed there, and whether it is current, stale, missing or unversioned`,
+      `for each place \`${app.command} skill install\` writes to, and the copy Hermes reads: the path, the version installed there, and whether it is current, stale, missing or unversioned`,
     )
     .action(function (this: Command) {
       const { renderer, env } = environment(this)
-      const targets = skillStatus(app, env ?? process.env)
+      const targets = [...skillStatus(app, env ?? process.env), hermesSkillStatus(app, env ? { env } : {})]
       renderer.result({ name: app.appName, version: app.version, targets })
     })
 

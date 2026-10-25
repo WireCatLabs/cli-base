@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`skill install --for hermes` gives Hermes Agent the skill, and `skill status` reports what Hermes reads.** It writes
+  the `~/.agents/skills` copy, then adds that folder to Hermes's `skills.external_dirs` through Hermes's own
+  `hermes config set`, keeping every folder already listed. When Hermes is not on PATH or refuses, it copies the file
+  into `$HERMES_HOME/skills/<app>/` and says why. `--for all` stays Claude Code and `~/.agents/skills`: it is the
+  default, and a bare `skill install` must not change another program's settings. `skill status --json` gains a last
+  target, `hermes`, with `via`; a host that matches targets by name and ignores unknown ones needs no change.
 ## 0.58.0 — 25.10.2026
 
 ### Changed — may break callers
