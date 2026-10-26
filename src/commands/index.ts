@@ -27,7 +27,26 @@ export {
   type CommandsPageText,
   commandsPage,
 } from "./page.js"
-export * from "./registry.js"
+export {
+  type ArgumentInfo,
+  annotate,
+  annotateOption,
+  type CommandInfo,
+  type CommandLifetime,
+  type CommandMeta,
+  type CommandOutput,
+  type CommandReach,
+  type CommandState,
+  describeOptions,
+  describeProgram,
+  flatten,
+  metaOf,
+  type OptionInfo,
+  type OptionMeta,
+  type Origin,
+  optionMetaOf,
+  stepTargets,
+} from "./registry.js"
 
 /**
  * Refuses a command path that arrived as one argument — `"projects add" --help`, what a zsh loop over

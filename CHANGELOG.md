@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in
+  0.62.0; it is a helper of the shared-command check and only works with a map kept for one check. No known caller
+  imports it. Describe a whole tree with `describeProgram` instead.
+
 ## 0.62.0 — 26.10.2026
 
 ### Added
