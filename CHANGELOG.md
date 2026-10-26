@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **A failing test shard in `node-ci.yml` names the failed test.** With `test-shards` above 1, each shard wrote only a
+  blob report, so its log said a shard failed but not which test; the shard now also prints Vitest's default report
+  and a GitHub annotation with the test's file and line. Its blob report is uploaded even when its tests fail, so it
+  can be downloaded from the run. The `coverage` job still fails when any shard fails. A caller gets this when it moves
+  its `node-ci.yml` pin to the release that carries it; a caller without shards already had both from Vitest's
+  defaults.
+
 ## 0.61.1 — 26.10.2026
 
 ### Fixed
