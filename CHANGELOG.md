@@ -10,6 +10,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Fixed
+
+- **The `--record` flag's meaning says what a run keeps now.** It read "keep this run under runs: ids and timings,
+  never content", which stopped being true when a run started keeping the command line as typed. It now reads cli-core
+  0.440.0's help line: "keep this run, with the command as typed and secrets hidden; record_input false leaves the
+  typed words out". cli-core's option catalogue picks it up at its next cli-base bump.
+  [Lifecycle](docs/standards/lifecycle.md#runs) also says how a CLI with a program of its own hands cli-core the
+  words it parsed, without which its runs keep no command line.
+
 ### Security
 
 - **`release-checks.yml` runs CodeQL action v4.39.1, pinned by its commit.** It was pinned to the `v4` tag object,

@@ -210,6 +210,8 @@ every value that may be content
   returns the owner's `record` and `keep_runs_for_days` as `keepFailedRuns` and `keepRunsForDays`, never fixed values.
 - A CLI with a program of its own opens each command's run with `startRecording` from `@wirecat/cli-core/cli`,
   ends it with `succeed` or `fail`, adds `--record` and `--no-record` at the root and registers `runsCommand(app)`.
+  Its run keeps the command line only when cli-core is given the words it parsed: `context: runContextOf({ program,
+  argv, … })` to `startRecording`, or `argv` in the program's environment (`provide`) under `recordRuns`.
 
 - **Why:** when a command fails, a person or an agent needs to see what it did, in the same place and shape in every
   CLI. Without the rule, three CLIs shipped with no run log, and one switched cli-core's off.
