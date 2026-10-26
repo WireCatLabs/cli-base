@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Security
+
+- **`release-checks.yml` runs CodeQL action v4.39.1, pinned by its commit.** It was pinned to the `v4` tag object,
+  which still pointed at v4.38.3. A caller gets the newer analysis when it moves its `release-checks.yml` pin to the
+  release that carries this.
+
 ## 0.61.0 — 26.10.2026
 
 ### Changed — may break callers
