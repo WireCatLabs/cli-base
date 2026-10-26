@@ -28,7 +28,6 @@ jobs:
     with:
       pack: ${{ inputs.pack || false }}
       platforms: ${{ inputs.platforms || false }}
-      test-shards: 2
       checks: |
         pnpm docs:check
 
