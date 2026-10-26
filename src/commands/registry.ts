@@ -171,7 +171,26 @@ interface Above {
   noOffline: boolean
 }
 
-const describe = (command: Command, cli: string, parents: readonly string[], above: Above): CommandInfo => {
+/**
+ * The command as if it had no parent, so it inherits nothing, and its subcommands the same way. `known` holds what one
+ * pass has described already, so a whole tree costs one description per command; keep it no longer than that pass.
+ */
+export const describeAlone = (command: Command, known: Map<Command, CommandInfo>): CommandInfo => {
+  let found = known.get(command)
+  if (!found) {
+    found = describe(command, "", [], { offMcp: false, noOffline: false }, known)
+    known.set(command, found)
+  }
+  return found
+}
+
+const describe = (
+  command: Command,
+  cli: string,
+  parents: readonly string[],
+  above: Above,
+  known?: Map<Command, CommandInfo>,
+): CommandInfo => {
   const path = [...parents, command.name()]
   const args = command.registeredArguments.map(describeArgument)
   const options = describeOptions(command)
@@ -201,7 +220,7 @@ const describe = (command: Command, cli: string, parents: readonly string[], abo
     ...(visible(command).length > 0 && hasAction(command) ? { runnable: true as const } : {}),
     arguments: args,
     options,
-    commands: visible(command).map((child) => describe(child, cli, path, here)),
+    commands: visible(command).map((child) => (known ? describeAlone(child, known) : describe(child, cli, path, here))),
   }
 }
 

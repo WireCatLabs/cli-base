@@ -180,3 +180,52 @@ describe("core-owned command contracts", () => {
     expect(() => assertSharedContracts(root)).toThrow("tasks show")
   })
 })
+
+describe("shared contracts checked against one description per pass", () => {
+  const examples = ["tool tasks notes list"]
+  const tree = sharedCommand(() =>
+    new Command("tasks").description("tasks").addCommand(
+      new Command("notes").description("notes on a task").addCommand(
+        annotate(
+          new Command("list").description("list notes").action(() => {}),
+          { examples },
+        ),
+      ),
+    ),
+  )
+  const checked = () => {
+    const group = tree()
+    const root = new Command("tool").addCommand(group)
+    assertSharedContracts(root)
+    const notes = group.commands[0] as Command
+    return { root, notes, list: notes.commands[0] as Command }
+  }
+
+  it("catches a subcommand edited after a passing check", () => {
+    const { root, notes } = checked()
+    notes.description("something else")
+    expect(() => assertSharedContracts(root)).toThrow("tasks notes (description)")
+  })
+
+  it("catches an in-place edit deep in the subtree", () => {
+    const { root, list } = checked()
+    examples.push("tool tasks notes list --all")
+    try {
+      expect(() => assertSharedContracts(root)).toThrow("tasks notes list (examples)")
+    } finally {
+      examples.pop()
+    }
+    list.option("--all", "every note")
+    expect(() => assertSharedContracts(root)).toThrow("tasks notes list (options)")
+  })
+
+  it("accepts an override deep in the subtree after a passing check", () => {
+    const { root, list } = checked()
+    overrideSharedContract(list, "This provider lists notes newest first.", (one) => {
+      one.description("list notes, newest first")
+    })
+    expect(() => assertSharedContracts(root)).not.toThrow()
+    expect(sharedContracts(root)["tasks notes list"]).toMatchObject({ description: "list notes" })
+    expect(sharedContractOverrides(root)).toMatchObject([{ command: ["tasks", "notes", "list"], field: "description" }])
+  })
+})

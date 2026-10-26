@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from "node:util"
 import { Command } from "commander"
 import { CliError } from "../errors.js"
-import { type CommandInfo, describeProgram } from "./registry.js"
+import { type CommandInfo, describeAlone } from "./registry.js"
 
 export interface SharedContractOverride {
   command: readonly string[]
@@ -22,21 +22,23 @@ const protectedCommands = new WeakMap<Command, Protected>()
 
 export const hasSharedContract = (command: Command): boolean => protectedCommands.has(command)
 
-const snapshot = (command: Command, children?: readonly Command[]): Contract => {
-  const root = new Command("contract")
-  const parent = command.parent
-  root.addCommand(command)
-  const described = describeProgram(root)[0]
-  command.parent = parent
-  if (!described) throw new Error("a hidden command cannot own a shared contract")
-  const { commands: _, usage: __, path: ___, ...contract } = described
-  return structuredClone({
+const hidden = (command: Command): boolean => Boolean((command as Command & { _hidden?: boolean })._hidden)
+
+/** Shares arrays with the live command and with `known`: clone it before keeping it past the pass. */
+const snapshot = (
+  command: Command,
+  known = new Map<Command, CommandInfo>(),
+  children?: readonly Command[],
+): Contract => {
+  if (hidden(command)) throw new Error("a hidden command cannot own a shared contract")
+  const { commands: _, usage: __, path: ___, ...contract } = describeAlone(command, known)
+  return {
     ...contract,
     aliases: [...command.aliases()],
     children: (children ?? protectedCommands.get(command)?.originalChildren ?? command.commands)
-      .filter((child) => command.commands.includes(child) && !(child as Command & { _hidden?: boolean })._hidden)
+      .filter((child) => command.commands.includes(child) && !hidden(child))
       .map((child) => child.name()),
-  })
+  }
 }
 const same = isDeepStrictEqual
 const visit = (root: Command, fn: (command: Command) => void): void => {
@@ -55,10 +57,11 @@ const differences = (before: Contract, after: Contract): string[] =>
 
 export const assertSharedContracts = (root: Command): void => {
   const changed: { command: string; fields: string[] }[] = []
+  const known = new Map<Command, CommandInfo>()
   visit(root, (command) => {
     const protectedContract = protectedCommands.get(command)
     if (!protectedContract) return
-    const fields = differences(protectedContract.contract, snapshot(command))
+    const fields = differences(protectedContract.contract, snapshot(command, known))
     if (fields.length) changed.push({ command: pathOf(command).join(" "), fields })
   })
   if (changed.length)
@@ -79,9 +82,9 @@ export const overrideSharedContract = <T extends Command>(
   const protectedContract = protectedCommands.get(command)
   if (!protectedContract) throw new Error("only a core-owned command contract can be overridden")
   assertSharedContracts(command)
-  const before = snapshot(command)
+  const before = structuredClone(snapshot(command))
   change(command)
-  const after = snapshot(command)
+  const after = structuredClone(snapshot(command))
   const fields = differences(before, after)
   if (fields.length === 0) throw new Error("a shared contract override must change its named command")
   for (const field of fields)
@@ -142,14 +145,17 @@ export const sharedCommand =
         const first = command.description().split("\n")[0] ?? ""
         if (!command.summary() && first.length > 80) command.summary(`${first.slice(0, 77).replace(/\s+\S*$/, "")}…`)
       })
+      const known = new Map<Command, CommandInfo>()
       visit(shared, (command) => {
-        if (!(command as Command & { _hidden?: boolean })._hidden && !protectedCommands.has(command))
-          protectedCommands.set(command, {
-            contract: snapshot(command),
-            reference: snapshot(command),
-            overrides: [],
-            originalChildren: [...command.commands],
-          })
+        if (hidden(command) || protectedCommands.has(command)) return
+        // One object for both: `contract` is only ever replaced, and `reference` is cloned on the way out.
+        const contract = structuredClone(snapshot(command, known))
+        protectedCommands.set(command, {
+          contract,
+          reference: contract,
+          overrides: [],
+          originalChildren: [...command.commands],
+        })
       })
       shared.hook("preAction", () => {
         let root: Command = shared
@@ -173,6 +179,7 @@ export const customizeSharedCommand = (
   const command = build()
   assertSharedContracts(command)
   const pending: { command: Command; record: Protected }[] = []
+  const known = new Map<Command, CommandInfo>()
   const edits: SharedContractOverride[] = []
   const bindingPath = (own: Command): string[] => {
     const path = [own.name()]
@@ -187,7 +194,7 @@ export const customizeSharedCommand = (
     if (!inherited) return
     if (!protectedCommands.has(own)) {
       const originalChildren = own.commands.filter((child) => inherited.reference.children.includes(child.name()))
-      const actual = snapshot(own, originalChildren)
+      const actual = structuredClone(snapshot(own, known, originalChildren))
       const overrides = differences(inherited.contract, actual).map((field) => ({
         command: bindingPath(own),
         field,

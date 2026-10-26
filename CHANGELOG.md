@@ -8,6 +8,24 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`describeAlone(command, known)` describes a command as if it had no parent, reusing what `known` already holds.**
+  The shared-command check uses it to describe each command once per pass. Keep `known` for one pass only: a map kept
+  longer returns descriptions of commands that have since changed.
+
+### Fixed
+
+- **The shared-command check describes each command once per pass, not once for itself and again for every group
+  above it.** It runs when a shared command is built and before each command runs, so every command of every CLI paid
+  for it: about 60% of tg's setup, even for `tg --version`. On tg's real program one check now takes about 5 ms
+  instead of 11, building the program about 35 ms instead of 46, and a warm `run(["--version"])` about 30 ms instead
+  of 47 ([measurement](https://github.com/WireCatLabs/cli-testing/blob/main/performance/cli/shared-contract-check/README.md)).
+  The check still covers every protected subcommand, with the same errors and overrides, and `sharedContracts` returns
+  the same contracts as before.
+
 ## 0.61.3 — 26.10.2026
 
 ### Fixed
