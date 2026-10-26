@@ -14,8 +14,8 @@ A "one-shot" command does one job and ends: most commands. A "long-running" comm
 `lifetime: "persistent"` (it runs until it is stopped, such as `serve` or `watch`) or `lifetime: "interactive"` (it
 waits for a person, such as a login).
 
-A "run" is one command's record: what it was, how it ended, and its events, never content. The rules on what a
-run's events may hold are [WC-SECR-1](security.md#wc-secr-1--private-data-and-secrets-never-reach-a-log-a-fixture-or-a-committed-document)
+A "run" is one command's record: what it was, as typed, how it ended, and its events, which never hold content. The
+rules on what a run may hold are [WC-SECR-1](security.md#wc-secr-1--private-data-and-secrets-never-reach-a-log-a-fixture-or-a-committed-document)
 and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and-hides-content-keys).
 
 ### Who follows these rules today
@@ -198,7 +198,10 @@ provider's limit as often as it ends. These three rules make the next run carry 
 ### WC-LIFE-15 · Keep a run log through cli-core, and read it back with `runs`
 
 A failed command is always kept as a run, unless the person turned recording off with `--no-record` or
-`record: false` in the config. `--record` keeps every run of a command that does its work inside cli-core's run
+`record: false` in the config. A run keeps the command line as typed, secrets hidden; `record_input: false` masks
+every value that may be content
+([WC-SECR-1](security.md#wc-secr-1--private-data-and-secrets-never-reach-a-log-a-fixture-or-a-committed-document)).
+`--record` keeps every run of a command that does its work inside cli-core's run
 (`context.run`, or `startRecording` in a program of its own). A run is a folder `<state>/runs/<day>/<run_id>/` with
 `run.json` and `events.jsonl`, one log record per line. `runs list` and `runs show` read it.
 

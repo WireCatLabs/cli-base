@@ -21,13 +21,27 @@ Rule ids on this page are `WC-SECR-<n>`. How to read a rule, how ids work and wh
 ### WC-SECR-1 · Private data and secrets never reach a log, a fixture or a committed document
 
 Command output is the only place where a message the owner asked to read may appear. A log, a run record, a test
-fixture, a document and a commit message never hold message text, a token or a phone number.
+fixture, a document and a commit message never hold message text, a token or a phone number — with one exception:
+a run record keeps the command line the person typed.
+
+A run record's `argv` keeps the words as typed by default, so the history of what was run can be read back. A secret
+in them is always `[redacted]`: the value of an option or argument the CLI marks with cli-core's `secretInput(...)`,
+one whose name says token, password, secret, credential, cookie, authorization or API key, a password inside a URL,
+and a long opaque string. `record_input: false` in the CLI's config masks every value that may be content, and a
+config that will not load masks the same way. A problem report sent to other people (`doctor reports create`) masks
+the typed words always.
 
 - **Why:** a log or a repository is copied and kept far longer than anyone remembers; private data in it is a leak.
 - **Enforced by:** `node-ci.yml:secrets`.
 - **Example:** a log line says `{ "event": "send", "outcome": "sent", "count": 1 }`, not the text that was sent.
-- **Exceptions:** none. The scanners catch secrets of known shapes; message text and names are caught only in review.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+  `tg messages send Mom "see you at 5"` is kept in its run as typed; `tg bot api set-webhook --body '{…}'` keeps
+  `--body [redacted]`, since cli-core marks `--body` with `secretInput`. A CLI's own option that takes a secret is
+  declared `secretInput(new Option("--pin <code>"))` — although under
+  [WC-SECR-5](#wc-secr-5--a-secret-is-never-taken-on-the-command-line) such an option should not exist.
+- **Exceptions:** a run record's `argv`, as above: messaging CLIs already keep every message in the store, so the
+  words typed are not hidden from the owner's own run log. The scanners catch secrets of known shapes; message text
+  and names elsewhere are caught only in review.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1829.
 
 ### WC-SECR-2 · A log keeps only known attribute keys, and hides content keys
 

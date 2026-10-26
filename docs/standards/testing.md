@@ -124,7 +124,8 @@ and which run after merge is in [CI](ci.md).
 - **Enforced by:** review only.
 - **Example:** test data is visibly fake: `synthetic text ${id}`, the phone number `+71234567890`, the device id
   `00000000-0000-0000-0000-000000000001`, `your-token-here`. Content that must stay hidden carries a unique marker,
-  and the test asserts that the marker is absent from output, errors and run events, while the id is present:
+  and the test asserts that the marker is absent from output, errors and run events (a run's `argv` keeps what was
+  typed, so a marker typed on the command line is looked for outside it), while the id is present:
   `expect(err).not.toContain(token)`. The positive check stops the test from passing by recording nothing.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.

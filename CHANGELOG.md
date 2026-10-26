@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **A run record keeps the command line as typed**
+  ([Security](docs/standards/security.md#wc-secr-1--private-data-and-secrets-never-reach-a-log-a-fixture-or-a-committed-document)).
+  The handbook said a run record never holds message text; a run's `argv` now keeps the words typed, so the owner can
+  read back what was run. A secret stays hidden: an option or argument marked with cli-core's `secretInput(...)`, one
+  named for a token, password, secret, credential, cookie, authorization or API key, a password in a URL, a long
+  opaque string. `record_input: false` in a CLI's config masks as before. A CLI's tests that assert a typed marker is
+  absent from its run folder now look outside `argv` ([Testing](docs/standards/testing.md)), and a CLI's own document
+  that says its run log hides what was typed needs the same change.
+
 ## 0.60.0 — 26.10.2026
 
 ### Added
