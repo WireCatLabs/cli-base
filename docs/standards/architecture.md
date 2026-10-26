@@ -144,7 +144,8 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Why:** two registries of the same environment must both be filled on every run, and one is always forgotten.
 - **Enforced by:** review only.
 - **Example:** a CLI extends `BaseEnvironment`, hands it to cli-core's `provide(program, environment)`, and its
-  commands read it with `environmentOf<Environment>(command)`, never with `process.*`.
+  commands read it with `environmentOf<Environment>(command)`. `process.*` appears only as the default for a field
+  the environment leaves unset, as WC-ARCH-10 says: `environmentOf(this).env ?? process.env`.
 - **Exceptions:** a CLI that does not use cli-core's command skeleton keeps one environment of its own.
 - **Applies to:** CLIs built on cli-core's command skeleton. **Since:** cli-base 0.41.0. **Rulings:** none.
 

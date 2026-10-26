@@ -8,6 +8,25 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **Handbook corrections from the cli-template 0.6.0 audit.** [CI](docs/standards/ci.md): the shared `node-ci.yml`
+  runs a CLI's contract, leak, version, generate, test matrix, docs, package and command lint steps itself with
+  `cli: true`; the repository's `ci.yml` names a step it cannot run yet in `skip` and puts only extra checks in
+  `checks`. The page used to say the repository listed those steps in `checks`.
+  [Architecture](docs/standards/architecture.md): a command may fall back to `process.env` when the environment leaves
+  `env` unset, as in `environmentOf(this).env ?? process.env`; the two rules on the command environment no longer
+  disagree. [Testing](docs/standards/testing.md): tests that only read may share a profile; a test that writes config
+  or the store uses its own profile or undoes the write in a `finally` block. The upgrade check defines local state:
+  data the CLI's own code writes and reads back, not cli-core's config file and run records.
+  [Documents](docs/standards/docs.md): an empty `## Unreleased` is not kept, and a developer page anchors claims about
+  behaviour, measurements and findings, not instructions. [New CLI](docs/standards/new-cli.md): the copy tool under
+  `kit/` follows the rules for code and the repository but not those for a CLI's commands and runtime, and the
+  `CLIDEV_` prefix is a placeholder like `clidev`. The repository lists on the CI, Toolchain, Security and Documents
+  pages now include cli-template.
+
 ## 0.61.2 — 26.10.2026
 
 ### Fixed

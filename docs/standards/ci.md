@@ -11,7 +11,8 @@ Rule ids on this page are `WC-CI-<n>`. How to read a rule, how ids work and whic
 [Security page](security.md).
 
 "The ten repositories" on this page means the six CLIs (tg, max, memo, drive, zoom, wa), cli-base, cli-core,
-cli-testing, cli-docs, plus community itself.
+cli-testing, cli-docs, plus community itself. cli-template follows every rule here as a CLI does
+([New CLI](new-cli.md#the-template-repository-itself)).
 
 ## Rules
 
@@ -51,7 +52,7 @@ cli-testing, cli-docs, plus community itself.
 - **Why:** it is the first build-level answer on a pull request, so it must stay fast enough that nobody wants it gone.
 - **Enforced by:** `standards.yml:standards` · `pnpm ci:quick`.
 - **Example:** what each repository runs today:
-  - tg, max, memo and wa: `pnpm typecheck && pnpm build && pnpm lint:commands`;
+  - tg, max, memo, wa and cli-template: `pnpm typecheck && pnpm build && pnpm lint:commands`;
   - drive: `pnpm typecheck && pnpm lint:commands`, which builds first;
   - zoom, cli-base and cli-testing: `pnpm typecheck`;
   - cli-core: `pnpm typecheck` and its command lint test;
@@ -95,8 +96,8 @@ cli-testing, cli-docs, plus community itself.
   cli-base `macos.yml` for the path code. cli-docs and community run `security-pr.yml`, a new-commit secret scan;
   cli-docs validates its site before each deployment instead, and community has no build. Third-party security apps
   may post their own checks.
-- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli, cli-core
-  cli-memo, zoom-cli and drive-cli have `pr.yml`; cli-testing does not have it yet. **Since:**
+- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli, cli-core,
+  cli-memo, zoom-cli, drive-cli and cli-template have `pr.yml`; cli-testing does not have it yet. **Since:**
   cli-base 0.41.0 (pull request validation since cli-base 0.45.0). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
@@ -115,9 +116,12 @@ cli-testing, cli-docs, plus community itself.
   catches that merge skew the same hour, not at the next release.
 - **Enforced by:** `main.yml:validation` · `node-ci.yml:check` · `node-ci.yml:bun` · `node-ci.yml:secrets`.
 - **Example:** `main.yml` calls the repository's own `ci.yml`, which calls cli-base `node-ci.yml`. That runs
-  `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage`, `pnpm build`, then the project's `checks` lines (for max:
-  contracts, the no-leak scan, the version check, `pnpm generate` and `git diff --exit-code`, the test matrix,
-  `docs:check` and parity), a Bun job, and a gitleaks scan of the whole history.
+  `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage` and `pnpm build`. With `cli: true` it then runs one named step
+  per CLI script: `contracts:check`, `contracts:upgrade`, `security:no-leak`, `version:check`, `generate:check`,
+  `test:matrix:check`, `docs:check`, `package:check`, `lint:commands`, and `parity:check` with `parity: true`. Then
+  the project's `checks` lines, a Bun job, and a gitleaks scan of the whole history. The shared workflow owns the CLI
+  steps: the repository's `ci.yml` names a step it cannot run yet in `skip`, with the reason beside it, and puts only
+  its extra checks in `checks` (tg and max: `pnpm check:agent-docs`).
 - **Exceptions:** platform suites (Windows, macOS, install checks) are skipped here and run at release, monthly or on
   request. Nothing in this run publishes or tags. cli-docs runs its full validation before each deployment and monthly
   instead; community has no build to validate.
@@ -140,8 +144,8 @@ what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/�
 - **Why:** one shared workflow keeps the full suite the same everywhere, and a pin keeps a cli-base change from
   breaking ten repositories at once.
 - **Enforced by:** `ci.yml:ci`.
-- **Example:** `uses: WireCatLabs/cli-base/.github/workflows/node-ci.yml@<commit> # v0.31.0`, with the project's own
-  checks in the `checks` input and `bun-run` for the Bun job. A job that only one repository needs stays beside it in
+- **Example:** `uses: WireCatLabs/cli-base/.github/workflows/node-ci.yml@<commit> # v0.31.0`, with `cli: true` for
+  the CLI steps (WC-CI-7), the project's extra checks in the `checks` input and `bun-run` for the Bun job. A job that only one repository needs stays beside it in
   that repository's `ci.yml`.
 - **Exceptions:** never pin to `main`. cli-base itself calls `./.github/workflows/node-ci.yml`. cli-docs has its own
   full workflow for the site, and community has none.
@@ -182,8 +186,8 @@ what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/�
 - **Why:** a red merge breaks `main` for every parallel branch, and an admin merge skips the only gate there is.
 - **Enforced by:** `whatsapp-cli: main ruleset required checks` · `cli-core: main ruleset required checks` ·
   `tg-cli: main ruleset required checks` · `max-cli: main ruleset required checks` ·
-  `cli-memo: main ruleset required checks` · `drive-cli: main ruleset required checks`, plus the main ruleset of
-  cli-base itself. In each repository with pr.yml, the ruleset requires the pull request validation jobs besides the
+  `cli-memo: main ruleset required checks` · `drive-cli: main ruleset required checks`, plus the main rulesets of
+  cli-base and cli-template. In each repository with pr.yml, the ruleset requires the pull request validation jobs besides the
   standards job. cli-testing and cli-docs have no pr.yml, so their rulesets require only the standards job, and
   review covers the rest. zoom-cli has pr.yml,
   but its ruleset still requires only the standards job.

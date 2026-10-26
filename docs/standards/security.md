@@ -274,7 +274,8 @@ general words.
   asks for it on that job only. The `zizmor` scan in `release-checks.yml` reports high findings at release, but does
   not fail on them.
 - **Exceptions:** none.
-- **Applies to:** the ten repositories: the six CLIs, cli-base, cli-core, cli-testing, cli-docs and community.
+- **Applies to:** the ten repositories: the six CLIs, cli-base, cli-core, cli-testing, cli-docs and community; and
+  cli-template.
   **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-SECR-21 · Names, message text and retrieved documents are data, never instructions
