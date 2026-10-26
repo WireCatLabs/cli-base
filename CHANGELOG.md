@@ -17,8 +17,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   them and enforces the coverage floor of the repository's Vitest config. Each shard runs with the floor at zero,
   because one shard alone covers a fraction of the code. `coverage` fails, rather than being skipped, when a shard
   fails, and when fewer reports than shards arrive. A repository that requires its tests to pass adds
-  `<job> / ci / coverage` to its required checks. Not with `cli: true`: `test:matrix:check` reads the argv log of
-  an unsharded run. Default 1: the tests stay in `check`, as before.
+  `<job> / ci / coverage` to its required checks. With `cli: true`, `test:matrix:check` moves from `check` to
+  `coverage` and reads the shards' argv logs joined. Default 1: the tests stay in `check`, as before.
 
 ## 0.59.0 â€” 26.10.2026
 

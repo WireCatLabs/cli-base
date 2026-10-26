@@ -71,7 +71,7 @@ on:
       test-shards:
         description: >-
           2 to 8 runs test:coverage on that many runners instead of in `check`, and the `coverage` job merges them and
-          enforces the coverage floor; not with cli, whose test:matrix:check reads the unsharded run
+          enforces the coverage floor and, with cli, runs test:matrix:check on the shards' joined argv logs
         type: number
         default: 1
 
@@ -92,10 +92,6 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: pnpm
-      - if: inputs.cli && inputs.test-shards > 1
-        run: |
-          echo "::error::test-shards needs cli: false — test:matrix:check reads the argv log of an unsharded test:coverage"
-          exit 1
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
@@ -104,7 +100,8 @@ jobs:
         env:
           TZ: Asia/Vladivostok
       - run: pnpm build
-      # One step per script, after test:coverage: test:matrix:check reads that run's argv log.
+      # One step per script, after test:coverage: test:matrix:check reads that run's argv log, so with shards it runs
+      # in `coverage` instead.
       - name: cli steps to skip
         if: inputs.cli
         id: skip
@@ -133,7 +130,7 @@ jobs:
         if: inputs.cli && !contains(steps.skip.outputs.list, ' generate:check ')
         run: pnpm generate:check
       - name: test:matrix:check
-        if: inputs.cli && !contains(steps.skip.outputs.list, ' test:matrix:check ')
+        if: inputs.cli && inputs.test-shards <= 1 && !contains(steps.skip.outputs.list, ' test:matrix:check ')
         run: pnpm test:matrix:check
       - name: docs:check
         if: inputs.cli && !contains(steps.skip.outputs.list, ' docs:check ')
@@ -211,6 +208,21 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
+      # The argv log lives in coverage/, which the merge in `coverage` empties.
+      - if: inputs.cli
+        env:
+          SHARD: ${{ matrix.shard }}
+        # A shard whose tests drive no command writes no log.
+        run: |
+          mkdir -p argv
+          if [ -f coverage/argv.jsonl ]; then cp coverage/argv.jsonl "argv/$SHARD.jsonl"; else : > "argv/$SHARD.jsonl"; fi
+      - if: inputs.cli
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: node-ci-test-argv-${{ matrix.shard }}
+          path: argv
+          if-no-files-found: error
+          retention-days: 1
 
   coverage:
     needs: test
@@ -238,6 +250,12 @@ jobs:
           pattern: node-ci-test-shard-*
           path: .vitest/blob
           merge-multiple: true
+      - if: inputs.cli
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: node-ci-test-argv-*
+          path: argv
+          merge-multiple: true
       # A missing shard would merge into a smaller, still passing report.
       - env:
           SHARDS: ${{ inputs.test-shards }}
@@ -247,6 +265,13 @@ jobs:
       - run: pnpm test:coverage --merge-reports
         env:
           TZ: Asia/Vladivostok
+      # test-matrix reads the log as a set of commands and options, so the shards' logs joined equal one run's.
+      - name: test:matrix:check
+        if: inputs.cli && !contains(inputs.skip, 'test:matrix:check')
+        run: |
+          cat argv/*.jsonl > coverage/argv.jsonl
+          pnpm build
+          pnpm test:matrix:check
 
   bun:
     if: inputs.bun

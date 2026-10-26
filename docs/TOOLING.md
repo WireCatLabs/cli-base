@@ -146,8 +146,9 @@ A missing script fails its step, so a check nobody wired up shows as red, not as
 `platforms: true` adds a job on Windows and macOS: install, `pnpm test` (one worker on Windows), build,
 `node dist/bin/<bin>.js --version`, then the lines in `platform-run` (commands that need no login).
 
-`test-shards: 4` (2 to 8, not with `cli: true`) takes `test:coverage` out of `check`: four `test (i/4)` jobs each
-run one Vitest shard, and `coverage` merges them and enforces the floor. Require `<job> / ci / coverage` beside
+`test-shards: 4` (2 to 8) takes `test:coverage` out of `check`: four `test (i/4)` jobs each
+run one Vitest shard, and `coverage` merges them and enforces the floor. With `cli: true`, `coverage` also runs
+`test:matrix:check` on the shards' argv logs joined. Require `<job> / ci / coverage` beside
 `<job> / ci / check`.
 
 ```yaml
