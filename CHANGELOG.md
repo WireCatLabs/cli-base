@@ -8,6 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`node-ci.yml` takes `test-shards` (2 to 8) to run `test:coverage` on that many runners.** The `check` job then
+  skips the tests; `test (i/n)` jobs each run one Vitest shard with the blob reporter, and a `coverage` job merges
+  them and enforces the coverage floor of the repository's Vitest config. Each shard runs with the floor at zero,
+  because one shard alone covers a fraction of the code. `coverage` fails, rather than being skipped, when a shard
+  fails, and when fewer reports than shards arrive. A repository that requires its tests to pass adds
+  `<job> / ci / coverage` to its required checks. Not with `cli: true`: `test:matrix:check` reads the argv log of
+  an unsharded run. Default 1: the tests stay in `check`, as before.
+
 ## 0.59.0 — 26.10.2026
 
 ### Added
