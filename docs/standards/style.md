@@ -57,7 +57,8 @@ formatting, so this page does not repeat it.
 - **Example:** narrow with a type guard, `instanceof` or a shape check. A test fixture uses an honest type, such as
   `Omit<T, "x"> & { x: string | null }`, not `as unknown as T`.
 - **Exceptions:** `as const` is allowed. A cast that cannot be avoided, because a library is typed too loosely, keeps
-  a comment on that line that says why. Existing casts are not yet removed; the rule holds for new code.
+  a comment on that line that says why. A cast already on `main` on 17.10.2026, the day cli-base 0.41.0 added this
+  rule, may stay until that code is changed; `git blame` shows the date of a line. A cast added later is a finding.
 - **Applies to:** all repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-STYLE-6 · In a `catch`, narrow with `instanceof` and wrap anything else

@@ -82,13 +82,14 @@ on the [CI](ci.md) page.
 - **Exceptions:** a shared library that prints no version has no `src/version.ts`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-REL-7 · Versions are `x.y.z`; before 1.0.0 the changelog, not the number, marks a breaking change
+### WC-REL-7 · Versions are `x.y.z`; before 1.0.0 a breaking change raises the minor
 
-- **Why:** before 1.0.0 any release may change the API, so a caller reads "Changed — may break callers" before an
-  upgrade.
+- **Why:** npm's `^0.40.4` takes every `0.40.x`, so a patch reaches callers who never read its changelog. It must not
+  break them.
 - **Enforced by:** review only.
-- **Example:** raise the minor (`0.40.4` to `0.41.0`) for a release with new features, and the patch for one with only
-  fixes. A breaking change, in either kind of release, has an entry under "Changed — may break callers".
+- **Example:** raise the minor (`0.40.4` to `0.41.0`) for a release with a new feature or with any entry under
+  "Changed — may break callers" or "Removed". Raise the patch (`0.40.4` to `0.40.5`) only when every entry is a fix
+  or a change to the documents.
 - **Exceptions:** a pre-release version (`0.41.0-rc.1`) is chosen by hand.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
