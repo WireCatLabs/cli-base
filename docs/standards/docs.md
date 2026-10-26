@@ -27,8 +27,8 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Enforced by:** `tg-cli: pnpm docs:check` · `max-cli: pnpm docs:check` · `whatsapp-cli: pnpm docs:check` ·
   `zoom-cli: pnpm docs:check`.
 - **Example:** write "`--limit` defaults to 50", not "~~20~~ 50 (correction 2026-10-01, NEED-12)".
-- **Exceptions:** none. `cli-dev docs-check` checks this when the CLI's rules module sets `userPage`. tg, max, wa
-  and zoom set it; memo, drive and cli-base's default check do not.
+- **Exceptions:** none. `cli-dev docs-check` checks this when the CLI's rules module sets `userPage`. tg, max, wa,
+  zoom and cli-template set it; memo, drive and cli-base's default check do not.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-3 · Every document states current facts; rewrite a wrong sentence in place
@@ -110,7 +110,9 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Enforced by:** review only.
 - **Example:** cite `src/store/open.ts:42` for our code, a URL for anything outside, a commit for history. Write "ran
   X, saw Y" for what you ran, and "the docs describe X" for what you only read. Say at the top what is not verified.
-- **Exceptions:** user pages state behaviour and do not carry code anchors.
+- **Exceptions:** an instruction or a rule ("run `pnpm test`", "one store per profile") needs no anchor; a claim about
+  how the code or a service behaves, a measurement and a finding do. A file path with no line number is enough when
+  the claim is about the whole file. User pages state behaviour and do not carry code anchors.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-12 · A runnable command in a document has no placeholder in it
@@ -136,7 +138,9 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Why:** the GitHub release and the release scripts read the changelog by its headings.
 - **Enforced by:** `pnpm docs:check` · `changelog-guard.yml`.
 - **Example:** `## Unreleased` at the top while work is merged; a release dates it as `## 0.41.0 — 17.10.2026`. Each
-  version heading and the pending heading appear once.
+  version heading and the pending heading appear once. The pending section exists only while it has entries: after a
+  release the changelog opens on the dated section, and the next entry adds `## Unreleased` back. Never keep an empty
+  one.
 - **Exceptions:** max-cli names the pending section `## Не выпущено`.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 

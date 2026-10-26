@@ -16,7 +16,8 @@ one source of the presets. Each repository holds a copy of them in `config/wirec
 `adopt-standards.py`.
 
 "The ten repositories" on this page means the six CLIs (tg, max, memo, drive, zoom, wa), cli-base, cli-core,
-cli-testing, cli-docs, plus community itself.
+cli-testing, cli-docs, plus community itself. cli-template follows every rule here as a CLI does
+([New CLI](new-cli.md#the-template-repository-itself)).
 
 ## Rules
 

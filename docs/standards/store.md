@@ -181,7 +181,7 @@ messages), or other people's data.
   `WIRECAT_STATE_DIR` and every `<APP>_CONFIG_DIR`, `_STATE_DIR` and `_CACHE_DIR` that is set at a temporary
   directory before any test runs, and the home folder with them, so one that is not set lands there too. cli-core and
   every CLI load it first, then their own setup file for what is theirs alone. A test that needs its own store is
-  [WC-TEST-9](testing.md#wc-test-9--give-each-test-its-own-profile-or-its-own-store). The rest of the sandbox is
+  [WC-TEST-9](testing.md#wc-test-9--leave-no-tests-config-or-store-change-for-the-next-test-to-see). The rest of the sandbox is
   [WC-TEST-1](testing.md#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory).
 - **Exceptions:** none.
 - **Applies to:** all CLIs that use the store, and cli-core. **Since:** cli-base 0.41.0. **Rulings:** none.
