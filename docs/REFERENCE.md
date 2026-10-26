@@ -178,10 +178,11 @@ timeout test finish instantly and a keyring test incapable of reaching a real ke
 format-neutral `ApiModel` — operations with a transport binding (`http` method and path, or `rpc`
 name), an `effect` (`read`, `write`, `destructive`) and how far the source can be trusted
 (`contract`, `example`, `inferred`, `override`) — and writes committed files. It parses no file
-format: the adapter from OpenAPI, Postman or anything else lives in the CLI that has that source,
-so this adds no dependency. Generation stops, naming the problem, when two operations collide, an
+format and adds no dependency: `adaptOpenApi` reads a parsed OpenAPI document, `adaptDiscovery` parsed
+Google Discovery documents, and an adapter from Postman or anything else lives in the CLI that has that
+source. Generation stops, naming the problem, when two operations collide, an
 operation is not classified as a read or a write, an override matches nothing, a reference points
-nowhere or a construct cannot be expressed; it never drops an operation or falls back to `any`.
+nowhere or a construct cannot be expressed; it never drops an operation unasked or falls back to `any`.
 
 ```ts
 import { generate, manifestGenerator, typesGenerator, valibotGenerator, writeArtifacts } from "@wirecat/cli-base/codegen"
@@ -191,6 +192,24 @@ const artifacts = generate(model, [typesGenerator({ path }), valibotGenerator({ 
   banner: ["Source: spec/bot/schema.yaml", "Run: pnpm bot:generate"],
 })
 const stale = writeArtifacts(artifacts, { root, check: process.argv.includes("--check") })
+```
+
+**Google APIs come from Discovery snapshots.** `syncDiscovery(sources, { dir })` downloads each document
+byte for byte into `dir` with a `provenance.json` (source, revision, version, `sha256`); it is the CLI's
+`spec:sync` script, run by hand. `readDiscovery(dir)` loads them back for generation and stops if a file no
+longer matches its hash. `adaptDiscovery(documents, { exclude, sourceRevision })` classifies each method by its
+HTTP verb, leaves out the methods in `exclude` (id → reason; a stale id stops generation), and returns the
+OAuth scopes per method, the omissions, and each service's `rootUrl` and `servicePath`. A POST that only reads,
+or one that deletes, is corrected with `overrides`:
+
+```ts
+const { model, metadata, services } = adaptDiscovery(readDiscovery("spec/google"), {
+  exclude: { "calendar.events.watch": "needs a public HTTPS endpoint" },
+})
+generate(model, generators, {
+  overrides: { "calendar.freebusy.query": { effect: "read", reason: "a POST that only reads busy times" } },
+  banner: ["Source: spec/google/*.json, verified by provenance.json", "Run: pnpm generate"],
+})
 ```
 
 The generated schemas import `@wirecat/cli-base/codegen/runtime` at run time — a few number

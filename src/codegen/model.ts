@@ -1,7 +1,8 @@
 /**
  * The model every generator reads, whatever the source was: an OpenAPI file, a Postman collection,
  * a scraped reference page. An adapter produces this from a document already parsed into plain
- * values: `adaptOpenApi` for OpenAPI here, the rest in the consumer. Nothing here reads YAML or a file.
+ * values: `adaptOpenApi` for OpenAPI and `adaptDiscovery` for Google Discovery here, the rest in the
+ * consumer. Nothing here reads YAML or a file.
  */
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD"

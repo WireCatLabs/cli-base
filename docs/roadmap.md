@@ -6,7 +6,7 @@ There are no dates. What changed in each release is in the [changelog](../CHANGE
 ## What works today
 
 Output for people and programs, closed error codes, the keyring, clocks, the query language, the command tree as
-data, code generation from OpenAPI, release checks and the `cli-dev` lint and audit: see the
+data, code generation from OpenAPI and Google Discovery, release checks and the `cli-dev` lint and audit: see the
 [README](../README.md#features) and the [API reference](REFERENCE.md). The rules every WireCat CLI follows are the
 [standards handbook](standards/README.md); [New CLI](standards/new-cli.md) starts one with `npx @wirecat/cli-template new`.
 
@@ -23,4 +23,4 @@ data, code generation from OpenAPI, release checks and the `cli-dev` lint and au
 
 ## Later
 
-- Code generation from API descriptions other than OpenAPI.
+- Code generation from API descriptions other than OpenAPI and Google Discovery.

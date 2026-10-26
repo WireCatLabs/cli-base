@@ -8,6 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`@wirecat/cli-base/codegen` reads Google Discovery documents: `adaptDiscovery`, `syncDiscovery` and
+  `readDiscovery`.** A Google CLI no longer keeps its own copy of the Discovery adapter and the `spec:sync` script.
+  `adaptDiscovery` takes `exclude` (method id → reason) for methods a CLI cannot serve, such as a `watch` that needs a
+  public webhook, and returns each service's `rootUrl` and `servicePath` for a CLI that calls Google with `fetch`.
+  Effects come from the HTTP verb only: correct a POST that reads, or a method that deletes, with `generate`'s
+  `overrides`. `syncDiscovery` writes the downloaded bytes unchanged and every provenance field, including
+  `sourceSha256` and `normalization`.
+
 ## 0.62.0 — 26.10.2026
 
 ### Added

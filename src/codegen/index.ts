@@ -1,9 +1,20 @@
 /**
  * Turns an official API description into committed code: types, Valibot schemas, an operation
  * manifest and a coverage page. Build-time only, and format-neutral: it parses no file format and
- * adds no dependency. `adaptOpenApi` reads an OpenAPI document the consumer has parsed; an adapter from
- * Postman or anything else lives in the consumer.
+ * adds no dependency. `adaptOpenApi` reads an OpenAPI document and `adaptDiscovery` Google Discovery
+ * documents the consumer has parsed; an adapter from Postman or anything else lives in the consumer.
  */
+export {
+  adaptDiscovery,
+  type DiscoveryMetadata,
+  type DiscoveryOptions,
+  type DiscoveryProvenance,
+  type DiscoveryResult,
+  type DiscoveryService,
+  readDiscovery,
+  type SyncDiscoveryOptions,
+  syncDiscovery,
+} from "./discovery.js"
 export {
   type CoverageOptions,
   coverageGenerator,
