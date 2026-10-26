@@ -332,7 +332,8 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     name: "--record",
     role: "mode",
     type: "switch",
-    meaning: "keep this run under runs: ids and timings, never content",
+    meaning:
+      "keep this run, with the command as typed and secrets hidden; record_input false leaves the typed words out",
   },
   { name: "--regex", role: "mode", type: "switch", meaning: "the words are one regular expression" },
   { name: "--silent", role: "mode", type: "switch", meaning: "deliver without a notification" },
