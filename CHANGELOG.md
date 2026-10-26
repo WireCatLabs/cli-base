@@ -21,6 +21,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Security
 
+- **The secret-handling rule lists what a run record hides by content.** Besides secret-named flags, a URL password
+  and a long opaque string, cli-core finds a token of a known format, a `Bearer` or `Basic` credential, the value of a
+  secret-named `name=value` pair and a random-looking string of 20 or more characters inside any typed word, and the
+  same in a kept error message (`WC-SECR-1`).
 - **`release-checks.yml` runs CodeQL action v4.39.1, pinned by its commit.** It was pinned to the `v4` tag object,
   which still pointed at v4.38.3. A caller gets the newer analysis when it moves its `release-checks.yml` pin to the
   release that carries this.

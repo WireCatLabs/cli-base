@@ -26,8 +26,12 @@ a run record keeps the command line the person typed.
 
 A run record's `argv` keeps the words as typed by default, so the history of what was run can be read back. A secret
 in them is always `[redacted]`: the value of an option or argument the CLI marks with cli-core's `secretInput(...)`,
-one whose name says token, password, secret, credential, cookie, authorization or API key, a password inside a URL,
-and a long opaque string. `record_input: false` in the CLI's config masks every value that may be content, and a
+one whose name says token, password, passphrase, secret, credential, cookie, authorization or API key, a password
+inside a URL, and a long opaque string. Inside any typed word cli-core also finds a secret by its content and replaces
+only the secret: a token of a known format (GitHub `ghp_…`/`github_pat_…`, `sk-…`, Slack `xox…-`, AWS `AKIA…`, Google
+`AIza…`, Stripe `sk_`/`rk_`, npm `npm_…`, a Telegram bot token, a JWT, a PEM private key), a `Bearer` or `Basic`
+credential, the value of a secret-named pair (`password=…`, `API_TOKEN=…`, `client_secret:…`), a random-looking string
+of 20 or more characters, and a phone number. The same search runs on a kept error message. `record_input: false` in the CLI's config masks every value that may be content, and a
 config that will not load masks the same way. A problem report sent to other people (`doctor reports create`) masks
 the typed words always.
 
