@@ -67,10 +67,12 @@ cli-testing, cli-docs, plus community itself.
 - **Why:** a folder that no `tsconfig` covers breaks without a sign, and a test that compares against a constant that
   does not exist passes for any input while CI stays green.
 - **Enforced by:** `pnpm typecheck` · `pnpm ci:quick` · `node-ci.yml:check`.
-- **Example:** `tsconfig.test.json` extends `@wirecat/cli-base/tsconfig.test.json`, covers all of `src/`, tests
-  included, checks them with `noEmit` and carries `"exclude": []`. Without that line it inherits the build's
-  `exclude`, checks no test file and still passes. `tsconfig.scripts.json` extends
-  `@wirecat/cli-base/tsconfig.scripts.json` and covers `scripts/`. The `typecheck` script runs all three projects.
+- **Example:** `tsconfig.test.json` has `"extends": ["./tsconfig.json", "@wirecat/cli-base/tsconfig.test.json"]`, in
+  that order, and adds at most `rootDir` and an `include` for more folders. The shared file covers all of `src/`,
+  tests included, checks it with `noEmit` and sets `"exclude": []`, so it must come last and the repository's file sets
+  no `exclude` of its own. A file that sets the build's `exclude` again checks no test file and still passes.
+  `tsconfig.scripts.json` extends `@wirecat/cli-base/tsconfig.scripts.json` and covers `scripts/`. The `typecheck`
+  script runs all three projects.
 - **Exceptions:** a new folder of TypeScript goes into one of these projects in the same pull request. memo has no
   `tsconfig.scripts.json` yet.
 - **Applies to:** the CLIs, cli-core, cli-base and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -81,13 +83,14 @@ cli-testing, cli-docs, plus community itself.
   the other.
 - **Enforced by:** `pnpm smoke:bun` · `node-ci.yml:bun` · `node-ci.yml:platforms` (the unit suite on Windows and
   macOS).
-- **Example:** `"engines": { "node": ">=22" }` in `package.json`. Full validation runs on Node 24. `bun test` cannot
-  run the vitest suite, so `scripts/smoke.ts` runs the built exports with plain assertions, and the Bun job runs it
+- **Example:** `"engines": { "node": "^22.16.0 || >=24" }` in `package.json`, as cli-core and cli-template have it:
+  Node 22 from 22.16.0, then 24 and later. Full validation runs on Node 24. `bun test` cannot run the vitest suite, so
+  `scripts/smoke.ts` runs the built exports with plain assertions, and the Bun job runs it
   (`pnpm build && pnpm smoke:bun`). A new entry point gets a line there. Node 22 runs in the Windows install matrix of
   tg, max and wa, in zoom's full validation and in cli-core's old-Node job.
-- **Exceptions:** cli-docs and community publish no runtime package. memo, drive and cli-base do not run Node 22 in
-  any workflow yet. The unit suite runs on Windows and macOS for tg, max and drive (`platforms: true`); zoom and
-  memo still fail tests there, so theirs is off.
+- **Exceptions:** cli-docs and community publish no runtime package. tg needs `^22.19.0`. memo, drive and cli-base
+  do not run Node 22 in any workflow yet, and cli-base's own `engines` is still `>=22`. The unit suite runs on Windows
+  and macOS for tg, max and drive (`platforms: true`); zoom and memo still fail tests there, so theirs is off.
 - **Applies to:** the CLIs, cli-core and cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-11.
 
 ### WC-TOOL-7 · Let Biome format the code, and do not format by hand
@@ -206,11 +209,14 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
 ### WC-TOOL-17 · Spell-check prose with the shared `cspell` config
 
 - **Why:** a typo in a page or a help text is the first thing a reader sees.
-- **Enforced by:** `pnpm docs:spell`.
+- **Enforced by:** `pnpm docs:spell` · `pnpm docs:check`.
 - **Example:** `cspell.json` imports `./config/wirecat/cspell.json` (English, British English, Russian, Spanish and the
-  WireCat word list) and adds only the project's own words. Code blocks and inline code are not checked.
-- **Exceptions:** a general word goes into the community word list, not into each project. In tg, max, wa, zoom and
-  cli-testing, `cspell` also runs inside `docs:check` in full validation.
+  WireCat word list) and adds only the project's own words. A repository checks `README.md` and every user page,
+  `docs/*.md`, in `docs:spell` or in `docs:check`. Generated pages (`docs/commands.md`), `docs/dev/` and
+  `CHANGELOG.md` may be left out. Code blocks and inline code are not checked.
+- **Exceptions:** a general word goes into the community word list, not into each project. cli-base checks
+  `README.md` and `docs/standards/`; cli-docs its site pages in `content/docs/`; community every Markdown file it
+  publishes. cli-core, zoom and cli-testing check only `README.md` yet.
 - **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-18 · Lint Markdown with `markdownlint-cli2` and the shared preset

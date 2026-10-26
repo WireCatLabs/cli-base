@@ -19,6 +19,23 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   fails, and when fewer reports than shards arrive. A repository that requires its tests to pass adds
   `<job> / ci / coverage` to its required checks. With `cli: true`, `test:matrix:check` moves from `check` to
   `coverage` and reads the shards' argv logs joined. Default 1: the tests stay in `check`, as before.
+- **Before 1.0.0, a release with a breaking change raises the minor version**
+  ([Releases](docs/standards/releases.md#wc-rel-7--versions-are-xyz-before-100-a-breaking-change-raises-the-minor)).
+  A section with an entry under "Changed — may break callers" or "Removed", or a new feature, raises the minor; only
+  fixes and document changes raise the patch. npm's `^0.x.y` takes every patch of that minor, so a patch must not
+  break anyone. The rule used to allow a breaking change in a patch release.
+
+### Fixed
+
+- **Handbook corrections from the cli-template 0.1.8 audit.**
+  [Kit surface](docs/standards/kit-surface.md) lists every cli-base and cli-core export the template uses, in `src/`
+  and `scripts/`, including `privateFiles` and `profileFree`, and the config files it extends.
+  [Toolchain](docs/standards/toolchain.md): the `engines` example is `^22.16.0 || >=24`, as cli-core and cli-template
+  pin it; `tsconfig.test.json` extends the shared test config last and sets no `exclude` of its own, since the shared
+  file already sets `"exclude": []`; the spell check covers `README.md` and every user page in `docs/`.
+  [Style](docs/standards/style.md): a cast may stay only if it was on `main` on 17.10.2026, when the rule against
+  casts came in. [CI](docs/standards/ci.md) says where an audit finds the shared workflows CI runs: at the commit
+  pinned in the repository's workflow files, not in the npm package.
 
 ## 0.59.0 — 26.10.2026
 

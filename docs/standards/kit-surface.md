@@ -12,17 +12,24 @@ This page is a reference, not a rule page: it assigns no rule ids. How to start 
 
 ## What the template imports
 
-The list is what the template's `src/` imports today, type imports included.
+The list is what the template's `src/` and `scripts/` import today, type imports and re-exports included. `kit/` imports
+nothing from either package.
 
 | Package and path | Exports |
 |---|---|
 | `@wirecat/cli-base` | `catchCrashes`, `CliError`, `configFilePath`, `mcpErrorResult`, `resolvePaths` |
 | `@wirecat/cli-base/commands` | `annotate`, `CommandInfo`, `describeProgram` |
-| `@wirecat/cli-core/cli` | `AppIdentity`, `changesAuthorityAt`, `commandsCommand`, `configCommand`, `Configuration`, `createProgram`, `environmentOf`, `GlobalFlags`, `itemOf`, `LOCAL_READ`, `outputFor`, `ProgramDefinition`, `ProgramOptions`, `readOnlyLockOf`, `REMOTE_WRITE`, `renderAnswer`, `rootOf`, `run`, `RunOptions`, `runsCommand`, `settingsFor`, `skillCommand`, `upgradeCommand` |
+| `@wirecat/cli-base/codegen` | `writeArtifacts` (in `scripts/`) |
+| `@wirecat/cli-base/release` | `DocsRules`, `JOURNAL_IDS`, `markdownFiles`, `packContents` (in `scripts/`) |
+| `@wirecat/cli-core/cli` | `AppIdentity`, `changesAuthorityAt`, `commandsCommand`, `configCommand`, `Configuration`, `createProgram`, `environmentOf`, `GlobalFlags`, `itemOf`, `LOCAL_READ`, `outputFor`, `privateFiles`, `profileFree`, `ProgramDefinition`, `ProgramOptions`, `readOnlyLockOf`, `REMOTE_WRITE`, `renderAnswer`, `rootOf`, `run`, `RunOptions`, `runsCommand`, `settingsFor`, `skillCommand`, `upgradeCommand` |
 | `@wirecat/cli-core/mcp` | `McpCommand`, `registerCommands`, `runCommandForAgent`, `toolsFromCommands` |
 | `@wirecat/cli-core/sends` | `Level` |
 | `@wirecat/cli-core/update` | `appUpdate` |
 | `@wirecat/cli-core/testing` | `ARGV_LOG`, `argvLogSetup` |
+
+The template's config files also reach cli-base: `tsconfig.json` and `kit/tsconfig.json` extend
+`tsconfig.base.json`, `tsconfig.test.json` and `tsconfig.scripts.json` extend the files of those names, `vitest.config.ts`
+loads `@wirecat/cli-base/testing/setup`, and `.vale.ini` reads the styles in `config/vale`.
 
 ## When one of them changes
 

@@ -133,6 +133,10 @@ cli-core's peer range holds the installed package back; in a repository made fro
 that apply are those of the handbook in the installed package. A newer `node-ci.yml` may run a step the repository
 cannot pass yet; the `skip` input names it.
 
+The shared workflows are not in the npm package, because CI runs the pinned commit, not the installed copy. To see
+what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/…@<commit>` lines in `ci.yml`,
+`release.yml` and `monthly.yml`, and opens each workflow file at that commit in cli-base.
+
 - **Why:** one shared workflow keeps the full suite the same everywhere, and a pin keeps a cli-base change from
   breaking ten repositories at once.
 - **Enforced by:** `ci.yml:ci`.
