@@ -193,15 +193,18 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # The floor is for all shards together, checked in `coverage`: one shard alone covers a fraction of the code
       # and fails it, silently under the blob reporter (measured with Vitest 5.0, 2026-10-26).
+      # Naming any reporter drops the ones Vitest adds by default, so a failure would reach only the blob.
       - name: test:coverage, one shard
         env:
           TZ: Asia/Vladivostok
           SHARD: ${{ matrix.shard }}/${{ inputs.test-shards }}
         run: >-
-          pnpm test:coverage --shard="$SHARD" --reporter=blob --coverage.reporter=text-summary
+          pnpm test:coverage --shard="$SHARD" --reporter=blob --reporter=default --reporter=github-actions
+          --coverage.reporter=text-summary
           --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0
           --coverage.thresholds.branches=0 --coverage.thresholds.perFile=false
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
         with:
           name: node-ci-test-shard-${{ matrix.shard }}
           path: .vitest/blob
