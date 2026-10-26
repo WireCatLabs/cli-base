@@ -31,7 +31,10 @@ inside a URL, and a long opaque string. Inside any typed word cli-core also find
 only the secret: a token of a known format (GitHub `ghp_…`/`github_pat_…`, `sk-…`, Slack `xox…-`, AWS `AKIA…`, Google
 `AIza…`, Stripe `sk_`/`rk_`, npm `npm_…`, a Telegram bot token, a JWT, a PEM private key), a `Bearer` or `Basic`
 credential, the value of a secret-named pair (`password=…`, `API_TOKEN=…`, `client_secret:…`), a random-looking string
-of 20 or more characters, and a phone number. The same search runs on a kept error message. `record_input: false` in the CLI's config masks every value that may be content, and a
+of 20 or more characters
+([how often it is caught](https://github.com/WireCatLabs/cli-testing/blob/main/performance/runs/secret-masking/README.md)),
+and a phone number. The same search runs on a kept error message. `record_input: false` in the CLI's config masks
+every value that may be content, and a
 config that will not load masks the same way. A problem report sent to other people (`doctor reports create`) masks
 the typed words always.
 
