@@ -47,6 +47,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **WC-TEST-5 on the [Testing](docs/standards/testing.md) page says that a test may wait for a local process or
   server it started**, polling with a timeout shorter than the test's own; a fixed sleep is still not allowed. It
   was unclear whether such a wait counts as waiting for real time.
+- **WC-CMD-6 on the [Commands](docs/standards/commands.md) page names `mcp --revoke` as an exception.** The rule says
+  an option never turns a command into a different action, and `--revoke` does: it forgets every browser login
+  instead of starting a server. The owner kept it an option on `mcp` because it belongs with the HTTP server's login
+  state. No other option gets this exception.
 - **The handbook's examples start `gcal-cli` with the command `gcal`, not `cal`**, the system calendar program on macOS
   and many Linux systems. A CLI named after it would shadow it.
 
