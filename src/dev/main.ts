@@ -98,7 +98,15 @@ const USAGE = `usage: cli-dev <command> [options]
                                        rules by its own lint/ folder; the rest by --baseline
                                        (audit/baseline). --groups replaces PARITY_GROUPS with the
                                        JSON list of parity groups in that file; --differences adds
-                                       to the groups in use`
+                                       to the groups in use
+  bundle --bin <dist/bin/name.js> [--external <package>]... [--anchor <package>]... [--harmless <path>]...
+                                       bundles the compiled bin with esbuild (a devDependency) into
+                                       dist/bundle/ and turns the bin into its loader. --external keeps
+                                       a package outside (* matches anything); --anchor adds a package
+                                       whose modules keep their installed place, as cli-core's do;
+                                       --harmless names a third-party file whose import.meta or
+                                       __dirname was read and found harmless. Fails when a bundled
+                                       module would look for a file or package in the wrong place`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -673,6 +681,43 @@ const auditRun = (args: string[], io: DevIo) => {
   return problems.length > 0 ? 1 : 0
 }
 
+const bundleCommand = async (args: string[], io: DevIo) => {
+  const { values } = parseArgs({
+    args,
+    options: {
+      bin: { type: "string" },
+      external: { type: "string", multiple: true },
+      anchor: { type: "string", multiple: true },
+      harmless: { type: "string", multiple: true },
+    },
+  })
+  if (!values.bin) {
+    io.err("bundle needs --bin <dist/bin/name.js>")
+    return 2
+  }
+  // esbuild is an optional peer: the other commands, and a CLI that does not bundle, never load it.
+  try {
+    await import("esbuild")
+  } catch {
+    io.err("cli-dev bundle needs esbuild: add it as a devDependency, in cli-base's peer range")
+    return 1
+  }
+  const { bundle } = await import("./bundle.js")
+  const result = await bundle({
+    root: io.cwd,
+    bin: values.bin,
+    external: values.external ?? [],
+    anchored: values.anchor ?? [],
+    harmless: values.harmless ?? [],
+  })
+  if (result.problems.length > 0) {
+    io.err(`the bundle would look for these in the wrong place, or is incomplete:\n${result.problems.join("\n")}`)
+    return 1
+  }
+  io.out(`bundle: ${values.bin} loads dist/bundle/; a server preloads ${result.chunks.length} chunks`)
+  return 0
+}
+
 export const main = async (argv: readonly string[], io: DevIo): Promise<number> => {
   const [command, ...args] = argv
   if (args.includes("--help")) {
@@ -716,6 +761,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       return lint(args, io)
     case "audit":
       return audit(args, io)
+    case "bundle":
+      return bundleCommand(args, io)
     case "help":
     case "--help":
     case "-h":

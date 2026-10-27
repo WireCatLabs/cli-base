@@ -135,6 +135,7 @@
     "@vitest/coverage-v8": "^5.0.5",
     "commander": "^15.0.0",
     "cspell": "10.4.0",
+    "esbuild": "0.28.2",
     "lefthook": "2.2.2",
     "markdownlint-cli2": "0.24.0",
     "typescript": "^7.0.2",
@@ -146,10 +147,14 @@
   },
   "peerDependencies": {
     "commander": ">=15",
+    "esbuild": "^0.28.0",
     "vitest": ">=5"
   },
   "peerDependenciesMeta": {
     "commander": {
+      "optional": true
+    },
+    "esbuild": {
       "optional": true
     },
     "vitest": {

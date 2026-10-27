@@ -122,6 +122,38 @@ Rule ids on this page are `WC-LAY-<n>`. How to read a rule, how ids work and whi
 - **Exceptions:** none.
 - **Applies to:** all CLIs and libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+### WC-LAY-10 · Ship the bin as a bundle that `cli-dev bundle` builds
+
+A command that imports about a thousand module files spends most of its start resolving and reading them. tg's
+bundle halved `--help` and every other short command
+([measurements](https://github.com/WireCatLabs/cli-testing/blob/main/performance/startup/tg-bundle/README.md)).
+
+- **Why:** one shared build keeps what tg learned in one place: lazy imports stay lazy, files and packages are found
+  where they were installed, and a running server survives an in-place upgrade.
+- **Enforced by:** `<app>: pnpm build` · `<app>: pnpm smoke:node` · `<app>: pnpm smoke:bun`.
+- **Example:** `"build": "tsc --build --force && cli-dev bundle --bin dist/bin/tg.js --external '@mtcute/*' --external undici"`,
+  with `esbuild` as a devDependency in cli-base's peer range. `dist/bundle/` holds the bundle, split so every lazy
+  `import()` stays a chunk of its own; `dist/bin/tg.js` stays the path `"bin"` names and becomes a loader. What it
+  does and checks:
+  - The loader answers `--version` from the version built into it, turns the compile cache on, and imports the
+    bundle. Under `serve`, `watch` and `mcp` it loads every chunk 2 s after start and resolves imports between chunks
+    without looking on disk: an upgrade deletes the old chunks, whose names carry a hash.
+  - In the CLI's own modules and in cli-core's and cli-base's (`--anchor` adds a package), `import.meta.url` is the
+    module's place before bundling, so skills, fonts, scenarios, migrations and child scripts are found. A package
+    they load at run time resolves from that place too (a resolve hook under Node, `Bun.resolveSync` under Bun):
+    pnpm installs cli-core's dependencies beside cli-core.
+  - A dynamic import of CommonJS (`yaml`) keeps its named exports. Names are kept (`keepNames`), so `commands --json`
+    and errors read as before.
+  - Native modules, Bun's SQLite and the packages cli-core loads by name stay outside; `--external` adds the CLI's
+    own (`*` matches anything).
+  - The build fails when a bundled module would look for a file or package from the chunk's place, or when the loader
+    names a chunk that was not built. A third-party file read and found harmless is named with `--harmless`.
+  - The CLI's smoke test runs the built bin under Node and Bun and checks that the store opens and the document
+    readers resolve.
+- **Exceptions:** a CLI moves when its outputs are byte-identical before and after and its start gains 15% or more;
+  until then it ships `tsc`'s output. cli-base, cli-core and cli-testing ship libraries, not a bin.
+- **Applies to:** all CLIs. **Since:** cli-base 0.64.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
