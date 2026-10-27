@@ -197,6 +197,18 @@ const commonJsNames: Plugin = {
   },
 }
 
+/**
+ * Whether the loader runs a server: `serve`, `watch` or `mcp serve`, or `mcp` alone as before cli-core 0.463. Flags
+ * are skipped, so `<cli> personal --read-only mcp serve` counts; four words leave room for one flag's value. It is
+ * written into the loader as source, so it uses nothing from outside.
+ */
+export const isServer = (words: readonly string[]): boolean => {
+  const plain = words.filter((word) => !word.startsWith("-"))
+  return plain
+    .slice(0, 4)
+    .some((word, at) => word === "serve" || word === "watch" || (word === "mcp" && plain[at + 1] === undefined))
+}
+
 /** The bin that replaces the compiled one: `name` is the bundle's entry, `chunks` what a server preloads. */
 export const loaderSource = (name: string, version: string, chunks: readonly string[]): string => `#!/usr/bin/env node
 ${LOADER_MARK}import * as module from "node:module"
@@ -212,9 +224,7 @@ if (
 } else {
   // Before the bundle compiles: the bundle's own call comes after its chunks.
   module.enableCompileCache()
-  const serves = words
-    .slice(0, 3)
-    .some((word, at) => ["serve", "watch"].includes(word) || (word === "mcp" && !/^[^-]/.test(words[at + 1] ?? "")))
+  const serves = (${isServer.toString()})(words)
   if (serves && module.registerHooks) {
     const bundle = new URL("../bundle/", import.meta.url).href
     module.registerHooks({

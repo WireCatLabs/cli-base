@@ -85,6 +85,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`cli-dev bundle`'s loader finds a server after a flag: `<cli> personal --read-only mcp serve`.** It looked for
+  `serve`, `watch` or `mcp` in the first three words of the command, and since cli-core 0.463 named the server
+  `mcp serve`, a flag before it pushed `serve` to the fourth word. Such a server loaded no chunks ahead and could fail
+  after an in-place upgrade (measured on drive: 91 of 138 chunks loaded, instead of 138). The loader now skips flags
+  and looks at four words. Rebuild a CLI with this release to take it.
 - **The handbook no longer contradicts itself on gcal's audit findings.**
   - WC-OUT-8 and WC-OUT-14: an answer with `meta.complete: false` is an answer on stdout, also after a non-zero
     exit; only a run with no answer prints one JSON error with stdout empty.
