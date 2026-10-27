@@ -20,7 +20,9 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Service:** a use case, written once, that both a command and an MCP tool call.
 - **Composition root:** the place in a CLI where real implementations are chosen and connected, usually
   `program.ts` and the command context.
-- **Vendor type:** a type from a provider library, such as `@mtcute/*` or `ws`.
+- **Vendor type:** a type from a provider library, such as `@mtcute/*` or `ws`, and a type generated from a
+  provider's API description, such as gcal's and drive's types under `src/generated/` from a Google Discovery
+  document: both change when the provider changes, not when we do.
 
 ## Rules
 
@@ -57,7 +59,9 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
   `src/adapter/` maps the client onto the shared messenger port. A field that only one provider has travels in
   `providerMetadata`.
 - **Exceptions:** a bot slice that talks to an official HTTP API keeps its own transport, beside the personal
-  account's adapter, never above it.
+  account's adapter, never above it. Generated API types may also be used by the generated `api <method>` commands,
+  which are the provider's own API by design; the shared ports and services never see them. In gcal,
+  `calendar-source.ts` and `calendar-writer.ts` translate the generated event type into cli-core's calendar entry.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-12.
 
 ### WC-ARCH-4 · Put code in the lowest shared package that can hold it
@@ -77,14 +81,16 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 
 ### WC-ARCH-5 · Build a feature that another provider could have as a shared command behind a capability
 
-- **Why:** a command written once in cli-core gives every messenger the same path, flags and output.
+- **Why:** a command written once in cli-core gives every provider of a kind the same path, flags and output.
 - **Enforced by:** review only.
 - **Example:** topics and polls are port groups and shared commands in cli-core. A messenger that lacks a capability
   refuses the command; it does not silently do less. A bot is another messenger with fewer capabilities, and tg and
-  max share the bot code.
-- **Exceptions:** a feature stays in one CLI only when the other providers cannot have it, such as MAX's socket server
-  or Telegram's app registration.
-- **Applies to:** messenger CLIs (tg, max, wa). **Since:** cli-base 0.41.0. **Rulings:** NEED-820, NEED-440,
+  max share the bot code. Calendars have the same shape: cli-core's `addCalendarCommands` builds `calendars`,
+  `sync`, `status`, `events` and `search` over the `CalendarSource` and `CalendarWriter` ports, and mounts
+  `calendars busy` or the event writes only when the provider has them.
+- **Exceptions:** a feature stays in one CLI only when the other providers cannot have it, such as MAX's socket server,
+  Telegram's app registration, or gcal's generated `api` commands.
+- **Applies to:** messenger CLIs (tg, max, wa) and calendar CLIs (gcal). **Since:** cli-base 0.41.0. **Rulings:** NEED-820, NEED-440,
   NEED-301, NEED-444.
 
 ### WC-ARCH-6 · Replace a use case, not a command
@@ -93,9 +99,10 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Enforced by:** review only.
 - **Example:** `Messenger.services` receives the shared services and returns only the ones it changes:
   `services: (base) => ({ messages: { ...base.messages, list: maxList } })`. To add a subcommand, a CLI calls
-  `addCommand` on the command a factory returns.
+  `addCommand` on the command a factory returns. A calendar CLI changes what the shared calendar commands do through
+  the source and writer it passes to `addCalendarCommands`, never by writing its own `sync` or `events list`.
 - **Exceptions:** none.
-- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** messenger CLIs and calendar CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-ARCH-7 · Keep policy in the service; a command or MCP handler only parses input and presents the result
 
@@ -215,9 +222,9 @@ out of search and listed under `skipped`, with the hint to run that CLI once.
 - **Why:** a new source joins search and memo without editing cli-core, and a provider nobody described is never read
   as something it is not (until this rule, an unlisted provider was searched as a messenger).
 - **Enforced by:** `cli-core: src/store/sqlite/providers.test.ts`.
-- **Example:** cal registers `{ name: "google-calendar", kind: "events", aliases: ["cal"], command: "cal" }` each
-  time it starts. On a machine where cal has never run, a search across accounts lists cal's accounts under
-  `skipped` instead of reading their rows as messages.
+- **Example:** gcal registers `{ name: "google-calendar", kind: "events", aliases: ["gcal", "calendar"], command:
+  "gcal" }` each time it opens the store. On a machine where gcal has never run, a search across accounts lists
+  gcal's accounts under `skipped` instead of reading their rows as messages.
 - **Exceptions:** the built-in providers of cli-core need no entry. Two entries that disagree on a kind are an error
   naming both.
 - **Applies to:** cli-core and every CLI with a provider of its own. **Since:** cli-base 0.53.0. **Rulings:** none

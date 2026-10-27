@@ -320,9 +320,14 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
 - **Keys.** Each command is checked against its own path (`events.create`), the default `keyOf`. Housekeeping has no
   key (WC-PERM-5). `extra` adds the keys a command checks inside itself, such as one per generated API method
   (`api.calendar.events.insert`). A key that names no command is refused when it is set or saved.
-- **Defaults.** `defaults` holds the CLI's built-in levels, beside cli-core's. They only ever tighten (WC-PERM-7). A
-  CLI picks them for what its writes do, not by WC-PERM-6's messenger list: they ask before a write people other
-  than the owner see or cannot easily undo, and deny what an agent must never do unasked.
+- **Defaults.** `defaults` holds the CLI's built-in levels, beside cli-core's. They only ever tighten (WC-PERM-7).
+  Like WC-PERM-6 for the messengers, and as tg and drive do: an ordinary change is `allow`; a delete is `ask`; a
+  write that mails or notifies people other than the owner is a key of its own, `deny` until the owner allows it.
+  Sending a message is not this kind of write; a messenger CLI keeps WC-PERM-6.
+- **Shared keys on every path.** A key a shared command checks inside itself, such as `events.notify` or
+  `events.delete.series`, is checked by every path that can do the same thing, the CLI's own generic API commands
+  included. A gcal `api` call that deletes an event with `sendUpdates: "all"` checks `events.notify` as well as
+  its own `api.calendar.events.delete`; otherwise the generic path is a way round the shared key.
 - **Read-only lock and guard.** `<PREFIX>_READ_ONLY` refuses every write to the service, as in WC-PERM-12. Every
   write runs through cli-core's write guard with `permissionDefaults: configuration.permissions.defaults`
   (cli-core 0.455.0), so `ask` is a y/N question at a terminal (WC-PERM-9) and every attempt goes into the send journal
@@ -331,14 +336,20 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
 - **Why:** one permission model for every CLI; a CLI-own layer drifts from the shared one and is audited by nobody.
 - **Enforced by:** `cli-core: src/cli/command-permissions.test.ts` · `cli-core: src/calendar/cli/writes.test.ts`.
 - **Example:** a calendar CLI takes cli-core's `CALENDAR_WRITE_DEFAULTS` and `CALENDAR_WRITE_KEYS`
-  (`@wirecat/cli-core/calendar`, cli-core 0.458.0): `events create`, `update`, `respond` and `delete` ask, since each
-  changes a calendar other people may share or be invited from; `events.delete.series` (a whole repeating series) and
-  `events.notify` (mail the attendees) are `deny` until the owner allows them. gcal adds its own: a generated
-  `api <method>` that writes asks, and one that shares, empties or gives away a calendar is `deny`.
-- **Exceptions:** known gaps: drive keeps its own policy and `--read-only` flag, zoom reads its own
-  `remote-meetings` key with `levelFor`, and memo uses cli-core's permissions for the shared commands only. None of
-  them declares `commandPermissions` yet.
-- **Applies to:** every CLI that writes and is not a messenger. **Since:** cli-base 0.64.0. **Rulings:** none.
+  (`@wirecat/cli-core/calendar`, cli-core 0.458.0). By this rule `events create`, `update` and `respond` are `allow`;
+  `events delete` and `events.delete.series` (a whole repeating series) are `ask`; `events.notify` (the provider
+  mails the attendees) is `deny` until the owner allows it. gcal adds its own keys for its generated
+  `api <method>` commands: sharing a calendar is `ask` (NEED-1857), and emptying the main calendar
+  (`api.calendar.calendars.clear`) is `deny`.
+- **Exceptions:** known gaps, as of 2026-10-27:
+  - cli-core's `CALENDAR_WRITE_DEFAULTS` (`src/calendar/writer.ts`) still has `events create`, `update` and
+    `respond` at `ask`, and `events.delete.series` at `deny`.
+  - gcal's generated `api` commands default every write to `ask`, ordinary changes included, and check neither
+    `events.notify` nor `events.delete.series`.
+  - drive keeps its own policy and `--read-only` flag, zoom reads its own `remote-meetings` key with `levelFor`, and
+    memo uses cli-core's permissions for the shared commands only. None of them declares `commandPermissions` yet.
+- **Applies to:** every CLI that writes and is not a messenger. **Since:** cli-base 0.64.0 (the levels and the shared
+  keys on every path: cli-base 0.65.0). **Rulings:** NEED-1857, NEED-1883.
 
 ## Sources
 

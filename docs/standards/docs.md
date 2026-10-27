@@ -37,7 +37,10 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Enforced by:** review only.
 - **Example:** a claim that turns out wrong is rewritten to the current fact, with no "correction" note and no dated
   "measured on" trail. A finished plan or handoff is deleted. A done backlog or cleanup line is deleted.
-- **Exceptions:** `CHANGELOG.md` is the one place with version history.
+- **Exceptions:** `CHANGELOG.md` is the one place with version history. A template-owned file (`AGENTS.md`,
+  `docs/dev/TESTING.md`, the skills under `docs/dev/skills/` and the others
+  [New CLI](new-cli.md) lists) that has turned false is fixed in cli-template, never only in the CLI: `upgrade` brings
+  the fix to every CLI, and a local edit would make `upgrade` ask about it each time.
 - **Applies to:** all CLIs, user and developer pages. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-4 · A generated page is never edited by hand

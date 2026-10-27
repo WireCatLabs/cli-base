@@ -19,7 +19,7 @@ tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp serve`) an
 `mcp serve --profiles` ([WC-MCP-9](#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)) is not
 built yet: cli-core serves one named profile.
 zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp serve`, cli-core's
-`toolsFromCommands` and `runCommandForAgent`). memo and drive have their own servers: memo has hand-written tools, and
+`toolsFromCommands` and `runCommandForAgent`), and gcal does the same (`gcal <profile> mcp serve`). memo and drive have their own servers: memo has hand-written tools, and
 drive builds one tool per command from its command tree and skips commands through its own list. Those two are known
 gaps against these rules.
 
@@ -68,12 +68,21 @@ Every entry in the catalogue must be a command the CLI has.
 
 Every command says whether it writes. `read` refuses a command that writes, and `write` refuses one that only reads.
 Both declare the answer envelope (a list `{ items, page, … }` or one thing `{ item, … }`) as their `outputSchema`.
+A command that reads the service and only saves what it read into the owner's local store, such as `sync` or
+`calendars list`, is a read and runs through `read`
+([WC-CMD-17](commands.md#wc-cmd-17--declare-effects-on-every-command) defines it).
 
-- **Why:** an agent host can let `read` run freely and ask a person before `write`.
+- **Why:** an agent host can let `read` run freely and ask a person before `write`. `read` carries the MCP
+  `readOnlyHint`, which the [MCP schema](https://modelcontextprotocol.io/specification/2025-11-25/schema#toolannotations)
+  describes as "the tool does not modify its environment". A local copy of what the service already holds changes
+  nothing the owner would have to undo, so a sync stays under it; sending it through `write` would make a host ask a
+  person before every refresh.
 - **Enforced by:** `cli-core: src/mcp/mcp.test.ts` · `cli-core: src/mcp/output-schema.test.ts`.
-- **Example:** `max_read { "command": "messages send", … }` is refused.
-- **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Example:** `max_read { "command": "messages send", … }` is refused. `gcal_read { "command": "sync" }` runs.
+- **Exceptions:** none. Known gap, as of 2026-10-27: cli-core decides with cli-base's `writes()`, which still counts
+  the local write, so `sync` runs through `write` until that follow-up lands (WC-CMD-17).
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (what counts as a read: cli-base 0.65.0). **Rulings:** the
+  owner's ruling on what counts as a read over MCP (2026-10-27).
 
 ### WC-MCP-5 · Unknown arguments are refused before anything runs
 
@@ -223,8 +232,11 @@ cli-core builds its personal and bot MCP catalogues from the command tree with `
 - **One server per subtree.** The personal server is built from the program without its `bot` group; the bot server
   from the `bot` group. Both keep three tools (WC-MCP-1).
 - **The profile still decides at run time** what is listed (WC-MCP-6).
-- **The whole catalogue is pinned** in each CLI's `contracts/mcp-tools.json`, so a command that becomes visible to
-  agents shows up as a diff in its pull request.
+- **Two snapshots pin what agents see.** `contracts/mcp-tools.json` pins the tools themselves: with three tools
+  (WC-MCP-1) that is three names and their schemas, which do not change when a command is added. So each CLI also
+  pins the command catalogue behind the tools, every command `tools_search` can return and whether it runs through
+  `read` or `write`, in `contracts/mcp-catalogue.json`. A command that becomes visible to agents then shows up as a diff in
+  its pull request. tg and max keep both; wa, zm, gcal and drive pin only the tools, a known gap as of 2026-10-27.
 
 ## Sources
 

@@ -171,8 +171,9 @@ and which run after merge is in [CI](ci.md).
 - **Enforced by:** `node-ci.yml:check` · `<app>: pnpm test:matrix:check`.
 - **Example:** under vitest, `run()` appends each parsed command path and option name (never a value) to
   `coverage/argv.jsonl`. `pnpm test:matrix` turns that into `docs/dev/test-matrix.md` and fails on a command or
-  option with neither a test nor a reason. A reason names the live scenario that covers it. A test that calls a
-  function directly does not count.
+  option with neither a test nor a reason. A test counts only when it runs the command through `run()`: a test that
+  calls a function directly records no command line, so the matrix does not see it. A reason says what covers the
+  command instead: the live scenario that runs it, or, for a generated group, the two tests below.
 - **Exceptions:** commands generated from a service's API description, such as drive's and gcal's
   `api <method>` from a Google Discovery snapshot, share one reason for the whole group (`api *` and its options).
   It names two tests: one that checks every generated command's options against the snapshot, and one that drives a
@@ -198,8 +199,10 @@ and which run after merge is in [CI](ci.md).
 - **Enforced by:** `node-ci.yml:check` · `<app>: pnpm contracts:upgrade`.
 - **Example:** `pnpm contracts:upgrade` runs the previous published package and this build on the same synthetic
   state and checks that the data survives. Each store migration also has its own upgrade test (WC-STORE-9).
-- **Exceptions:** a CLI with no local state, or with no published version yet. Local state is data the CLI's own
-  code writes and reads back in a later run, such as a store, a session or a cache. A config file, run records, the
+- **Exceptions:** a CLI with no local state, or with no published version yet. Local state is data the CLI writes
+  and reads back in a later run, such as a store, a session or a cache. The shared store counts, also when cli-core's
+  code writes it, because the CLI's release decides which cli-core and so which migrations run: gcal's calendars and
+  events in the store are its local state. A config file, run records, the
   update check, MCP logins and lock files that only cli-core writes do not count. Tests still keep them in the
   sandboxed home, like every other path
   ([WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory)).

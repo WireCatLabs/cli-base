@@ -18,6 +18,18 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   calendar an event moves to (`events move --to-calendar`); `--calendar` keeps its meaning, the calendar the event is
   on. The verb `move` now says what moves in general: a file to a folder, an event to a calendar. cli-core's shared
   calendar commands use all three; gcal-cli carries `lint/overrides.json` entries for them until this release.
+- **Every CLI that signs in has `session start`, `session status`, `session end` and a profile-free `session list`.**
+  [WC-ACCT-12](docs/standards/accounts.md#wc-acct-12--sign-in-is-session-start-status-and-end-and-session-list-names-the-profiles)
+  is the owner's ruling: `status` says whether one profile is signed in, `list` which profiles exist. Each
+  CLI's missing commands are listed as known gaps: tg, max and wa lack `session status` and list profiles with
+  `account list`; drive lacks `session status`; gcal lacks `session list`; zm lacks `session end` and `session list`;
+  memo has no `session` group.
+- **A sync spends a request budget sized to its deadline and says how to continue.**
+  [WC-LIFE-16](docs/standards/lifecycle.md#wc-life-16--a-sync-spends-a-request-budget-sized-to-its-deadline-and-its-answer-says-how-to-continue)
+  describes what cli-core 0.464.0 (cli-core #2118) builds for the calendar sync: `floor((deadline âˆ’ margin) /
+  requestMs)` requests, one `requestMs` per CLI, `--max-pages` only lowering it, a partial stop that exits 0 with the
+  exact command to continue, and progress in the sync's status command. The other syncs and gcal's own `requestMs`
+  are listed as gaps.
 
 - **The command vocabulary has the verbs `serve` (run a server in this process and answer its clients until stopped)
   and `revoke` (take back what was granted, so it stops working).** cli-core 0.463.0 names the MCP server
@@ -25,6 +37,28 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `chats link revoke` and the `consents revoke` commands that were baselined as unknown verbs.
 
 ### Changed â€” may break callers
+
+- **A command that reads the service and only saves what it read is a read, also over MCP.**
+  [WC-CMD-17](docs/standards/commands.md#wc-cmd-17--declare-effects-on-every-command) defines a write, and WC-CMD-6,
+  WC-CMD-28, [WC-MCP-4](docs/standards/mcp.md#wc-mcp-4--read-runs-only-reading-commands-and-write-only-writing-ones)
+  and WC-OUT-9 point at it: `{ remote: "read", local: "write" }` (`sync`, `calendars list`) runs through the `read`
+  tool; `{ remote: "none", local: "write" }` (`store reindex`) stays a write. cli-base's `writes()` still counts every
+  local write, so cli-core serves `sync` through `write` until a follow-up changes it; watch for that release, which
+  moves those commands between tools.
+- **Deadlines: 30 s for a one-shot command, 5 min for a cooperative one at a terminal and 45 s over MCP.**
+  [WC-LIFE-5](docs/standards/lifecycle.md#wc-life-5--bound-every-one-shot-command-by-a-deadline) and WC-LIFE-10 say
+  so, as cli-core 0.464.0 builds it, because MCP clients cut a tool call at about 60 s.
+- **A non-messenger CLI allows ordinary writes, asks before deletes and denies mail to other people.**
+  [WC-PERM-22](docs/standards/permissions.md#wc-perm-22--a-cli-that-is-not-a-messenger-declares-its-own-keys-and-defaults-with-commandpermissions)
+  follows the owner's ruling, and a CLI's generic API path must check the shared keys (`events.notify`,
+  `events.delete.series`) too. Its example said sharing a calendar is `deny`; the owner made it `ask`. cli-core's
+  `CALENDAR_WRITE_DEFAULTS` and gcal's `api` defaults do not follow it yet; both are listed as gaps.
+- **Meeting passcodes stay out of command output and agent answers, not only out of the store.**
+  [WC-SECR-23](docs/standards/security.md) covers answers that come straight from the provider: gcal's `api` answers
+  still keep a description's passcode lines, a listed gap.
+- **Each CLI pins the command catalogue behind its MCP tools.** The [MCP](docs/standards/mcp.md) page no longer
+  claims `mcp-tools.json` pins the catalogue: with three tools it does not. `contracts/mcp-catalogue.json` does; tg and
+  max have it, and wa, zm, gcal and drive do not yet.
 
 - **An MCP server serves the profiles it is told, and refuses without them.**
   [WC-MCP-9](docs/standards/mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)
@@ -49,6 +83,24 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   The template already follows it; a CLI that changed its copy of the HTTP server checks it against the rule.
 
 ### Fixed
+
+- **The handbook no longer contradicts itself on gcal's audit findings.**
+  - WC-OUT-8 and WC-OUT-14: an answer with `meta.complete: false` is an answer on stdout, also after a non-zero
+    exit; only a run with no answer prints one JSON error with stdout empty.
+  - WC-CMD-10 names `--max-pages` a `budget` option, not a paging one, and says why the calendar `--id` exists beside
+    `--operation-id`. WC-CMD-11 lists `--duration-minutes` as a known gap until the vocabulary has
+    `--duration <duration>`.
+  - WC-REL-16 says `packContents` checks the pack against the list it is given, so a check that passes the `files`
+    list itself cannot fail on a wrong list; the fix belongs in cli-template.
+  - WC-TIME-5 matches an all-day event by local dates, not UTC moments; cli-core's event filter is a listed gap.
+  - WC-ARCH-3 counts generated API types as vendor types, WC-ARCH-5 and WC-ARCH-6 cover calendar CLIs, and
+    WC-ARCH-21's example is gcal's real provider entry.
+  - WC-TOOL-16 puts a word waiting for the vocabulary in `lint/overrides.json` with a link and a date, never in the
+    baseline. The [Documents](docs/standards/docs.md#wc-doc-3--every-document-states-current-facts-rewrite-a-wrong-sentence-in-place)
+    rule on current facts sends a false template-owned file to cli-template.
+  - WC-DATA-3 makes a calendar entry's `external_id` unique per calendar, WC-STORE-3 lists the calendar areas as not
+    bound, WC-TEST-12 says what a reason names, and WC-TEST-14 counts the shared store as local state.
+  - The "who follows" lists name gcal.
 
 - **The handbook's pages on the template match cli-template 0.9.0.** The [Kit surface](docs/standards/kit-surface.md)
   table lists `LOCAL_WRITE` and `revokeAll`, which the template now imports, and counts imports loaded on demand.

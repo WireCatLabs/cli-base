@@ -52,8 +52,9 @@ Related pages: which account a read covers, and how a read across accounts is as
   accounts on purpose asks for the whole store with `crossAccount(deps, reason)`; see [Accounts](accounts.md).
 - **Exceptions:** `forAccount` binds only the account areas (accounts, chats, sync, messages, attachments, roster,
   people, conversations, vectors, counters, tags, mentions). The `chats`, `conversations` and `attachments` services
-  use the bound store; the other services still pair `deps.store()` with `deps.account()`. New code uses the bound
-  store.
+  use the bound store; the other services still pair `deps.store()` with `deps.account()`. The calendar areas
+  (calendars, calendar entries, their sync cursors) are not bound either: cli-core's calendar commands pass
+  `accountId` to every call, a known gap as of 2026-10-27. New code uses the bound store.
 - **Applies to:** cli-core and every CLI that adds a service. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-STORE-4 · Reach the store through its public module, never a table module

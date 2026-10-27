@@ -93,7 +93,11 @@ JSON Schema 2020-12.
 - **Why:** a caller that checks only the exit code must not take half an answer for a whole one.
 - **Enforced by:** review only.
 - **Example:** a search across accounts declares `annotate(search, { partial: true })` and exits 0 with
-  `meta.complete: false`. Any other command prints what it read, then exits with the code of its first issue.
+  `meta.complete: false`. Any other command prints the whole envelope of what it read on stdout, with
+  `meta.complete: false` and its `issues`, then exits with the code of its first issue. Such an answer is an answer,
+  not a failure, so [WC-OUT-14](#wc-out-14--print-a-failure-in-machine-mode-as-one-json-object-on-stderr-with-stdout-empty)
+  does not apply to it: a caller reads stdout whenever it is not empty, also after a non-zero exit. cli-core's
+  `renderAnswer` does this.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -103,7 +107,8 @@ JSON Schema 2020-12.
 - **Enforced by:** review only.
 - **Example:** `next` holds the step to take, then one alternative. Each has `kind` (`command`, or `user_action` with
   no command) and `safe_to_auto_execute`. A step that reads the service and writes only the local store (a sync) is
-  safe. A step that reads nothing remotely and writes locally (`store reindex`) is not: it waits to be asked. A step
+  safe; it counts as a read, also over MCP
+  ([WC-CMD-17](commands.md#wc-cmd-17--declare-effects-on-every-command)). A step that reads nothing remotely and writes locally (`store reindex`) is not: it waits to be asked. A step
   is built from ids, counts and cursors the CLI holds, never from text a message, mail or document carried. A CLI
   answer's command step also has `line`, the whole command with the profile (`tg personal mcp config`), because
   `command` is the bare path an MCP router takes and a copied path without the profile fails.
@@ -159,6 +164,12 @@ JSON Schema 2020-12.
 ## Errors and exit codes
 
 ### WC-OUT-14 · Print a failure in machine mode as one JSON object on stderr, with stdout empty
+
+A failure is a run that has no answer: the command threw. A command that answers with what it could read and
+`meta.complete: false` has not failed, even when it exits non-zero; that case is
+[WC-OUT-8](#wc-out-8--exit-0-on-a-partial-answer-only-when-the-command-declares-partial). So a non-zero exit does not
+mean stdout is empty: stdout empty and one JSON object on stderr is a failure; an envelope on stdout is an answer,
+whole or partial.
 
 - **Why:** a caller tells success from failure without parsing text, and stdout never holds half an answer and an
   error.

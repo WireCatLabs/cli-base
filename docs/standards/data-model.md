@@ -37,6 +37,8 @@ is rewritten only to follow it:
   entity's own fields (WC-DATA-2).
 - `meeting_participants` is unique on the meeting and the contact; its `external_id` is in no unique key (WC-DATA-3).
 
+The calendar tables that gcal fills through cli-core (`calendars`, `calendar_entries`) follow them from the start.
+
 ## Rules
 
 ### WC-DATA-1 · A record more than one tool needs is a core entity in cli-core; a CLI's own tables stay private
@@ -73,7 +75,9 @@ to its entity. One entity may combine source records from several sources and ac
 ### WC-DATA-3 · A provider's id goes in `external_id`
 
 The id a provider gives a record is stored in `external_id`, unique with `account_id` (or with `provider` where the
-record has no account). Never in a column named after the provider (`google_id`, `file_id`) and never only in
+record has no account). Where the provider's id is unique only inside a container the record belongs to, it is unique
+with that container instead: a calendar entry's `external_id` is unique with its `calendar_id`, because the same event
+id appears in each calendar that holds a copy of the event, and the calendar is unique with `account_id`. Never in a column named after the provider (`google_id`, `file_id`) and never only in
 `metadata`. A second id the provider also uses gets a named column of its own (`ical_uid`).
 
 - **Why:** one place to look for every provider's id, and one unique key to update a record by.

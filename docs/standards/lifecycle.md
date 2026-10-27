@@ -20,9 +20,13 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 
 ### Who follows these rules today
 
-- **WC-LIFE-15:** tg, max, wa and the template. drive, memo and zm do not keep runs yet; each is adding them on a
+- **WC-LIFE-15:** tg, max, wa, gcal and the template. drive, memo and zm do not keep runs yet; each is adding them on a
   `feat/runs` branch (2026-10-25). zm's `resolveSettings` also returns `keepFailedRuns: false`, which turns off the
   failure log cli-core's `run` would keep.
+- **WC-LIFE-16:** cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal gets it when it
+  moves up from cli-core 0.459.0. The deadlines of WC-LIFE-5 come with the same release. The other syncs
+  (`messages sync` in tg, max and wa, drive's `sync`, memo's mail import, zm's `recordings sync`) are cooperative but
+  spend no request budget yet, and gcal sets no `requestMs` of its own, so it uses the 2 s default.
 
 ## One-shot commands
 
@@ -74,15 +78,31 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 
 ### WC-LIFE-5 · Bound every one-shot command by a deadline
 
-- **Why:** a command that waits for ever on a dead connection never fails, so nobody learns why it hangs.
+| Command | At a terminal or in a script | Called over MCP |
+|---|---|---|
+| one-shot | 30 s | 30 s |
+| `cooperative` ([WC-LIFE-10](#wc-life-10--mark-a-long-command-cooperative-when-it-should-stop-at-its-own-pace-and-keep-its-work)) | 5 min | 45 s |
+
+`--timeout 2m` or the `<PREFIX>_TIMEOUT` variable sets the deadline, higher or lower. Past the deadline a one-shot
+command fails with `timeout` (exit 9).
+
+- **Why:** a command that waits for ever on a dead connection never fails, so nobody learns why it hangs. Over MCP
+  the client cuts a tool call at about 60 s: the MCP TypeScript SDK's `DEFAULT_REQUEST_TIMEOUT_MSEC` is 60000
+  (`@modelcontextprotocol/sdk` 1.32.1, `dist/esm/shared/protocol.js:8`), and users report the same for Claude Desktop
+  and ChatGPT. A cooperative command answers at 45 s, so the agent gets the answer and the way to continue instead of
+  a cut call. Claude Code waits longer ([its MCP page](https://code.claude.com/docs/en/mcp)), but a CLI does not know
+  its client, so it takes the shortest.
 - **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/program.test.ts`.
-- **Example:** the default is 30 seconds. `--timeout 2m` or the `<PREFIX>_TIMEOUT` variable changes it. Past the
-  deadline the command fails with `timeout` (exit 9).
+- **Example:** `gcal personal sync` in a terminal may run 5 minutes; the same call through `gcal_read` stops at
+  45 seconds with what it saved. cli-core's `DEFAULT_COMMAND_MS`, `DEFAULT_COOPERATIVE_MS` and
+  `DEFAULT_AGENT_COOPERATIVE_MS` (`src/cli/execution.ts`) hold the three values, and `run()` picks one when it starts
+  the command.
 - **Exceptions:** a `persistent` command has no deadline and ignores `--timeout`. An `interactive` command has none
   while a person is at the terminal; run headless, it keeps the deadline. `--help` and `--version` need none. A
   background fetch started with `<PREFIX>_BACKFILL_JOB` is bounded only by an explicit `--timeout`.
 - **Applies to:** CLIs that run on cli-core's `run()`; other CLIs use cli-base's `createDeadline`. **Since:** cli-base
-  0.41.0. **Rulings:** none.
+  0.41.0 (the cooperative deadlines: cli-base 0.65.0, cli-core 0.464.0). **Rulings:** the owner's deadlines and
+  request budgets (2026-10-27).
 
 ### WC-LIFE-6 · Open nothing until an action needs it
 
@@ -131,7 +151,9 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 - **Enforced by:** review only.
 - **Example:** `annotate(fetch, { cooperative: true })`. The runner then does not cut the command when the run is
   aborted from outside. The command passes the signal to every operation that can be cancelled, checks it before
-  each write, and stops after the current step. `persistent` commands count as cooperative.
+  each write, and stops after the current step. `persistent` commands count as cooperative. A cooperative command
+  gets the longer deadline of WC-LIFE-5, and a sync among them spends a request budget (WC-LIFE-16), so it stops
+  before the deadline instead of at it.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -154,7 +176,8 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 ## Resumable syncs
 
 A long sync — a mailbox, a chat history, a Drive folder, a recording archive — is stopped by a kill, a reboot or a
-provider's limit as often as it ends. These three rules make the next run carry on.
+provider's limit as often as it ends. These three rules make the next run carry on, and WC-LIFE-16 stops a run
+before its deadline.
 
 ### WC-LIFE-12 · Save a long sync's work per item or per page, so a kill loses nothing saved
 
@@ -220,6 +243,44 @@ every value that may be content
   events.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.56.0. **Rulings:** none.
+
+## Request budgets
+
+A sync that resumes (WC-LIFE-12 to WC-LIFE-14) also stops on its own before its deadline.
+
+### WC-LIFE-16 · A sync spends a request budget sized to its deadline, and its answer says how to continue
+
+Before each request to the provider, a sync asks its budget whether one more may go. The budget is
+
+`requests = floor((deadline − margin) / requestMs)`, at least one,
+
+where `margin` is the larger of 5 s and 15 % of the deadline, and `requestMs` is how long one request of this CLI is
+expected to take: one constant per CLI, `AppIdentity.requestMs` (2 s when it is not set). `--timeout` changes the
+deadline, and the budget is computed again from it; `--max-pages <pages>` can only lower it. The budget also stops
+when the deadline is closer than the margin plus the slowest request so far, and when the run is cancelled.
+
+When the budget stops the sync before its end, the sync saves where it is (WC-LIFE-12), exits 0 as a declared
+`partial` answer ([WC-OUT-8](output.md#wc-out-8--exit-0-on-a-partial-answer-only-when-the-command-declares-partial))
+and says in the answer why it stopped and how far it got. Its `next` holds the exact command that continues it, the
+same `sync` with the same budget and timeout, marked safe to run unasked; over MCP the step carries that command and
+its arguments for the `read` tool. A run that moved nothing on offers no step, so an agent cannot loop. The sync's
+status command answers how far it is
+([WC-LIFE-14](#wc-life-14--a-syncs-status-command-says-how-far-it-is-in-one-shape)).
+
+- **Why:** a first sync of a large account does not fit one deadline. Without a budget the deadline cuts it mid-page
+  and the run loses its round; with one, every run ends with an answer, saves its work and says how to go on. One
+  `requestMs` per CLI, in one place, keeps the arithmetic the same in every sync of that CLI.
+- **Enforced by:** `cli-core: src/background/budget.test.ts` · `cli-core: src/calendar/testing/sync-contract.ts`.
+- **Example:** `gcal personal sync` over MCP has 45 s: margin 6.75 s, so with the 2 s default about 19 requests. It
+  answers `state: "partial"`, `stopped: "requests"`, `progress: { calendars, calendarsDone, requests, saved }`, and
+  `next` with `gcal personal sync`; `gcal personal status` shows each calendar's progress. cli-core builds the budget
+  with `runBudgetOf(command, maxPages)` from `@wirecat/cli-core/cli` over `runBudget` in
+  `@wirecat/cli-core/background`.
+- **Exceptions:** known gaps, as of 2026-10-27: only the calendar sync spends a budget (see "Who follows"). The
+  continuing step names the command, not the MCP tool, and until the WC-CMD-17 follow-up the router sends that
+  command to `write`, not `read`.
+- **Applies to:** every CLI with a sync. **Since:** cli-base 0.65.0. **Rulings:** the owner's deadlines and request
+  budgets (2026-10-27).
 
 ## Sources
 

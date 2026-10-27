@@ -192,8 +192,13 @@ fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/
 
 - **Why:** a stray file in the package can leak local data and grows every install.
 - **Enforced by:** `node-ci.yml:check` · `<app>: pnpm package:check` · `whatsapp-cli: pnpm release:check`.
-- **Example:** `package.json` `files` lists what ships. The CLI's `pnpm release:check` runs `packContents` from
-  `@wirecat/cli-base/release` and fails on any other path in `npm pack --dry-run`.
+- **Example:** `package.json` `files` lists what ships. `packContents(root, allowed, said)` from
+  `@wirecat/cli-base/release` fails on any path in `npm pack --dry-run` outside `allowed`. It checks the pack against
+  the list it is given, not against this rule: a CLI that passes its own `files` list as `allowed`, as the template's
+  `scripts/smoke.ts` does, checks only that npm packs what `files` says, and cannot fail on a wrong `files` list.
+  gcal's list names `.github`, `config`, `contracts` and `docs`, and its check passes. The check this rule needs
+  refuses the forbidden paths above whatever `files` says; it belongs in cli-template, so every CLI gets it by
+  `upgrade` ([cli-template#77](https://github.com/WireCatLabs/cli-template/issues/77)).
 - **Exceptions:** cli-template's own package ships the skeleton's sources and configs, since `new` copies them; the
   `files` list `new` writes into a CLI follows this rule. Each CLI's `package:check` runs `packContents`; tg and max
   as `release-check.ts --package-only`.

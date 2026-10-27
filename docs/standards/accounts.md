@@ -3,7 +3,7 @@
 ## Scope
 
 How a CLI chooses an account: the profile is always explicit, a read across accounts covers all of them and says so,
-and scope flags work the same everywhere.
+scope flags work the same everywhere, and sign-in has the same four commands in every CLI.
 
 A **profile** is the name of one login of a CLI on one computer, for example `personal` or `work`. One profile can
 hold a personal session, a bot token, or both.
@@ -16,7 +16,8 @@ Rule ids on this page are `WC-ACCT-<n>`. How to read a rule, how ids work and wh
 cli-core resolves the profile for tg, max and wa. WC-ACCT-1 needs cli-core 0.319.0 or newer. memo has no messenger profile: its shared commands run without one, and they pick accounts with `--provider`
 and `--account` (WC-ACCT-7). zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
 `ZM_PROFILE_LOCK`) from zoom-cli 0.35.0, with cli-core's `liftProfile` and `usableProfileName`. drive still has its own
-profile code: it registers its own profiles. That is a known gap, not an exception.
+profile code: it registers its own profiles. That is a known gap, not an exception. gcal resolves the profile through
+cli-core's `run()`, like tg, max and wa. Which CLIs lack a sign-in command of WC-ACCT-12 is listed in that rule.
 
 ## Rules
 
@@ -31,8 +32,9 @@ on the computer.
 - **Example:** `tg personal chats list`, or `TG_PROFILE=personal tg chats list`. When no profile is named and the
   config file still has `default_profile`, cli-core stops and says which profile to type. `config set default_profile`
   is refused.
-- **Exceptions:** a command that touches no account runs without a profile, for example `account list`,
-  `config show` and `commands`. `mcp serve` may name its profiles with `--profiles <names|all>` instead
+- **Exceptions:** a command that touches no account runs without a profile, for example `session list`
+  ([WC-ACCT-12](#wc-acct-12--sign-in-is-session-start-status-and-end-and-session-list-names-the-profiles)),
+  `config show` and `commands`; tg, max and wa still name their list `account list`. `mcp serve` may name its profiles with `--profiles <names|all>` instead
   ([WC-MCP-9](mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)); `all` is the owner's explicit choice, never a fallback.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84, NEED-1881.
 
@@ -156,6 +158,35 @@ inferred from a matching name, and `unlink` undoes it.
 - **Example:** `tg personal contacts link Ana max:Ana`. Until then, a Telegram Ana and a MAX Ana stay two people.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.43.1. **Rulings:** none.
+
+### WC-ACCT-12 · Sign-in is `session start`, `status` and `end`, and `session list` names the profiles
+
+Every CLI that signs in has four commands under `session`:
+
+- `<cli> <profile> session start` signs the profile in.
+- `<cli> <profile> session status` says whether this profile is signed in, and as whom.
+- `<cli> <profile> session end` signs the profile out and forgets its login.
+- `<cli> session list` takes no profile and lists the profiles on this computer, each with whether it is signed in.
+
+`status` answers about one profile; `list` answers which profiles exist. Neither one connects to more than it must:
+`list` reads only what the computer holds.
+
+- **Why:** the owner and an agent look for sign-in in the same place in every CLI. Today each CLI has a different
+  part of the set, so an agent that learned one CLI guesses wrong in the next.
+- **Enforced by:** review only.
+- **Example:** `gcal personal session status` answers whether the `personal` profile holds a Google login;
+  `gcal session list` lists `personal` and `work` with no profile named.
+- **Exceptions:** known gaps, as of 2026-10-27:
+  - tg, max and wa have `session start` and `session end`, no `session status`, and list their profiles with
+    `account list` instead of `session list`.
+  - drive has `session start`, `session list` and `session end`, and no `session status`.
+  - gcal has `session start`, `session status` and `session end`, and no `session list`.
+  - zm has `session start` and `session status`, and no `session end` or `session list`.
+  - memo signs in per mail account with `mail add` and has no `session` group.
+
+  A CLI that adds a missing command adds it under `session`; a renamed path keeps no alias
+  ([WC-CMD-8](commands.md#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)).
+- **Applies to:** every CLI that signs in. **Since:** cli-base 0.65.0. **Rulings:** NEED-1884.
 
 ## Sources
 
