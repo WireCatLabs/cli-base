@@ -335,7 +335,9 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
   changes a calendar other people may share or be invited from; `events.delete.series` (a whole repeating series) and
   `events.notify` (mail the attendees) are `deny` until the owner allows them. gcal adds its own: a generated
   `api <method>` that writes asks, and one that shares, empties or gives away a calendar is `deny`.
-- **Exceptions:** drive still keeps its own policy and `--read-only` flag; moving onto `commandPermissions` is open.
+- **Exceptions:** known gaps: drive keeps its own policy and `--read-only` flag, zoom reads its own
+  `remote-meetings` key with `levelFor`, and memo uses cli-core's permissions for the shared commands only. None of
+  them declares `commandPermissions` yet.
 - **Applies to:** every CLI that writes and is not a messenger. **Since:** cli-base 0.64.0. **Rulings:** none.
 
 ## Sources

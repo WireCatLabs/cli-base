@@ -185,10 +185,10 @@ on the [CI](ci.md) page.
 
 ### WC-REL-16 · The package ships only the files it names
 
-A CLI's `files` holds what the installed CLI runs from or shows its user: `dist`, the agent skill (`skills`),
-`/README.md`, `CHANGELOG.md` and `LICENSE`, plus any data file its code reads at run time, such as a generated API
-manifest it does not compile into `dist`. It never holds `src/`, tests, fakes or fixtures, `scripts/`, `.github/`,
-`bin/release`, `config/`, `lint/`, `contracts/`, `docs/dev/` or `template.json`.
+A CLI's `files` holds only what the installed CLI runs from or shows its user: `dist`, the agent skill (`skills`),
+`README.md`, `LICENSE`, and files its code reads or runs after install, such as `scenarios` for `guide`, an `install`
+script, third-party notices and licenses. `CHANGELOG.md` may ship too. It never holds `src/`, tests, fakes or
+fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/`, `docs/dev/` or `template.json`.
 
 - **Why:** a stray file in the package can leak local data and grows every install.
 - **Enforced by:** `node-ci.yml:check` · `<app>: pnpm package:check` · `whatsapp-cli: pnpm release:check`.
