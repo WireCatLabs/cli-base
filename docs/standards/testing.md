@@ -94,7 +94,9 @@ and which run after merge is in [CI](ci.md).
 - **Enforced by:** review only.
 - **Example:** waits go through an injected `SleepLike`, and `fakeClock()` from `@wirecat/cli-base/testing` records
   them without waiting. A test harness passes `sleep: async () => {}`. `pnpm test:slow` lists the 20 slowest tests
-  and the 10 slowest files.
+  and the 10 slowest files. A test may wait for a local process or server it started, for example polling its
+  status with `vi.waitFor` and a timeout shorter than the test's own; that waits for an event, not for time. A
+  fixed sleep or `setTimeout` is still a wait for real time.
 - **Exceptions:** none. A new wait in the code gets a seam, never a longer test timeout.
 - **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.41.0. **Rulings:** dev-process:4.
 

@@ -98,8 +98,10 @@ All of these pass on `main`, before the first release:
 - the changelog guard on a pull request
 - `pnpm release:check`
 
-The last test is a fresh agent. Give it only this handbook's [index](README.md) and the new repository, and ask it to
-audit the CLI. Every gap it lists is either a gap in the CLI, to fix before the first release, or a hole in the
+The last test is a fresh agent. Give it only this handbook's [index](README.md), the new repository and the cli-base
+workflow files its own workflows pin
+([WC-CI-8](ci.md#wc-ci-8--call-cli-base-node-ciyml-from-ciyml-pinned-to-a-tag-or-commit)), and ask it to audit the
+CLI. Every gap it lists is either a gap in the CLI, to fix before the first release, or a hole in the
 handbook, to fix here.
 
 ## The template repository itself
