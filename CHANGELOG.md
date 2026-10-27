@@ -18,6 +18,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`syncDiscovery` writes the same snapshot for the same revision of a Google API.** Google serves one revision with
+  its object keys in a different order on each download, so two syncs gave different files, hashes and generated
+  code. The snapshot is now the parsed document with its keys sorted and 2-space indentation; values and array order
+  are unchanged. `sha256` is stable; `sourceSha256` is still the hash of the bytes Google served, so it can change
+  between syncs. The first sync after upgrading rewrites each snapshot once, and `pnpm generate` then reorders the
+  generated types, schemas and manifest once.
 - **`skill show` now names every agent `skill install` serves: Claude Code, Codex, Gemini CLI, OpenClaw, and Hermes
   on request.** Its help named only the first three, so OpenClaw and Hermes users could not tell the skill was meant
   for them.

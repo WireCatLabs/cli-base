@@ -285,7 +285,7 @@ export interface DiscoveryProvenance {
   version: string
   /** Of the committed file; `readDiscovery` refuses a snapshot that no longer matches it. */
   sha256: string
-  /** Of the bytes Google served. Equal to `sha256` unless the file was normalized after download. */
+  /** Of the bytes Google served. Google varies its key order, so this one can change while `sha256` does not. */
   sourceSha256: string
   normalization: string
 }
@@ -298,9 +298,23 @@ export interface SyncDiscoveryOptions {
 
 const sha256 = (bytes: string | Buffer): string => createHash("sha256").update(bytes).digest("hex")
 
+/** Google serves the same revision with its keys in a different order each time; arrays keep theirs. */
+const sortKeys = (value: unknown): unknown =>
+  Array.isArray(value)
+    ? value.map(sortKeys)
+    : object(value)
+      ? Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map((key) => [key, sortKeys(value[key])]),
+        )
+      : value
+
+const NORMALIZATION = "object keys sorted, 2-space JSON; values and array order unchanged"
+
 /**
- * Downloads each Discovery document byte for byte and records where it came from. Run by hand, then review
- * the diff: the build never fetches. `provenance.json` keeps the order of `sources`, and that order is
+ * Downloads each Discovery document, sorts its object keys so the same revision always gives the same file, and
+ * records where it came from. Run by hand, then review the diff: the build never fetches. `provenance.json` keeps the order of `sources`, and that order is
  * the order of the generated schemas.
  */
 export const syncDiscovery = async (
@@ -317,19 +331,19 @@ export const syncDiscovery = async (
     const document: unknown = JSON.parse(raw)
     if (!object(document) || document.name !== service)
       throw new Error(`${source} is not the Discovery document of ${service}`)
-    const hash = sha256(raw)
-    downloaded[service] = raw
+    const written = `${JSON.stringify(sortKeys(document), null, 2)}\n`
+    downloaded[service] = written
     provenance[service] = {
       source,
       revision: String(document.revision),
       version: String(document.version),
-      sha256: hash,
-      sourceSha256: hash,
-      normalization: "none",
+      sha256: sha256(written),
+      sourceSha256: sha256(raw),
+      normalization: NORMALIZATION,
     }
   }
   mkdirSync(options.dir, { recursive: true })
-  for (const [service, raw] of Object.entries(downloaded)) writeFileSync(join(options.dir, `${service}.json`), raw)
+  for (const [service, text] of Object.entries(downloaded)) writeFileSync(join(options.dir, `${service}.json`), text)
   writeFileSync(join(options.dir, "provenance.json"), `${JSON.stringify(provenance, null, 2)}\n`)
   return provenance
 }
