@@ -27,10 +27,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed â€” may break callers
 
-- **A lint baseline entry for a word that is now in the vocabulary goes stale, and `cli-dev lint` fails on it.** This
-  release adds `unsync`, `review`, `resolve`, `calendars`, `events` and `people`. zoom-cli lists `events` in
-  `lint/baseline/unknown-resource.json`, and gcal-cli lists `calendars`, `events`, `people`, `calendars unsync`,
-  `links review` and `links resolve`. Remove those entries in the same change that takes this version.
+- **A lint baseline entry or override for a word that is now in the vocabulary goes stale, and `cli-dev lint` fails
+  on it.** This release adds `unsync`, `review`, `resolve`, `calendars`, `events` and `people`. zoom-cli lists
+  `events` in `lint/baseline/unknown-resource.json`; gcal-cli lists `calendars`, `events`, `people`,
+  `calendars unsync`, `links review` and `links resolve` in its baseline; drive-cli overrides `unknown-verb` for
+  `comments resolve`, and cli-memo for `search people`, in `lint/overrides.json`. Remove those entries in the same
+  change that takes this version.
 
 - **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in
   0.62.0; it is a helper of the shared-command check and only works with a map kept for one check. No known caller
