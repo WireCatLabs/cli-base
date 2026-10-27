@@ -48,7 +48,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **Deadlines: 30 s for a one-shot command, 5 min for a cooperative one at a terminal and 45 s over MCP.**
   [WC-LIFE-5](docs/standards/lifecycle.md#wc-life-5--bound-every-one-shot-command-by-a-deadline) and WC-LIFE-10 say
   so, as cli-core 0.464.0 builds it, because MCP clients cut a tool call at about 60 s.
-- **A non-messenger CLI allows ordinary writes, asks before deletes and denies mail to other people.**
+- **A non-messenger CLI allows ordinary writes, asks before deletes, and denies mail to other people and deleting
+  a whole series.**
   [WC-PERM-22](docs/standards/permissions.md#wc-perm-22--a-cli-that-is-not-a-messenger-declares-its-own-keys-and-defaults-with-commandpermissions)
   follows the owner's ruling, and a CLI's generic API path must check the shared keys (`events.notify`,
   `events.delete.series`) too. Its example said sharing a calendar is `deny`; the owner made it `ask`. cli-core's
@@ -88,7 +89,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   - WC-OUT-8 and WC-OUT-14: an answer with `meta.complete: false` is an answer on stdout, also after a non-zero
     exit; only a run with no answer prints one JSON error with stdout empty.
   - WC-CMD-10 names `--max-pages` a `budget` option, not a paging one, and says why the calendar `--id` exists beside
-    `--operation-id`. WC-CMD-11 lists `--duration-minutes` as a known gap until the vocabulary has
+    `--operation-id`; gcal's `events create`, with `--id` and no `--operation-id`, is a listed gap. WC-CMD-11 lists `--duration-minutes` as a known gap until the vocabulary has
     `--duration <duration>`.
   - WC-REL-16 says `packContents` checks the pack against the list it is given, so a check that passes the `files`
     list itself cannot fail on a wrong list; the fix belongs in cli-template.
