@@ -86,8 +86,16 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   { name: "messengers", members: ["tg", "max"], covers: "tree", differences: [] },
   {
     name: "all",
-    members: ["tg", "max", "memo", "drive", "zm", "wa", "gcal"],
+    members: ["tg", "max", "memo", "drive", "zm", "wa"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "search", "notes", "meetings"],
+    differences: [],
+  },
+  // gcal is compared on what it already shares with every CLI; doctor, mcp, search and skill wait until the published
+  // CLIs agree there (https://github.com/WireCatLabs/cli-base/issues/390), then gcal moves back into "all".
+  {
+    name: "gcal-shared",
+    members: ["tg", "max", "memo", "drive", "zm", "wa", "gcal"],
+    covers: ["commands", "upgrade", "notes", "meetings"],
     differences: [],
   },
 ])

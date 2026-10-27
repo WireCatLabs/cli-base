@@ -85,6 +85,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`cli-dev audit` compares gcal only on the commands it already shares with every CLI, for now.** cli-base 0.64.0
+  put gcal into the `all` parity group, and gcal's release audit then blocked on 20 `same-path-contract` differences
+  in `doctor`, `mcp`, `search` and `skill` that already exist among the other six published CLIs and that gcal
+  cannot remove alone (gcal-cli#13). gcal leaves `all` and has its own group, `gcal-shared`, with every CLI over
+  `commands`, `upgrade`, `notes` and `meetings`. It rejoins `all` once tg, max, wa, drive, zoom and memo release on
+  cli-core's shared `mcp serve`, `doctor` and `skill` ([#390](https://github.com/WireCatLabs/cli-base/issues/390)).
+  The other CLIs' audits are unchanged: a path is compared across every member of every group that covers it.
+
 - **`cli-dev bundle`'s loader finds a server after a flag: `<cli> personal --read-only mcp serve`.** It looked for
   `serve`, `watch` or `mcp` in the first three words of the command, and since cli-core 0.463 named the server
   `mcp serve`, a flag before it pushed `serve` to the fourth word. Such a server loaded no chunks ahead and could fail
