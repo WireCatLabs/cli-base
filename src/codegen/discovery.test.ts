@@ -159,7 +159,7 @@ describe("syncDiscovery and readDiscovery", () => {
     return new Response(served)
   }) as typeof globalThis.fetch
 
-  it("writes the served bytes and every provenance field, then reads them back verified", async () => {
+  it("writes the served document and every provenance field, then reads them back verified", async () => {
     const sources = { calendar: "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest" }
     const hash = createHash("sha256").update(served).digest("hex")
     const provenance = await syncDiscovery(sources, { dir, fetch })
@@ -170,7 +170,7 @@ describe("syncDiscovery and readDiscovery", () => {
         version: "v3",
         sha256: hash,
         sourceSha256: hash,
-        normalization: "none",
+        normalization: "object keys sorted, 2-space JSON; values and array order unchanged",
       },
     })
     expect(readFileSync(join(dir, "calendar.json"), "utf8")).toBe(served)
@@ -190,5 +190,34 @@ describe("syncDiscovery and readDiscovery", () => {
       "HTTP 503",
     )
     expect(() => readFileSync(join(empty, "provenance.json"))).toThrow()
+  })
+
+  it("writes the same snapshot and model whatever order Google serves the keys in", async () => {
+    const document = { ...calendar().calendar, labels: ["limited_availability", "beta"] }
+    const reversed = (value: unknown): unknown =>
+      Array.isArray(value)
+        ? value.map(reversed)
+        : value && typeof value === "object"
+          ? Object.fromEntries(
+              Object.entries(value)
+                .reverse()
+                .map(([key, item]) => [key, reversed(item)]),
+            )
+          : value
+    const sync = async (body: unknown) => {
+      const target = mkdtempSync(join(dir, "order-"))
+      const fetch = (async () => new Response(JSON.stringify(body))) as unknown as typeof globalThis.fetch
+      const provenance = await syncDiscovery({ calendar: "https://example.test" }, { dir: target, fetch })
+      return { target, provenance: provenance.calendar }
+    }
+    const a = await sync(document)
+    const b = await sync(reversed(document))
+    expect(readFileSync(join(a.target, "calendar.json"), "utf8")).toBe(
+      readFileSync(join(b.target, "calendar.json"), "utf8"),
+    )
+    expect(a.provenance?.sha256).toBe(b.provenance?.sha256)
+    expect(a.provenance?.sourceSha256).not.toBe(b.provenance?.sourceSha256)
+    expect(adaptDiscovery(readDiscovery(a.target))).toEqual(adaptDiscovery(readDiscovery(b.target)))
+    expect(JSON.parse(readFileSync(join(b.target, "calendar.json"), "utf8")).labels).toEqual(document.labels)
   })
 })

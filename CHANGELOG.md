@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`requestSchema(operation, definitions)` in `@wirecat/cli-base/codegen` builds the JSON Schema of a generated
+  operation's request body**, every referenced definition under `$defs`, or returns `null` when the operation takes
+  no body. drive-cli and gcal-cli each kept an identical copy for `api show`. Pass a manifest operation and the
+  `definitions` that `definitionsGenerator` wrote.
+
 ### Changed â€” may break callers
 
 - **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in
@@ -18,6 +25,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`syncDiscovery` writes the same snapshot for the same revision of a Google API.** Google serves one revision with
+  its object keys in a different order on each download, so two syncs gave different files, hashes and generated
+  code. The snapshot is now the parsed document with its keys sorted and 2-space indentation; values and array order
+  are unchanged. `sha256` is stable; `sourceSha256` is still the hash of the bytes Google served, so it can change
+  between syncs. The first sync after upgrading rewrites each snapshot once, and `pnpm generate` then reorders the
+  generated types, schemas and manifest once.
 - **`skill show` now names every agent `skill install` serves: Claude Code, Codex, Gemini CLI, OpenClaw, and Hermes
   on request.** Its help named only the first three, so OpenClaw and Hermes users could not tell the skill was meant
   for them.
