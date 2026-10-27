@@ -48,6 +48,7 @@ extends:
 
 | — | `cli-dev lint --cli dist/bin.js` (or `--commands <file>`): the command tree against the standard |
 | — | `cli-dev audit --cli <bin> --cli <bin> …`: several CLIs against the standard and against each other |
+| `scripts/bundle.ts` (tg) | `cli-dev bundle --bin dist/bin/<cli>.js [--external <package>]…`: the published bin as an esbuild bundle and its loader ([WC-LAY-10](standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds)) |
 
 `cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and
 judges it by `LINT_RULES` and `VOCABULARY` from `/standards/tables`. Known violations live in

@@ -12,6 +12,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`cli-dev bundle --bin dist/bin/<cli>.js` builds the published bin as an esbuild bundle, the way tg-cli 0.100.0
+  ships.** It moves tg's `scripts/bundle.ts` into cli-base so every CLI builds the same way: code splitting that keeps
+  each lazy `import()` lazy; `import.meta.url` and run-time package lookups that stay at the original module's place
+  in the CLI, cli-core and cli-base; CommonJS named exports for a dynamic `import("yaml")`; kept names; native and
+  by-name packages left outside. The bin becomes a loader that answers `--version`, turns the compile cache on and,
+  under `serve`, `watch` and `mcp`, preloads every chunk so a running server survives an in-place upgrade. The build
+  fails when a bundled module would look in the wrong place. Add `esbuild` (an optional peer, `^0.28.0`) as a
+  devDependency and name the CLI's own outside packages with `--external`. The rule is
+  [WC-LAY-10](docs/standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds).
 - **WC-PERM-22 on the [Permissions](docs/standards/permissions.md) page: a CLI that is not a messenger declares its
   own permission keys and defaults with cli-core's `commandPermissions`** (cli-core 0.450.0). It says how such a CLI
   keys its commands, picks built-in defaults for what its writes do, and runs writes through the read-only lock and the
