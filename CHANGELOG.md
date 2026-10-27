@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`skill show` now names every agent `skill install` serves: Claude Code, Codex, Gemini CLI, OpenClaw, and Hermes
+  on request.** Its help named only the first three, so OpenClaw and Hermes users could not tell the skill was meant
+  for them.
+
 ## 0.63.0 — 27.10.2026
 
 ### Added

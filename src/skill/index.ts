@@ -32,7 +32,7 @@ export type SkillTarget = (typeof SKILL_TARGETS)[number]
 
 const homeOf = (env: Env): string => env.HOME || env.USERPROFILE || homedir()
 
-/** `~/.claude/skills` is Claude Code's; `~/.agents/skills` is read by Codex and Gemini CLI. */
+/** `~/.claude/skills` is Claude Code's; `~/.agents/skills` is read by Codex, Gemini CLI and OpenClaw. */
 export const skillPath = (target: SkillTarget, appName: string, env: Env): string =>
   join(homeOf(env), target === "claude" ? ".claude" : ".agents", "skills", appName, "SKILL.md")
 
@@ -319,7 +319,7 @@ export const skillCommand = (
   const show = annotate(command.command("show"), { effects: { remote: "none", local: "read" } })
     .summary("print the tool's instructions for AI agents")
     .description(
-      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex and Gemini CLI look for it; --for prints the copy already there`,
+      `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex, Gemini CLI and OpenClaw look for it, and where Hermes does on request; --for prints the copy already there`,
     )
   if (named.length > 0) show.argument("[name]", `one of the skills shipped for a task: ${named.join(", ")}`)
   show.addOption(
