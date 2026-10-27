@@ -310,16 +310,23 @@ store and runs no search. A CLI declares its provider and may replace any step.
   printed. A CLI that signs in another way (a bot token, a session) does not use the module.
 - **Applies to:** every CLI that signs in with OAuth. **Since:** cli-base 0.57.1. **Rulings:** NEED-1734.
 
-### WC-SECR-23 · Meeting passcodes and the query of a join link never reach the store
+### WC-SECR-23 · Meeting passcodes and the query of a join link never reach the store, the output or an agent
 
-- **Why:** a passcode, PIN or join-link query lets anyone who reads the store join the meeting.
+- **Why:** a passcode, PIN or join-link query lets anyone who reads the store, a terminal log or an agent's
+  transcript join the meeting.
 - **Enforced by:** `cli-core: src/store/calendar.test.ts`.
 - **Example:** a calendar entry's description loses each line that carries a passcode, password or PIN, and every
   link loses its query string, so `join_url` holds `https://zoom.us/j/123` without `?pwd=`. A meeting is matched by
   its room (`join_key`, such as `zoom:<number>`), never by a link that carries the passcode.
-- **Exceptions:** a title that names a PIN or a password is kept: it is the meeting's name.
-- **Applies to:** cli-core and every CLI that stores meetings or calendar entries. **Since:** cli-base 0.57.1.
-  **Rulings:** none (Wave 3 requirements 3.4).
+  The same holds for what a command prints and what an MCP tool answers, also when the answer comes straight from
+  the provider and never touched the store: a generic API command removes the provider's passcode fields (Google's
+  `conferenceData.entryPoints[].passcode`, `pin`, `accessCode`, `password`), the query of every join link and the
+  dial sequence after a phone number, and the passcode lines of a description or a location.
+- **Exceptions:** a title that names a PIN or a password is kept: it is the meeting's name. Known gap, as of
+  2026-10-27: gcal's `api` answers drop the conference entry points' secrets (`src/conference.ts`) but keep the
+  description and location as Google sent them.
+- **Applies to:** cli-core and every CLI that stores or shows meetings or calendar entries. **Since:** cli-base 0.57.1
+  (output and agent answers: cli-base 0.65.0). **Rulings:** none (Wave 3 requirements 3.4).
 
 ## Sources
 

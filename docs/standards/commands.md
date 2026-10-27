@@ -75,7 +75,8 @@ catalogue and parity manifest stay in cli-core
 - **Why:** an option that turns a command into a different report hides that report from anyone reading the tree.
 - **Enforced by:** review only.
 - **Example:** ranking is `stats messages top`, not a ranking mode on `search messages`. Options choose the scope,
-  measure, order or format of the same action. No command both shows and changes something.
+  measure, order or format of the same action. No command both shows and changes something; saving what it read
+  into the local store is not a change ([WC-CMD-17](#wc-cmd-17--declare-effects-on-every-command)).
 - **Exceptions:** a documented preparatory fetch such as `--sync-first`. It keeps its own permissions and reports
   its outcome.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1880 (`mcp revoke` is its own command; it
@@ -117,9 +118,16 @@ catalogue and parity manifest stay in cli-core
 - **Why:** `--limit` must mean "how many items" in every command of every CLI.
 - **Enforced by:** `flag-synonym` · `flag-two-meanings` · `same-flag-meaning` (weekly audit; it does not block a pull
   request yet).
-- **Example:** `--limit <n>`, never `--max`, `--take` or `--count`. `--cursor <cursor>`, never `--offset`. How much
-  to read is `--limit`, `--page` and `--page-size`. A count of pages is never an option.
-- **Exceptions:** generated commands (`bot api`) are exempt from the naming rules.
+- **Example:** `--limit <n>`, never `--max`, `--take` or `--count`. `--cursor <cursor>`, never `--offset`. How big
+  the answer is: `--limit`, `--page` and `--page-size`; a count of pages is never a paging option. How much work a
+  command may do is a `budget` option: `--max-pages <pages>` caps the pages a sync reads from the source, and
+  `--max-output-bytes` the size of the answer. A budget changes how far the command gets, never which items one page
+  of the answer holds. A retry after `outcome_unknown` is `--operation-id`: the attempt in the send journal. The
+  calendar vocabulary's `--id <id>` is a different value: the provider's own id for a thing being created, chosen
+  before the create, so a retry finds it at the provider. A CLI whose provider takes such an id may offer both.
+- **Exceptions:** generated commands (`bot api`) are exempt from the naming rules. Known gap, as of 2026-10-27: gcal's
+  `events create` offers `--id` and no `--operation-id`, so its `outcome_unknown` names the event id instead of an
+  `operation_id` (WC-LIFE-9, WC-OUT-10).
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CMD-11 · Name an option in plain words, with the kind of value in the name
@@ -129,7 +137,10 @@ catalogue and parity manifest stay in cli-core
 - **Example:** `--operation-id`, not `--cid`. `--before-id` takes a message id, `--after-time` a time, `--before-n` a
   count: two kinds are two options. A length of time is a `<duration>` with a unit (`500ms`, `30s`, `2m`, `4h`, `1d`),
   never a bare number.
-- **Exceptions:** none.
+- **Exceptions:** `--duration-minutes <minutes>` (zm's meeting length, gcal's `calendars busy`) takes a bare count of
+  minutes. It is a known gap in the vocabulary, as of 2026-10-27: it stays until the vocabulary has
+  `--duration <duration>`, and then moves in the release that adds it, under "Changed — may break callers". No new
+  option follows it.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CMD-12 · Give every option a role from the vocabulary, and filter a list with its query
@@ -188,13 +199,25 @@ Each of these is set with `annotate(command, { … })` from `@wirecat/cli-base/c
 
 ### WC-CMD-17 · Declare `effects` on every command
 
+A command **writes** when it changes something on the service (`remote: "write"`), or when it changes the local
+store or files without reading the service first (`remote: "none"`, `local: "write"`, such as `store reindex` or
+`config set`). A command that reads the service and only saves what it read into the owner's local store
+(`{ remote: "read", local: "write" }`, such as `sync` or `calendars list`) is a **read**: on the command line, in
+[WC-CMD-6](#wc-cmd-6--give-one-action-or-one-report-one-leaf-command), over MCP
+([WC-MCP-4](mcp.md#wc-mcp-4--read-runs-only-reading-commands-and-write-only-writing-ones)) and as a next step
+([WC-OUT-9](output.md#wc-out-9--offer-at-most-two-next-steps-and-mark-a-step-safe-only-when-it-changes-nothing-on-the-service)).
+
 - **Why:** retries and unasked next steps are judged on effects, and a command without them counts as a write.
 - **Enforced by:** `missing-command-effects` · `cli-core: src/cli/effects.test.ts` · `cli-memo: src/effects.test.ts`.
 - **Example:** `annotate(send, { effects: { remote: "write", local: "write" } })`. Each side is `none`, `read` or
   `write`. A sync that reads the service and writes the local store is `{ remote: "read", local: "write" }`.
 - **Exceptions:** none. Without `effects`, the error handler never marks a failure safe to retry, and a next step
-  that runs the command is never safe to run unasked.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+  that runs the command is never safe to run unasked. Known gap, as of 2026-10-27: cli-base's `writes()`
+  (`src/standards/effects.ts`) still counts every local write as a write, so cli-core's MCP router serves `sync` and
+  `calendars list` through the `write` tool. The follow-up makes `writes()` true for `remote: "write"`, or for
+  `local: "write"` when `remote` is `none`.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (what counts as a read: cli-base 0.65.0). **Rulings:** the
+  owner's ruling on what counts as a read over MCP (2026-10-27).
 
 ### WC-CMD-18 · Declare `lifetime` and `cooperative` instead of matching command names
 
@@ -328,8 +351,9 @@ The references, each for its own part:
   [WC-OUT-18](output.md#wc-out-18--exit-with-cli-bases-code-for-each-kind-of-failure), prompts follow
   [WC-CMD-15](#wc-cmd-15--never-prompt-when-no-person-can-answer), and a renamed path keeps no alias
   ([WC-CMD-8](#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)), unlike the
-  deprecation advice of the Command Line Interface Guidelines. A read may have documented local effects, such as storing what it read or recording a failed
-  run, so a failed command does not promise that it wrote nothing. A write is never retried on its own, and a tool's
+  deprecation advice of the Command Line Interface Guidelines. A read may have documented local effects, such as
+  storing what it read or recording a failed run, so a failed command does not promise that it wrote nothing; what
+  counts as a read is in [WC-CMD-17](#wc-cmd-17--declare-effects-on-every-command). A write is never retried on its own, and a tool's
   whole payload is never logged. The `stats` root and its resources are the project's own choice.
 - **Exceptions:** the CLI Agent Spec's rule that help goes to stderr when stdout is not a terminal is not adopted. The
   Agent Client Protocol links an editor to a coding agent; a WireCat CLI is a tool an agent calls, so it adds no

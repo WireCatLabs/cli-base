@@ -202,8 +202,11 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
 - **Example:** `"lint:commands": "cli-dev lint --cli dist/bin/max.js"`, run by `ci:quick` after the build. Known
   violations live in `lint/baseline/<rule-id>.json`; an entry with no violation left fails the run. A violation that a
   shared package forces, such as a verb cli-core names before the vocabulary has it, goes in the baseline too and
-  comes out when the shared package catches up. A permanent
-  exception goes in `lint/overrides.json` with `rule`, `target`, `reason`, `owner` and `review_after`. More than 10
+  comes out when the shared package catches up. A word the CLI needs that the vocabulary does not have yet goes in
+  `lint/overrides.json`, never in the baseline: its `reason` links the cli-base pull request or issue that adds the
+  word, and it comes out in the change that takes the cli-base release with the word. The shared package's words
+  go in the baseline, as above; the CLI's own go in the overrides, where the count and the date keep them few. A permanent exception also goes in `lint/overrides.json`, with `rule`, `target`, `reason`, `owner`
+  and `review_after`. More than 10
   overrides fail the run, and so does one past its date. The rules themselves are on the
   [Commands page](commands.md).
 - **Exceptions:** zoom runs `lint:commands` in full validation only. cli-core runs its own command lint test in
