@@ -36,6 +36,23 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **A lint baseline entry for `serve` or `revoke` goes stale, and `cli-dev lint` fails on it.** cli-core lists
   `bot mcp serve`, `mcp serve`, `mcp revoke` and `replies consents revoke` in `lint/baseline/unknown-verb.json`;
   tg-cli and max-cli list `replies consents revoke`. Remove those entries in the same change that takes this version.
+- **The HTTP MCP server rule covers every CLI that offers `mcp serve --http`, not only the messenger CLIs.**
+  [WC-MCP-12](docs/standards/mcp.md#wc-mcp-12--an-mcp-server-over-http-follows-the-same-permissions-and-short-lived-logins)
+  now applies to cli-template and every CLI made from it, which have offered `mcp serve --http` with no rule over it.
+  The template already follows it; a CLI that changed its copy of the HTTP server checks it against the rule.
+
+### Fixed
+
+- **The handbook's pages on the template match cli-template 0.9.0.** The [Kit surface](docs/standards/kit-surface.md)
+  table lists `LOCAL_WRITE` and `revokeAll`, which the template now imports, and counts imports loaded on demand.
+  [New CLI](docs/standards/new-cli.md) says the MCP server has three tools that reach every command, not a tool for
+  every command.
+- **The handbook says where a lint violation that a shared package forces goes, and which cli-core files are not a
+  CLI's local state.** [WC-TOOL-16](docs/standards/toolchain.md) puts such a violation in the CLI's lint baseline
+  until the shared package catches up.
+  [WC-TEST-14](docs/standards/testing.md#wc-test-14--check-the-upgrade-from-the-previous-published-version) names
+  the update check, MCP logins and lock files that only cli-core writes as outside the upgrade contract; tests still
+  keep them in the sandboxed home.
 
 ## 0.64.0 â€” 27.10.2026
 

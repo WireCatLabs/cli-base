@@ -187,7 +187,8 @@ needs a one-time code that the owner reads in a terminal. `mcp revoke` ends ever
 - **Enforced by:** review only.
 - **Example:** `max work mcp serve --http --public-url https://<name>.ts.net`.
 - **Exceptions:** none.
-- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-594, NEED-774.
+- **Applies to:** every CLI that offers `mcp serve --http`: the messenger CLIs, cli-template and every CLI made from
+  it. **Since:** cli-base 0.41.0. **Rulings:** NEED-594, NEED-774.
 
 ### WC-MCP-13 · A tool's hints and descriptions never stand in for the permission check
 

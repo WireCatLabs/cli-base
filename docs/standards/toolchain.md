@@ -200,7 +200,9 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
   request.
 - **Enforced by:** `<app>: pnpm lint:commands`.
 - **Example:** `"lint:commands": "cli-dev lint --cli dist/bin/max.js"`, run by `ci:quick` after the build. Known
-  violations live in `lint/baseline/<rule-id>.json`; an entry with no violation left fails the run. A permanent
+  violations live in `lint/baseline/<rule-id>.json`; an entry with no violation left fails the run. A violation that a
+  shared package forces, such as a verb cli-core names before the vocabulary has it, goes in the baseline too and
+  comes out when the shared package catches up. A permanent
   exception goes in `lint/overrides.json` with `rule`, `target`, `reason`, `owner` and `review_after`. More than 10
   overrides fail the run, and so does one past its date. The rules themselves are on the
   [Commands page](commands.md).
