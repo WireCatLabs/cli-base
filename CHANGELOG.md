@@ -21,6 +21,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`skill show` now names every agent `skill install` serves: Claude Code, Codex, Gemini CLI, OpenClaw, and Hermes
   on request.** Its help named only the first three, so OpenClaw and Hermes users could not tell the skill was meant
   for them.
+- **The [CI](docs/standards/ci.md) page lists the monthly cron minutes WireCat repositories already use**, under
+  WC-CI-9, and [New CLI](docs/standards/new-cli.md) step 3 points to it. Finding a free minute meant reading
+  `monthly.yml` in every repository. A new CLI adds its minute to the list in the same pull request that joins the
+  parity groups.
+- **The handbook's examples start `gcal-cli` with the command `gcal`, not `cal`**, the system calendar program on macOS
+  and many Linux systems. A CLI named after it would shadow it.
 
 ## 0.63.0 â€” 27.10.2026
 

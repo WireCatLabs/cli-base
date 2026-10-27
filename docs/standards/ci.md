@@ -158,7 +158,24 @@ what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/â
 - **Example:** `monthly.yml`, from the community template, calls the repository's `ci.yml` and the pinned cli-base
   `release-checks.yml`. Each repository has its own minute, between 02:17 and 03:20 UTC, so runs do not overlap. No
   check compares the minutes across repositories; review keeps them apart. A CLI made from cli-template starts with
-  the template's own minute and changes it (see [New CLI](new-cli.md)).
+  the template's own minute and changes it (see [New CLI](new-cli.md)). Taken minutes, from each `monthly.yml` on
+  the default branch:
+
+  | UTC | Repository |
+  |---|---|
+  | 02:17 | cli-base |
+  | 02:24 | whatsapp-cli |
+  | 02:27 | gcal-cli |
+  | 02:31 | cli-memo |
+  | 02:38 | cli-core |
+  | 02:45 | drive-cli |
+  | 02:52 | cli-testing |
+  | 02:59 | max-cli |
+  | 03:02 | cli-template |
+  | 03:06 | tg-cli |
+  | 03:13 | zoom-cli |
+  | 03:20 | cli-docs |
+
 - **Exceptions:** cli-core also builds and probes its native packages in their own workflows, after the window:
   `onnx.yml` at 03:27 and `sqlite.yml` at 03:37 UTC. A scheduled run of either never publishes; only a manual run
   with `publish` does. community has no build, so it runs only the release security checks, at 03:47 UTC. A monthly
