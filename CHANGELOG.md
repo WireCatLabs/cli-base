@@ -16,6 +16,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   0.62.0; it is a helper of the shared-command check and only works with a map kept for one check. No known caller
   imports it. Describe a whole tree with `describeProgram` instead.
 
+### Fixed
+
+- **`skill show` now names every agent `skill install` serves: Claude Code, Codex, Gemini CLI, OpenClaw, and Hermes
+  on request.** Its help named only the first three, so OpenClaw and Hermes users could not tell the skill was meant
+  for them.
+
 ## 0.63.0 â€” 27.10.2026
 
 ### Added
