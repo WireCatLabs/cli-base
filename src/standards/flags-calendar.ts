@@ -39,6 +39,20 @@ export const CALENDAR_FLAGS: VocabularyFlag[] = [
     meaning: "the calendar it acts on, when the thing is on more than one",
   },
   {
+    name: "--repeat",
+    value: "<rule>",
+    role: "value",
+    type: "string",
+    meaning: "how it repeats, as an RFC 5545 rule such as FREQ=WEEKLY;BYDAY=MO;COUNT=10",
+  },
+  {
+    name: "--hours",
+    value: "<from-to>",
+    role: "target",
+    type: "string",
+    meaning: "the working hours of each day to look in, such as 09:00-17:00, in the owner's time zone",
+  },
+  {
     name: "--series",
     role: "target",
     type: "switch",

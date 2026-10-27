@@ -32,6 +32,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `--notify` now means telling the people a change concerns â€” a chat's members or an event's attendees. Verb
   `respond` (answer an invitation). Without them `option-role` and `unknown-verb` reported every calendar CLI's
   write commands.
+- **The vocabulary has the words of free/busy and repeating events** (cli-core's `calendars busy` and
+  `events create | update --repeat`). View `busy` (when calendars or people are taken, without what takes them);
+  flags `--repeat <rule>` (an RFC 5545 rule) as `value` and `--hours <from-to>` (the working hours to look in) as
+  `target`. gcal-cli overrides the four lint reports they cause until it takes this release.
 
 - **`requestSchema(operation, definitions)` in `@wirecat/cli-base/codegen` builds the JSON Schema of a generated
   operation's request body**, every referenced definition under `$defs`, or returns `null` when the operation takes
@@ -49,6 +53,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **The calendar write words make gcal-cli's write baseline stale too.** Its `lint/baseline/option-role.json` (20
   entries under `events create | update | delete | respond`) and `events respond` in `unknown-verb.json` go stale
   with this release; remove them when gcal takes it. No other CLI's baseline or overrides on `main` name these words.
+- **The free/busy and repeat words make four of gcal-cli's overrides stale.** `lint/overrides.json` names
+  `calendars busy` (`unknown-verb`), `calendars busy --hours` and `events create | update --repeat` (`option-role`);
+  remove them when gcal takes this release.
 
 - **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in
   0.62.0; it is a helper of the shared-command check and only works with a map kept for one check. No known caller

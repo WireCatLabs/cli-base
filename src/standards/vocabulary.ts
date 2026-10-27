@@ -325,6 +325,7 @@ const views: [string, string][] = [
   ["evidence", "the stored messages or lines a result or a reference rests on"],
   ["passage", "a cited transcript line with bounded surrounding lines from the same revision"],
   ["agenda", "what needs a look today"],
+  ["busy", "when calendars or people are taken, without what takes them"],
   ["categories", "the categories a thing takes, with what each means"],
   ["domains", "the internet domains links point to, most linked first"],
   ["places", "the street addresses confirmed as places, most mentioned first"],
