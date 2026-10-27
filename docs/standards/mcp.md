@@ -16,6 +16,8 @@ Rule ids on this page are `WC-MCP-<n>`. How to read a rule, how ids work and whi
 ### Who follows these rules today
 
 tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp serve`) and bot server (`<cli> <profile> bot mcp serve`).
+`mcp serve --profiles` ([WC-MCP-9](#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)) is not
+built yet: cli-core serves one named profile.
 zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp serve`, cli-core's
 `toolsFromCommands` and `runCommandForAgent`). memo and drive have their own servers: memo has hand-written tools, and
 drive builds one tool per command from its command tree and skips commands through its own list. Those two are known
@@ -129,16 +131,23 @@ the owner saw the profile offers writes.
   as "permit writing"; that wording is a gap.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1423.
 
-### WC-MCP-9 · A server speaks for one named profile over one connection
+### WC-MCP-9 · A server serves the profiles it is told, with one connection for each
 
-`mcp serve` needs a profile, like every command ([WC-ACCT-1](accounts.md)). The server opens one messenger connection and
-every call shares it.
+`mcp serve` serves one named profile (`<cli> <profile> mcp serve`), or the profiles that `--profiles` lists:
+`--profiles work,personal`, or `--profiles all` for every profile on this computer. With neither, it refuses with
+`validation_error` and lists the profiles, like any missing profile ([WC-ACCT-3](accounts.md)). It never serves every
+profile by default. The server opens one messenger connection for each profile it serves, and every call for that
+profile shares it. When it serves more than one profile, each call names its profile; a call without one is refused
+and lists the profiles served. Each call follows its own profile's permissions.
 
-- **Why:** a connection per call would break the messenger's pace limits and look unlike the official client.
+- **Why:** which accounts an agent can reach is the owner's choice, written in the agent's config. A connection per
+  call would break the messenger's pace limits and look unlike the official client.
 - **Enforced by:** review only.
-- **Example:** `max work mcp serve`.
+- **Example:** `max work mcp serve`, `max mcp serve --profiles work,personal` or `max mcp serve --profiles all`.
+  Under the last two, a call reads `max_read { "profile": "work", "command": "inbox", "arguments": {} }`.
+  `max mcp serve` alone is refused, and its message lists `personal` and `work`.
 - **Exceptions:** the bot server needs no held connection: each Bot API call is plain HTTPS.
-- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1881.
 
 ### WC-MCP-10 · A tool and its command give the same answer and the same error
 

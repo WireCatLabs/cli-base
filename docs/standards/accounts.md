@@ -32,8 +32,9 @@ on the computer.
   config file still has `default_profile`, cli-core stops and says which profile to type. `config set default_profile`
   is refused.
 - **Exceptions:** a command that touches no account runs without a profile, for example `account list`,
-  `config show` and `commands`.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84.
+  `config show` and `commands`. `mcp serve` may name its profiles with `--profiles <names|all>` instead
+  ([WC-MCP-9](mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)); `all` is the owner's explicit choice, never a fallback.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84, NEED-1881.
 
 ### WC-ACCT-2 · The profile is a word, never a flag
 
@@ -44,8 +45,9 @@ profile.
 - **Enforced by:** `cli-core: src/cli/profile.test.ts`.
 - **Example:** `max work bot messages send …` uses the same first word as `max work chats list`. `tg --json chats list`
   still works, because `--json` is an option.
-- **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84, NEED-294.
+- **Exceptions:** `mcp serve --profiles <names|all>` names the profiles one server serves ([WC-MCP-9](mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)). It is used in
+  place of the first word, never with it.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84, NEED-294, NEED-1881.
 
 ### WC-ACCT-3 · A missing profile is an error that lists the choices
 
@@ -78,8 +80,8 @@ top-level command, such as `chats` or `bot`, is refused when the profile is crea
 
 ### WC-ACCT-5 · A profile lock pins a process to one profile
 
-When `<PREFIX>_PROFILE_LOCK` is set, a first word or `<PREFIX>_PROFILE` that names any other profile is refused with
-`permission_error`.
+When `<PREFIX>_PROFILE_LOCK` is set, a first word, `<PREFIX>_PROFILE` or `mcp serve --profiles` that names any other
+profile is refused with `permission_error`. `--profiles all` names every profile, so it is refused too.
 
 - **Why:** an agent must not escape its guards by naming a profile with fewer of them.
 - **Enforced by:** `cli-core: src/cli/settings.test.ts`.

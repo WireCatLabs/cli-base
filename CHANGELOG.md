@@ -19,6 +19,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed â€” may break callers
 
+- **An MCP server serves the profiles it is told, and refuses without them.**
+  [WC-MCP-9](docs/standards/mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)
+  now allows one named profile (`<cli> <profile> mcp serve`), a list (`<cli> mcp serve --profiles work,personal`) or
+  every profile (`<cli> mcp serve --profiles all`), with one messenger connection per served profile. With no profile
+  and no `--profiles`, `mcp serve` fails with `validation_error` and lists the profiles; it never serves every profile
+  by default. With several profiles, each call names its profile. WC-ACCT-1, WC-ACCT-2 and WC-ACCT-5 say how
+  `--profiles` fits the profile rules, and a profile lock refuses `--profiles all`. The flag registry has `--profiles`.
+  The owner ruled it; cli-core does not build `--profiles` yet.
 - **The handbook names the MCP server `mcp serve` and has no `mcp --revoke` exception.** The
   [MCP](docs/standards/mcp.md) and [Lifecycle](docs/standards/lifecycle.md) pages say `mcp serve`, `mcp serve --http`,
   `mcp serve --permission`, `bot mcp serve` and `mcp revoke`, as cli-core 0.463.0 builds them.
