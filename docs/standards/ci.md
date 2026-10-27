@@ -10,8 +10,9 @@ Rule ids on this page are `WC-CI-<n>`. How to read a rule, how ids work and whic
 [Releases page](releases.md); which scanners must exist and how workflows are hardened is on the
 [Security page](security.md).
 
-"The ten repositories" on this page means the six CLIs (tg, max, memo, drive, zoom, wa), cli-base, cli-core,
-cli-testing, cli-docs, plus community itself. cli-template follows every rule here as a CLI does
+"The WireCat repositories" on this page means every WireCat CLI (today tg, max, memo, drive, zoom, wa and gcal; a
+CLI made with `npx @wirecat/cli-template new` counts from its first commit), cli-base, cli-core, cli-testing, cli-docs,
+plus community itself. cli-template follows every rule here as a CLI does
 ([New CLI](new-cli.md#the-template-repository-itself)).
 
 ## Rules
@@ -24,7 +25,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
   `gitleaks git --staged --redact`. A clone without gitleaks gets a warning and can still commit; CI scans anyway.
   The `prepare` script installs the hooks; `LEFTHOOK=0 git commit` skips them for one commit.
 - **Exceptions:** none.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CI-2 · Add no push hook, and no hook that installs, builds, checks types, generates or tests
 
@@ -34,7 +35,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
   does not run `standards:check`, the full lint, spelling, a build or the test suite on each commit or push; it runs a
   targeted check when it needs one.
 - **Exceptions:** none. cli-base `config/lefthook.yml` still has a pre-push typecheck, but no repository extends it.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CI-3 · Run the fast standards job on every pull request and every push to `main`
 
@@ -45,7 +46,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
   commit cancels the run it replaces. The job times out after five minutes, a ceiling for a stalled setup, not an
   expected time.
 - **Exceptions:** none. Runner queues and cold downloads are outside the budget.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CI-4 · Keep `ci:quick` to early bug checks that finish within two minutes
 
@@ -61,7 +62,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
 - **Exceptions:** never put live-account suites, agent suites or platform jobs here. Full tests and coverage run in
   the pull request validation job ([WC-CI-5](#wc-ci-5--run-the-full-linux-validation-on-every-pull-request-and-keep-platform-suites-out)),
   not in `ci:quick`.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CI-5 · Run the full Linux validation on every pull request, and keep platform suites out
 
@@ -139,10 +140,13 @@ cannot pass yet; the `skip` input names it.
 
 The shared workflows are not in the npm package, because CI runs the pinned commit, not the installed copy. To see
 what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/…@<commit>` lines in `ci.yml`,
-`release.yml` and `monthly.yml`, and opens each workflow file at that commit in cli-base.
+`release.yml` and `monthly.yml`, and opens each workflow file at that commit in cli-base. The fresh-agent audit on the
+[New CLI](new-cli.md#done-when) page is given these files for this reason, beside the handbook and the repository;
+its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older template takes the prompt with
+`upgrade`.
 
 - **Why:** one shared workflow keeps the full suite the same everywhere, and a pin keeps a cli-base change from
-  breaking ten repositories at once.
+  breaking every repository at once.
 - **Enforced by:** `ci.yml:ci`.
 - **Example:** `uses: WireCatLabs/cli-base/.github/workflows/node-ci.yml@<commit> # v0.31.0`, with `cli: true` for
   the CLI steps (WC-CI-7), the project's extra checks in the `checks` input and `bun-run` for the Bun job. A job that only one repository needs stays beside it in
@@ -180,7 +184,7 @@ what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/�
   `onnx.yml` at 03:27 and `sqlite.yml` at 03:37 UTC. A scheduled run of either never publishes; only a manual run
   with `publish` does. community has no build, so it runs only the release security checks, at 03:47 UTC. A monthly
   run never publishes a package or deploys the site.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CI-10 · Run heavy security checks only at release, monthly or on request
 
@@ -194,7 +198,7 @@ what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/�
   job ([WC-CI-5](#wc-ci-5--run-the-full-linux-validation-on-every-pull-request-and-keep-platform-suites-out)); it
   takes seconds. The dependency audit, `zizmor` and CodeQL stay out. Do not add a heavy scanner to an editor hook, a
   stop hook or an ordinary pull request job.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** sc:9.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** sc:9.
 
 ### WC-CI-11 · Moved to [WC-SECR-20](security.md#wc-secr-20--pin-each-third-party-action-to-a-commit-and-give-each-workflow-read-only-defaults)
 
@@ -212,7 +216,7 @@ what CI runs, an audit reads the `uses: WireCatLabs/cli-base/.github/workflows/�
   release changes `main` the same way
   ([WC-REL-2](releases.md#wc-rel-2--main-changes-only-through-a-pull-request-also-during-a-release)).
 - **Exceptions:** none.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** NEED-381.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** NEED-381.
 
 ### WC-CI-13 · Start no live messenger or account test from a workflow
 

@@ -12,6 +12,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **WC-PERM-22 on the [Permissions](docs/standards/permissions.md) page: a CLI that is not a messenger declares its
+  own permission keys and defaults with cli-core's `commandPermissions`** (cli-core 0.450.0). It says how such a CLI
+  keys its commands, picks built-in defaults for what its writes do, and runs writes through the read-only lock and the
+  write guard. The example is a calendar: event writes ask, deleting a whole series and mailing attendees are denied
+  until the owner allows them. The page covered messenger CLIs only, and WC-PERM-6's "ask only before what cannot be
+  undone" read as if it applied to a calendar too; it now says it is the messengers' list. drive, zoom and memo do
+  not declare `commandPermissions` yet; the rule names them as known gaps.
 - **`cli-dev audit` compares gcal (`@wirecat/gcal-cli`, the Google Calendar CLI) in the `all` parity group**, next to
   tg, max, memo, drive, zm and wa, so its shared root commands are held to the same options and summaries. A run
   without gcal's command tree skips it, as before; the weekly audit adds it once gcal is published on npm.
@@ -48,6 +55,26 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   imports it. Describe a whole tree with `describeProgram` instead.
 
 ### Fixed
+
+- **Handbook corrections from gcal-cli's first-release audit.**
+  - The Toolchain, CI, Security, Testing and Store pages listed "the ten repositories" and "the six CLIs" without
+    gcal. They now say "the WireCat repositories": every WireCat CLI, a new one from its first commit, and the shared
+    repositories. `gcal-cli` is a known repository name for "Enforced by".
+  - WC-SECR-4 said the keyring service is the command's name. It is the CLI's app name (`max-cli`, `gcal-cli`,
+    `cli-memo`), as cli-core passes it.
+  - WC-REL-16 says what a CLI's package `files` holds: `dist`, `skills`, `README.md`, `LICENSE` and what the CLI
+    reads or runs after install (`scenarios`, `install`, notices); `CHANGELOG.md` may ship. Never `src/`, tests,
+    scripts, workflows, `bin/release`, `config/`, `lint/`, `contracts/` or `template.json`.
+  - WC-REL-11 names its one exception: a package's first version, published by the owner with `bin/release --local`,
+    since npm sets a trusted publisher only for a package that exists. Step 2 of
+    [New CLI](docs/standards/new-cli.md) says the same.
+  - [New CLI](docs/standards/new-cli.md) says which copied files a CLI rewrites (seeds) and which it leaves to
+    cli-template (template-owned), and that a template-owned page wrong for the CLI is fixed in cli-template.
+  - "Done when" told authors to add a new CLI's shared audit findings to `audit/baseline`, which has not accepted
+    them since cli-base 0.51.0. It now says to fix each one, or declare an exact difference in the parity group.
+  - WC-CI-8 says the fresh-agent audit is given the pinned cli-base workflows.
+  - WC-TEST-12 has one exception: commands generated from an API description share one reason that names an
+    options-against-the-snapshot test and a test that drives a generated command through `run()`.
 
 - **`syncDiscovery` writes the same snapshot for the same revision of a Google API.** Google serves one revision with
   its object keys in a different order on each download, so two syncs gave different files, hashes and generated

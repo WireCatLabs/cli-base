@@ -44,7 +44,7 @@ and which run after merge is in [CI](ci.md).
   file, listed after the shared one, adds only what is its own, such as a default profile.
 - **Exceptions:** keep coverage reports and debug traces outside the sandbox, with bounded retention. Never clean
   another session's scratch directory as test teardown.
-- **Applies to:** all CLIs and the shared packages. cli-base, cli-core, the six CLIs and cli-template load the shared
+- **Applies to:** all CLIs and the shared packages. cli-base, cli-core, every CLI and cli-template load the shared
   setup first in `setupFiles`; cli-testing does not use it yet. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-2 · No test opens a real credential store
@@ -173,7 +173,11 @@ and which run after merge is in [CI](ci.md).
   `coverage/argv.jsonl`. `pnpm test:matrix` turns that into `docs/dev/test-matrix.md` and fails on a command or
   option with neither a test nor a reason. A reason names the live scenario that covers it. A test that calls a
   function directly does not count.
-- **Exceptions:** none.
+- **Exceptions:** commands generated from a service's API description, such as drive's and gcal's
+  `api <method>` from a Google Discovery snapshot, share one reason for the whole group (`api *` and its options).
+  It names two tests: one that checks every generated command's options against the snapshot, and one that drives a
+  generated command through `run()` into the executor every generated command shares. A hand-written command in the
+  same CLI still needs its own test or live scenario.
 - **Applies to:** all CLIs. memo's check fails only on a stale page, not yet on an option with no test.
   **Since:** cli-base 0.41.0. **Rulings:** NEED-359.
 
