@@ -192,6 +192,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "the profile to use, instead of the first word",
   },
   {
+    name: "--profiles",
+    value: "<names|all>",
+    role: "scope",
+    type: "list",
+    meaning: "the profiles an MCP server serves, comma-separated, or all of them",
+  },
+  {
     name: "--history-since-time",
     value: "<time>",
     role: "target",
