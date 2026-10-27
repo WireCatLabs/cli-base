@@ -310,7 +310,13 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "do not keep this run, whatever the configuration says",
   },
   { name: "--no-registries", role: "mode", type: "switch", meaning: "do not ask the public ban lists" },
-  { name: "--notify", role: "mode", type: "switch", meaning: "tell the chat's members about it" },
+  {
+    name: "--notify",
+    role: "mode",
+    type: "switch",
+    meaning: "tell the people it concerns about it: the chat's members, or an event's attendees",
+  },
+  { name: "--no-notify", role: "mode", type: "switch", meaning: "tell nobody about it" },
   { name: "--offline", role: "mode", type: "switch", meaning: "answer from what was recorded and never connect" },
   {
     name: "--operation-id",
