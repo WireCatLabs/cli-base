@@ -193,7 +193,7 @@ const verbs: [string, string][] = [
   ["reject", "the owner refuses what an agent proposed"],
   ["review", "list what waits for the owner's decision"],
   ["resolve", "settle one thing that waits for the owner's decision, with the owner's choice"],
-  ["move", "move a file in the source"],
+  ["move", "move a thing to another place in the source: a file to a folder, an event to a calendar"],
   ["copy", "copy a file in the source"],
   ["run", "run a saved job once, now, as its timer would"],
   ["claim", "take a thing for a while so no other agent works it at once; the claim lapses by itself"],

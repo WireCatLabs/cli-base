@@ -12,6 +12,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **Calendar words for moving an event and for "this and all following".** Flag `--following` (`target`, switch):
+  this occurrence and every later one of a repeating event (`events update|delete --following`), beside `--series`.
+  `--scope` already means personal or work, so it is not reused. Flag `--to-calendar <id>` (`target`, id): the
+  calendar an event moves to (`events move --to-calendar`); `--calendar` keeps its meaning, the calendar the event is
+  on. The verb `move` now says what moves in general: a file to a folder, an event to a calendar. cli-core's shared
+  calendar commands use all three; gcal-cli carries `lint/overrides.json` entries for them until this release.
+
 - **The command vocabulary has the verbs `serve` (run a server in this process and answer its clients until stopped)
   and `revoke` (take back what was granted, so it stops working).** cli-core 0.463.0 names the MCP server
   `mcp serve` and gives forgetting browser logins its own command, `mcp revoke`; `revoke` also covers
