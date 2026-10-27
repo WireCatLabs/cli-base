@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Changed â€” may break callers
+
+- **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in
+  0.62.0; it is a helper of the shared-command check and only works with a map kept for one check. No known caller
+  imports it. Describe a whole tree with `describeProgram` instead.
+
 ### Fixed
 
 - **`skill show` now names every agent `skill install` serves: Claude Code, Codex, Gemini CLI, OpenClaw, and Hermes
