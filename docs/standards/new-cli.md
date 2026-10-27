@@ -51,8 +51,8 @@ The reference CLI is the one to compare with when a step is unclear.
 
 The copy already holds every file this handbook asks for: the required root commands (`commands`, `doctor`,
 `skill show`, `skill install`, `mcp`, `upgrade`) and `config` from cli-core, the run log and its `runs` commands
-([WC-LIFE-15](lifecycle.md#wc-life-15--keep-a-run-log-through-cli-core-and-read-it-back-with-runs)), the MCP server with a tool for every
-command, writes included, the community presets in `config/wirecat/`, the TypeScript, Biome and vitest setup,
+([WC-LIFE-15](lifecycle.md#wc-life-15--keep-a-run-log-through-cli-core-and-read-it-back-with-runs)), the MCP server with its three tools
+([WC-MCP-1](mcp.md#wc-mcp-1--a-server-offers-three-tools-not-one-per-command)) that reach every command, writes included, the community presets in `config/wirecat/`, the TypeScript, Biome and vitest setup,
 `contracts/`, `lint/`, the test matrix, the user pages, `CHANGELOG.md`, `SECURITY.md`, `bin/release`, and the
 `pr.yml`, `ci.yml`, `main.yml`, `standards.yml`, `changelog-guard.yml`, `monthly.yml` and `release.yml` workflows.
 The rules they keep are on the area pages: [Commands](commands.md), [MCP](mcp.md), [Accounts](accounts.md),

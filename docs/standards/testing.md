@@ -199,8 +199,10 @@ and which run after merge is in [CI](ci.md).
 - **Example:** `pnpm contracts:upgrade` runs the previous published package and this build on the same synthetic
   state and checks that the data survives. Each store migration also has its own upgrade test (WC-STORE-9).
 - **Exceptions:** a CLI with no local state, or with no published version yet. Local state is data the CLI's own
-  code writes and reads back in a later run, such as a store, a session or a cache. A config file and run records
-  that only cli-core writes do not count.
+  code writes and reads back in a later run, such as a store, a session or a cache. A config file, run records, the
+  update check, MCP logins and lock files that only cli-core writes do not count. Tests still keep them in the
+  sandboxed home, like every other path
+  ([WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory)).
 - **Applies to:** all CLIs with local state. wa has no upgrade contract yet. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-15 · A refactor keeps `commands --json` and the MCP tool list as they were
