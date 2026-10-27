@@ -12,12 +12,25 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`cli-dev audit` compares gcal (`@wirecat/gcal-cli`, the Google Calendar CLI) in the `all` parity group**, next to
+  tg, max, memo, drive, zm and wa, so its shared root commands are held to the same options and summaries. A run
+  without gcal's command tree skips it, as before; the weekly audit adds it once gcal is published on npm.
+- **The command vocabulary has the words a calendar CLI needs.** Verbs `unsync` (stop syncing a thing; what is
+  stored stays), `review` (list what waits for the owner's decision) and `resolve` (settle one such thing with the
+  owner's choice); collections `calendars`, `events` and `people`. `events` was only a view word, so a command group
+  named `events` was reported by `unknown-resource`.
+
 - **`requestSchema(operation, definitions)` in `@wirecat/cli-base/codegen` builds the JSON Schema of a generated
   operation's request body**, every referenced definition under `$defs`, or returns `null` when the operation takes
   no body. drive-cli and gcal-cli each kept an identical copy for `api show`. Pass a manifest operation and the
   `definitions` that `definitionsGenerator` wrote.
 
 ### Changed â€” may break callers
+
+- **A lint baseline entry for a word that is now in the vocabulary goes stale, and `cli-dev lint` fails on it.** This
+  release adds `unsync`, `review`, `resolve`, `calendars`, `events` and `people`. zoom-cli lists `events` in
+  `lint/baseline/unknown-resource.json`, and gcal-cli lists `calendars`, `events`, `people`, `calendars unsync`,
+  `links review` and `links resolve`. Remove those entries in the same change that takes this version.
 
 - **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in
   0.62.0; it is a helper of the shared-command check and only works with a map kept for one check. No known caller
