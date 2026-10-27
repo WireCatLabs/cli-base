@@ -19,6 +19,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   stored stays), `review` (list what waits for the owner's decision) and `resolve` (settle one such thing with the
   owner's choice); collections `calendars`, `events` and `people`. `events` was only a view word, so a command group
   named `events` was reported by `unknown-resource`.
+- **The vocabulary has the flags and the verb of calendar writes** (cli-core's `events create | update | delete |
+  respond`). Flags `--end-time`, `--start-date`, `--end-date`, `--location`, `--attendee` (repeat it for more),
+  `--id` (the id a create is made with) as `value`; `--calendar` and `--series` as `target`; `--no-notify` as `mode`.
+  `--notify` now means telling the people a change concerns â€” a chat's members or an event's attendees. Verb
+  `respond` (answer an invitation). Without them `option-role` and `unknown-verb` reported every calendar CLI's
+  write commands.
 
 - **`requestSchema(operation, definitions)` in `@wirecat/cli-base/codegen` builds the JSON Schema of a generated
   operation's request body**, every referenced definition under `$defs`, or returns `null` when the operation takes
@@ -33,6 +39,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `calendars unsync`, `links review` and `links resolve` in its baseline; drive-cli overrides `unknown-verb` for
   `comments resolve`, and cli-memo for `search people`, in `lint/overrides.json`. Remove those entries in the same
   change that takes this version.
+- **The calendar write words make gcal-cli's write baseline stale too.** Its `lint/baseline/option-role.json` (20
+  entries under `events create | update | delete | respond`) and `events respond` in `unknown-verb.json` go stale
+  with this release; remove them when gcal takes it. No other CLI's baseline or overrides on `main` name these words.
 
 - **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in
   0.62.0; it is a helper of the shared-command check and only works with a map kept for one check. No known caller

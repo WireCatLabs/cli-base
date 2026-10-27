@@ -1,4 +1,5 @@
 import * as v from "valibot"
+import { CALENDAR_FLAGS } from "./flags-calendar.js"
 import { HOW_FLAGS } from "./flags-how.js"
 import { WHAT_FLAGS } from "./flags-what.js"
 import { duplicates, parseRegistry, text, word } from "./registry.js"
@@ -165,6 +166,7 @@ const verbs: [string, string][] = [
   ["unstar", "take the owner's star off a message"],
   ["vote", "answer a poll"],
   ["answer", "reply to a button someone pressed under a bot's message"],
+  ["respond", "answer an invitation: accept, tentatively accept or decline it"],
   ["press", "press a button under a bot's message; the bot sees who pressed it"],
   ["action", "show what a bot is doing in a chat, such as typing, for a few seconds"],
   ["watch", "follow new events as they come, and keep them"],
@@ -371,5 +373,5 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
   ],
   views: views.map(([entry, meaning]) => ({ word: entry, meaning })),
   roots: roots.map(([entry, meaning]) => ({ word: entry, meaning })),
-  flags: [...HOW_FLAGS, ...WHAT_FLAGS],
+  flags: [...HOW_FLAGS, ...WHAT_FLAGS, ...CALENDAR_FLAGS],
 })
