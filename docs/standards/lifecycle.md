@@ -93,8 +93,8 @@ command fails with `timeout` (exit 9).
   a cut call. Claude Code waits longer ([its MCP page](https://code.claude.com/docs/en/mcp)), but a CLI does not know
   its client, so it takes the shortest.
 - **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/program.test.ts`.
-- **Example:** `gcal personal sync` in a terminal may run 5 minutes; the same call through `gcal_read` stops at
-  45 seconds with what it saved. cli-core's `DEFAULT_COMMAND_MS`, `DEFAULT_COOPERATIVE_MS` and
+- **Example:** from cli-core 0.464.0, a calendar `sync` in a terminal may run 5 minutes; the same command called over
+  MCP stops at 45 seconds with what it saved. cli-core's `DEFAULT_COMMAND_MS`, `DEFAULT_COOPERATIVE_MS` and
   `DEFAULT_AGENT_COOPERATIVE_MS` (`src/cli/execution.ts`) hold the three values, and `run()` picks one when it starts
   the command.
 - **Exceptions:** a `persistent` command has no deadline and ignores `--timeout`. An `interactive` command has none

@@ -19,7 +19,8 @@ tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp serve`) an
 `mcp serve --profiles` ([WC-MCP-9](#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)) is not
 built yet: cli-core serves one named profile.
 zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp serve`, cli-core's
-`toolsFromCommands` and `runCommandForAgent`), and gcal does the same (`gcal <profile> mcp serve`). memo and drive have their own servers: memo has hand-written tools, and
+`toolsFromCommands` and `runCommandForAgent`), and gcal does the same (`gcal <profile> mcp`; it moves to `mcp serve`
+when it takes cli-core 0.463.0). memo and drive have their own servers: memo has hand-written tools, and
 drive builds one tool per command from its command tree and skips commands through its own list. Those two are known
 gaps against these rules.
 
@@ -78,7 +79,8 @@ A command that reads the service and only saves what it read into the owner's lo
   nothing the owner would have to undo, so a sync stays under it; sending it through `write` would make a host ask a
   person before every refresh.
 - **Enforced by:** `cli-core: src/mcp/mcp.test.ts` · `cli-core: src/mcp/output-schema.test.ts`.
-- **Example:** `max_read { "command": "messages send", … }` is refused. `gcal_read { "command": "sync" }` runs.
+- **Example:** `max_read { "command": "messages send", … }` is refused. Once the gap below is closed,
+  `gcal_read { "command": "sync" }` runs.
 - **Exceptions:** none. Known gap, as of 2026-10-27: cli-core decides with cli-base's `writes()`, which still counts
   the local write, so `sync` runs through `write` until that follow-up lands (WC-CMD-17).
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (what counts as a read: cli-base 0.65.0). **Rulings:** the

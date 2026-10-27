@@ -125,7 +125,9 @@ catalogue and parity manifest stay in cli-core
   of the answer holds. A retry after `outcome_unknown` is `--operation-id`: the attempt in the send journal. The
   calendar vocabulary's `--id <id>` is a different value: the provider's own id for a thing being created, chosen
   before the create, so a retry finds it at the provider. A CLI whose provider takes such an id may offer both.
-- **Exceptions:** generated commands (`bot api`) are exempt from the naming rules.
+- **Exceptions:** generated commands (`bot api`) are exempt from the naming rules. Known gap, as of 2026-10-27: gcal's
+  `events create` offers `--id` and no `--operation-id`, so its `outcome_unknown` names the event id instead of an
+  `operation_id` (WC-LIFE-9, WC-OUT-10).
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CMD-11 · Name an option in plain words, with the kind of value in the name

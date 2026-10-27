@@ -166,7 +166,7 @@ Every CLI that signs in has four commands under `session`:
 - `<cli> <profile> session start` signs the profile in.
 - `<cli> <profile> session status` says whether this profile is signed in, and as whom.
 - `<cli> <profile> session end` signs the profile out and forgets its login.
-- `<cli> session list` takes no profile and lists the profiles on this computer, each with whether it is signed in.
+- `<cli> session list` takes no profile and lists the profiles on this computer.
 
 `status` answers about one profile; `list` answers which profiles exist. Neither one connects to more than it must:
 `list` reads only what the computer holds.

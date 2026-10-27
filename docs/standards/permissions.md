@@ -322,7 +322,8 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
   (`api.calendar.events.insert`). A key that names no command is refused when it is set or saved.
 - **Defaults.** `defaults` holds the CLI's built-in levels, beside cli-core's. They only ever tighten (WC-PERM-7).
   Like WC-PERM-6 for the messengers, and as tg and drive do: an ordinary change is `allow`; a delete is `ask`; a
-  write that mails or notifies people other than the owner is a key of its own, `deny` until the owner allows it.
+  write that mails or notifies people other than the owner, or deletes a whole series from their calendars, is a key
+  of its own, `deny` until the owner allows it.
   Sending a message is not this kind of write; a messenger CLI keeps WC-PERM-6.
 - **Shared keys on every path.** A key a shared command checks inside itself, such as `events.notify` or
   `events.delete.series`, is checked by every path that can do the same thing, the CLI's own generic API commands
@@ -336,14 +337,15 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
 - **Why:** one permission model for every CLI; a CLI-own layer drifts from the shared one and is audited by nobody.
 - **Enforced by:** `cli-core: src/cli/command-permissions.test.ts` · `cli-core: src/calendar/cli/writes.test.ts`.
 - **Example:** a calendar CLI takes cli-core's `CALENDAR_WRITE_DEFAULTS` and `CALENDAR_WRITE_KEYS`
-  (`@wirecat/cli-core/calendar`, cli-core 0.458.0). By this rule `events create`, `update` and `respond` are `allow`;
-  `events delete` and `events.delete.series` (a whole repeating series) are `ask`; `events.notify` (the provider
-  mails the attendees) is `deny` until the owner allows it. gcal adds its own keys for its generated
+  (`@wirecat/cli-core/calendar`, cli-core 0.458.0). By this rule `events create`, `update` and `respond` are `allow`
+  and `events delete` is `ask`. `events.delete.series` (every occurrence of a repeating series, in every attendee's
+  calendar) and `events.notify` (the provider mails the attendees) are `deny` until the owner allows them: over MCP
+  `ask` runs without a question, and each reaches people other than the owner. gcal adds its own keys for its generated
   `api <method>` commands: sharing a calendar is `ask` (NEED-1857), and emptying the main calendar
   (`api.calendar.calendars.clear`) is `deny`.
 - **Exceptions:** known gaps, as of 2026-10-27:
   - cli-core's `CALENDAR_WRITE_DEFAULTS` (`src/calendar/writer.ts`) still has `events create`, `update` and
-    `respond` at `ask`, and `events.delete.series` at `deny`.
+    `respond` at `ask`.
   - gcal's generated `api` commands default every write to `ask`, ordinary changes included, and check neither
     `events.notify` nor `events.delete.series`.
   - drive keeps its own policy and `--read-only` flag, zoom reads its own `remote-meetings` key with `levelFor`, and
