@@ -38,6 +38,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   WC-CI-9, and [New CLI](docs/standards/new-cli.md) step 3 points to it. Finding a free minute meant reading
   `monthly.yml` in every repository. A new CLI adds its minute to the list in the same pull request that joins the
   parity groups.
+- **The [Kit surface](docs/standards/kit-surface.md) page lists every cli-core and cli-base export cli-template
+  0.7.0 imports**, among them the ones for MCP over HTTP: `mcpServerCommand`, `serveOverHttp`, `httpLockFile` and
+  the rest. The page left them out, so a change to them would not have been seen as one that reaches every new CLI.
+- **[New CLI](docs/standards/new-cli.md) lets the fresh audit agent read the cli-base workflow files a CLI's
+  workflows pin.** WC-CI-8 tells an audit to read them, but the audit was limited to the handbook and the
+  repository. A release audit prompt kept in a CLI repository needs the same change.
+- **WC-TEST-5 on the [Testing](docs/standards/testing.md) page says that a test may wait for a local process or
+  server it started**, polling with a timeout shorter than the test's own; a fixed sleep is still not allowed. It
+  was unclear whether such a wait counts as waiting for real time.
 - **The handbook's examples start `gcal-cli` with the command `gcal`, not `cal`**, the system calendar program on macOS
   and many Linux systems. A CLI named after it would shadow it.
 

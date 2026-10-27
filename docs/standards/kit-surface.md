@@ -18,11 +18,11 @@ nothing from either package.
 | Package and path | Exports |
 |---|---|
 | `@wirecat/cli-base` | `catchCrashes`, `CliError`, `configFilePath`, `mcpErrorResult`, `resolvePaths` |
-| `@wirecat/cli-base/commands` | `annotate`, `CommandInfo`, `describeProgram` |
+| `@wirecat/cli-base/commands` | `annotate`, `CommandInfo`, `COMMANDS_PAGE_LABELS` (in `scripts/`), `commandsPage` (in `scripts/`), `describeOptions` (in `scripts/`), `describeProgram` |
 | `@wirecat/cli-base/codegen` | `writeArtifacts` (in `scripts/`) |
 | `@wirecat/cli-base/release` | `DocsRules`, `JOURNAL_IDS`, `markdownFiles`, `packContents` (in `scripts/`) |
-| `@wirecat/cli-core/cli` | `AppIdentity`, `changesAuthorityAt`, `commandsCommand`, `configCommand`, `Configuration`, `createProgram`, `environmentOf`, `GlobalFlags`, `itemOf`, `LOCAL_READ`, `outputFor`, `privateFiles`, `profileFree`, `ProgramDefinition`, `ProgramOptions`, `readOnlyLockOf`, `REMOTE_WRITE`, `renderAnswer`, `rootOf`, `run`, `RunOptions`, `runsCommand`, `settingsFor`, `skillCommand`, `upgradeCommand` |
-| `@wirecat/cli-core/mcp` | `McpCommand`, `registerCommands`, `runCommandForAgent`, `toolsFromCommands` |
+| `@wirecat/cli-core/cli` | `AppIdentity`, `changesAuthorityAt`, `commandHelpMarkdown` (in `scripts/`), `commandsCommand`, `configCommand`, `Configuration`, `createProgram`, `environmentOf`, `GlobalFlags`, `httpTokenFile`, `itemOf`, `LOCAL_READ`, `MCP_HTTP_DEFAULT_PORT`, `mcpServerCommand`, `outputFor`, `privateFiles`, `profileFree`, `ProgramDefinition`, `ProgramOptions`, `readOnlyLockOf`, `refuseUnderReadOnly`, `REMOTE_WRITE`, `renderAnswer`, `rootOf`, `run`, `RunOptions`, `runsCommand`, `settingsFor`, `skillCommand`, `upgradeCommand` |
+| `@wirecat/cli-core/mcp` | `httpLockFile`, `MCP_PATH`, `McpCommand`, `portOf`, `publicUrlOf`, `registerCommands`, `runCommandForAgent`, `serveOverHttp`, `toolsFromCommands` |
 | `@wirecat/cli-core/sends` | `Level` |
 | `@wirecat/cli-core/update` | `appUpdate` |
 | `@wirecat/cli-core/testing` | `ARGV_LOG`, `argvLogSetup` |
