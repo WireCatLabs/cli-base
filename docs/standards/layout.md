@@ -131,7 +131,7 @@ bundle halved `--help` and every other short command
 - **Why:** one shared build keeps what tg learned in one place: lazy imports stay lazy, files and packages are found
   where they were installed, and a running server survives an in-place upgrade.
 - **Enforced by:** `<app>: pnpm build` · `<app>: pnpm smoke:node` · `<app>: pnpm smoke:bun`.
-- **Example:** `"build": "tsc --build --force && cli-dev bundle --bin dist/bin/tg.js --external '@mtcute/*' --external undici"`,
+- **Example:** `"build": "tsc --build --force && cli-dev bundle --bin dist/bin/tg.js --external \"@mtcute/*\" --external undici"`,
   with `esbuild` as a devDependency in cli-base's peer range. `dist/bundle/` holds the bundle, split so every lazy
   `import()` stays a chunk of its own; `dist/bin/tg.js` stays the path `"bin"` names and becomes a loader. What it
   does and checks:
@@ -145,7 +145,8 @@ bundle halved `--help` and every other short command
   - A dynamic import of CommonJS (`yaml`) keeps its named exports. Names are kept (`keepNames`), so `commands --json`
     and errors read as before.
   - Native modules, Bun's SQLite and the packages cli-core loads by name stay outside; `--external` adds the CLI's
-    own (`*` matches anything).
+    own (`*` matches anything). Quote a pattern with double quotes: pnpm runs scripts through `cmd.exe` on Windows,
+    which keeps single quotes, so `'@mtcute/*'` would match nothing there.
   - The build fails when a bundled module would look for a file or package from the chunk's place, or when the loader
     names a chunk that was not built. A third-party file read and found harmless is named with `--harmless`.
   - The CLI's smoke test runs the built bin under Node and Bun and checks that the store opens and the document
