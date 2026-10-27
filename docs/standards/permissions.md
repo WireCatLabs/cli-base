@@ -20,8 +20,9 @@ Rule ids on this page are `WC-PERM-<n>`. How to read a rule, how ids work and wh
 tg, max and wa use cli-core's permissions and write guard in full. memo uses them for the shared commands only. drive
 has its own policy and guard, with its own `--read-only` flag. zoom has per-profile `permissions` from zoom-cli 0.35.0,
 read with cli-core's `levelFor`; its writes change Zoom meetings, its built-in default is `remote-meetings: ask`, and
-it has no send journal or recipient list, since it sends no messages. Where this page says "every CLI that writes",
-drive is a known gap.
+it has no send journal or recipient list, since it sends no messages. gcal declares its own keys through cli-core's
+`commandPermissions` and runs its event writes through cli-core's write guard (WC-PERM-22). Where this page says
+"every CLI that writes", drive is a known gap.
 
 WC-PERM-10 and WC-PERM-11 need cli-core 0.321.0, which tg, max and wa pin. WC-PERM-12 as written needs cli-core
 0.337.0; before it, the lock let through some local writes that overwrite what the owner saved. A command other
@@ -114,7 +115,8 @@ A default is never made stricter without the owner's word.
 - **Exceptions:** where the messenger has replies, `replies.send` is `deny`: a reply rule writes to people with nobody
   typing a command, so it waits for the owner's own `allow`. A messenger with no `replies` group, such as wa, has no
   use for the key.
-- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-568.
+- **Applies to:** messenger CLIs. A CLI that is not a messenger sets its own defaults (WC-PERM-22). **Since:** cli-base
+  0.41.0. **Rulings:** NEED-568.
 
 ### WC-PERM-7 · A built-in default only ever tightens
 
@@ -309,6 +311,32 @@ Moderation rules use the same four levels for each kind of action (delete, remov
 - **Exceptions:** an agent may run the same check over MCP, under the same levels. A rule's level is meant to be no
   looser than the profile's `chats.moderate`; the code does not check that yet.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-306, NEED-310.
+
+### WC-PERM-22 · A CLI that is not a messenger declares its own keys and defaults with `commandPermissions`
+
+A messenger's keys come from its resources (`messages`, `chats`). Any other CLI names its own with cli-core's
+`commandPermissions({ keyOf, extra, defaults })`, passed as `settingsFor(app, { permissions })` (cli-core 0.450.0):
+
+- **Keys.** Each command is checked against its own path (`events.create`), the default `keyOf`. Housekeeping has no
+  key (WC-PERM-5). `extra` adds the keys a command checks inside itself, such as one per generated API method
+  (`api.calendar.events.insert`). A key that names no command is refused when it is set or saved.
+- **Defaults.** `defaults` holds the CLI's built-in levels, beside cli-core's. They only ever tighten (WC-PERM-7). A
+  CLI picks them for what its writes do, not by WC-PERM-6's messenger list: they ask before a write people other
+  than the owner see or cannot easily undo, and deny what an agent must never do unasked.
+- **Read-only lock and guard.** `<PREFIX>_READ_ONLY` refuses every write to the service, as in WC-PERM-12. Every
+  write runs through cli-core's write guard with `permissionDefaults: configuration.permissions.defaults`
+  (cli-core 0.455.0), so `ask` is a y/N question at a terminal (WC-PERM-9) and every attempt goes into the send journal
+  (WC-PERM-17). A CLI that sends no messages has no recipient list or hourly limit to set.
+
+- **Why:** one permission model for every CLI; a CLI-own layer drifts from the shared one and is audited by nobody.
+- **Enforced by:** `cli-core: src/cli/command-permissions.test.ts` · `cli-core: src/calendar/cli/writes.test.ts`.
+- **Example:** a calendar CLI takes cli-core's `CALENDAR_WRITE_DEFAULTS` and `CALENDAR_WRITE_KEYS`
+  (`@wirecat/cli-core/calendar`, cli-core 0.458.0): `events create`, `update`, `respond` and `delete` ask, since each
+  changes a calendar other people may share or be invited from; `events.delete.series` (a whole repeating series) and
+  `events.notify` (mail the attendees) are `deny` until the owner allows them. gcal adds its own: a generated
+  `api <method>` that writes asks, and one that shares, empties or gives away a calendar is `deny`.
+- **Exceptions:** drive still keeps its own policy and `--read-only` flag; moving onto `commandPermissions` is open.
+- **Applies to:** every CLI that writes and is not a messenger. **Since:** cli-base 0.64.0. **Rulings:** none.
 
 ## Sources
 

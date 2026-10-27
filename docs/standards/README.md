@@ -33,7 +33,7 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Output](output.md) | `OUT` | 23 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection |
 | [MCP](mcp.md) | `MCP` | 13 | The MCP tools, how they come from commands, what each permission shows |
 | [Accounts](accounts.md) | `ACCT` | 11 | The explicit profile, reads across accounts, scope flags, linked identities |
-| [Permissions](permissions.md) | `PERM` | 21 | Levels, keys, defaults, hard limits, the write guard and its journal |
+| [Permissions](permissions.md) | `PERM` | 22 | Levels, keys, defaults, hard limits, the write guard and its journal |
 | [Architecture](architecture.md) | `ARCH` | 17 | Layers, dependency direction, vendor types, what goes in which package |
 | [Lifecycle](lifecycle.md) | `LIFE` | 14 | Opening late, who closes, one-shot exits, long-running commands, the `serve` relay, resumable syncs, the run log |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
@@ -84,7 +84,7 @@ Every rule has the same shape. A rule may add a sentence or a short list under i
     CLI's `node_modules`;
   - a check in another repository, as `<repo>: <check>`, such as `cli-core: pnpm parity:check` or
     `cli-core: biome noRestrictedImports`. `<repo>` is the repository's name on GitHub: `cli-core`, `cli-testing`,
-    `cli-docs`, `community`, `tg-cli`, `max-cli`, `cli-memo`, `drive-cli`, `zoom-cli` or `whatsapp-cli`. `<app>`
+    `cli-docs`, `community`, `tg-cli`, `max-cli`, `cli-memo`, `drive-cli`, `zoom-cli`, `whatsapp-cli` or `gcal-cli`. `<app>`
     stands for each CLI the rule applies to, when every one of them runs that check in its own repository.
 - **Since** is the cli-base release whose handbook first carried the rule. A feature can be older than its rule.
 

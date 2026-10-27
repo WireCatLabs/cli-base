@@ -17,7 +17,7 @@ export interface StoredCredential {
 export interface CredentialsOptions {
   /** Where the fallback file lives when the keyring cannot be used. */
   configDir: string
-  /** The keyring service name — the command's name, e.g. `max-cli`. */
+  /** The keyring service name — the CLI's app name, e.g. `max-cli`, not its command word. */
   service: string
   /**
    * **True when the config directory came from the environment rather than the OS convention.**

@@ -125,7 +125,11 @@ on the [CI](ci.md) page.
 - **Example:** `bin/release` starts `release.yml` and follows it. Only the `publish` job has the OIDC permission (the
   short-lived identity npm trusts), and it runs no project code: it only runs `npm publish` on the validated file.
 - **Exceptions:** npm trusts the workflow by file name: renaming `release.yml` stops publishing until npm's trusted
-  publisher settings are updated.
+  publisher settings are updated. npm sets a trusted publisher on the package's settings page
+  ([npm docs](https://docs.npmjs.com/trusted-publishers)), which a package has only once it is published, so its
+  first version is published with `bin/release --local` by the owner, from a clean `main`. Right after it, the owner
+  adds the trusted publisher on npmjs.com (step 2 of [New CLI](new-cli.md#four-steps-that-need-a-person)), and every
+  later version goes through `release.yml`.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-12 · Publish only after full validation and the release security checks pass
@@ -181,12 +185,18 @@ on the [CI](ci.md) page.
 
 ### WC-REL-16 · The package ships only the files it names
 
+A CLI's `files` holds what the installed CLI runs from or shows its user: `dist`, the agent skill (`skills`),
+`/README.md`, `CHANGELOG.md` and `LICENSE`, plus any data file its code reads at run time, such as a generated API
+manifest it does not compile into `dist`. It never holds `src/`, tests, fakes or fixtures, `scripts/`, `.github/`,
+`bin/release`, `config/`, `lint/`, `contracts/`, `docs/dev/` or `template.json`.
+
 - **Why:** a stray file in the package can leak local data and grows every install.
 - **Enforced by:** `node-ci.yml:check` · `<app>: pnpm package:check` · `whatsapp-cli: pnpm release:check`.
 - **Example:** `package.json` `files` lists what ships. The CLI's `pnpm release:check` runs `packContents` from
   `@wirecat/cli-base/release` and fails on any other path in `npm pack --dry-run`.
-- **Exceptions:** none. Each CLI's `package:check` runs `packContents`; tg and max as
-  `release-check.ts --package-only`.
+- **Exceptions:** cli-template's own package ships the skeleton's sources and configs, since `new` copies them; the
+  `files` list `new` writes into a CLI follows this rule. Each CLI's `package:check` runs `packContents`; tg and max
+  as `release-check.ts --package-only`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ## Sources

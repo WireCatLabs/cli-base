@@ -30,7 +30,7 @@ Related pages: which account a read covers, and how a read across accounts is as
   `%LOCALAPPDATA%\WireCat\Data\` on Windows). Rows are keyed by provider and account. `storePath` is the only code
   that reads `MESSAGING_STORE` and `WIRECAT_STATE_DIR`.
 - **Exceptions:** none. Older documents that name `messages.db` describe a store that is no longer used.
-- **Applies to:** CLIs that keep local data through cli-core (tg, max, wa, memo, drive, zoom). **Since:** cli-base 0.41.0.
+- **Applies to:** CLIs that keep local data through cli-core (tg, max, wa, memo, drive, zoom, gcal). **Since:** cli-base 0.41.0.
   **Rulings:** NEED-383.
 
 ### WC-STORE-2 · Reach the data through its area, and add a new kind of record as a new area

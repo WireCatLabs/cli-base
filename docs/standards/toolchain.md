@@ -15,22 +15,23 @@ The [community standards](https://github.com/WireCatLabs/community/blob/main/sta
 one source of the presets. Each repository holds a copy of them in `config/wirecat/`, installed by
 `adopt-standards.py`.
 
-"The ten repositories" on this page means the six CLIs (tg, max, memo, drive, zoom, wa), cli-base, cli-core,
-cli-testing, cli-docs, plus community itself. cli-template follows every rule here as a CLI does
+"The WireCat repositories" on this page means every WireCat CLI (today tg, max, memo, drive, zoom, wa and gcal; a
+CLI made with `npx @wirecat/cli-template new` counts from its first commit), cli-base, cli-core, cli-testing, cli-docs,
+plus community itself. cli-template follows every rule here as a CLI does
 ([New CLI](new-cli.md#the-template-repository-itself)).
 
 ## Rules
 
 ### WC-TOOL-1 · Install the shared presets with `adopt-standards.py`, and never edit the copies
 
-- **Why:** one reviewed set of presets keeps ten repositories alike; an edited copy drifts without anyone seeing it.
+- **Why:** one reviewed set of presets keeps the repositories alike; an edited copy drifts without anyone seeing it.
 - **Enforced by:** `pnpm standards:check` · `standards.yml:standards`.
 - **Example:** `python3 scripts/adopt-standards.py /path/to/project` from a community checkout, then commit
   `config/wirecat/` and the lockfile. `standards:check` compares each file in `config/wirecat/` with the hash in
   `config/wirecat/manifest.json`.
 - **Exceptions:** none. A general improvement goes to community and comes back through a new adoption. A
   project-only setting goes in the root config (WC-TOOL-2).
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-2 · Make each root config extend its copy in `config/wirecat/`
 
@@ -41,7 +42,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
   `lefthook.yml` extends `config/wirecat/lefthook.yml`.
 - **Exceptions:** do not extend `@wirecat/cli-base/biome` or `@wirecat/cli-base/lefthook.yml`. No repository uses
   them, and `standards:check` accepts only the paths above.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-3 · Pin the tool versions that `toolchain.json` names
 
@@ -50,7 +51,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
 - **Example:** `package.json` has `"packageManager": "pnpm@11.20.0"` and exact `devDependencies` for
   `@biomejs/biome`, `cspell` and its three dictionaries, `lefthook` and `markdownlint-cli2`, as in the manifest.
 - **Exceptions:** none.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-4 · Extend the shared TypeScript config, and do not loosen it
 
@@ -101,7 +102,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
 - **Example:** the shared preset sets 2 spaces, double quotes, semicolons only where needed, trailing commas, arrow
   parentheses always and 120 columns. Run `pnpm lint:fix` to apply them.
 - **Exceptions:** none.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-8 · Keep the shared Biome rules at error
 
@@ -111,7 +112,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
   noUnusedImports, noUnusedVariables and noExplicitAny.
 - **Exceptions:** a repository may add rules or raise a level. It may not turn a shared rule off (index, "Which rule
   wins").
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-9 · Write to the console only with `console.error`, except in `scripts/`
 
@@ -122,7 +123,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
 - **Exceptions:** files under `scripts/` may print, because they are development tools. A shared package prints
   nothing at all, not even with `console.error`
   ([WC-ARCH-19](architecture.md#wc-arch-19--shared-packages-print-nothing-and-log-nothing-on-their-own)).
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-10 · Keep the secret lint on, and suppress a finding only with its reason
 
@@ -132,7 +133,7 @@ cli-testing, cli-docs, plus community itself. cli-template follows every rule he
   `// biome-ignore lint/security/noSecrets: Crockford base32 alphabet, not a key`.
 - **Exceptions:** the rule is off in test files, `test/`, `tests/`, `__tests__/`, `fixtures/` and `generated/`,
   because those hold fake credentials or cannot keep a suppression comment.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-11 · Keep the three grit plugins that block unsafe calls
 
@@ -149,7 +150,7 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
   concatenation. no-new-function reports `new Function(...)` and `Function(...)`.
 - **Exceptions:** a reviewed site may keep a `biome-ignore` comment with the reason, for example a Windows `.cmd` shim
   with fixed arguments. The plugins read syntax, not data flow, so review and CodeQL at release cover the rest.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-12 · Do not spread a list of user data into call arguments
 
@@ -159,7 +160,7 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
   plugin reports `.push(...x)`, `Math.max(...x)` and `Math.min(...x)` as a warning.
 - **Exceptions:** a spread over a list that is small by construction may stay. The plugin skips tests, `testing/`,
   `scripts/`, `bench/` and `performance/`.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-13 · Cap every file at 1,000 lines with Biome
 
@@ -172,7 +173,7 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
   `src/telegram/adapter.ts`; four files in cli-core). A smaller cap is allowed: zoom uses 500. cli-docs turns it off for
   stylesheets. Biome reads only JavaScript and TypeScript, so the cap does not cover
   code in another language, such as wa's Go engine; the review signals of WC-LAY-7 still apply to it.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-14 · Turn on the import cycle rule
 
@@ -180,7 +181,7 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
 - **Enforced by:** `pnpm lint` · `standards.yml:standards` (the shared Biome base, like WC-TOOL-8).
 - **Example:** the shared Biome base sets the suspicious rule noImportCycles to error.
 - **Exceptions:** none.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-15 · Declare layer boundaries as restricted imports in `biome.json`
 
@@ -218,7 +219,7 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
 - **Exceptions:** a general word goes into the community word list, not into each project. cli-base checks
   `README.md` and `docs/standards/`; cli-docs its site pages in `content/docs/`; community every Markdown file it
   publishes. cli-core, zoom and cli-testing check only `README.md` yet.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-18 · Lint Markdown with `markdownlint-cli2` and the shared preset
 
@@ -227,7 +228,7 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
 - **Example:** the preset turns on only: no tabs (MD010), at most two blank lines in a row (MD012), a language on
   every fenced code block (MD040) and no empty links (MD042). `.markdownlint-cli2.jsonc` lists the files to check.
 - **Exceptions:** a repository may turn on more rules in its root config.
-- **Applies to:** the ten repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TOOL-19 · Check user pages with `rumdl` and the shared `rumdl.toml`
 

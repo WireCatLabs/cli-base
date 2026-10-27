@@ -67,8 +67,9 @@ name. Any other top-level key is written as `[not allowed]`. A key that names co
 ### WC-SECR-4 · Secrets come from the environment, then the OS keyring, then a private file
 
 cli-base's `Credentials` reads the environment variable first (for CI), then the OS keyring, then a file with mode
-`0600`. The keyring service is the command's name. When the config directory comes from the environment, the service
-name is scoped to that directory (`isolated: true`).
+`0600`. The keyring service is the CLI's app name, `appName` in its identity (`max-cli`, `gcal-cli`, `cli-memo`), not
+the command word people type (`max`, `gcal`). When the config directory comes from the environment, the service name
+is scoped to that directory (`isolated: true`).
 
 - **Why:** the keyring is the safest store on the computer, and a throwaway config directory must not overwrite the
   owner's real keyring entry.
@@ -274,7 +275,7 @@ general words.
   asks for it on that job only. The `zizmor` scan in `release-checks.yml` reports high findings at release, but does
   not fail on them.
 - **Exceptions:** none.
-- **Applies to:** the ten repositories: the six CLIs, cli-base, cli-core, cli-testing, cli-docs and community; and
+- **Applies to:** the WireCat repositories: every CLI, cli-base, cli-core, cli-testing, cli-docs and community; and
   cli-template.
   **Since:** cli-base 0.41.0. **Rulings:** none.
 

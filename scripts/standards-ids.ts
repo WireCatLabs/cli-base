@@ -16,6 +16,7 @@ export const OTHER_REPOSITORIES: readonly string[] = [
   "cli-testing",
   "community",
   "drive-cli",
+  "gcal-cli",
   "max-cli",
   "tg-cli",
   "whatsapp-cli",
