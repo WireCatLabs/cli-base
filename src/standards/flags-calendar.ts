@@ -58,4 +58,17 @@ export const CALENDAR_FLAGS: VocabularyFlag[] = [
     type: "switch",
     meaning: "act on the whole repeating event, not only this occurrence",
   },
+  {
+    name: "--following",
+    role: "target",
+    type: "switch",
+    meaning: "act on this occurrence and every later one of the repeating event",
+  },
+  {
+    name: "--to-calendar",
+    value: "<id>",
+    role: "target",
+    type: "id",
+    meaning: "the calendar it moves to, of the same account",
+  },
 ]
