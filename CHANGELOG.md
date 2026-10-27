@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`requestSchema(operation, definitions)` in `@wirecat/cli-base/codegen` builds the JSON Schema of a generated
+  operation's request body**, every referenced definition under `$defs`, or returns `null` when the operation takes
+  no body. drive-cli and gcal-cli each kept an identical copy for `api show`. Pass a manifest operation and the
+  `definitions` that `definitionsGenerator` wrote.
+
 ### Changed â€” may break callers
 
 - **`describeAlone` is no longer exported from `@wirecat/cli-base/commands`.** It was made public by accident in

@@ -195,7 +195,8 @@ const stale = writeArtifacts(artifacts, { root, check: process.argv.includes("--
 ```
 
 **Google APIs come from Discovery snapshots.** `syncDiscovery(sources, { dir })` downloads each document
-byte for byte into `dir` with a `provenance.json` (source, revision, version, `sha256`); it is the CLI's
+into `dir`, its object keys sorted so the same revision always gives the same file, with a `provenance.json`
+(source, revision, version, `sha256`); it is the CLI's
 `spec:sync` script, run by hand. `readDiscovery(dir)` loads them back for generation and stops if a file no
 longer matches its hash. `adaptDiscovery(documents, { exclude, sourceRevision })` classifies each method by its
 HTTP verb, leaves out the methods in `exclude` (id → reason; a stale id stops generation), and returns the
@@ -218,6 +219,8 @@ helpers, not the generator. Numbers are expected from a lossless JSON parser (`l
 number fails instead of rounding. Objects are loose, so a field the API added later passes through.
 Unions retain every alternative, including recursive references and Boolean literals.
 `definitionsGenerator` emits the same schema nodes for runtime input traversal; RPC parameters can be in the JSON body.
+`requestSchema(operation, definitions)` turns a manifest operation's request body into a JSON Schema with its
+`$defs`, or `null` when it takes none — what an `api show` command prints.
 Enums and discriminated unions are **strict**: a value or subtype the snapshot does not know fails,
 so decode a live stream (updates, webhooks) only where that is what you want.
 
