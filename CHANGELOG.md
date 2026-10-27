@@ -8,6 +8,27 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The command vocabulary has the verbs `serve` (run a server in this process and answer its clients until stopped)
+  and `revoke` (take back what was granted, so it stops working).** cli-core 0.463.0 names the MCP server
+  `mcp serve` and gives forgetting browser logins its own command, `mcp revoke`; `revoke` also covers
+  `chats link revoke` and the `consents revoke` commands that were baselined as unknown verbs.
+
+### Changed — may break callers
+
+- **The handbook names the MCP server `mcp serve` and has no `mcp --revoke` exception.** The
+  [MCP](docs/standards/mcp.md) and [Lifecycle](docs/standards/lifecycle.md) pages say `mcp serve`, `mcp serve --http`,
+  `mcp serve --permission`, `bot mcp serve` and `mcp revoke`, as cli-core 0.463.0 builds them.
+  [WC-CMD-6](docs/standards/commands.md#wc-cmd-6--give-one-action-or-one-report-one-leaf-command) no longer lets
+  `--revoke` stay an option: forgetting every browser login is the `mcp revoke` command. A CLI with its own server
+  (drive, memo, zoom) moves to the same shape.
+- **A lint baseline entry for `serve` or `revoke` goes stale, and `cli-dev lint` fails on it.** cli-core lists
+  `bot mcp serve`, `mcp serve`, `mcp revoke` and `replies consents revoke` in `lint/baseline/unknown-verb.json`;
+  tg-cli and max-cli list `replies consents revoke`. Remove those entries in the same change that takes this version.
+
 ## 0.64.0 — 27.10.2026
 
 ### Added

@@ -15,8 +15,8 @@ Rule ids on this page are `WC-MCP-<n>`. How to read a rule, how ids work and whi
 
 ### Who follows these rules today
 
-tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp`) and bot server (`<cli> <profile> bot mcp`).
-zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp`, cli-core's
+tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp serve`) and bot server (`<cli> <profile> bot mcp serve`).
+zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp serve`, cli-core's
 `toolsFromCommands` and `runCommandForAgent`). memo and drive have their own servers: memo has hand-written tools, and
 drive builds one tool per command from its command tree and skips commands through its own list. Those two are known
 gaps against these rules.
@@ -116,27 +116,27 @@ profile's permissions, the recipient list and the hourly limit decide.
 
 ### WC-MCP-8 · No `mcp` flag grants access
 
-`mcp --permission <key=level>` may only make a level stricter for that server. An override that would loosen the
+`mcp serve --permission <key=level>` may only make a level stricter for that server. An override that would loosen the
 profile is refused at start-up with `validation_error` naming the key. This includes a parent key that would hide a
-stricter key under it, and lifting a built-in `ask`. `mcp setup --allow-writes` only confirms, at install time, that
+stricter key under it, and lifting a built-in `ask`. `mcp add <client> --allow-writes` only confirms, at install time, that
 the owner saw the profile offers writes.
 
 - **Why:** whoever writes the agent's MCP config must not get more than the profile allows.
 - **Enforced by:** `cli-core: src/cli/messenger/mcp-command-http.test.ts`.
-- **Example:** `max work mcp --permission messages=readonly` works. `max work mcp --permission messages.delete=allow`
+- **Example:** `max work mcp serve --permission messages=readonly` works. `max work mcp serve --permission messages.delete=allow`
   is refused, because the built-in level is `ask`.
-- **Exceptions:** `bot mcp` takes no `--permission` at all. cli-base's flag registry still describes `--allow-writes`
+- **Exceptions:** `bot mcp serve` takes no `--permission` at all. cli-base's flag registry still describes `--allow-writes`
   as "permit writing"; that wording is a gap.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1423.
 
 ### WC-MCP-9 · A server speaks for one named profile over one connection
 
-`mcp` needs a profile, like every command ([WC-ACCT-1](accounts.md)). The server opens one messenger connection and
+`mcp serve` needs a profile, like every command ([WC-ACCT-1](accounts.md)). The server opens one messenger connection and
 every call shares it.
 
 - **Why:** a connection per call would break the messenger's pace limits and look unlike the official client.
 - **Enforced by:** review only.
-- **Example:** `max work mcp`. Plain `max mcp` stops and lists the profiles.
+- **Example:** `max work mcp serve`.
 - **Exceptions:** the bot server needs no held connection: each Bot API call is plain HTTPS.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
@@ -170,13 +170,13 @@ it carries.
 
 ### WC-MCP-12 · An MCP server over HTTP follows the same permissions and short-lived logins
 
-`mcp --http` serves on `127.0.0.1` for agents in a browser, behind the owner's tunnel. Writes follow the profile's
+`mcp serve --http` serves on `127.0.0.1` for agents in a browser, behind the owner's tunnel. Writes follow the profile's
 permissions. An access token lives one hour and a refresh token 30 days, replaced on each use. To log in, a browser app
-needs a one-time code that the owner reads in a terminal. `--revoke` ends every login.
+needs a one-time code that the owner reads in a terminal. `mcp revoke` ends every login.
 
 - **Why:** a server reachable from a browser must not be a softer way in than the local one.
 - **Enforced by:** review only.
-- **Example:** `max work mcp --http --public-url https://<name>.ts.net`.
+- **Example:** `max work mcp serve --http --public-url https://<name>.ts.net`.
 - **Exceptions:** none.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-594, NEED-774.
 
