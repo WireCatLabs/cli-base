@@ -12,7 +12,7 @@ built on are on the [Kit surface](kit-surface.md) page.
 ## Start with the template
 
 ```sh
-npx @wirecat/cli-template new cal-cli --command cal --package @wirecat/cal-cli --owner WireCatLabs \
+npx @wirecat/cli-template new gcal-cli --command gcal --package @wirecat/gcal-cli --owner WireCatLabs \
   --category calendar --content-lang en,ru --sign-in oauth --api official-client --filters time,person,text \
   --never-store tokens,secret-links --untrusted names,links
 ```
@@ -24,7 +24,7 @@ the choices. Nothing is guessed.
 |---|---|---|
 | `<name>-cli` | the repository folder | any name |
 | `--command` | the command word people type | one word |
-| `--package` | the npm package name | a scoped name, such as `@wirecat/cal-cli` |
+| `--package` | the npm package name | a scoped name, such as `@wirecat/gcal-cli` |
 | `--owner` | the GitHub owner of the repository | an owner |
 | `--category` | what the CLI reads | `messenger`, `mail`, `notes`, `files`, `calendar`, `meetings` |
 | `--content-lang` | the languages of the content | a list, such as `en,ru` |
@@ -42,11 +42,11 @@ a reference CLI for your category in `AGENTS.md`. It does not install packages, 
 publish. Then:
 
 ```sh
-cd cal-cli && pnpm install && pnpm ci:quick
+cd gcal-cli && pnpm install && pnpm ci:quick
 git add -A && git commit -m "chore: start from @wirecat/cli-template"
 ```
 
-Give the agent `docs/dev/DESIGN.md` next. Every example passes a profile explicitly, such as `cal personal doctor`.
+Give the agent `docs/dev/DESIGN.md` next. Every example passes a profile explicitly, such as `gcal personal doctor`.
 The reference CLI is the one to compare with when a step is unclear.
 
 The copy already holds every file this handbook asks for: the required root commands (`commands`, `doctor`,
@@ -71,10 +71,10 @@ See [Kit surface](kit-surface.md#how-your-cli-stays-current).
    check names exist only once CI has run. See [Releases](releases.md).
 2. **Set npm trusted publishing** for the new package, naming `release.yml`, and add any secrets the CI needs. See
    [WC-REL-11](releases.md#wc-rel-11--publish-from-github-actions-with-npm-trusted-publishing).
-3. **Pick a monthly cron minute** between 02:17 and 03:20 UTC that no other repository uses. The copy of
-   `.github/workflows/monthly.yml` keeps the template's own minute, 03:02, and no check compares minutes across
-   repositories, so change it by hand. See
+3. **Pick a monthly cron minute** between 02:17 and 03:20 UTC that is not in the list of taken minutes under
    [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing).
+   The copy of `.github/workflows/monthly.yml` keeps the template's own minute, 03:02, and no check compares minutes
+   across repositories, so change it by hand, and add the new minute to the list in the step 4 pull request.
 4. **WireCat CLIs only: join the shared lists.** A pull request to cli-base's `PARITY_GROUPS` (at least the `all`
    group, which compares the shared root commands), a line in cli-core's `WIRECAT_TOOLS` and a line in cli-docs'
    `tools.json`. A messenger also joins cli-core's `parity.json`. A CLI outside WireCatLabs keeps its parity groups

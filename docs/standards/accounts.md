@@ -57,8 +57,8 @@ CLI with a `setup` command suggests it, and any other CLI suggests the command t
 - **Enforced by:** `cli-core: src/cli/settings.test.ts` · `cli-core: src/cli/program.test.ts`.
 - **Example:** ``name a profile: `tg <profile> …` — profiles here: personal, work (or set TG_PROFILE)``. With none,
   tg, which has `setup`, says to ``create one with `tg personal setup` (any name in place of personal)``. A CLI
-  without `setup`, such as one made from cli-template, answers `cal events list` with ``name a profile: there is none
-  on this computer yet — any name works, such as `cal personal events list` (or set CAL_PROFILE)`` (cli-core 0.424.0
+  without `setup`, such as one made from cli-template, answers `gcal events list` with ``name a profile: there is none
+  on this computer yet — any name works, such as `gcal personal events list` (or set GCAL_PROFILE)`` (cli-core 0.424.0
   and later).
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
