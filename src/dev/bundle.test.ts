@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSy
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { beforeEach, describe, expect, it } from "vitest"
-import { LOADER_MARK } from "./bundle.js"
+import { isServer, LOADER_MARK } from "./bundle.js"
 import { type DevIo, main } from "./main.js"
 
 let root: string
@@ -128,5 +128,26 @@ export const skill = async () => String(Database)
     expect(await main(["bundle", "--bin", "dist/bin/demo.js"], io)).toBe(1)
     expect(err.join("\n")).toContain("already the loader")
     expect(await main(["bundle"], io)).toBe(2)
+  })
+
+  it("treats serve, watch and mcp serve as servers, also after a flag, and a short command as not one", () => {
+    for (const words of [
+      ["personal", "mcp", "serve"],
+      ["personal", "--read-only", "mcp", "serve"],
+      ["personal", "--timeout", "30", "mcp", "serve", "--http"],
+      ["mcp", "serve"],
+      ["personal", "serve"],
+      ["personal", "watch"],
+      ["personal", "mcp"],
+      ["personal", "mcp", "--http"],
+    ])
+      expect(isServer(words), words.join(" ")).toBe(true)
+    for (const words of [[], ["--version"], ["personal", "mcp", "config"], ["personal", "chats", "list", "--json"]])
+      expect(isServer(words), words.join(" ")).toBe(false)
+  })
+
+  it("writes the same server check into the loader", async () => {
+    await main(["bundle", "--bin", "dist/bin/demo.js"], io)
+    expect(readFileSync(join(root, "dist/bin/demo.js"), "utf8")).toContain(isServer.toString())
   })
 })
