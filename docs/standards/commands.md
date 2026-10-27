@@ -77,9 +77,9 @@ catalogue and parity manifest stay in cli-core
 - **Example:** ranking is `stats messages top`, not a ranking mode on `search messages`. Options choose the scope,
   measure, order or format of the same action. No command both shows and changes something.
 - **Exceptions:** a documented preparatory fetch such as `--sync-first`. It keeps its own permissions and reports
-  its outcome. `mcp --revoke` forgets every login given to a browser app; it stays an option on `mcp` because it
-  belongs with the HTTP server's login state.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1864.
+  its outcome.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1880 (`mcp revoke` is its own command; it
+  replaces NEED-1864, which kept `--revoke` as an option on `mcp`).
 
 ### WC-CMD-7 · Never let two commands overlap
 

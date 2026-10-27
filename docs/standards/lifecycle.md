@@ -147,7 +147,7 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
   a CLI's own commands included, connects through `connectFor`: a relayed run gets serve's own adapter, and a run for
   another profile is refused. With no live `serve`, the command connects on its own. A `serve` that offers the socket
   but does not answer gives `provider_unavailable`, never a second connection.
-- **Exceptions:** `serve`, `server`, `bot`, logins, `--offline`, `--dry-run` and `mcp --http` are not relayed.
+- **Exceptions:** `serve`, `server`, `bot`, logins, `--offline`, `--dry-run` and `mcp serve --http` are not relayed.
 - **Applies to:** messenger CLIs with an exclusive connection (wa today). **Since:** cli-base 0.41.0.
   **Rulings:** NEED-1389.
 
