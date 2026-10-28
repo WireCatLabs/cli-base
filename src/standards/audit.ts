@@ -86,7 +86,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   { name: "messengers", members: ["tg", "max"], covers: "tree", differences: [] },
   {
     name: "all",
-    members: ["tg", "max", "memo", "drive", "zm", "wa"],
+    members: ["tg", "max", "memo", "drive", "zm", "wa", "mail"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "search", "notes", "meetings"],
     differences: [],
   },
