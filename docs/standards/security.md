@@ -328,6 +328,22 @@ store and runs no search. A CLI declares its provider and may replace any step.
 - **Applies to:** cli-core and every CLI that stores or shows meetings or calendar entries. **Since:** cli-base 0.57.1
   (output and agent answers: cli-base 0.65.0). **Rulings:** none (Wave 3 requirements 3.4).
 
+### WC-SECR-24 · A run with moved folders never writes the owner's system keyring
+
+- **Why:** with its folders moved (`<PREFIX>_CONFIG_DIR`, `<PREFIX>_STATE_DIR`, a throwaway `HOME` or `XDG_*`),
+  `Credentials` keys the keyring by `<app>:<config folder>` (`keyringService`, `isolated`). Each test run, agent check
+  or worktree that signs in then leaves its own copy of a sign-in in the owner's keyring, and nothing removes it.
+- **Enforced by:** review only.
+- **Example:** a test passes `memoryKeyring()`. An agent checking a built CLI signs in with file storage inside its
+  temp folder (`session start --credential-storage file`), or does not sign in. A run against the owner's real data
+  keeps the default folders, so it reads the owner's existing entry (`<app>` / `oauth:<provider>:<profile>`) instead
+  of making a new one. A throwaway `HOME` does not hide the keyring, which is reached over D-Bus: a run that must not
+  see it also runs with `DBUS_SESSION_BUS_ADDRESS` removed.
+- **Exceptions:** none. Known gap, as of 2026-10-29: `Credentials` still writes the system keyring when `isolated` is
+  true; it should write the private file instead, so the rule holds in code and not only in review.
+- **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** the next cli-base release. **Rulings:** owner,
+  2026-10-29 (sign-ins copied per work folder should have reused the existing entry).
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

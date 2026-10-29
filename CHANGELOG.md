@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A run with moved folders never writes the owner's system keyring** ([WC-SECR-24](docs/standards/security.md)).
+  Tests use `memoryKeyring()`, agent checks use file storage in their temp folder, and runs on real data keep the
+  default folders so they reuse the owner's entry. A per-folder keyring service (`<app>:<folder>`) was leaving one
+  copy of a sign-in per temp folder.
+
 ## 0.65.0 — 27.10.2026
 
 ### Added
