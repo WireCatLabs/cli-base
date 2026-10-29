@@ -8,20 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
-
-### Added
-
-- **A run with moved folders never writes the owner's system keyring** ([WC-SECR-24](docs/standards/security.md)).
-  Tests use `memoryKeyring()`, agent checks use file storage in their temp folder, and runs on real data keep the
-  default folders so they reuse the owner's entry. A per-folder keyring service (`<app>:<folder>`) was leaving one
-  copy of a sign-in per temp folder.
+## 0.65.1 — 29.10.2026
 
 ### Fixed
 
-- **`Credentials` with `isolated` no longer writes the system keyring.** A secret goes to the private file in the moved
-  config folder instead; one saved in the keyring before is still read, so an existing per-folder sign-in keeps
-  working until its next save moves it to the file. A test passing its own keyring (`memoryKeyring()`) is unchanged.
+- **`Credentials` with `isolated` no longer writes the system keyring** ([WC-SECR-24](docs/standards/security.md), new:
+  a run with moved folders never writes the owner's keyring). A per-folder keyring service (`<app>:<folder>`) was
+  leaving one copy of a sign-in per temp folder. A secret goes to the private file in the moved config folder
+  instead; one saved in the keyring before is still read, so an existing per-folder sign-in keeps working until its
+  next save moves it to the file. A test passing its own keyring (`memoryKeyring()`) is unchanged.
 - **`cli-dev changelog restore` no longer fails a package's first release.** With no `v<x.y.z>` tag yet it says there
   is nothing to restore and exits 0; `bin/release` stopped at "no v<x.y.z> tag to compare the changelog with".
 
