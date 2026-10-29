@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.65.2 — 29.10.2026
+
+### Fixed
+
+- **`defineQuery` checks a registry object once per process.** A later call with the same object returns it at once.
+  An MCP server rebuilds its commands on every tool call, and each build re-ran every field's example through the
+  query parser. A registry changed after its first check is not checked again: build a new object instead.
+
 ## 0.65.1 — 29.10.2026
 
 ### Fixed
