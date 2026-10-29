@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A rule against per-call state in the command tree** (`WC-ARCH-22`, [Architecture](docs/standards/architecture.md)):
+  the tree is built once per process and a call's state lives in a per-call context. cli-core's `run()` still
+  rebuilds the tree per call and is the named exception until that is reworked.
+
 ## 0.65.2 — 29.10.2026
 
 ### Fixed

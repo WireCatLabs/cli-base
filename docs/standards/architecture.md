@@ -230,6 +230,25 @@ out of search and listed under `skipped`, with the hint to run that CLI once.
 - **Applies to:** cli-core and every CLI with a provider of its own. **Since:** cli-base 0.53.0. **Rulings:** none
   (Wave 3 requirements 3.2).
 
+### WC-ARCH-22 · Build the command tree once; keep each call's state out of it
+
+The Commander tree — commands, options, help, actions — describes the CLI and is the same for every call, so it is
+built once per process. What belongs to one call (its streams, signal, deadline, environment, profile and parsed
+options, its hooks) lives in a per-call context that the action receives, never on the `Command` objects.
+
+- **Why:** state written into a shared tree leaks into the next call. Commander restores option values to what they
+  were before the *first* parse, so a profile set on the tree before parsing becomes every later call's starting
+  value, and a hook added per call runs once more each time. Building a fresh tree per call avoids the leak but costs
+  an MCP server ~16 ms per tool call for tg.
+- **Enforced by:** review only.
+- **Example:** a check that always gives the same answer for the same definition (`defineQuery`'s examples,
+  `assertSharedContracts`) runs once per definition, not per build. A new per-call value goes into the call's context,
+  not into `setOptionValue`, `hook` or `provide` on the tree.
+- **Exceptions:** cli-core's `run()` still builds a fresh tree per call, because it writes the call's environment,
+  a `preAction` hook and the profile into it; moving that to a per-call context is
+  [CORE-41](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/BACKLOG_LATER.md). New code does not add to it.
+- **Applies to:** cli-core's command skeleton and every CLI built on it. **Since:** cli-base 0.65.3. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
