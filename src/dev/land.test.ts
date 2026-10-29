@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { beforeEach, describe, expect, it } from "vitest"
-import { landChange, landFold, restoreChange, type Shell } from "./land.js"
+import { landChange, landFold, newestTag, restoreChange, type Shell } from "./land.js"
 
 const dated = "# Changelog\n\n## 0.9.0 — 14.10.2026\n\n### Fixed\n\n- Older fix.\n"
 const stacked = dated.replace("## 0.9.0", "## Unreleased\n\n### Fixed\n\n- Newer fix.\n\n## 0.9.0")
@@ -117,5 +117,27 @@ describe("landFold", () => {
     expect(landed).toBe(`restored 0.9.0's notes to its tag; moved to Unreleased:\n- Late fix. (${PR})`)
     expect(readFileSync(file, "utf8")).toContain("## Unreleased\n\n### Fixed\n\n- Late fix.\n\n## 0.9.0")
     expect(calls.find((c) => c.startsWith("gh pr create"))).toContain("1 entry that missed 0.9.0 moved to Unreleased")
+  })
+})
+
+describe("newestTag", () => {
+  it("finds no tag before the first release", () => {
+    expect(
+      newestTag(
+        fakeShell(() => undefined),
+        "CHANGELOG.md",
+      ),
+    ).toBeUndefined()
+  })
+
+  it("reads the changelog at the highest tag", () => {
+    const shell = fakeShell((c) =>
+      c.startsWith("git tag")
+        ? { out: "v0.9.0\nv0.10.0\nv0.2.1\n" }
+        : c.startsWith("git show")
+          ? { out: dated }
+          : undefined,
+    )
+    expect(newestTag(shell, "CHANGELOG.md")).toEqual({ version: "0.10.0", text: dated })
   })
 })
