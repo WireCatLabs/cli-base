@@ -171,6 +171,10 @@ const changelog = (args: string[], io: DevIo) => {
     if (action === "restore") {
       const shell = processShell(io.cwd)
       const tag = newestTag(shell, relative(io.cwd, file))
+      if (!tag) {
+        io.err("no v<x.y.z> tag yet: a first release has nothing to restore")
+        return 0
+      }
       if (!taggedSection(tag.text, tag.version)) {
         io.err(`v${tag.version}'s changelog has no section of its own; nothing to restore`)
         return 0

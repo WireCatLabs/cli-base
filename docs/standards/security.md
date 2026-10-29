@@ -333,14 +333,15 @@ store and runs no search. A CLI declares its provider and may replace any step.
 - **Why:** with its folders moved (`<PREFIX>_CONFIG_DIR`, `<PREFIX>_STATE_DIR`, a throwaway `HOME` or `XDG_*`),
   `Credentials` keys the keyring by `<app>:<config folder>` (`keyringService`, `isolated`). Each test run, agent check
   or worktree that signs in then leaves its own copy of a sign-in in the owner's keyring, and nothing removes it.
-- **Enforced by:** review only.
+- **Enforced by:** `src/credentials.test.ts`.
 - **Example:** a test passes `memoryKeyring()`. An agent checking a built CLI signs in with file storage inside its
   temp folder (`session start --credential-storage file`), or does not sign in. A run against the owner's real data
   keeps the default folders, so it reads the owner's existing entry (`<app>` / `oauth:<provider>:<profile>`) instead
   of making a new one. A throwaway `HOME` does not hide the keyring, which is reached over D-Bus: a run that must not
-  see it also runs with `DBUS_SESSION_BUS_ADDRESS` removed.
-- **Exceptions:** none. Known gap, as of 2026-10-29: `Credentials` still writes the system keyring when `isolated` is
-  true; it should write the private file instead, so the rule holds in code and not only in review.
+  see it also runs with `DBUS_SESSION_BUS_ADDRESS` removed. With `isolated` and the system keyring, `Credentials`
+  saves new secrets to the private file in the moved config folder and only reads the keyring, for a secret saved
+  there before.
+- **Exceptions:** none.
 - **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** the next cli-base release. **Rulings:** owner,
   2026-10-29 (sign-ins copied per work folder should have reused the existing entry).
 

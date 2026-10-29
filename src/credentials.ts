@@ -27,6 +27,9 @@ export interface CredentialsOptions {
    * not — it overwrites the real secret for that account. In `brazecli` that destroyed two working
    * keys on 2026-09-14, and a keyring entry cannot be read back out. Passing `true` here scopes the
    * service name to the directory, making the isolation people already assume they have real.
+   *
+   * With the system keyring it also keeps new secrets out of it: they go to the file in the moved directory, so a test
+   * or worktree run leaves nothing in the owner's keyring (WC-SECR-24). A secret saved there before is still read.
    */
   isolated?: boolean
   /** Read before the keyring, for CI. */
@@ -60,6 +63,7 @@ export class Credentials {
   readonly #envVar: string | undefined
   readonly #fileName: string
   readonly #warn: (message: string) => void
+  readonly #fileFirst: boolean
   #warned = false
 
   constructor(options: CredentialsOptions) {
@@ -71,23 +75,32 @@ export class Credentials {
     this.#fileName = options.fileName ?? "credentials.json"
     this.#warn = options.warn ?? ((message) => process.stderr.write(`${message}\n`))
     this.#service = keyringService(options.service, options.configDir, options.isolated)
+    this.#fileFirst = options.isolated === true && this.#keyring === systemKeyring
   }
 
   read(account: string): StoredCredential | undefined {
     const fromEnv = this.#envVar ? this.#env[this.#envVar]?.trim() : undefined
     if (fromEnv) return { secret: fromEnv, source: "environment" }
 
+    const fromFile = () => {
+      const secret = this.#readFile()?.[account]?.secret
+      return secret ? { secret, source: "file" as const } : undefined
+    }
+    if (this.#fileFirst) {
+      const found = fromFile()
+      if (found) return found
+    }
+
     if (this.#storage !== "file") {
       const fromKeyring = this.#tryKeyring(() => this.#keyring.get(this.#service, account))
       if (fromKeyring) return { secret: fromKeyring, source: "keyring" }
     }
 
-    const fromFile = this.#readFile()?.[account]?.secret
-    return fromFile ? { secret: fromFile, source: "file" } : undefined
+    return this.#fileFirst ? undefined : fromFile()
   }
 
   write(account: string, secret: string): CredentialSource {
-    if (this.#storage !== "file") {
+    if (this.#storage !== "file" && !this.#fileFirst) {
       const stored = this.#tryKeyring(() => {
         this.#keyring.set(this.#service, account, secret)
         return true

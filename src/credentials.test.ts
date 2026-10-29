@@ -1,10 +1,10 @@
 import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { Credentials, keyringService } from "./credentials.js"
 import { CliError } from "./errors.js"
-import { brokenKeyring, memoryKeyring } from "./keyring.js"
+import { brokenKeyring, memoryKeyring, systemKeyring } from "./keyring.js"
 
 const dir = () => mkdtempSync(join(tmpdir(), "cli-base-creds-"))
 const make = (options: Partial<ConstructorParameters<typeof Credentials>[0]> = {}) =>
@@ -85,6 +85,37 @@ describe("Credentials", () => {
     )
     const written = readFileSync(join(configDir, "credentials.json"), "utf8")
     expect(JSON.parse(written)).toEqual({ default: { secret: "s3cret" } })
+  })
+})
+
+describe("a run with moved folders and the system keyring", () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  const stubSystemKeyring = (saved: Record<string, string> = {}) => ({
+    get: vi
+      .spyOn(systemKeyring, "get")
+      .mockImplementation((service, account) => saved[`${service}/${account}`] ?? null),
+    set: vi.spyOn(systemKeyring, "set").mockImplementation(() => {}),
+  })
+
+  it("saves to the file in the moved folder, never the system keyring", () => {
+    const keyring = stubSystemKeyring()
+    const configDir = dir()
+    const credentials = make({ configDir, keyring: systemKeyring, isolated: true, storage: "keyring" })
+
+    expect(credentials.write("default", "s3cret")).toBe("file")
+    expect(keyring.set).not.toHaveBeenCalled()
+    expect(credentials.read("default")).toEqual({ secret: "s3cret", source: "file" })
+  })
+
+  it("still reads a secret saved in the system keyring before", () => {
+    const configDir = dir()
+    stubSystemKeyring({ [`max-cli:${configDir}/default`]: "older" })
+
+    expect(make({ configDir, keyring: systemKeyring, isolated: true }).read("default")).toEqual({
+      secret: "older",
+      source: "keyring",
+    })
   })
 })
 

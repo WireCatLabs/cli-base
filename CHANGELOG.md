@@ -17,6 +17,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   default folders so they reuse the owner's entry. A per-folder keyring service (`<app>:<folder>`) was leaving one
   copy of a sign-in per temp folder.
 
+### Fixed
+
+- **`Credentials` with `isolated` no longer writes the system keyring.** A secret goes to the private file in the moved
+  config folder instead; one saved in the keyring before is still read, so an existing per-folder sign-in keeps
+  working until its next save moves it to the file. A test passing its own keyring (`memoryKeyring()`) is unchanged.
+- **`cli-dev changelog restore` no longer fails a package's first release.** With no `v<x.y.z>` tag yet it says there
+  is nothing to restore and exits 0; `bin/release` stopped at "no v<x.y.z> tag to compare the changelog with".
+
 ## 0.65.0 â€” 27.10.2026
 
 ### Added

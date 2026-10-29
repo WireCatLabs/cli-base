@@ -174,10 +174,11 @@ export const landChange = ({
 }
 
 /**
- * The newest `v<x.y.z>` tag in this commit's history and the changelog at it. Tags are fetched first: a clone made before the
- * last release does not have its tag, and comparing against an older one would hide the newest drift.
+ * The newest `v<x.y.z>` tag in this commit's history and the changelog at it, or `undefined` before the first release. Tags
+ * are fetched first: a clone made before the last release does not have its tag, and comparing against an older one would
+ * hide the newest drift.
  */
-export const newestTag = (shell: Shell, path: string): { version: string; text: string } => {
+export const newestTag = (shell: Shell, path: string): { version: string; text: string } | undefined => {
   const fetched = shell.run("git", ["fetch", "-q", "--tags", "origin"])
   if (!fetched.ok) throw new Error(`git fetch --tags failed: ${fetched.out}`)
   const [version] = shell
@@ -189,7 +190,7 @@ export const newestTag = (shell: Shell, path: string): { version: string; text: 
       const [x, y] = [a, b].map((found) => found.split(".").map(Number))
       return (y?.[0] ?? 0) - (x?.[0] ?? 0) || (y?.[1] ?? 0) - (x?.[1] ?? 0) || (y?.[2] ?? 0) - (x?.[2] ?? 0)
     })
-  if (!version) throw new Error("no v<x.y.z> tag to compare the changelog with")
+  if (!version) return undefined
   const shown = shell.run("git", ["show", `v${version}:${path}`])
   if (!shown.ok) throw new Error(`git show v${version}:${path} failed: ${shown.out}`)
   return { version, text: shown.out }
