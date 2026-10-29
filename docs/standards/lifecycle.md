@@ -23,7 +23,10 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 - **WC-LIFE-15:** tg, max, wa, gcal and the template. drive, memo and zm do not keep runs yet; each is adding them on a
   `feat/runs` branch (2026-10-25). zm's `resolveSettings` also returns `keepFailedRuns: false`, which turns off the
   failure log cli-core's `run` would keep.
-- **WC-LIFE-16:** cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal gets it when it
+- **WC-LIFE-17:** mail-cli's IMAP source and cli-core's mail `syncMail`, from the cli-core release after 0.472.0. No
+  other CLI times out or retries a request by this rule yet; each has its own handling (tg, max and wa through their
+  messenger libraries).
+- **WC-LIFE-16:** mail-cli's `sync` and cli-core's mail `syncMail`, from the same release; cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal gets it when it
   moves up from cli-core 0.459.0. The deadlines of WC-LIFE-5 come with the same release. The other syncs
   (`messages sync` in tg, max and wa, drive's `sync`, memo's mail import, zm's `recordings sync`) are cooperative but
   spend no request budget yet, and gcal sets no `requestMs` of its own, so it uses the 2 s default.
@@ -82,6 +85,7 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 |---|---|---|
 | one-shot | 30 s | 30 s |
 | `cooperative` ([WC-LIFE-10](#wc-life-10--mark-a-long-command-cooperative-when-it-should-stop-at-its-own-pace-and-keep-its-work)) | 5 min | 45 s |
+| `cooperative` and `partial`: a resumable sync ([WC-LIFE-16](#wc-life-16--a-sync-spends-a-request-budget-sized-to-its-deadline-and-its-answer-says-how-to-continue)) | 15 min | 45 s |
 
 `--timeout 2m` or the `<PREFIX>_TIMEOUT` variable sets the deadline, higher or lower. Past the deadline a one-shot
 command fails with `timeout` (exit 9).
@@ -91,18 +95,22 @@ command fails with `timeout` (exit 9).
   (`@modelcontextprotocol/sdk` 1.32.1, `dist/esm/shared/protocol.js:8`), and users report the same for Claude Desktop
   and ChatGPT. A cooperative command answers at 45 s, so the agent gets the answer and the way to continue instead of
   a cut call. Claude Code waits longer ([its MCP page](https://code.claude.com/docs/en/mcp)), but a CLI does not know
-  its client, so it takes the shortest.
+  its client, so it takes the shortest. A sync gets 15 minutes at a terminal because its first run on a large account
+  is hours of requests: with 5 minutes the owner reruns it dozens of times, and with 15 the same work takes a third of
+  the reruns, while a stop still loses nothing ([WC-LIFE-12](#wc-life-12--save-a-long-syncs-work-per-item-or-per-page-so-a-kill-loses-nothing-saved)).
+  Other cooperative commands keep 5 minutes: they have no request budget to stop them early.
 - **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/program.test.ts`.
-- **Example:** from cli-core 0.464.0, a calendar `sync` in a terminal may run 5 minutes; the same command called over
-  MCP stops at 45 seconds with what it saved. cli-core's `DEFAULT_COMMAND_MS`, `DEFAULT_COOPERATIVE_MS` and
-  `DEFAULT_AGENT_COOPERATIVE_MS` (`src/cli/execution.ts`) hold the three values, and `run()` picks one when it starts
-  the command.
+- **Example:** from cli-core 0.464.0, a calendar `sync` in a terminal may run 5 minutes (15 from the release that
+  adds `DEFAULT_SYNC_MS`); the same command called over MCP stops at 45 seconds with what it saved. cli-core's
+  `DEFAULT_COMMAND_MS`, `DEFAULT_COOPERATIVE_MS`, `DEFAULT_SYNC_MS` and `DEFAULT_AGENT_COOPERATIVE_MS`
+  (`src/cli/execution.ts`) hold the four values, and `run()` picks one when it starts the command. A command is a
+  sync when it declares `cooperative` and `partial`.
 - **Exceptions:** a `persistent` command has no deadline and ignores `--timeout`. An `interactive` command has none
   while a person is at the terminal; run headless, it keeps the deadline. `--help` and `--version` need none. A
   background fetch started with `<PREFIX>_BACKFILL_JOB` is bounded only by an explicit `--timeout`.
 - **Applies to:** CLIs that run on cli-core's `run()`; other CLIs use cli-base's `createDeadline`. **Since:** cli-base
-  0.41.0 (the cooperative deadlines: cli-base 0.65.0, cli-core 0.464.0). **Rulings:** the owner's deadlines and
-  request budgets (2026-10-27).
+  0.41.0 (the cooperative deadlines: cli-base 0.65.0, cli-core 0.464.0; the sync's 15 minutes: next release).
+  **Rulings:** the owner's deadlines and request budgets (2026-10-27); NEED-1902, the sync's 15 minutes (2026-10-29).
 
 ### WC-LIFE-6 · Open nothing until an action needs it
 
@@ -276,11 +284,61 @@ status command answers how far it is
   `next` with `gcal personal sync`; `gcal personal status` shows each calendar's progress. cli-core builds the budget
   with `runBudgetOf(command, maxPages)` from `@wirecat/cli-core/cli` over `runBudget` in
   `@wirecat/cli-core/background`.
-- **Exceptions:** known gaps, as of 2026-10-27: only the calendar sync spends a budget (see "Who follows"). The
+- **Exceptions:** known gaps, as of 2026-10-29: only the calendar sync and mail-cli's sync spend a budget (see "Who follows"). The
   continuing step names the command, not the MCP tool, and until the WC-CMD-17 follow-up the router sends that
   command to `write`, not `read`.
 - **Applies to:** every CLI with a sync. **Since:** cli-base 0.65.0. **Rulings:** the owner's deadlines and request
   budgets (2026-10-27).
+
+## Requests
+
+### WC-LIFE-17 · Give every request to a provider its own timeout, and retry only a read that failed in transit
+
+A request has its own limit, apart from the command's deadline ([WC-LIFE-5](#wc-life-5--bound-every-one-shot-command-by-a-deadline))
+and from the socket's idle limit, which only catches a dead line. The limit is the smaller of a per-request default
+and the time left to the deadline; past it the request is closed and fails as `timeout`. The default is 60 s; a CLI
+may set a longer one in one place, next to its `requestMs`, with the measurement that justifies it.
+
+A failed request is sent again only when all of these hold:
+
+1. **It reads and changes nothing on the service.** A write is never retried here: it ends as `outcome_unknown`
+   ([WC-OUT-20](output.md#wc-out-20--mark-a-failure-safe-to-retry-only-when-repeating-it-cannot-do-harm)).
+2. **It failed in transit or for a moment**: the connection was closed or reset, the request timed out, DNS failed for
+   a moment, or the service said it is unavailable for now (HTTP 502, 503, 504; IMAP `NO [UNAVAILABLE]`; HTTP 429 or
+   `THROTTLED` with a wait it names). A login that was refused, a bad request and every other 4xx are not retried.
+3. **The budget and the deadline allow it.** Each retry takes one request from the run's budget
+   ([WC-LIFE-16](#wc-life-16--a-sync-spends-a-request-budget-sized-to-its-deadline-and-its-answer-says-how-to-continue)),
+   and it is not made when its wait and the deadline's margin would end after the deadline, or when the run is
+   cancelled. A command with no budget stops at 8 attempts for one request.
+4. **A reconnect proves it is still the same place.** A connection opened again checks the position identity it
+   depends on (an IMAP UIDVALIDITY, a cursor's epoch) before going on; a changed one stops the run with
+   `invalid_response` and is not retried.
+
+The wait before attempt *n* + 1 is 1 s, 3 s, then 10 s for every later one, each multiplied by a random 0.5 to 1.5 so
+parallel runs do not retry in step; a wait the service names (`Retry-After`, `retry_after_ms`) wins when it is longer.
+
+One item of a batch failing while the rest succeed does not fail the batch. The item is marked not read, asked for once
+more at the end of the run, and if it still fails it is left for the next run, never stored as done in the resume
+point ([WC-LIFE-12](#wc-life-12--save-a-long-syncs-work-per-item-or-per-page-so-a-kill-loses-nothing-saved)). The answer
+counts such items.
+
+When the retries run out, the error is the one the failure would have been, marked `retryable`, with the transport's
+own code as `details.cause_code` (`NoConnection`, `ETIMEDOUT`, `RequestTimeout`, a server response code such as
+`UNAVAILABLE`): letters, digits, `.`, `_` and `-`, at most 40, never the server's text, which can quote mail or names.
+A run keeps it, so `runs show` says why a run failed.
+
+- **Why:** a provider that is slow or drops a connection now and then is the normal case, not an error: Yandex 360
+  answers `NO [UNAVAILABLE]` for single messages and then closes the connection, and a sync that treats the first one as
+  the end of the run never finishes. Retries that did not count against the budget or the deadline would make a run
+  outlive the limit the owner set; a retry of a write could send twice.
+- **Enforced by:** `cli-core: src/mail/sync.test.ts` · `cli-core: src/runs/error-detail.test.ts`.
+- **Example:** mail-cli's IMAP source (`src/mail/imap.ts`): a command that times out after 90 s, or a connection the
+  server closes, is retried on a new connection after about 1, 3 and 10 s while the run's budget and deadline allow, and
+  the run stops if UIDVALIDITY changed. A message Yandex refuses is asked for again at the end of the sync.
+- **Exceptions:** a connection held by `serve` ([WC-LIFE-11](#wc-life-11--run-commands-through-serve-when-the-messenger-allows-one-connection-per-account))
+  reconnects by its messenger library's own rules. A request that needs a person (a login) is not retried.
+- **Applies to:** every CLI that sends requests to a provider. **Since:** next release. **Rulings:** NEED-1902 (the
+  owner asked for retries, timeouts and error handling to be one standard, 2026-10-29).
 
 ## Sources
 
