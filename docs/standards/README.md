@@ -35,7 +35,7 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Accounts](accounts.md) | `ACCT` | 12 | The explicit profile, reads across accounts, scope flags, linked identities, sign-in commands |
 | [Permissions](permissions.md) | `PERM` | 22 | Levels, keys, defaults, hard limits, the write guard and its journal |
 | [Architecture](architecture.md) | `ARCH` | 17 | Layers, dependency direction, vendor types, what goes in which package |
-| [Lifecycle](lifecycle.md) | `LIFE` | 15 | Opening late, who closes, deadlines, long-running commands, the `serve` relay, resumable syncs and their request budget, the run log |
+| [Lifecycle](lifecycle.md) | `LIFE` | 16 | Opening late, who closes, deadlines, long-running commands, the `serve` relay, resumable syncs and their request budget, the run log, request timeouts and retries |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
 | [Data model](data-model.md) | `DATA` | 9 | Core entities, entities and source records, `external_id`, field names, links and duplicates, files, calendar entries |
 | [Testing](testing.md) | `TEST` | 17 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity |

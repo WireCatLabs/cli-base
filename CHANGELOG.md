@@ -8,6 +8,22 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **[WC-LIFE-17](docs/standards/lifecycle.md): a request has its own timeout, and only a read that failed in transit is
+  retried.** A 60 s default per request (a CLI may set a longer one with its measurement), retries for a closed
+  connection, a timeout and a provider's "unavailable for now", never for a write, 1 s, 3 s and 10 s waits with jitter,
+  each retry a request of the budget and none past the deadline, an item of a batch that fails is asked for once more at
+  the end and then left for the next run, and the transport's own code is kept as `cause_code`.
+
+### Changed — may break callers
+
+- **WC-LIFE-5: a resumable sync (a `cooperative` command that declares `partial`) may run 15 minutes at a terminal,**
+  not 5. Other cooperative commands keep 5 minutes and MCP keeps 45 seconds. The owner chose this on 2026-10-29; cli-core's
+  `DEFAULT_SYNC_MS` carries it.
+
 ## 0.65.0 — 27.10.2026
 
 ### Added

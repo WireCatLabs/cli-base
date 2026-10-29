@@ -2,5 +2,5 @@
   "version": "0.2",
   "files": ["README.md", "docs/standards/**/*.md"],
   "import": ["./config/wirecat/cspell.json"],
-  "words": ["gcal", "SECR", "whatsapp"]
+  "words": ["UIDVALIDITY", "gcal", "SECR", "whatsapp"]
 }
