@@ -42,8 +42,12 @@ export const exampleProblems = (registry: QueryRegistry): { field: string; probl
   ].filter((entry): entry is { field: string; problem: string } => entry.problem !== undefined)
 }
 
+// A long-lived process (an MCP server) rebuilds its commands on every call with the same module-level registries.
+const checked = new WeakSet<QueryRegistry>()
+
 /** One list's query: field names unique and snake_case, every example and default runs. Throws naming every problem. */
 export const defineQuery = (registry: QueryRegistry): QueryRegistry => {
+  if (checked.has(registry)) return registry
   const names = registry.fields.map((field) => field.name)
   const problems = [
     ...duplicates(names).map((name) => `"${name}" is listed twice`),
@@ -51,6 +55,7 @@ export const defineQuery = (registry: QueryRegistry): QueryRegistry => {
     ...exampleProblems(registry).map(({ field, problem }) => `${field}: ${problem}`),
   ]
   if (problems.length > 0) throw new RegistryError(`${registry.entity} query`, problems)
+  checked.add(registry)
   return registry
 }
 

@@ -201,6 +201,24 @@ describe("defineQuery and help", () => {
     )
   })
 
+  it("checks one registry object once, and a changed copy again", () => {
+    let reads = 0
+    const counted = { ...(fields[2] as FieldSpec) }
+    Object.defineProperty(counted, "example", {
+      get: () => {
+        reads++
+        return "state:open"
+      },
+      enumerable: true,
+    })
+    const once: QueryRegistry = { ...registry, fields: [counted] }
+    expect(defineQuery(once)).toBe(once)
+    const afterFirst = reads
+    expect(defineQuery(once)).toBe(once)
+    expect(reads).toBe(afterFirst)
+    expect(() => defineQuery({ ...once, defaults: ["state:gone"] })).toThrow(/unknown-value/)
+  })
+
   it("describes the query for commands --json without hooks", () => {
     const described = describeQuery({ ...registry, fields: [{ ...(fields[2] as FieldSpec), validate: () => {} }] })
     expect(described).toEqual({
