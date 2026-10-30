@@ -68,11 +68,10 @@ name. Any other top-level key is written as `[not allowed]`. A key that names co
 
 cli-base's `Credentials` reads the environment variable first (for CI), then the OS keyring, then a file with mode
 `0600`. The keyring service is the CLI's app name, `appName` in its identity (`max-cli`, `gcal-cli`, `cli-memo`), not
-the command word people type (`max`, `gcal`). When the config directory comes from the environment, the service name
-is scoped to that directory (`isolated: true`).
+the command word people type (`max`, `gcal`). A run with moved folders uses the same entry and never deletes it
+([WC-SECR-24](#wc-secr-24--a-run-with-moved-folders-shares-the-owners-keyring-entry-and-never-deletes-it)).
 
-- **Why:** the keyring is the safest store on the computer, and a throwaway config directory must not overwrite the
-  owner's real keyring entry.
+- **Why:** the keyring is the safest store on the computer.
 - **Enforced by:** `src/credentials.test.ts`.
 - **Example:** a bot token is read from `MAX_BOT_TOKEN`, then the keyring entry `bot:<profile>`, then the file.
 - **Exceptions:** `auto` storage tries the keyring and, when it fails, warns once on stderr and uses the file. A
@@ -322,28 +321,29 @@ store and runs no search. A CLI declares its provider and may replace any step.
   the provider and never touched the store: a generic API command removes the provider's passcode fields (Google's
   `conferenceData.entryPoints[].passcode`, `pin`, `accessCode`, `password`), the query of every join link and the
   dial sequence after a phone number, and the passcode lines of a description or a location.
-- **Exceptions:** a title that names a PIN or a password is kept: it is the meeting's name. Known gap, as of
-  2026-10-27: gcal's `api` answers drop the conference entry points' secrets (`src/conference.ts`) but keep the
-  description and location as Google sent them.
+- **Exceptions:** a title that names a PIN or a password is kept: it is the meeting's name.
 - **Applies to:** cli-core and every CLI that stores or shows meetings or calendar entries. **Since:** cli-base 0.57.1
   (output and agent answers: cli-base 0.65.0). **Rulings:** none (Wave 3 requirements 3.4).
 
-### WC-SECR-24 · A run with moved folders never writes the owner's system keyring
+### WC-SECR-24 · A run with moved folders shares the owner's keyring entry and never deletes it
 
-- **Why:** with its folders moved (`<PREFIX>_CONFIG_DIR`, `<PREFIX>_STATE_DIR`, a throwaway `HOME` or `XDG_*`),
-  `Credentials` keys the keyring by `<app>:<config folder>` (`keyringService`, `isolated`). Each test run, agent check
-  or worktree that signs in then leaves its own copy of a sign-in in the owner's keyring, and nothing removes it.
-- **Enforced by:** `src/credentials.test.ts`.
-- **Example:** a test passes `memoryKeyring()`. An agent checking a built CLI signs in with file storage inside its
-  temp folder (`session start --credential-storage file`), or does not sign in. A run against the owner's real data
-  keeps the default folders, so it reads the owner's existing entry (`<app>` / `oauth:<provider>:<profile>`) instead
-  of making a new one. A throwaway `HOME` does not hide the keyring, which is reached over D-Bus: a run that must not
-  see it also runs with `DBUS_SESSION_BUS_ADDRESS` removed. With `isolated` and the system keyring, `Credentials`
-  saves new secrets to the private file in the moved config folder and only reads the keyring, for a secret saved
-  there before.
-- **Exceptions:** none.
-- **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** the next cli-base release. **Rulings:** owner,
-  2026-10-29 (sign-ins copied per work folder should have reused the existing entry).
+- **Why:** a per-folder keyring entry (`<app>:<config folder>`) left one copy of a sign-in for every test run, agent
+  check or worktree, about 1,500 of them in the owner's keyring, and nothing removed them. One entry per computer is
+  enough. But a moved run then reaches the owner's real sign-in: `HOME=/tmp/x gcal personal session end` deleted the
+  owner's Google sign-in, because only `<PREFIX>_*_DIR` counted as moved (a security review, 2026-10-30).
+- **Enforced by:** `src/credentials.test.ts` · `src/paths.test.ts`.
+- **Example:** a run is moved when `isMovedRun({ appName, prefix, env })` is true: a `<PREFIX>_CONFIG_DIR`,
+  `_STATE_DIR` or `_CACHE_DIR` override, or a `HOME` or XDG folder that puts the default folders anywhere but under
+  the account's own home. A CLI passes that as `isolated`. `Credentials` then reads and writes the app's own entry
+  (`<app>` / `oauth:<provider>:<profile>`), as a run with the default folders does. With the system keyring, its
+  `remove` keeps that entry, warns on stderr and leaves `"keyring"` out of what it returns; a moved `HOME` or XDG
+  folder in its `env` counts even when `isolated` is false. A CLI checks `isMovedRun` before it revokes a sign-in at
+  the provider, and says so when `session end` removed nothing. A test passes `memoryKeyring()`; a run that must not
+  see the keyring at all also runs with `DBUS_SESSION_BUS_ADDRESS` removed, since the keyring is reached over D-Bus.
+- **Exceptions:** a write from a moved run, such as `session start` in a worktree, replaces the owner's entry.
+- **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** the next cli-base release.
+  **Rulings:** owner, 2026-10-29 (sign-ins copied per work folder should have reused the existing entry); owner,
+  2026-10-30 (share the keyring entry, do not multiply it).
 
 ## Sources
 

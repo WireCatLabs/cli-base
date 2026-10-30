@@ -1,4 +1,4 @@
-import { homedir } from "node:os"
+import { homedir, userInfo } from "node:os"
 import { join, posix, win32 } from "node:path"
 
 export interface Paths {
@@ -69,5 +69,41 @@ export const resolvePaths = (options: PathsOptions): Paths => {
 /** Whether any of the three directories came from the environment rather than the OS convention. */
 export const pathsAreOverridden = ({ appName, prefix, env = process.env }: PathsOptions): boolean =>
   PATH_KINDS.some((kind) => env[overrideName(appName, prefix, kind)] !== undefined)
+
+const accountHome = (): string | undefined => {
+  try {
+    return userInfo().homedir
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Whether `HOME` or an XDG (or Windows) folder in `env` puts the default folders anywhere but under the account's own
+ * home, which comes from the user database: `os.homedir()` returns `$HOME` and would miss exactly this. An account with
+ * no home entry counts as moved.
+ */
+export const homeIsMoved = ({
+  env = process.env,
+  platform = process.platform,
+  home = accountHome(),
+}: {
+  env?: NodeJS.ProcessEnv
+  platform?: NodeJS.Platform
+  home?: string | undefined
+} = {}): boolean => {
+  if (home === undefined) return true
+  const appName = "app"
+  const actual = defaultPaths({ appName, env, platform })
+  const owners = defaultPaths({ appName, env: { HOME: home, USERPROFILE: home }, platform })
+  return PATH_KINDS.some((kind) => actual[kind] !== owners[kind])
+}
+
+/**
+ * **A run whose folders are not the owner's own**: a `<PREFIX>_*_DIR` override, or a moved `HOME` or XDG folder.
+ * It still shares the owner's keyring entry, so it must not delete or revoke it (WC-SECR-24).
+ */
+export const isMovedRun = (options: PathsOptions & { home?: string | undefined }): boolean =>
+  pathsAreOverridden(options) || homeIsMoved(options)
 
 export const configFilePath = (configDir: string, fileName = "config.json"): string => join(configDir, fileName)

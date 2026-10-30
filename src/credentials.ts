@@ -3,6 +3,7 @@ import { join } from "node:path"
 import { writeSecurely } from "./config.js"
 import { CliError } from "./errors.js"
 import { type KeyringStore, systemKeyring } from "./keyring.js"
+import { homeIsMoved } from "./paths.js"
 
 export const CREDENTIAL_STORAGE = ["auto", "keyring", "file"] as const
 export type CredentialStorage = (typeof CREDENTIAL_STORAGE)[number]
@@ -20,16 +21,12 @@ export interface CredentialsOptions {
   /** The keyring service name — the CLI's app name, e.g. `max-cli`, not its command word. */
   service: string
   /**
-   * **True when the config directory came from the environment rather than the OS convention.**
+   * **True when the run's folders are not the owner's own** — pass `isMovedRun(…)`.
    *
-   * The OS keyring is global: an entry is addressed by service and account and knows nothing about
-   * which config directory asked for it. So a throwaway config directory looks isolated and is
-   * not — it overwrites the real secret for that account. In `brazecli` that destroyed two working
-   * keys on 2026-09-14, and a keyring entry cannot be read back out. Passing `true` here scopes the
-   * service name to the directory, making the isolation people already assume they have real.
-   *
-   * With the system keyring it also keeps new secrets out of it: they go to the file in the moved directory, so a test
-   * or worktree run leaves nothing in the owner's keyring (WC-SECR-24). A secret saved there before is still read.
+   * The run still uses the owner's keyring entry (`service`, the same account names): one sign-in per computer, not
+   * one per temp folder. With the system keyring, `remove` then keeps that entry instead of deleting it, so a test or
+   * worktree run cannot end the owner's real sign-in (WC-SECR-24). A moved `HOME` or XDG folder in `env` counts as
+   * moved even when this is false.
    */
   isolated?: boolean
   /** Read before the keyring, for CI. */
@@ -42,8 +39,11 @@ export interface CredentialsOptions {
   warn?: (message: string) => void
 }
 
-export const keyringService = (service: string, configDir: string, isolated = false): string =>
-  isolated ? `${service}:${configDir}` : service
+/**
+ * The keyring service a `Credentials` uses: the app's own, for a moved run too. The other two arguments are ignored
+ * and stay only so that callers written against 0.65.0 still compile.
+ */
+export const keyringService = (service: string, _configDir?: string, _isolated?: boolean): string => service
 
 type FileStore = Record<string, { secret?: string }>
 
@@ -63,7 +63,7 @@ export class Credentials {
   readonly #envVar: string | undefined
   readonly #fileName: string
   readonly #warn: (message: string) => void
-  readonly #fileFirst: boolean
+  readonly #keepsSharedEntry: boolean
   #warned = false
 
   constructor(options: CredentialsOptions) {
@@ -74,33 +74,26 @@ export class Credentials {
     this.#envVar = options.envVar
     this.#fileName = options.fileName ?? "credentials.json"
     this.#warn = options.warn ?? ((message) => process.stderr.write(`${message}\n`))
-    this.#service = keyringService(options.service, options.configDir, options.isolated)
-    this.#fileFirst = options.isolated === true && this.#keyring === systemKeyring
+    this.#service = options.service
+    this.#keepsSharedEntry =
+      this.#keyring === systemKeyring && (options.isolated === true || homeIsMoved({ env: this.#env }))
   }
 
   read(account: string): StoredCredential | undefined {
     const fromEnv = this.#envVar ? this.#env[this.#envVar]?.trim() : undefined
     if (fromEnv) return { secret: fromEnv, source: "environment" }
 
-    const fromFile = () => {
-      const secret = this.#readFile()?.[account]?.secret
-      return secret ? { secret, source: "file" as const } : undefined
-    }
-    if (this.#fileFirst) {
-      const found = fromFile()
-      if (found) return found
-    }
-
     if (this.#storage !== "file") {
       const fromKeyring = this.#tryKeyring(() => this.#keyring.get(this.#service, account))
       if (fromKeyring) return { secret: fromKeyring, source: "keyring" }
     }
 
-    return this.#fileFirst ? undefined : fromFile()
+    const secret = this.#readFile()?.[account]?.secret
+    return secret ? { secret, source: "file" } : undefined
   }
 
   write(account: string, secret: string): CredentialSource {
-    if (this.#storage !== "file" && !this.#fileFirst) {
+    if (this.#storage !== "file") {
       const stored = this.#tryKeyring(() => {
         this.#keyring.set(this.#service, account, secret)
         return true
@@ -124,7 +117,12 @@ export class Credentials {
   remove(account: string): CredentialSource[] {
     const removed: CredentialSource[] = []
 
-    if (this.#storage !== "file" && this.#tryKeyring(() => this.#keyring.delete(this.#service, account))) {
+    if (this.#storage !== "file" && this.#keepsSharedEntry) {
+      this.#warn(
+        `kept ${account} in the OS keyring: this run's folders are not the owner's, and the entry is the owner's ` +
+          "sign-in. Run without the moved folders to remove it.",
+      )
+    } else if (this.#storage !== "file" && this.#tryKeyring(() => this.#keyring.delete(this.#service, account))) {
       removed.push("keyring")
     }
 

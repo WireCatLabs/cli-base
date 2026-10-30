@@ -150,8 +150,8 @@ on macOS and Windows through `node-ci.yml` with `platforms: true`; here, Full va
 spawning `npm` and `tsc`). In every test the keyring is a fake, so no test reaches a real Keychain or Credential
 Manager.
 
-Two traps worth designing for: the keyring is global, so a throwaway config directory overwrites the real secret
-unless you pass `isolated: true`; and a locked Linux keyring can block on a prompt rather than fail.
+Two traps worth designing for: the keyring is global, so a throwaway config directory shares the owner's entry (pass
+`isolated: isMovedRun(…)` so it never deletes it); and a locked Linux keyring can block on a prompt rather than fail.
 
 ### Time, retries and deadlines
 

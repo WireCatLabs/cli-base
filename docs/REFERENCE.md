@@ -165,7 +165,8 @@ streams.data(formatSuggestions(suggest({ commands, globalOptions, words, sources
 
 **Two traps worth knowing before you use the credential store.** The OS keyring is global: an entry
 is addressed by service and account and knows nothing about which config directory asked for it, so
-a throwaway config directory silently overwrites the real secret unless you pass `isolated: true`.
+a throwaway config directory reads and overwrites the owner's real entry. Pass `isolated: isMovedRun(…)`
+so that such a run never deletes it, and check `isMovedRun` before revoking a sign-in.
 And a secret should never be handed to a logger in the first place — redaction by field name is the
 second line of defence, not the first.
 
