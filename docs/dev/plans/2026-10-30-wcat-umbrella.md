@@ -1,8 +1,8 @@
 # Plan: unique `wcat-<tool>` commands and the `wcat` umbrella
 
-Status: **proposed**, waiting for the owner's approval of this plan. Decided so far (journal of WireCat Desktop,
+Status: **approved** by the owner on 2026-10-30 (NEED-153 A); step 0 next. Decided so far (journal of WireCat Desktop,
 `docs/journal/2026-10-25-desktop-mvp.md`): NEED-148 A, NEED-149 (`wcat-` prefix), NEED-151 A (umbrella, code in
-cli-base, no separate package), NEED-152 A (this plan lives here).
+cli-base, no separate package), NEED-152 A (this plan lives here), NEED-153 A (approved; extendable by third-party CLIs; docs, standards and template updated).
 
 ## Why
 
@@ -32,6 +32,29 @@ tg personal messages list             a shortcut, created only when no other pro
   - an MCP server entry an AI app starts, and WireCat Desktop itself, call `wcat-tg` directly, which skips the
     umbrella's extra process start;
   - a person types whichever they like.
+
+## CLIs that other people build
+
+`wcat` must work for any CLI, not only ours (owner, NEED-153), the way `git` runs any `git-foo` someone writes.
+
+- **Joining takes one thing: a command named `wcat-<name>` on PATH.** No registry, no file to edit, no change to `wcat`.
+  `wcat <name> …` then runs it, whoever published it and whatever it is written in.
+- **A CLI built on cli-base gets the rest for free:**
+  - `npx @wirecat/cli-template new` writes `"bin": { "wcat-<name>": … }`;
+  - `wcat --help` shows its one-line description and version;
+  - `wcat shortcuts` can give it a short name.
+- **How `wcat` learns about a tool:** it runs `wcat-<name> --wcat-describe`. A cli-base CLI answers with JSON: name,
+  version, description, docs URL. A program that does not answer is still listed and still runs, just without a
+  description. The flag is new and namespaced, so it cannot clash with a tool's own options.
+- **Names:**
+  - WireCat's own names are reserved in a list in cli-base: `tg`, `max`, `wa`, `zm`, `drive`, `memo`, `email`, plus the
+    built-in commands.
+  - `wcat` warns when two `wcat-<name>` programs are on PATH, and names both.
+  - The standard asks a third-party CLI to pick a name that is not in the reserved list.
+- **Built-in commands always win** over a `wcat-<name>` program with the same name, so a third-party program can never
+  take over `wcat shortcuts` or `wcat --help`.
+- WireCat Desktop keeps showing only the tools in its catalog. Listing third-party `wcat-*` programs there is a
+  separate decision.
 
 ## How `wcat` gets onto PATH
 
@@ -99,6 +122,23 @@ The results go to cli-testing (`performance/cli/wcat-umbrella/`), with the scrip
   Linux, macOS and Windows. Record whether the second install fails, overwrites or warns. This picks A or B above.
 - What `npm uninstall -g` and an upgrade do to a link in the bin folder that npm did not create.
 - The time `wcat tg --version` adds over `wcat-tg --version`, as a median of 20 runs.
+
+## Docs, standards and the template
+
+Each change ships in the same PR as the code it describes. A standard that describes behaviour that has not shipped
+yet would mislead the people who build on it.
+
+| Where | Change | With step |
+| --- | --- | --- |
+| cli-base `docs/standards/layout.md` (WC-LAY-2) | The `"bin"` is `wcat-<name>`; no short name in `"bin"` | 2 (new), 4 (rule enforced) |
+| cli-base `docs/standards/commands.md` | New rule: answer `--wcat-describe`; don't use a reserved name | 1 |
+| cli-base `docs/standards/new-cli.md` | Naming the CLI, the reserved list, joining `wcat` | 1 |
+| cli-base `README.md`, `docs/REFERENCE.md`, `CHANGELOG.md`, `docs/roadmap.md` | The dispatcher, the shortcut API | 1 |
+| cli-base `cli-dev` lint | A check that `"bin"` keys start with `wcat-` and that `--wcat-describe` answers | 1 (warn), 4 (error) |
+| cli-template (`kit/`, skeleton) | `new` writes `wcat-<name>`; `upgrade` moves an existing CLI over | 2 |
+| Each CLI's README, docs and agent skill | `wcat tg …` | 3 |
+| wirecat.dev (cli-docs), EN/RU/ES | Install pages, every example, a "Build your own CLI for wcat" page | 3 |
+| WireCat Desktop | The catalog, detection, shortcuts (section above) | 3 |
 
 ## Not decided here
 
