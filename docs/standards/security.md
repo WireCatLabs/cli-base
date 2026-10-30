@@ -341,7 +341,7 @@ store and runs no search. A CLI declares its provider and may replace any step.
   the provider, and says so when `session end` removed nothing. A test passes `memoryKeyring()`; a run that must not
   see the keyring at all also runs with `DBUS_SESSION_BUS_ADDRESS` removed, since the keyring is reached over D-Bus.
 - **Exceptions:** a write from a moved run, such as `session start` in a worktree, replaces the owner's entry.
-- **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** the next cli-base release.
+- **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** cli-base 0.65.4.
   **Rulings:** owner, 2026-10-29 (sign-ins copied per work folder should have reused the existing entry); owner,
   2026-10-30 (share the keyring entry, do not multiply it).
 
