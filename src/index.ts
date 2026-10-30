@@ -43,7 +43,7 @@ export {
   type RecordLogOptions,
 } from "./logging.js"
 export { createOutputBuffer, type OutputBuffer, type OutputBufferOptions } from "./output-buffer.js"
-export { configFilePath, type Paths, type PathsOptions, pathsAreOverridden, resolvePaths } from "./paths.js"
+export { configFilePath, isMovedRun, type Paths, type PathsOptions, pathsAreOverridden, resolvePaths } from "./paths.js"
 export { indent, type PrettyOptions, renderPretty } from "./pretty.js"
 export {
   createRenderer,

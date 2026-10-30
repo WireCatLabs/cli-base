@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { pathsAreOverridden, resolvePaths } from "./paths.js"
+import { isMovedRun, pathsAreOverridden, resolvePaths } from "./paths.js"
 
 describe("resolvePaths", () => {
   it("derives the environment variable names from the app name", () => {
@@ -59,5 +59,29 @@ describe("resolvePaths", () => {
       state: "/o/s",
       cache: "/o/k",
     })
+  })
+})
+
+describe("isMovedRun", () => {
+  const home = "/home/alice"
+  const moved = (env: NodeJS.ProcessEnv, platform: NodeJS.Platform = "linux") =>
+    isMovedRun({ appName: "gcal-cli", prefix: "GCAL", env, platform, home })
+
+  it("is false for the owner's own folders, XDG set to its default included", () => {
+    expect(moved({ HOME: home })).toBe(false)
+    expect(moved({ HOME: `${home}/`, XDG_CONFIG_HOME: `${home}/.config` })).toBe(false)
+  })
+
+  it("is true for a folder override, a throwaway HOME or a moved XDG folder", () => {
+    expect(moved({ HOME: home, GCAL_STATE_DIR: "/tmp/s" })).toBe(true)
+    expect(moved({ HOME: "/tmp/x" })).toBe(true)
+    expect(moved({ HOME: home, XDG_DATA_HOME: "/tmp/data" })).toBe(true)
+  })
+
+  it("compares Windows folders with the account's own", () => {
+    const winHome = "C:\\Users\\alice"
+    const win = (env: NodeJS.ProcessEnv) => isMovedRun({ appName: "gcal-cli", env, platform: "win32", home: winHome })
+    expect(win({ USERPROFILE: winHome, APPDATA: `${winHome}\\AppData\\Roaming` })).toBe(false)
+    expect(win({ USERPROFILE: "C:\\Temp\\x" })).toBe(true)
   })
 })

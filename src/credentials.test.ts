@@ -1,5 +1,5 @@
 import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { tmpdir, userInfo } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { Credentials, keyringService } from "./credentials.js"
@@ -91,31 +91,59 @@ describe("Credentials", () => {
 describe("a run with moved folders and the system keyring", () => {
   afterEach(() => vi.restoreAllMocks())
 
+  const ownerHome = userInfo().homedir
   const stubSystemKeyring = (saved: Record<string, string> = {}) => ({
     get: vi
       .spyOn(systemKeyring, "get")
       .mockImplementation((service, account) => saved[`${service}/${account}`] ?? null),
-    set: vi.spyOn(systemKeyring, "set").mockImplementation(() => {}),
+    set: vi.spyOn(systemKeyring, "set").mockImplementation((service, account, secret) => {
+      saved[`${service}/${account}`] = secret
+    }),
+    delete: vi.spyOn(systemKeyring, "delete").mockImplementation(() => true),
   })
 
-  it("saves to the file in the moved folder, never the system keyring", () => {
-    const keyring = stubSystemKeyring()
-    const configDir = dir()
-    const credentials = make({ configDir, keyring: systemKeyring, isolated: true, storage: "keyring" })
+  const moved = {
+    "a <PREFIX>_CONFIG_DIR override": { isolated: true, env: { HOME: ownerHome } },
+    "a throwaway HOME": { env: { HOME: "/tmp/x" } },
+    "a moved XDG_CONFIG_HOME": { env: { HOME: ownerHome, XDG_CONFIG_HOME: "/tmp/x/config" } },
+  }
 
-    expect(credentials.write("default", "s3cret")).toBe("file")
-    expect(keyring.set).not.toHaveBeenCalled()
-    expect(credentials.read("default")).toEqual({ secret: "s3cret", source: "file" })
-  })
+  for (const [name, options] of Object.entries(moved)) {
+    it(`reads and writes the owner's own entry with ${name}`, () => {
+      const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
+      const credentials = make({ keyring: systemKeyring, ...options })
 
-  it("still reads a secret saved in the system keyring before", () => {
-    const configDir = dir()
-    stubSystemKeyring({ [`max-cli:${configDir}/default`]: "older" })
-
-    expect(make({ configDir, keyring: systemKeyring, isolated: true }).read("default")).toEqual({
-      secret: "older",
-      source: "keyring",
+      expect(credentials.read("default")).toEqual({ secret: "owner's", source: "keyring" })
+      expect(credentials.write("default", "renewed")).toBe("keyring")
+      expect(keyring.set).toHaveBeenCalledWith("max-cli", "default", "renewed")
     })
+
+    it(`never deletes the owner's entry with ${name}`, () => {
+      const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
+      const warnings: string[] = []
+      const credentials = make({ keyring: systemKeyring, warn: (message) => warnings.push(message), ...options })
+
+      expect(credentials.remove("default")).toEqual([])
+      expect(keyring.delete).not.toHaveBeenCalled()
+      expect(warnings.join()).toMatch(/kept default in the OS keyring/)
+    })
+  }
+
+  it("still removes a file sign-in, so `session start --credential-storage file` then end works", () => {
+    const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
+    const configDir = dir()
+    make({ configDir, storage: "file", isolated: true }).write("default", "throwaway")
+    const credentials = make({ configDir, keyring: systemKeyring, isolated: true })
+
+    expect(credentials.remove("default")).toEqual(["file"])
+    expect(keyring.delete).not.toHaveBeenCalled()
+  })
+
+  it("deletes the entry when the folders are the owner's own", () => {
+    const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
+
+    expect(make({ keyring: systemKeyring, env: { HOME: ownerHome } }).remove("default")).toEqual(["keyring"])
+    expect(keyring.delete).toHaveBeenCalledWith("max-cli", "default")
   })
 })
 
@@ -154,12 +182,8 @@ describe("a credentials file that cannot be parsed", () => {
 })
 
 describe("keyringService", () => {
-  it("scopes the service name to a throwaway config directory", () => {
-    expect(keyringService("max-cli", "/tmp/x", true)).toBe("max-cli:/tmp/x")
+  it("names the app's own entry for a moved run too", () => {
+    expect(keyringService("max-cli", "/tmp/x", true)).toBe("max-cli")
     expect(keyringService("max-cli", "/home/me/.config/max-cli", false)).toBe("max-cli")
-  })
-
-  it("keeps two throwaway directories from colliding with each other", () => {
-    expect(keyringService("max-cli", "/tmp/a", true)).not.toBe(keyringService("max-cli", "/tmp/b", true))
   })
 })

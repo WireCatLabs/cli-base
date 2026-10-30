@@ -23,10 +23,10 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 - **WC-LIFE-15:** tg, max, wa, gcal and the template. drive, memo and zm do not keep runs yet; each is adding them on a
   `feat/runs` branch (2026-10-25). zm's `resolveSettings` also returns `keepFailedRuns: false`, which turns off the
   failure log cli-core's `run` would keep.
-- **WC-LIFE-16:** cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal gets it when it
-  moves up from cli-core 0.459.0. The deadlines of WC-LIFE-5 come with the same release. The other syncs
-  (`messages sync` in tg, max and wa, drive's `sync`, memo's mail import, zm's `recordings sync`) are cooperative but
-  spend no request budget yet, and gcal sets no `requestMs` of its own, so it uses the 2 s default.
+- **WC-LIFE-16:** cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal has it. The
+  deadlines of WC-LIFE-5 come with the same release. The other syncs (`messages sync` in tg, max and wa, drive's
+  `sync`, memo's mail import, zm's `recordings sync`) are cooperative but spend no request budget yet. gcal sets
+  `requestMs` to 1.5 s.
 
 ## One-shot commands
 
@@ -271,7 +271,7 @@ status command answers how far it is
   and the run loses its round; with one, every run ends with an answer, saves its work and says how to go on. One
   `requestMs` per CLI, in one place, keeps the arithmetic the same in every sync of that CLI.
 - **Enforced by:** `cli-core: src/background/budget.test.ts` · `cli-core: src/calendar/testing/sync-contract.ts`.
-- **Example:** `gcal personal sync` over MCP has 45 s: margin 6.75 s, so with the 2 s default about 19 requests. It
+- **Example:** `gcal personal sync` over MCP has 45 s: margin 6.75 s, so with gcal's 1.5 s about 25 requests. It
   answers `state: "partial"`, `stopped: "requests"`, `progress: { calendars, calendarsDone, requests, saved }`, and
   `next` with `gcal personal sync`; `gcal personal status` shows each calendar's progress. cli-core builds the budget
   with `runBudgetOf(command, maxPages)` from `@wirecat/cli-core/cli` over `runBudget` in

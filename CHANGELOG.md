@@ -8,6 +8,29 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **A run with moved folders uses the app's own keyring entry again** ([WC-SECR-24](docs/standards/security.md#wc-secr-24--a-run-with-moved-folders-shares-the-owners-keyring-entry-and-never-deletes-it),
+  rewritten). `Credentials` with `isolated` reads and writes service `<app>`, not `<app>:<config folder>`, and no
+  longer saves to the moved folder's file first (the 0.65.1 redirect is gone). `keyringService` returns the app's
+  service whatever its other arguments say, so cli-core's sign-in key names the shared entry. Per-folder entries made
+  before are no longer read; they were copies made by throwaway runs. A secret 0.65.1 saved in a moved folder's file
+  is still read when the keyring has none.
+- **The handbook's statements about gcal match gcal-cli 0.2.0:** it has `session list`, its `api` checks
+  `events.notify` and `events.delete.series`, its `api` answers drop the passcode lines of a description and a
+  location, it serves MCP as `mcp serve`, it sets `requestMs` to 1.5 s, and it packs 144 files.
+
+### Security
+
+- **A moved run never deletes the owner's keyring entry.** A security review found that
+  `HOME=/tmp/x gcal personal session end` deleted the owner's real Google sign-in. With the system keyring,
+  `Credentials.remove` from a moved run keeps the entry, warns on stderr and leaves `"keyring"` out of what it
+  returns. A run counts as moved with `isolated`, or when the `env` it is given moves `HOME` or an XDG folder away from
+  the account's own home. The new `isMovedRun({ appName, prefix, env })` says the same for a CLI: pass it as
+  `isolated`, and check it before revoking a sign-in at the provider. A test with `memoryKeyring()` is unchanged.
+
 ## 0.65.3 — 30.10.2026
 
 ### Added

@@ -180,7 +180,6 @@ Every CLI that signs in has four commands under `session`:
   - tg, max and wa have `session start` and `session end`, no `session status`, and list their profiles with
     `account list` instead of `session list`.
   - drive has `session start`, `session list` and `session end`, and no `session status`.
-  - gcal has `session start`, `session status` and `session end`, and no `session list`.
   - zm has `session start` and `session status`, and no `session end` or `session list`.
   - memo signs in per mail account with `mail add` and has no `session` group.
 
