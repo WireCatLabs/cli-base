@@ -119,8 +119,8 @@ export class Credentials {
 
     if (this.#storage !== "file" && this.#keepsSharedEntry) {
       this.#warn(
-        `kept ${account} in the OS keyring: this run's folders are not the owner's, and the entry is the owner's ` +
-          "sign-in. Run without the moved folders to remove it.",
+        `kept ${account} in the OS keyring: it is the owner's sign-in, shared with every run, and a run with moved ` +
+          "folders never removes it",
       )
     } else if (this.#storage !== "file" && this.#tryKeyring(() => this.#keyring.delete(this.#service, account))) {
       removed.push("keyring")
