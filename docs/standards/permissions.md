@@ -346,8 +346,7 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
 - **Exceptions:** known gaps, as of 2026-10-27:
   - cli-core's `CALENDAR_WRITE_DEFAULTS` (`src/calendar/writer.ts`) still has `events create`, `update` and
     `respond` at `ask`.
-  - gcal's generated `api` commands default every write to `ask`, ordinary changes included, and check neither
-    `events.notify` nor `events.delete.series`.
+  - gcal's generated `api` commands default every write to `ask`, ordinary changes included.
   - drive keeps its own policy and `--read-only` flag, zoom reads its own `remote-meetings` key with `levelFor`, and
     memo uses cli-core's permissions for the shared commands only. None of them declares `commandPermissions` yet.
 - **Applies to:** every CLI that writes and is not a messenger. **Since:** cli-base 0.64.0 (the levels and the shared

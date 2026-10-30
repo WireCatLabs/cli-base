@@ -196,8 +196,9 @@ fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/
   `@wirecat/cli-base/release` fails on any path in `npm pack --dry-run` outside `allowed`. It checks the pack against
   the list it is given, not against this rule: a CLI that passes its own `files` list as `allowed`, as the template's
   `scripts/smoke.ts` does, checks only that npm packs what `files` says, and cannot fail on a wrong `files` list.
-  `npm pack --dry-run` in gcal-cli (2026-10-27) packs 256 files, `src/`, `scripts/`, `.github/`, `config/`,
-  `contracts/`, `lint/` and `template.json` among them, because its `files` list names them; its check cannot see it. The check this rule needs
+  `npm pack --dry-run` in gcal-cli packed 256 files on 2026-10-27, `src/`, `scripts/`, `.github/`, `config/`,
+  `contracts/`, `lint/` and `template.json` among them, because its `files` list named them; its check could not see
+  it. On 2026-10-31 (gcal-cli 0.2.0) it packs 144. The check this rule needs
   refuses the forbidden paths above whatever `files` says; it belongs in cli-template, so every CLI gets it by
   `upgrade` ([cli-template#77](https://github.com/WireCatLabs/cli-template/issues/77)).
 - **Exceptions:** cli-template's own package ships the skeleton's sources and configs, since `new` copies them; the
