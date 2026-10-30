@@ -1,6 +1,6 @@
 # Plan: unique `wcat-<tool>` commands and the `wcat` umbrella
 
-Status: **approved** by the owner on 2026-10-30 (NEED-153 A); step 0 next. Decided so far (journal of WireCat Desktop,
+Status: **approved** by the owner on 2026-10-30 (NEED-153 A); step 0 done (option B); step 1 next. Decided so far (journal of WireCat Desktop,
 `docs/journal/2026-10-25-desktop-mvp.md`): NEED-148 A, NEED-149 (`wcat-` prefix), NEED-151 A (umbrella, code in
 cli-base, no separate package), NEED-152 A (this plan lives here), NEED-153 A (approved; extendable by third-party CLIs; docs, standards and template updated).
 
@@ -71,6 +71,28 @@ command by itself. There are two ways to put it on PATH, and step 0 picks one by
   - Cost: npm does not know the link. When the tool it points into is uninstalled, the link is left pointing at
     nothing.
   - Handling: on every run, the manager sends a broken link to another tool, or removes it when none is left.
+
+### Chosen: B (step 0, 2026-10-30)
+
+[The measurement](https://github.com/WireCatLabs/cli-testing/blob/main/performance/cli/wcat-umbrella/README.md) rules
+out A:
+
+- npm, pnpm and Volta refuse to install a second package that declares `wcat`, on Linux, macOS and Windows. They
+  refuse the whole package, so its own `wcat-<tool>` is not installed either.
+- bun installs it and silently takes over `wcat`. It then removes `wcat` with whichever package goes first.
+
+B holds on install and upgrade, with three requirements for the link manager:
+
+- **Repair on every run.** After the target package is uninstalled, npm, pnpm and Volta (and Windows under every
+  manager) leave the link pointing at nothing.
+- **No target inside a versioned folder.** pnpm keeps packages in folders named after the version, so a link into one
+  broke on the first upgrade. The `wcat` file is therefore a small generated launcher that starts an installed
+  `wcat-<tool>` in dispatch mode, not a link into a package. That tool's cli-base copy does the dispatching.
+- **No reliance on a dependency file's mode or path.** cli-base's own files are not a declared bin, so on Linux and
+  macOS they may lack the execute permission, and under pnpm their folder changes with every cli-base version.
+
+The extra process start costs a median of 22–32 ms on Linux, 32–45 ms on macOS and 47–72 ms on Windows. That
+confirms that MCP entries and WireCat Desktop call `wcat-<tool>` directly.
 
 ## The dispatcher
 
