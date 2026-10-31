@@ -68,7 +68,8 @@ name. Any other top-level key is written as `[not allowed]`. A key that names co
 
 cli-base's `Credentials` reads the environment variable first (for CI), then the OS keyring, then a file with mode
 `0600`. The keyring service is the CLI's app name, `appName` in its identity (`max-cli`, `gcal-cli`, `cli-memo`), not
-the command word people type (`max`, `gcal`). A run with moved folders uses the same entry and never deletes it
+the command word people type (`max`, `gcal`). A run with moved folders reads the same entry, writes a temporary one,
+and never replaces or deletes the owner's
 ([WC-SECR-24](#wc-secr-24--a-run-with-moved-folders-shares-the-owners-keyring-entry-and-never-deletes-it)).
 
 - **Why:** the keyring is the safest store on the computer.
@@ -327,23 +328,36 @@ store and runs no search. A CLI declares its provider and may replace any step.
 
 ### WC-SECR-24 · A run with moved folders shares the owner's keyring entry and never deletes it
 
-- **Why:** a per-folder keyring entry (`<app>:<config folder>`) left one copy of a sign-in for every test run, agent
-  check or worktree, about 1,500 of them in the owner's keyring, and nothing removed them. One entry per computer is
-  enough. But a moved run then reaches the owner's real sign-in: `HOME=/tmp/x gcal personal session end` deleted the
-  owner's Google sign-in, because only `<PREFIX>_*_DIR` counted as moved (a security review, 2026-10-30).
+- **Why:** a per-folder keyring entry (`<app>:<config folder>`) for every run left one copy of a sign-in for every test
+  run, agent check or worktree, about 1,500 of them in the owner's keyring, and nothing removed them. One entry per
+  computer is enough. But a moved run then reaches the owner's real sign-in: `HOME=/tmp/x gcal personal session end`
+  deleted the owner's Google sign-in, because only `<PREFIX>_*_DIR` counted as moved (a security review, 2026-10-30),
+  and `session start` in a worktree replaced it.
 - **Enforced by:** `src/credentials.test.ts` · `src/paths.test.ts`.
 - **Example:** a run is moved when `isMovedRun({ appName, prefix, env })` is true: a `<PREFIX>_CONFIG_DIR`,
   `_STATE_DIR` or `_CACHE_DIR` override, or a `HOME` or XDG folder that puts the default folders anywhere but under
-  the account's own home. A CLI passes that as `isolated`. `Credentials` then reads and writes the app's own entry
-  (`<app>` / `oauth:<provider>:<profile>`), as a run with the default folders does. With the system keyring, its
-  `remove` keeps that entry, warns on stderr and leaves `"keyring"` out of what it returns; a moved `HOME` or XDG
-  folder in its `env` counts even when `isolated` is false. A CLI checks `isMovedRun` before it revokes a sign-in at
-  the provider, and says so when `session end` removed nothing. A test passes `memoryKeyring()`; a run that must not
-  see the keyring at all also runs with `DBUS_SESSION_BUS_ADDRESS` removed, since the keyring is reached over D-Bus.
-- **Exceptions:** a write from a moved run, such as `session start` in a worktree, replaces the owner's entry.
-- **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** cli-base 0.65.4.
-  **Rulings:** owner, 2026-10-29 (sign-ins copied per work folder should have reused the existing entry); owner,
-  2026-10-30 (share the keyring entry, do not multiply it).
+  the account's own home. A CLI passes that as `isolated`; a moved `HOME` or XDG folder in `env` counts even when
+  `isolated` is false. With the system keyring, `Credentials` in a moved run:
+  - **writes** only a temporary entry, `movedRunService(app, configDir)` = `<app>:<absolute config folder>`, never the
+    owner's `<app>` entry;
+  - **reads** that temporary entry first and the owner's `<app>` entry when it has none, so a moved run still uses
+    the owner's sign-in;
+  - **removes** only the temporary entry, warns on stderr that the owner's was kept, and returns `"keyring"` only when
+    a temporary entry was there. `session end` in a moved run therefore cleans up after `session start`.
+
+  A CLI never revokes a sign-in at the provider in a moved run, even one read from the temporary entry: a refreshed
+  token is still the owner's grant. A test passes `memoryKeyring()`; a run that must not see the keyring at all also
+  runs with `DBUS_SESSION_BUS_ADDRESS` removed, since the keyring is reached over D-Bus.
+- **Cleanup:** a moved run that never reaches `session end` leaves its temporary entry, and so does one that refreshes
+  a token, since the refreshed token is written there. `bin/keyring-dedupe --delete` in the projects folder removes
+  temporary entries that sit beside the owner's real one; a test or agent can also delete one by name with
+  `movedRunService`. When only `<PREFIX>_STATE_DIR` or `_CACHE_DIR` is moved, the temporary entry is named after the
+  owner's own config folder, which `keyring-dedupe` treats as a real entry: remove it with `session end`.
+- **Exceptions:** none.
+- **Applies to:** every CLI, its tests and every agent that runs a CLI. **Since:** cli-base 0.65.4 (temporary entry:
+  0.65.5). **Rulings:** owner, 2026-10-29 (sign-ins copied per work folder should have reused the existing entry);
+  owner, 2026-10-30 (share the keyring entry, do not multiply it); owner, 2026-10-31 (do not replace it: a test of a
+  new session writes a temporary entry and cleans it up).
 
 ## Sources
 
