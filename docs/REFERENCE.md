@@ -33,6 +33,8 @@ and why it is built this way.
 | `/query` | one query language for every list: the Lucene 9.12.3 parser port, fields from an entity schema, validation, the Fields help and `evaluate` as a test oracle — see below |
 | `/standards` | the run-time contract: effects, output envelope, error object and reasons, next steps, log record — as Valibot schemas that also emit JSON Schema 2020-12 |
 | `/standards/tables` | the tables lint, audit and docs read: vocabulary, lint and audit rules, parity groups, identifiers, output field rules |
+| `/wcat` | the `wcat` umbrella command: `runWcat`, `listTools`, the shortcuts (`listShortcuts`, `addShortcuts`, `removeShortcuts`), the launcher (`binFolder`, `ensureLauncher`) and `RESERVED_NAMES` — see below |
+| `/wcat/start` | `wcatStart`, the first call in a CLI's bin: `--wcat-describe`, dispatch mode and the launcher check, on Node built-ins only |
 
 **Nothing in the root export is HTTP.** Status classification, `Retry-After` parsing and the fetch
 seam live in `@wirecat/cli-base/http`, so a CLI that speaks a socket never depends on a stack it
@@ -276,6 +278,53 @@ const failed = releaseCheck(
 )
 process.exit(failed === 0 ? 0 : 1)
 ```
+
+**`wcat <tool> …` runs `wcat-<tool> …`, from `@wirecat/cli-base/wcat`**, the way `git foo` runs `git-foo`. Its code
+is here, so every CLI carries a copy. The `wcat` file on PATH is a small launcher in a tool's global bin folder that
+starts that tool as `wcat-<tool> --wcat-dispatch …`; the tool's copy of cli-base then does the dispatching. A CLI's
+bin calls `wcatStart` first:
+
+```ts
+import { wcatStart } from "@wirecat/cli-base/wcat/start"
+
+const { code } = await wcatStart({ command: "tg", version, description, docs: "https://wirecat.dev/en/docs/tg" })
+if (code !== undefined) process.exitCode = code
+else await startCli(…)
+```
+
+- **`--wcat-describe`** prints `{"wcat_describe":1,"name","version","description","docs_url"}` and returns `{ code: 0 }`.
+- **`--wcat-dispatch …`**, which only the launcher passes, runs `runWcat` with the rest of the words.
+- **Any other start** checks the launcher and returns `{ launcher }`: `kept`, `written`, `foreign`, `newer` or
+  `failed`, or nothing when the tool is not a global npm, pnpm or bun install (npx, a checkout, a project's
+  `node_modules/.bin`). It never prints and never throws. When the launcher works, the check is a few `stat` calls.
+  It writes the launcher only when it is missing, starts a tool that is gone, or is in an older format; it never
+  replaces a `wcat` it did not write, and keeps the tool the launcher starts while that tool is installed.
+
+The launcher, like a shortcut, is a marked file that starts a program in the same folder by its stable name, never a
+link into a package: pnpm keeps packages in folders named after their version. On Linux and macOS it is a `sh`
+script; on Windows a `.cmd` and a `.ps1`, the pair npm writes for its own commands. `parseShim` reads the mark.
+
+`runWcat(args, context)` is the command itself:
+
+- `wcat`, `wcat --help` list every `wcat-<name>` on PATH with its version and description, read by running
+  `wcat-<name> --wcat-describe` with no input, a 2 s limit and a 64 KiB cap; a program that does not answer is listed
+  without one. WireCat's own tools that are missing follow, each with its install command. `--json` prints the list
+  as a list envelope, and two programs with one name are a warning that names both.
+- `wcat --version` adds cli-base's version and the tool that runs it.
+- `wcat <tool> [args]` starts the first `wcat-<tool>` on PATH with the same streams and environment, passes SIGTERM
+  and SIGHUP on, and answers the tool's exit code (128 + the signal number when a signal ended it). Ctrl-C reaches the
+  tool from the terminal; `wcat` only waits for it.
+- A tool that is not installed is `not_found` with reason `tool.not-installed`, `details.tool` and
+  `details.installed`.
+- `BUILT_IN_COMMANDS` (`help`, `version`, `shortcuts`, `doctor`, `update`, `upgrade`, `app`) are answered by `wcat` before
+  any program is looked up; those not built yet are a `validation_error`.
+
+`wcat shortcuts [list|add|remove] [tool…]` gives installed tools their short names. `listShortcuts(search, names?)`
+says for each one `made`, `free`, `package` (the tool's package installs the name itself) or `taken` (with its path).
+`addShortcuts` makes only a `free` one, in the folder of the program it starts; `removeShortcuts` removes only
+a `made` one. A name that is not installed is refused before anything changes. Each takes `{ env, platform }`, so a
+caller such as WireCat Desktop can use them, or run `wcat shortcuts --json`.
+
 
 ## Where secrets actually go, per platform
 

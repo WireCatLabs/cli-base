@@ -1,6 +1,6 @@
 {
   "name": "@wirecat/cli-base",
-  "version": "0.65.5",
+  "version": "0.66.0",
   "description": "The parts every command line tool needs: output modes, terminal rendering, error model, exit codes, credentials, clocks",
   "license": "Apache-2.0",
   "author": "Viacheslav Ptsarev",
@@ -89,6 +89,14 @@
     "./standards/tables": {
       "types": "./dist/standards/tables.d.ts",
       "default": "./dist/standards/tables.js"
+    },
+    "./wcat": {
+      "types": "./dist/wcat/index.d.ts",
+      "default": "./dist/wcat/index.js"
+    },
+    "./wcat/start": {
+      "types": "./dist/wcat/start.d.ts",
+      "default": "./dist/wcat/start.js"
     },
     "./biome": "./config/biome.base.json",
     "./tsconfig.base.json": "./config/tsconfig.base.json",

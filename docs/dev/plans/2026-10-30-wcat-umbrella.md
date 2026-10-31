@@ -1,6 +1,6 @@
 # Plan: unique `wcat-<tool>` commands and the `wcat` umbrella
 
-Status: **approved** by the owner on 2026-10-30 (NEED-153 A); step 0 done (option B); step 1 next. Decided so far (journal of WireCat Desktop,
+Status: **approved** by the owner on 2026-10-30 (NEED-153 A); step 0 done (option B); step 1 built (`/wcat`, `/wcat/start`), step 2 next. Decided so far (journal of WireCat Desktop,
 `docs/journal/2026-10-25-desktop-mvp.md`): NEED-148 A, NEED-149 (`wcat-` prefix), NEED-151 A (umbrella, code in
 cli-base, no separate package), NEED-152 A (this plan lives here), NEED-153 A (approved; extendable by third-party CLIs; docs, standards and template updated).
 
@@ -91,6 +91,11 @@ B holds on install and upgrade, with three requirements for the link manager:
 - **No reliance on a dependency file's mode or path.** cli-base's own files are not a declared bin, so on Linux and
   macOS they may lack the execute permission, and under pnpm their folder changes with every cli-base version.
 
+As built in step 1, the launcher keeps starting the tool that wrote it while that tool is installed. Another tool
+rewrites it only when that tool is gone or the launcher's format is older, so two tools never take turns, and no
+cli-base version is compared. When the last tool goes, the launcher stays and fails with the shell's "not found" (exit 127);
+nothing runs to remove it.
+
 The extra process start costs a median of 22–32 ms on Linux, 32–45 ms on macOS and 47–72 ms on Windows. That
 confirms that MCP entries and WireCat Desktop call `wcat-<tool>` directly.
 
@@ -109,9 +114,13 @@ confirms that MCP entries and WireCat Desktop call `wcat-<tool>` directly.
 
 - `wcat shortcuts` lists each installed tool's short name: made, free, or taken by another program (with its path).
 - `wcat shortcuts add [tool…]` makes the free ones; `wcat shortcuts remove [tool…]` removes ours only.
-- "Ours" means a link into a `@wirecat/*` package. A file or link elsewhere is never touched.
-- On Windows npm makes `.cmd` and `.ps1` wrappers, not links. A shortcut there is the same pair of wrappers, marked
-  so it can be told apart from someone else's. This needs a Windows test before it ships.
+- A shortcut is a small marked script beside `wcat-<tool>` that starts it by name, like the `wcat` launcher (NEED-154),
+  not a link into a package: pnpm renames package folders on every upgrade. "Ours" means a file with that mark; any
+  other file or link is never touched.
+- While a package still declares its short name (steps 2 and 3), that name shows as installed by the package and
+  `remove` leaves it to the package manager.
+- On Windows a shortcut is a `.cmd` and `.ps1` pair, like npm's own wrappers. This needs a Windows test before it
+  ships.
 
 ## Transition, in release order
 
@@ -167,3 +176,5 @@ yet would mislead the people who build on it.
 - Whether `max` and `drive` keep those short names or get new ones. Both are common words, but the shortcut rule
   already makes them safe.
 - Shared commands across tools (`wcat doctor`, `wcat update`).
+- A built-in `wcat app`: start, stop and show the status of WireCat Desktop, or print where to download it when it is
+  not installed. The name is reserved now, so no `wcat-app` program can take it.

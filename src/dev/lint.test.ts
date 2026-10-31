@@ -759,6 +759,30 @@ describe("cli-dev lint", () => {
     expect(err).toContain("lint needs one of --cli <bin> or --commands <file>")
   })
 
+  it("warns, without failing, about a short command name and a CLI that does not answer --wcat-describe", async () => {
+    const tree = JSON.stringify(commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 }))
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "@wirecat/tool-cli", bin: { tool: "bin.mjs" } }))
+    writeFileSync(join(root, "bin.mjs"), `process.stdout.write(${JSON.stringify(tree)})\n`)
+    expect(await main(["lint", "--cli", "bin.mjs", "--write-baseline"], io)).toBe(0)
+    expect(err).toContain(
+      'warning  wcat-bin-name  package.json "bin" tool: install the command as wcat-tool, so no other program on PATH has its name',
+    )
+    expect(err.some((line) => line.startsWith("warning  wcat-describe  --wcat-describe: "))).toBe(true)
+
+    err.length = 0
+    writeFileSync(
+      join(root, "package.json"),
+      JSON.stringify({ name: "@wirecat/tool-cli", bin: { "wcat-tool": "bin.mjs" } }),
+    )
+    writeFileSync(
+      join(root, "bin.mjs"),
+      `if (process.argv[2] === "--wcat-describe") process.stdout.write('{"wcat_describe":1,"name":"tool","version":"1.0.0","description":"d"}')
+else process.stdout.write(${JSON.stringify(tree)})\n`,
+    )
+    expect(await main(["lint", "--cli", "bin.mjs"], io)).toBe(0)
+    expect(err.filter((line) => line.startsWith("warning"))).toEqual([])
+  })
+
   const fakeCli = (keeps: boolean) => {
     const tree = JSON.stringify(commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 }))
     writeFileSync(
