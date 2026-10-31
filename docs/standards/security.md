@@ -72,6 +72,8 @@ running, no D-Bus), the CLI uses the file without asking, warns once on stderr, 
 says where it went (gcal: `credential_storage: "file"`). `--credential-storage file` on the sign-in command chooses
 the file outright; help and docs discourage it. Once the file holds a secret, it is read from the file, so a locked
 keyring is not tried again for it; the next sign-in that reaches the keyring moves it back and removes the file copy.
+`Credentials` in `auto` does all of this: the CLI passes `{ signIn: true }` to `write` for a new sign-in and nothing
+for a refresh.
 No CLI asks which store to use, and none is keyring-only.
 The keyring service is the CLI's app name, `appName` in its identity (`max-cli`, `gcal-cli`, `cli-memo`), not
 the command word people type (`max`, `gcal`). A run with moved folders reads the same entry, writes a temporary one,

@@ -18,11 +18,22 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed â€” may break callers
 
+- **`Credentials` in `auto` does the whole file fallback itself (WC-SECR-4).** A secret the file holds is read from the
+  file before the keyring, so a locked keyring is not tried for it, and a refresh `write` keeps it there. A sign-in
+  passes `write(account, secret, { signIn: true })`: it tries the keyring and, once the keyring takes it, removes the
+  file copy. The "could not reach the OS keyring" warning comes once per run (per `env` object), not once per
+  `Credentials`. Watch for: a file copy left next to a newer keyring entry by an older CLI now wins the read; sign in
+  again to move it back. CLIs can drop their own file-first read, "remove the file copy" step and `warnOnce`.
 - **WC-SECR-4 is the one credential-storage standard.** The keyring by default; when it fails, the file without
   asking, one warning on stderr, and the answer that saved the secret says where it went;
   `--credential-storage file` on the sign-in command chooses the file and is discouraged; a secret in the file is
   read from there until a sign-in reaches the keyring again. No CLI asks, none is keyring-only. `Credentials` already
   falls back this way in `auto`; the rule now says every CLI must use it.
+
+### Fixed
+
+- **`Credentials.remove` with `storage: "keyring"` leaves the file alone.** It also deleted the account from the
+  credentials file, so a CLI that cleared the keyring copy after a file sign-in lost the sign-in it had just saved.
 
 ### Added
 

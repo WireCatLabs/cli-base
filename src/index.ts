@@ -12,7 +12,13 @@ export {
   runBatch,
 } from "./batch.js"
 export { loadConfigFile, saveConfigFile, writeSecurely } from "./config.js"
-export type { CredentialSource, CredentialStorage, CredentialsOptions, StoredCredential } from "./credentials.js"
+export type {
+  CredentialSource,
+  CredentialStorage,
+  CredentialsOptions,
+  StoredCredential,
+  WriteOptions,
+} from "./credentials.js"
 export { CREDENTIAL_STORAGE, Credentials, keyringService, movedRunService } from "./credentials.js"
 export { createDeadline, type Deadline, type DeadlineOptions } from "./deadline.js"
 export { CliError, type CliErrorDetails, type ErrorCode, errorCodes, isCliError } from "./errors.js"
