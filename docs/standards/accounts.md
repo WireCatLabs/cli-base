@@ -14,7 +14,9 @@ Rule ids on this page are `WC-ACCT-<n>`. How to read a rule, how ids work and wh
 ### Who follows these rules today
 
 cli-core resolves the profile for tg, max and wa. WC-ACCT-1 needs cli-core 0.319.0 or newer. memo has no messenger profile: its shared commands run without one, and they pick accounts with `--provider`
-and `--account` (WC-ACCT-7). zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
+and `--account` (WC-ACCT-7). memo never creates profiles of its own: it reads the stores of other CLIs and selects
+their accounts with `--source email:<name>` or `--account telegram:1`, so it has no `--profiles` either
+([cli-base#390](https://github.com/WireCatLabs/cli-base/issues/390), owner decision 2026-10-31). zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
 `ZM_PROFILE_LOCK`) from zoom-cli 0.35.0, with cli-core's `liftProfile` and `usableProfileName`. drive still has its own
 profile code: it registers its own profiles. That is a known gap, not an exception. gcal resolves the profile through
 cli-core's `run()`, like tg, max and wa. Which CLIs lack a sign-in command of WC-ACCT-12 is listed in that rule.
@@ -48,7 +50,8 @@ profile.
 - **Example:** `max work bot messages send …` uses the same first word as `max work chats list`. `tg --json chats list`
   still works, because `--json` is an option.
 - **Exceptions:** `mcp serve --profiles <names|all>` names the profiles one server serves ([WC-MCP-9](mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)). It is used in
-  place of the first word, never with it.
+  place of the first word, never with it. memo has no profiles of its own, so it has neither the first word nor
+  `--profiles`; it selects the accounts of other CLIs with `--source` and `--account`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84, NEED-294, NEED-1881.
 
 ### WC-ACCT-3 · A missing profile is an error that lists the choices

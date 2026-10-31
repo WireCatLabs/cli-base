@@ -26,6 +26,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **The audit accepts a flag that one CLI lacks by design, by name.** A parity difference may carry `absent: "<cli>"`
+  with a target of `<path> <flag>` and no CLI list; it covers every finding where only that CLI lacks the flag and the
+  others agree, so another CLI joining the group does not make it stale. `PARITY_GROUPS` uses it to declare that memo
+  has no profiles of its own (no `--profiles` on `mcp serve`, `mcp revoke`, `mcp server start|status|stop`); memo
+  selects other CLIs' accounts with `--source` and `--account`. A run without the absent CLI does not call it stale.
+  WC-MCP-9 and WC-ACCT-1 say so. See [#390](https://github.com/WireCatLabs/cli-base/issues/390).
 - **`--credential-storage <storage>` in the flag vocabulary** (role `mode`), so `cli-dev lint` accepts it on a sign-in
   command without a per-CLI override.
 

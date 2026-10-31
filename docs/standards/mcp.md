@@ -155,7 +155,11 @@ and lists the profiles served. Each call follows its own profile's permissions.
 - **Example:** `max work mcp serve`, `max mcp serve --profiles work,personal` or `max mcp serve --profiles all`.
   Under the last two, a call reads `max_read { "profile": "work", "command": "inbox", "arguments": {} }`.
   `max mcp serve` alone is refused, and its message lists `personal` and `work`.
-- **Exceptions:** the bot server needs no held connection: each Bot API call is plain HTTPS.
+- **Exceptions:** the bot server needs no held connection: each Bot API call is plain HTTPS. memo has no profiles of
+  its own, so `--profiles` stays absent on its `mcp serve`, `mcp revoke` and `mcp server start`, `status` and `stop`;
+  it reads other CLIs' stores and selects their accounts with `--source email:<name>` or `--account telegram:1`
+  ([cli-base#390](https://github.com/WireCatLabs/cli-base/issues/390), owner decision 2026-10-31). The audit declares
+  this once, as a difference of memo, not of the other CLIs.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1881.
 
 ### WC-MCP-10 · A tool and its command give the same answer and the same error

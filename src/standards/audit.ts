@@ -63,8 +63,11 @@ const parityGroupSchema = v.strictObject({
   differences: v.array(
     v.strictObject({
       rule: word,
+      /** `<clis> <path> <flag>`; with `absent`, only `<path> <flag>`: the CLI list is whoever else has it. */
       target: text,
       expected: v.optional(text),
+      /** The CLI that lacks the path or flag by design; the rest must agree, so other CLIs joining do not stale it. */
+      absent: v.optional(word),
       reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
     }),
   ),
@@ -75,11 +78,17 @@ export type ParityGroup = v.InferOutput<typeof parityGroupSchema>
 export const defineParityGroups = (input: unknown): ParityGroup[] =>
   parseRegistry("parity groups", v.array(parityGroupSchema), input, (groups) => [
     ...duplicates(groups.map((group) => group.name)).map((name) => `"${name}" is listed twice`),
-    ...groups.flatMap((group) =>
-      duplicates(group.differences.map((entry) => `${entry.rule} ${entry.target}`)).map(
+    ...groups.flatMap((group) => [
+      ...duplicates(group.differences.map((entry) => `${entry.rule} ${entry.target}`)).map(
         (both) => `${group.name}: "${both}" is listed twice`,
       ),
-    ),
+      ...group.differences
+        .filter((entry) => entry.absent && entry.expected)
+        .map(
+          (entry) =>
+            `${group.name}: "${entry.target}" has \`absent\`, which measures the values itself; drop \`expected\``,
+        ),
+    ]),
   ])
 
 export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
@@ -88,7 +97,16 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     name: "all",
     members: ["tg", "max", "memo", "drive", "zm", "wa", "mail"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "search", "notes", "meetings"],
-    differences: [],
+    differences: ["mcp serve", "mcp revoke", "mcp server start", "mcp server status", "mcp server stop"].map(
+      (path) => ({
+        rule: "same-path-contract",
+        target: `${path} --profiles`,
+        absent: "memo",
+        reason:
+          "memo has no profiles: it reads other CLIs' stores and selects their accounts with --source and --account " +
+          "(https://github.com/WireCatLabs/cli-base/issues/390)",
+      }),
+    ),
   },
   // gcal is compared on what it already shares with every CLI; doctor, mcp, search and skill wait until the published
   // CLIs agree there (https://github.com/WireCatLabs/cli-base/issues/390), then gcal moves back into "all".

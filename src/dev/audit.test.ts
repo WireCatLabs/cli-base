@@ -330,6 +330,39 @@ describe("judging an audit", () => {
     )
   })
 
+  it("accepts a CLI's absent flag by name, however many other CLIs share it, and fails a stale one", () => {
+    const withLimit = (cli: string) => inputOf(tool(cli, notes("list notes", [["--limit <n>", "how many"]])))
+    const declare = (absent: string): ParityGroup[] => [
+      {
+        name: "pair",
+        members: ["a", "b", "c"],
+        covers: "tree",
+        differences: [
+          { rule: "same-path-contract", target: "notes list --limit", absent, reason: "a has no limit by design" },
+        ],
+      },
+    ]
+    const judge = (inputs: AuditInput[], absent = "a") => auditClis(inputs, options({ groups: declare(absent) }))
+
+    for (const others of [["b"], ["b", "c"]]) {
+      const result = judge([inputOf(tool("a", notes("list notes"))), ...others.map(withLimit)])
+      expect(result.problems).toEqual([])
+      expect(result.blocking.map((one) => one.target)).toEqual([])
+    }
+
+    const disagreeing = judge([
+      inputOf(tool("a", notes("list notes"))),
+      withLimit("b"),
+      inputOf(tool("c", notes("list notes", [["--limit <count>", "how many"]]))),
+    ])
+    expect(disagreeing.blocking.map((one) => one.target)).toContain("a+b+c notes list --limit")
+
+    const stale = judge([withLimit("a"), withLimit("b")])
+    expect(stale.problems).toEqual([
+      "stale difference in pair, no such divergence — remove it: same-path-contract notes list --limit (absent in a)",
+    ])
+  })
+
   it("judges a CLI's lint rules by its own lint folder when given", () => {
     const grab = tool("a", (root) =>
       annotate(root.command("grab").description("grab it"), { effects: READS, examples: ["a grab"] }),
