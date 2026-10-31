@@ -25,10 +25,10 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 
 - **Why:** the reader wants the current behaviour, not the history of a page or a journal number they cannot open.
 - **Enforced by:** `tg-cli: pnpm docs:check` · `max-cli: pnpm docs:check` · `whatsapp-cli: pnpm docs:check` ·
-  `zoom-cli: pnpm docs:check`.
+  `zoom-cli: pnpm docs:check` · `gcal-cli: pnpm docs:check`.
 - **Example:** write "`--limit` defaults to 50", not "~~20~~ 50 (correction 2026-10-01, NEED-12)".
 - **Exceptions:** none. `cli-dev docs-check` checks this when the CLI's rules module sets `userPage`. tg, max, wa,
-  zoom and cli-template set it; memo, drive and cli-base's default check do not.
+  zoom, gcal and cli-template set it; memo, drive and cli-base's default check do not.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-3 · Every document states current facts; rewrite a wrong sentence in place

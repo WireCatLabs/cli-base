@@ -65,7 +65,7 @@ on the [CI](ci.md) page.
 
 - **Why:** two sessions often prepare the same number; the second must not publish over the first or fail late.
 - **Enforced by:** `tg-cli: bin/release` · `max-cli: bin/release` · `whatsapp-cli: bin/release` ·
-  `cli-memo: bin/release`.
+  `cli-memo: bin/release` · `gcal-cli: bin/release`.
 - **Example:** before it publishes, `bin/release` asks npm. When npm already has the version, or a higher one, it
   takes the next free number at the same level (after `x.y.0` the next minor, else the next patch). It lands that
   number through a pull request and publishes it.
@@ -159,7 +159,7 @@ on the [CI](ci.md) page.
 
 - **Why:** a release must still be possible when GitHub Actions is down, without leaking the token.
 - **Enforced by:** `tg-cli: bin/release` · `max-cli: bin/release` · `whatsapp-cli: bin/release` ·
-  `cli-memo: bin/release`.
+  `cli-memo: bin/release` · `gcal-cli: bin/release`.
 - **Example:** `bin/release --local` runs the same checks on this machine and reads the npm token from the keyring
   into the publish command's environment. The checks include the test suite with its coverage floor,
   any shipped non-JavaScript engine's tests, offline contracts, leak and secret scans, and dependency

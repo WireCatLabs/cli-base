@@ -19,6 +19,17 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   Node 22 yet. WC-PERM-22 says a template-made CLI calls `commandPermissions` with its first command that writes to a
   service. WC-REL-11 covers ClawHub's stored `CLAWHUB_TOKEN` and a ClawHub failure after the tag. WC-REL-16 says
   where the forbidden-path check lives now, and that `upgrade` does not deliver it.
+- **The handbook catches up with cli-core 0.491.0 and gcal-cli 0.4.0.** WC-CMD-17 and WC-MCP-4 no longer list
+  `sync` and `calendars list` as running through `write`: cli-core's `fetchesOnly` sends them through `read`.
+  WC-PERM-22 no longer says `CALENDAR_WRITE_DEFAULTS` asks before `events create`, `update` and `respond`; those and
+  `move` are `allow`. "Tools generated from commands" (mcp.md) counts gcal among the CLIs that pin
+  `contracts/mcp-catalogue.json`.
+- **WC-PERM-6 lists all of cli-core's built-in defaults.** It showed the 8 messenger keys; `DEFAULT_PERMISSIONS` has
+  25, including `mcp.authority: deny` and `ask` for `store.*`, `server.*`, `models.download` and `schedule.*`.
+- **WC-CMD-23 exempts generated commands,** as the naming and example rules do: their help is the API description's
+  own text.
+- **gcal-cli is named where it meets a rule:** no correction marks on user pages, `rumdl` on user pages, pull
+  request validation, required checks on `main`, the free version number and `bin/release --local`.
 
 ## 0.66.1 â€” 31.10.2026
 

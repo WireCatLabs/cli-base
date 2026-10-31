@@ -78,10 +78,9 @@ A command that reads the service and only saves what it read into the owner's lo
   nothing the owner would have to undo, so a sync stays under it; sending it through `write` would make a host ask a
   person before every refresh.
 - **Enforced by:** `cli-core: src/mcp/mcp.test.ts` · `cli-core: src/mcp/output-schema.test.ts`.
-- **Example:** `max_read { "command": "messages send", … }` is refused. Once the gap below is closed,
-  `gcal_read { "command": "sync" }` runs.
-- **Exceptions:** none. Known gap, as of 2026-10-27: cli-core decides with cli-base's `writes()`, which still counts
-  the local write, so `sync` runs through `write` until that follow-up lands (WC-CMD-17).
+- **Example:** `max_read { "command": "messages send", … }` is refused. `gcal_read { "command": "sync" }` runs:
+  cli-core counts a command that only fetches into the local store as a read (`fetchesOnly`, cli-core 0.468.0).
+- **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (what counts as a read: cli-base 0.65.0). **Rulings:** the
   owner's ruling on what counts as a read over MCP (2026-10-27).
 
@@ -237,7 +236,7 @@ cli-core builds its personal and bot MCP catalogues from the command tree with `
   (WC-MCP-1) that is three names and their schemas, which do not change when a command is added. So each CLI also
   pins the command catalogue behind the tools, every command `tools_search` can return and whether it runs through
   `read` or `write`, in `contracts/mcp-catalogue.json`. A command that becomes visible to agents then shows up as a diff in
-  its pull request. tg and max keep both; wa, zm, gcal and drive pin only the tools, a known gap as of 2026-10-27.
+  its pull request. tg, max and gcal keep both; wa, zm and drive pin only the tools, a known gap as of 2026-10-27.
 
 ## Sources
 

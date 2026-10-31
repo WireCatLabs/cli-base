@@ -97,26 +97,39 @@ Commands that look after the tool and its files, and never show a message, have 
 
 ### WC-PERM-6 · The built-in defaults ask only before what cannot be undone
 
-With no `permissions` set, a profile may do almost everything. The built-in defaults are:
+With no `permissions` set, a profile may do almost everything. The built-in defaults, cli-core's
+`DEFAULT_PERMISSIONS` (`src/sends/permissions.ts`), are:
 
 ```json
 {
   "messages.delete": "ask", "bot.messages.delete": "ask", "account.sessions.end": "ask",
   "topics.enable": "ask", "topics.delete": "ask", "chats.delete": "ask", "chats.clear": "ask",
-  "replies.send": "deny"
+  "replies.send": "deny",
+  "mcp.authority": "deny",
+  "store.backup": "ask", "store.restore": "ask", "store.migrate": "ask", "store.repair": "ask",
+  "store.reset": "ask", "store.clear": "ask", "store.decrypt": "ask", "store.copies.delete": "ask",
+  "server.start": "ask", "server.stop": "ask", "server.restart": "ask",
+  "models.download": "ask", "images.models.download": "ask",
+  "schedule.run": "ask", "schedule.exec": "ask", "doctor.reports.create": "ask"
 }
 ```
 
+`mcp.authority` keeps an agent from running the commands that change what a later run may do, such as settings,
+schedules or recipient lists (NEED-1662, cli-core 0.400.0). The `store`, `server`, `models`, `schedule` and `doctor`
+keys give a key to writes that had none, so an MCP server can offer them (NEED-1663, cli-core 0.401.0). A CLI that
+declares `commandPermissions` (WC-PERM-22) gets these defaults beneath its own.
+
 A default is never made stricter without the owner's word.
 
-- **Why:** the tool should work without questions; only a deletion, a logout or an automatic reply needs one.
+- **Why:** the tool should work without questions; only a deletion, a logout, an automatic reply, a change to the
+  store or this machine, or a change to what an agent may do needs one.
 - **Enforced by:** `cli-core: src/sends/permissions.test.ts`.
 - **Example:** a new profile sends at once, and asks before `messages delete`.
 - **Exceptions:** where the messenger has replies, `replies.send` is `deny`: a reply rule writes to people with nobody
   typing a command, so it waits for the owner's own `allow`. A messenger with no `replies` group, such as wa, has no
   use for the key.
 - **Applies to:** messenger CLIs. A CLI that is not a messenger sets its own defaults (WC-PERM-22). **Since:** cli-base
-  0.41.0. **Rulings:** NEED-568.
+  0.41.0. **Rulings:** NEED-568, NEED-1662, NEED-1663.
 
 ### WC-PERM-7 · A built-in default only ever tightens
 
@@ -339,15 +352,13 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
 - **Why:** one permission model for every CLI; a CLI-own layer drifts from the shared one and is audited by nobody.
 - **Enforced by:** `cli-core: src/cli/command-permissions.test.ts` · `cli-core: src/calendar/cli/writes.test.ts`.
 - **Example:** a calendar CLI takes cli-core's `CALENDAR_WRITE_DEFAULTS` and `CALENDAR_WRITE_KEYS`
-  (`@wirecat/cli-core/calendar`, cli-core 0.458.0). By this rule `events create`, `update` and `respond` are `allow`
-  and `events delete` is `ask`. `events.delete.series` (every occurrence of a repeating series, in every attendee's
-  calendar) and `events.notify` (the provider mails the attendees) are `deny` until the owner allows them: over MCP
+  (`@wirecat/cli-core/calendar`, cli-core 0.458.0). By this rule `events create`, `update`, `respond` and `move` are
+  `allow` and `events delete` is `ask`. `events.delete.series` (every occurrence of a repeating series, in every
+  attendee's calendar) and `events.notify` (the provider mails the attendees) are `deny` until the owner allows them: over MCP
   `ask` runs without a question, and each reaches people other than the owner. gcal adds its own keys for its generated
   `api <method>` commands: sharing a calendar is `ask` (NEED-1857), and emptying the main calendar
   (`api.calendar.calendars.clear`) is `deny`.
-- **Exceptions:** known gaps, as of 2026-10-27:
-  - cli-core's `CALENDAR_WRITE_DEFAULTS` (`src/calendar/writer.ts`) still has `events create`, `update` and
-    `respond` at `ask`.
+- **Exceptions:** known gaps, as of 2026-10-31:
   - gcal's generated `api` commands default every write to `ask`, ordinary changes included.
   - drive keeps its own policy and `--read-only` flag, zoom reads its own `remote-meetings` key with `levelFor`, and
     memo uses cli-core's permissions for the shared commands only. None of them declares `commandPermissions` yet.
