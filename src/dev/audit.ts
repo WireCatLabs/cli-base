@@ -26,6 +26,8 @@ export interface Finding {
   /** `<clis> <what>`: `max+tg chats list --limit`, `zm upgrade`, `tg: chats grab` for a lint violation. */
   target: string
   message: string
+  /** What each CLI showed, for a finding about one flag or output; `absent` when it lacks the flag. */
+  values?: Record<string, string>
 }
 
 export interface ScoreRow {
@@ -150,6 +152,7 @@ const samePathContract = (inputs: readonly AuditInput[], groups: readonly Parity
           clis: having,
           target: `${named(having)} ${path}${what}`,
           message: describe(values),
+          values: Object.fromEntries(values),
         })
     }
     const kinds = new Map(
@@ -382,21 +385,40 @@ export const auditClis = (
       )
       .map((finding) => `${finding.rule} ${finding.target}`),
   )
-  const declared = new Map(
-    options.groups.flatMap((group) => group.differences.map((entry) => [`${entry.rule} ${entry.target}`, group.name])),
+  // An `absent` difference names no CLI list: it stands for every finding where only that CLI lacks the flag.
+  const differences = options.groups.flatMap((group) =>
+    group.differences.flatMap((entry) => {
+      if (!entry.absent) return [{ group: group.name, ...entry }]
+      const matching = findings.filter((finding) => {
+        if (finding.rule !== entry.rule || finding.target !== `${named(finding.clis)} ${entry.target}`) return false
+        const others = Object.entries(finding.values ?? {}).filter(([cli]) => cli !== entry.absent)
+        return (
+          finding.values?.[entry.absent as string] === "absent" && new Set(others.map(([, value]) => value)).size === 1
+        )
+      })
+      if (matching.length === 0 && clis.includes(entry.absent))
+        problems.push(
+          `stale difference in ${group.name}, no such divergence — remove it: ${entry.rule} ${entry.target} (absent in ${entry.absent})`,
+        )
+      return matching.map((finding) => ({
+        ...entry,
+        group: group.name,
+        target: finding.target,
+        expected: finding.message,
+      }))
+    }),
   )
+  const declared = new Map(differences.map((entry) => [`${entry.rule} ${entry.target}`, entry.group]))
   const found = new Set(findings.map((finding) => `${finding.rule} ${finding.target}`))
   for (const [key, group] of declared)
     if (!found.has(key)) problems.push(`stale difference in ${group}, no such divergence — remove it: ${key}`)
-  for (const group of options.groups) {
-    for (const difference of group.differences) {
-      const finding = findings.find((one) => one.rule === difference.rule && one.target === difference.target)
-      if (finding && difference.expected !== finding.message) {
-        declared.delete(`${difference.rule} ${difference.target}`)
-        problems.push(
-          `difference in ${group.name} must match the exact current values: ${difference.rule} ${difference.target}`,
-        )
-      }
+  for (const difference of differences) {
+    const finding = findings.find((one) => one.rule === difference.rule && one.target === difference.target)
+    if (finding && difference.expected !== finding.message) {
+      declared.delete(`${difference.rule} ${difference.target}`)
+      problems.push(
+        `difference in ${difference.group} must match the exact current values: ${difference.rule} ${difference.target}`,
+      )
     }
   }
   for (const group of options.groups)
