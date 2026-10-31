@@ -220,12 +220,13 @@ before its deadline.
 
 ### WC-LIFE-15 · Keep a run log through cli-core, and read it back with `runs`
 
-A failed command is always kept as a run, unless the person turned recording off with `--no-record` or
-`record: false` in the config. A run keeps the command line as typed, secrets hidden; `record_input: false` masks
-every value that may be content
+Every failed command is kept as a run, and so is every command that does its work inside cli-core's run
+(`context.run`, or `startRecording` in a program of its own). `record: false` in the config keeps failures only;
+`--no-record` keeps nothing; `--record` keeps a success the config, WireCat Desktop or a command that runs until
+stopped would not. A run keeps the command line as typed, secrets hidden; `record_input: false` masks every value
+that may be content
 ([WC-SECR-1](security.md#wc-secr-1--private-data-and-secrets-never-reach-a-log-a-fixture-or-a-committed-document)).
-`--record` keeps every run of a command that does its work inside cli-core's run
-(`context.run`, or `startRecording` in a program of its own). A run is a folder `<state>/runs/<day>/<run_id>/` with
+A run is a folder `<state>/runs/<day>/<run_id>/` with
 `run.json` and `events.jsonl`, one log record per line. `runs list` and `runs show` read it.
 
 - A CLI that runs its program through cli-core's `run` gets the failure log and `--record`/`--no-record` from it,
