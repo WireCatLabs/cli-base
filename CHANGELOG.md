@@ -8,6 +8,23 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`movedRunService(app, configDir)` names a moved run's temporary keyring entry**, so a test or an agent can delete
+  it by name.
+
+### Security
+
+- **A moved run no longer replaces the owner's keyring entry.** `session start` in a worktree or with
+  `HOME=/tmp/x` overwrote the owner's real sign-in. With the system keyring, `Credentials` in a moved run (`isolated`,
+  or a moved `HOME` or XDG folder) now writes a temporary entry, `<app>:<absolute config folder>`; reads it first and
+  the owner's `<app>` entry when it has none; and `remove` deletes only the temporary entry, so `session end` cleans up.
+  A token refreshed in a moved run is saved in the temporary entry too, so a run that never ends its session leaves
+  one behind ([WC-SECR-24](docs/standards/security.md#wc-secr-24--a-run-with-moved-folders-shares-the-owners-keyring-entry-and-never-deletes-it)).
+  A run with the default folders, and a test with `memoryKeyring()`, are unchanged.
+
 ## 0.65.4 — 31.10.2026
 
 ### Fixed

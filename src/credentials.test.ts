@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir, userInfo } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { Credentials, keyringService } from "./credentials.js"
+import { Credentials, keyringService, movedRunService } from "./credentials.js"
 import { CliError } from "./errors.js"
 import { brokenKeyring, memoryKeyring, systemKeyring } from "./keyring.js"
 
@@ -99,7 +99,11 @@ describe("a run with moved folders and the system keyring", () => {
     set: vi.spyOn(systemKeyring, "set").mockImplementation((service, account, secret) => {
       saved[`${service}/${account}`] = secret
     }),
-    delete: vi.spyOn(systemKeyring, "delete").mockImplementation(() => true),
+    delete: vi.spyOn(systemKeyring, "delete").mockImplementation((service, account) => {
+      const existed = `${service}/${account}` in saved
+      delete saved[`${service}/${account}`]
+      return existed
+    }),
   })
 
   const moved = {
@@ -109,25 +113,51 @@ describe("a run with moved folders and the system keyring", () => {
   }
 
   for (const [name, options] of Object.entries(moved)) {
-    it(`reads and writes the owner's own entry with ${name}`, () => {
+    it(`writes a temporary entry and never replaces the owner's with ${name}`, () => {
+      const configDir = dir()
       const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
-      const credentials = make({ keyring: systemKeyring, ...options })
+      const credentials = make({ configDir, keyring: systemKeyring, ...options })
 
-      expect(credentials.read("default")).toEqual({ secret: "owner's", source: "keyring" })
-      expect(credentials.write("default", "renewed")).toBe("keyring")
-      expect(keyring.set).toHaveBeenCalledWith("max-cli", "default", "renewed")
+      expect(credentials.write("default", "throwaway")).toBe("keyring")
+      expect(keyring.set).toHaveBeenCalledExactlyOnceWith(movedRunService("max-cli", configDir), "default", "throwaway")
+      expect(keyring.set).not.toHaveBeenCalledWith("max-cli", expect.anything(), expect.anything())
     })
 
-    it(`never deletes the owner's entry with ${name}`, () => {
+    it(`reads the temporary entry first, then the owner's, with ${name}`, () => {
+      const configDir = dir()
+      stubSystemKeyring({ "max-cli/default": "owner's", "max-cli/work": "owner's work" })
+      const credentials = make({ configDir, keyring: systemKeyring, ...options })
+      credentials.write("default", "throwaway")
+
+      expect(credentials.read("default")).toEqual({ secret: "throwaway", source: "keyring" })
+      expect(credentials.read("work")).toEqual({ secret: "owner's work", source: "keyring" })
+    })
+
+    it(`deletes only the temporary entry with ${name}`, () => {
+      const configDir = dir()
       const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
       const warnings: string[] = []
-      const credentials = make({ keyring: systemKeyring, warn: (message) => warnings.push(message), ...options })
+      const credentials = make({
+        configDir,
+        keyring: systemKeyring,
+        warn: (message) => warnings.push(message),
+        ...options,
+      })
 
-      expect(credentials.remove("default")).toEqual([])
-      expect(keyring.delete).not.toHaveBeenCalled()
+      credentials.write("default", "throwaway")
+
+      expect(credentials.remove("default")).toEqual(["keyring"])
+      expect(keyring.delete).toHaveBeenCalledExactlyOnceWith(movedRunService("max-cli", configDir), "default")
       expect(warnings.join()).toMatch(/kept default in the OS keyring/)
+      expect(credentials.read("default")).toEqual({ secret: "owner's", source: "keyring" })
     })
   }
+
+  it("says nothing was removed when the run had no temporary entry", () => {
+    stubSystemKeyring({ "max-cli/default": "owner's" })
+
+    expect(make({ keyring: systemKeyring, isolated: true }).remove("default")).toEqual([])
+  })
 
   it("still removes a file sign-in, so `session start --credential-storage file` then end works", () => {
     const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
@@ -136,14 +166,18 @@ describe("a run with moved folders and the system keyring", () => {
     const credentials = make({ configDir, keyring: systemKeyring, isolated: true })
 
     expect(credentials.remove("default")).toEqual(["file"])
-    expect(keyring.delete).not.toHaveBeenCalled()
+    expect(keyring.delete).not.toHaveBeenCalledWith("max-cli", expect.anything())
   })
 
-  it("deletes the entry when the folders are the owner's own", () => {
+  it("writes, reads and deletes the owner's entry when the folders are the owner's own", () => {
     const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
+    const credentials = make({ keyring: systemKeyring, env: { HOME: ownerHome } })
 
-    expect(make({ keyring: systemKeyring, env: { HOME: ownerHome } }).remove("default")).toEqual(["keyring"])
-    expect(keyring.delete).toHaveBeenCalledWith("max-cli", "default")
+    expect(credentials.read("default")).toEqual({ secret: "owner's", source: "keyring" })
+    credentials.write("default", "renewed")
+    expect(keyring.set).toHaveBeenCalledExactlyOnceWith("max-cli", "default", "renewed")
+    expect(credentials.remove("default")).toEqual(["keyring"])
+    expect(keyring.delete).toHaveBeenCalledExactlyOnceWith("max-cli", "default")
   })
 })
 
@@ -178,6 +212,12 @@ describe("a credentials file that cannot be parsed", () => {
     writeFileSync(join(configDir, "credentials.json"), broken)
     expect(make({ configDir, storage: "file" }).remove("other")).toEqual([])
     expect(readFileSync(join(configDir, "credentials.json"), "utf8")).toBe(broken)
+  })
+})
+
+describe("movedRunService", () => {
+  it("names the temporary entry by the absolute config folder", () => {
+    expect(movedRunService("max-cli", "/tmp/x/../y")).toBe("max-cli:/tmp/y")
   })
 })
 
