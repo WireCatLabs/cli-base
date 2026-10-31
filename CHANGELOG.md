@@ -14,6 +14,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **WC-SECR-24 says how to hide the keyring from a run.** Set `DBUS_SESSION_BUS_ADDRESS=disabled:`. Removing the
   variable, as the rule said before, still reaches the keyring through the default session bus.
+- **Five rules answer what cli-template's 0.10.0 audit found unclear.** WC-SECR-20 names the release `tag` job,
+  which keeps its credentials to push the tag. WC-TOOL-6 lists cli-template and its CLIs among those that do not run
+  Node 22 yet. WC-PERM-22 says a template-made CLI calls `commandPermissions` with its first command that writes to a
+  service. WC-REL-11 covers ClawHub's stored `CLAWHUB_TOKEN` and a ClawHub failure after the tag. WC-REL-16 says
+  where the forbidden-path check lives now, and that `upgrade` does not deliver it.
 
 ## 0.66.1 â€” 31.10.2026
 

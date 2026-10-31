@@ -129,7 +129,9 @@ on the [CI](ci.md) page.
   ([npm docs](https://docs.npmjs.com/trusted-publishers)), which a package has only once it is published, so its
   first version is published with `bin/release --local` by the owner, from a clean `main`. Right after it, the owner
   adds the trusted publisher on npmjs.com (step 2 of [New CLI](new-cli.md#four-steps-that-need-a-person)), and every
-  later version goes through `release.yml`.
+  later version goes through `release.yml`. ClawHub has no trusted publishing: the `clawhub` job publishes the agent
+  skill with the organization secret `CLAWHUB_TOKEN`. It runs after the tag, so a ClawHub failure never holds back
+  npm; the run then fails although npm and the tag are done, and only that job is run again.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-REL-12 · Publish only after full validation and the release security checks pass
@@ -199,8 +201,9 @@ fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/
   `npm pack --dry-run` in gcal-cli packed 256 files on 2026-10-27, `src/`, `scripts/`, `.github/`, `config/`,
   `contracts/`, `lint/` and `template.json` among them, because its `files` list named them; its check could not see
   it. On 2026-10-31 (gcal-cli 0.2.0) it packs 144. The check this rule needs
-  refuses the forbidden paths above whatever `files` says; it belongs in cli-template, so every CLI gets it by
-  `upgrade` ([cli-template#77](https://github.com/WireCatLabs/cli-template/issues/77)).
+  refuses the forbidden paths above whatever `files` says: cli-template's `scripts/smoke.ts` does since
+  [cli-template#85](https://github.com/WireCatLabs/cli-template/pull/85). `scripts/` is a seed that `upgrade` never
+  changes, so a CLI made before it copies the check by hand.
 - **Exceptions:** cli-template's own package ships the skeleton's sources and configs, since `new` copies them; the
   `files` list `new` writes into a CLI follows this rule. Each CLI's `package:check` runs `packContents`; tg and max
   as `release-check.ts --package-only`.
