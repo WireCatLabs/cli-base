@@ -117,6 +117,9 @@ installing that command; nothing else is registered anywhere.
    `tools.json`. A messenger also joins cli-core's `parity.json`. A CLI outside WireCatLabs keeps its parity groups
    in its own repository and runs `cli-dev audit --groups <file>`. See [Testing](testing.md).
 
+The listings beyond npm (ClawHub, the MCP Registry, the Claude plugin, the docs site, Glama) are a checklist in
+[Publishing](../PUBLISHING.md#a-new-cli).
+
 ## Done when
 
 All of these pass on `main`, before the first release:
