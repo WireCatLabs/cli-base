@@ -378,6 +378,13 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "string",
     meaning: "the browser program to open for sign-in",
   },
+  {
+    name: "--credential-storage",
+    value: "<storage>",
+    role: "mode",
+    type: "choice",
+    meaning: "where a sign-in is kept: keyring, which falls back to a private file by itself, or file (WC-SECR-4)",
+  },
   { name: "--checkpoint", value: "<file>", role: "mode", type: "path", meaning: "keep resume progress in this file" },
   {
     name: "--expected-event-id",
