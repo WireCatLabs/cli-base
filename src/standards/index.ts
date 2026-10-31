@@ -44,6 +44,8 @@ export {
   type Page,
   pageSchema,
   reference,
+  type Total,
+  totalSchema,
 } from "./output.js"
 export { fill, jsonSchemaOf, RegistryError } from "./registry.js"
 export {
