@@ -12,6 +12,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **WC-LIFE-15 says a success is kept by default.** It described `--record` as the way to keep a success and said
+  `record: false` also drops failures. cli-core keeps every run of a command that works through it; `record: false`
+  keeps failures only, and `--no-record` keeps nothing.
+
 - **`Credentials.remove` in a moved run says "kept" only when the owner's entry is there and was kept.** It printed
   "kept X in the OS keyring: it is the owner's sign-in" on every removal in a moved run, also when it had just removed
   the run's own temporary entry and when the owner had no entry at all. Now it looks the owner's entry up after the
