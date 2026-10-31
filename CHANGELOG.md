@@ -12,6 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`Credentials.remove` in a moved run says "kept" only when the owner's entry is there and was kept.** It printed
+  "kept X in the OS keyring: it is the owner's sign-in" on every removal in a moved run, also when it had just removed
+  the run's own temporary entry and when the owner had no entry at all. Now it looks the owner's entry up after the
+  removal: with the temporary entry removed it says so and that the owner's was kept; with nothing removed it says the
+  owner's was kept; with no owner's entry it prints nothing. A keyring that fails on that look-up does not fail the
+  removal. The return value is unchanged (WC-SECR-24).
 - **WC-SECR-24 says how to hide the keyring from a run.** Set `DBUS_SESSION_BUS_ADDRESS=disabled:`. Removing the
   variable, as the rule said before, still reaches the keyring through the default session bus.
 - **WC-TOOL-6 counts cli-template's Node 22 job.** cli-template 0.11.0 runs its tests on Node 22.16.0, and a CLI made
