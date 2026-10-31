@@ -347,7 +347,8 @@ store and runs no search. A CLI declares its provider and may replace any step.
 
   A CLI never revokes a sign-in at the provider in a moved run, even one read from the temporary entry: a refreshed
   token is still the owner's grant. A test passes `memoryKeyring()`; a run that must not see the keyring at all also
-  runs with `DBUS_SESSION_BUS_ADDRESS` removed, since the keyring is reached over D-Bus.
+  runs with `DBUS_SESSION_BUS_ADDRESS=disabled:`, since the keyring is reached over D-Bus. Removing the variable is not
+  enough: D-Bus then connects to `$XDG_RUNTIME_DIR/bus`, the default session bus, and reaches the keyring anyway.
 - **Cleanup:** a moved run that never reaches `session end` leaves its temporary entry, and so does one that refreshes
   a token, since the refreshed token is written there. `bin/keyring-dedupe --delete` in the projects folder removes
   temporary entries that sit beside the owner's real one; a test or agent can also delete one by name with
