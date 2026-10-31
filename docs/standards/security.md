@@ -67,19 +67,29 @@ name. Any other top-level key is written as `[not allowed]`. A key that names co
 ### WC-SECR-4 · Secrets come from the environment, then the OS keyring, then a private file
 
 cli-base's `Credentials` reads the environment variable first (for CI), then the OS keyring, then a file with mode
-`0600`. The keyring service is the CLI's app name, `appName` in its identity (`max-cli`, `gcal-cli`, `cli-memo`), not
+`0600` in the CLI's own folder. Storage is the keyring by default (`auto`): when the keyring fails (locked, not
+running, no D-Bus), the CLI uses the file without asking, warns once on stderr, and the answer that saved the secret
+says where it went (gcal: `credential_storage: "file"`). `--credential-storage file` on the sign-in command chooses
+the file outright; help and docs discourage it. Once the file holds a secret, it is read from the file, so a locked
+keyring is not tried again for it; the next sign-in that reaches the keyring moves it back and removes the file copy.
+No CLI asks which store to use, and none is keyring-only.
+The keyring service is the CLI's app name, `appName` in its identity (`max-cli`, `gcal-cli`, `cli-memo`), not
 the command word people type (`max`, `gcal`). A run with moved folders reads the same entry, writes a temporary one,
 and never replaces or deletes the owner's
 ([WC-SECR-24](#wc-secr-24--a-run-with-moved-folders-shares-the-owners-keyring-entry-and-never-deletes-it)).
 
-- **Why:** the keyring is the safest store on the computer.
+- **Why:** the keyring is the safest store on the computer, and a sign-in that fails on a server or in a container
+  because no keyring runs there is a broken CLI, not a safe one.
 - **Enforced by:** `src/credentials.test.ts`.
 - **Example:** a bot token is read from `MAX_BOT_TOKEN`, then the keyring entry `bot:<profile>`, then the file.
-- **Exceptions:** `auto` storage tries the keyring and, when it fails, warns once on stderr and uses the file. A
-  messenger library's own device store, which the library opens as a file and which cannot live in the keyring
-  (WhatsApp's `private.db`), is an owner-only file under
-  [WC-SECR-10](#wc-secr-10--private-files-are-written-atomically-with-private-modes) instead.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-295.
+  `gcal personal session start` on a computer without a keyring signs in, warns once, and answers
+  `credential_storage: "file"`.
+- **Exceptions:** a messenger library's own device store, which the library opens as a file and which cannot live in
+  the keyring (WhatsApp's `private.db`, tg's session file), is an owner-only file under
+  [WC-SECR-10](#wc-secr-10--private-files-are-written-atomically-with-private-modes) instead. A copy between two
+  profiles that must land in the keyring (cli-core's bot transfer) may use `storage: "keyring"`.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-295; owner, 2026-10-31 (never ask, keyring
+  by default, fall back to a file on error, a discouraged flag for the file).
 
 ### WC-SECR-5 · A secret is never taken on the command line
 

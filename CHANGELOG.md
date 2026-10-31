@@ -16,6 +16,19 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `bin/release` in max-cli and whatsapp-cli no longer reads a release report or a `Signed off:` line. The agent asks
   the owner before it runs `bin/release`; one yes covers one version.
 
+### Changed — may break callers
+
+- **WC-SECR-4 is the one credential-storage standard.** The keyring by default; when it fails, the file without
+  asking, one warning on stderr, and the answer that saved the secret says where it went;
+  `--credential-storage file` on the sign-in command chooses the file and is discouraged; a secret in the file is
+  read from there until a sign-in reaches the keyring again. No CLI asks, none is keyring-only. `Credentials` already
+  falls back this way in `auto`; the rule now says every CLI must use it.
+
+### Added
+
+- **`--credential-storage <storage>` in the flag vocabulary** (role `mode`), so `cli-dev lint` accepts it on a sign-in
+  command without a per-CLI override.
+
 ## 0.67.0 — 31.10.2026
 
 ### Added
