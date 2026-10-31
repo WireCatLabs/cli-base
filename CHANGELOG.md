@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **WC-SECR-24 says how to hide the keyring from a run.** Set `DBUS_SESSION_BUS_ADDRESS=disabled:`. Removing the
+  variable, as the rule said before, still reaches the keyring through the default session bus.
+
 ## 0.66.1 — 31.10.2026
 
 ### Fixed
