@@ -52,11 +52,23 @@ export const movedRunService = (service: string, configDir: string): string => `
 
 type FileStore = Record<string, { secret?: string }>
 
+export interface WriteOptions {
+  /**
+   * A new sign-in rather than a refresh: it tries the keyring even when the file holds the account, and once the
+   * keyring takes it, removes the file copy (WC-SECR-4).
+   */
+  signIn?: boolean
+}
+
+// One warning per run, not per instance: a run over several profiles builds one Credentials for each.
+const warnedRuns = new WeakSet<NodeJS.ProcessEnv>()
+
 /**
- * Environment first, then the OS keyring, then a file.
+ * Environment first, then the OS keyring, then a file. In `auto`, a file that holds the account is read before the
+ * keyring and keeps its refreshes, so a locked keyring is not tried again for it; a sign-in moves it back.
  *
  * `auto` does not probe whether a keyring exists: it attempts the operation, and on failure warns
- * once and falls through. A probe would touch the user's keychain for nothing and could still
+ * once per run and falls through. A probe would touch the user's keychain for nothing and could still
  * succeed where the real operation fails.
  */
 export class Credentials {
@@ -70,7 +82,6 @@ export class Credentials {
   readonly #warn: (message: string) => void
   /** Set only for a moved run with the system keyring. */
   readonly #temporaryService: string | undefined
-  #warned = false
 
   constructor(options: CredentialsOptions) {
     this.#configDir = options.configDir
@@ -89,6 +100,9 @@ export class Credentials {
     const fromEnv = this.#envVar ? this.#env[this.#envVar]?.trim() : undefined
     if (fromEnv) return { secret: fromEnv, source: "environment" }
 
+    const fromFile = this.#storage === "keyring" ? undefined : this.#readFile()?.[account]?.secret
+    if (fromFile) return { secret: fromFile, source: "file" }
+
     if (this.#storage !== "file") {
       const temporary = this.#temporaryService
       const fromKeyring = this.#tryKeyring(
@@ -97,17 +111,20 @@ export class Credentials {
       if (fromKeyring) return { secret: fromKeyring, source: "keyring" }
     }
 
-    const secret = this.#readFile()?.[account]?.secret
-    return secret ? { secret, source: "file" } : undefined
+    return undefined
   }
 
-  write(account: string, secret: string): CredentialSource {
-    if (this.#storage !== "file") {
+  write(account: string, secret: string, options: WriteOptions = {}): CredentialSource {
+    const inFile = this.#storage === "auto" && this.#readFile()?.[account] !== undefined
+    if (this.#storage === "keyring" || (this.#storage === "auto" && (options.signIn || !inFile))) {
       const stored = this.#tryKeyring(() => {
         this.#keyring.set(this.#temporaryService ?? this.#service, account, secret)
         return true
       })
-      if (stored) return "keyring"
+      if (stored) {
+        if (inFile) this.#removeFromFile(account)
+        return "keyring"
+      }
     }
 
     const store = this.#readFile()
@@ -141,14 +158,17 @@ export class Credentials {
       }
     }
 
-    const store = this.#readFile()
-    if (store?.[account] !== undefined) {
-      delete store[account]
-      this.#writeFile(store)
-      removed.push("file")
-    }
+    if (this.#storage !== "keyring" && this.#removeFromFile(account)) removed.push("file")
 
     return removed
+  }
+
+  #removeFromFile(account: string): boolean {
+    const store = this.#readFile()
+    if (store?.[account] === undefined) return false
+    delete store[account]
+    this.#writeFile(store)
+    return true
   }
 
   /** Only for the warning: a keyring that fails here must not fail a removal that already happened. */
@@ -192,8 +212,8 @@ export class Credentials {
     try {
       return operation()
     } catch (error) {
-      if (!this.#warned) {
-        this.#warned = true
+      if (!warnedRuns.has(this.#env)) {
+        warnedRuns.add(this.#env)
         this.#warn(
           `could not reach the OS keyring — it may be locked, or no keyring service is running ` +
             `(${error instanceof Error ? error.message : String(error)}); ` +

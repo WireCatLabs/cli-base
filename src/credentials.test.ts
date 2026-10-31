@@ -77,6 +77,66 @@ describe("Credentials", () => {
     expect(credentials.read("personal")?.secret).toBe("two")
   })
 
+  it("leaves the file alone when removing with the keyring only", () => {
+    const configDir = dir()
+    make({ configDir, storage: "file" }).write("default", "in-file")
+    const credentials = make({ configDir, storage: "keyring" })
+    credentials.write("default", "in-keyring")
+
+    expect(credentials.remove("default")).toEqual(["keyring"])
+    expect(make({ configDir, storage: "file" }).read("default")?.secret).toBe("in-file")
+  })
+
+  it("reads a secret the file holds without trying the keyring", () => {
+    const configDir = dir()
+    const warnings: string[] = []
+    make({ configDir, storage: "file" }).write("default", "in-file")
+    const credentials = make({ configDir, keyring: brokenKeyring(), warn: (m) => warnings.push(m) })
+
+    expect(credentials.read("default")).toEqual({ secret: "in-file", source: "file" })
+    expect(warnings).toEqual([])
+  })
+
+  it("keeps a refresh in the file that holds the secret", () => {
+    const configDir = dir()
+    const keyring = memoryKeyring()
+    make({ configDir, storage: "file" }).write("default", "old")
+    const credentials = make({ configDir, keyring })
+
+    expect(credentials.write("default", "refreshed")).toBe("file")
+    expect(keyring.get("max-cli", "default")).toBeNull()
+    expect(credentials.read("default")).toEqual({ secret: "refreshed", source: "file" })
+  })
+
+  it("moves a sign-in back to the keyring and drops the file copy", () => {
+    const configDir = dir()
+    make({ configDir, storage: "file" }).write("default", "old")
+    const credentials = make({ configDir })
+
+    expect(credentials.write("default", "new", { signIn: true })).toBe("keyring")
+    expect(credentials.read("default")).toEqual({ secret: "new", source: "keyring" })
+    expect(JSON.parse(readFileSync(join(configDir, "credentials.json"), "utf8"))).toEqual({})
+  })
+
+  it("keeps a sign-in in the file when the keyring still fails", () => {
+    const configDir = dir()
+    make({ configDir, storage: "file" }).write("default", "old")
+    const credentials = make({ configDir, keyring: brokenKeyring() })
+
+    expect(credentials.write("default", "new", { signIn: true })).toBe("file")
+    expect(credentials.read("default")).toEqual({ secret: "new", source: "file" })
+  })
+
+  it("warns once per run, however many profiles it opens", () => {
+    const env = {}
+    const warnings: string[] = []
+    const warn = (message: string) => warnings.push(message)
+    make({ env, keyring: brokenKeyring(), warn }).write("default", "one")
+    make({ env, keyring: brokenKeyring(), warn }).write("work", "two")
+
+    expect(warnings).toHaveLength(1)
+  })
+
   it("never writes the secret anywhere the file store does not name", () => {
     const configDir = dir()
     new Credentials({ configDir, service: "max-cli", storage: "file", env: {}, warn: () => {} }).write(
@@ -155,6 +215,18 @@ describe("a run with moved folders and the system keyring", () => {
       expect(credentials.read("default")).toEqual({ secret: "owner's", source: "keyring" })
     })
   }
+
+  it("moves a sign-in to the temporary entry and drops the run's file copy, never touching the owner's", () => {
+    const configDir = dir()
+    const keyring = stubSystemKeyring({ "max-cli/default": "owner's" })
+    make({ configDir, storage: "file", isolated: true }).write("default", "old")
+    const credentials = make({ configDir, keyring: systemKeyring, isolated: true })
+
+    expect(credentials.write("default", "new", { signIn: true })).toBe("keyring")
+    expect(keyring.set).toHaveBeenCalledExactlyOnceWith(movedRunService("max-cli", configDir), "default", "new")
+    expect(keyring.delete).not.toHaveBeenCalled()
+    expect(credentials.read("default")).toEqual({ secret: "new", source: "keyring" })
+  })
 
   it("says nothing was removed, and that the owner's sign-in was kept, when the run had no temporary entry", () => {
     stubSystemKeyring({ "max-cli/default": "owner's" })
