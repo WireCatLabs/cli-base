@@ -4,7 +4,7 @@
 
 ## Scope
 
-How a CLI is released: `bin/release`, the release lock, version numbers, the release report and trusted publishing.
+How a CLI is released: `bin/release`, the release lock, version numbers, the owner's yes and trusted publishing.
 
 Rule ids on this page are `WC-REL-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). The changelog a release dates is on the [Documents](docs.md) page. The checks a release runs are
@@ -106,17 +106,16 @@ on the [CI](ci.md) page.
 
 ### WC-REL-9 · Merged into [WC-REL-8](#wc-rel-8--any-package-may-release-at-any-time)
 
-### WC-REL-10 · A messenger CLI is released only with a release report the owner signed for that commit
+### WC-REL-10 · A messenger CLI is released only after the owner says yes in the conversation
 
-- **Why:** the judgement half of a release (changelog wording, docs against the change, live checks) has no other
-  record that it ran for this exact commit.
-- **Enforced by:** `max-cli: bin/release` · `whatsapp-cli: bin/release`.
-- **Example:** max-cli's and whatsapp-cli's `bin/release` refuse unless the report has `Commit: <HEAD>` and
-  `Signed off: <date>`. When `bin/release` only renumbers or folds the changelog, it carries the report to the new
-  commit. A fork passes its own report with `bin/release --report <path>`.
-- **Exceptions:** none. max-cli and whatsapp-cli (from 0.1.0) check the report in `bin/release`. tg-cli has the
-  release skill, but its `bin/release` does not check a report yet.
-- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Why:** a messenger CLI acts on the owner's own accounts, so the owner decides when a new version ships. A signed
+  release report added a step without adding a check: the owner removed it on 2026-10-31 ("remove the signing
+  requirements instead just ask").
+- **Enforced by:** review only.
+- **Example:** the agent finishes the release skill, then asks "release max 0.91.0?". It runs `bin/release` only after
+  the owner says yes for that version. One yes covers one version.
+- **Exceptions:** none.
+- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** owner, 2026-10-31.
 
 ### WC-REL-11 · Publish from GitHub Actions with npm trusted publishing
 

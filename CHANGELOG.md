@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Removed
+
+- **WC-REL-10: a messenger CLI is released after the owner's yes in the conversation, with no signed report.**
+  `bin/release` in max-cli and whatsapp-cli no longer reads a release report or a `Signed off:` line. The agent asks
+  the owner before it runs `bin/release`; one yes covers one version.
+
 ## 0.67.0 — 31.10.2026
 
 ### Added
