@@ -333,6 +333,8 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
   write runs through cli-core's write guard with `permissionDefaults: configuration.permissions.defaults`
   (cli-core 0.455.0), so `ask` is a y/N question at a terminal (WC-PERM-9) and every attempt goes into the send journal
   (WC-PERM-17). A CLI that sends no messages has no recipient list or hourly limit to set.
+- **When.** cli-template's skeleton has no command of its own that writes to a service, so it does not call
+  `commandPermissions`; a CLI made from it adds the call with its first such command.
 
 - **Why:** one permission model for every CLI; a CLI-own layer drifts from the shared one and is audited by nobody.
 - **Enforced by:** `cli-core: src/cli/command-permissions.test.ts` · `cli-core: src/calendar/cli/writes.test.ts`.

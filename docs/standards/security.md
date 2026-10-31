@@ -274,7 +274,8 @@ general words.
   `persist-credentials: false`, and `permissions: contents: read` at the top of the workflow. A job that needs more
   asks for it on that job only. The `zizmor` scan in `release-checks.yml` reports high findings at release, but does
   not fail on them.
-- **Exceptions:** none.
+- **Exceptions:** the `tag` job of `release.yml` keeps its checkout's credentials (no `persist-credentials: false`),
+  because it pushes `v<version>`; it runs no project code.
 - **Applies to:** the WireCat repositories: every CLI, cli-base, cli-core, cli-testing, cli-docs and community; and
   cli-template.
   **Since:** cli-base 0.41.0. **Rulings:** none.
