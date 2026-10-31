@@ -22,6 +22,7 @@ the command tree as data — the parts every CLI needs and nobody should write t
 | [Architecture](docs/dev/ARCHITECTURE.md) | The entry points, the lines this package does not cross, who consumes what |
 | [API reference](docs/REFERENCE.md) | What each entry point holds, with examples |
 | [Shared tooling](docs/TOOLING.md) | The TypeScript, Biome, lefthook, docs and CI setup a CLI takes from here, and `cli-dev` |
+| [Publishing](docs/PUBLISHING.md) | Where a CLI is published beyond npm, how to prove it, and what has gone wrong |
 | [Testing](docs/dev/TESTING.md) | The checks, and what each one is for |
 | [Conventions](docs/dev/CONVENTIONS.md) | How code here is written |
 | [Standards handbook](docs/standards/README.md) | The rules every WireCat CLI follows, one page per area and a new-CLI checklist |

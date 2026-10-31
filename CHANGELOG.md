@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **[Publishing](docs/PUBLISHING.md): where a CLI is published beyond npm, and how.** npm, ClawHub, the MCP Registry,
+  the Claude plugin marketplace, Hermes, Glama, GitHub and wirecat.dev: each one's setup, what a release does, how to
+  prove a publish happened (three jobs go green without publishing), the problems met with their fixes, a checklist
+  for a new CLI, and each CLI's status. `new-cli.md` points to the checklist.
+
 ## 0.68.1 — 31.10.2026
 
 ### Added
