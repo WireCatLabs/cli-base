@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`implicitTextTerms` counts a bare number as a word.** It left out every number token, so a question with a
+  number ("do logs expire after 21 days") looked like query syntax: cli-core's `--discover` then ran strict search
+  and usually found nothing. A number that is a field's value (`size:>2`) is still not a bare word.
+
 ## 0.66.0 — 31.10.2026
 
 ### Added
