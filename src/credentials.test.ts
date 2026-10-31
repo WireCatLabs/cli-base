@@ -148,15 +148,55 @@ describe("a run with moved folders and the system keyring", () => {
 
       expect(credentials.remove("default")).toEqual(["keyring"])
       expect(keyring.delete).toHaveBeenCalledExactlyOnceWith(movedRunService("max-cli", configDir), "default")
-      expect(warnings.join()).toMatch(/kept default in the OS keyring/)
+      expect(warnings).toEqual([
+        "removed this run's own sign-in of default from the OS keyring and kept the owner's: a run with moved " +
+          "folders never removes it",
+      ])
       expect(credentials.read("default")).toEqual({ secret: "owner's", source: "keyring" })
     })
   }
 
-  it("says nothing was removed when the run had no temporary entry", () => {
+  it("says nothing was removed, and that the owner's sign-in was kept, when the run had no temporary entry", () => {
     stubSystemKeyring({ "max-cli/default": "owner's" })
+    const warnings: string[] = []
+    const credentials = make({ keyring: systemKeyring, isolated: true, warn: (message) => warnings.push(message) })
 
-    expect(make({ keyring: systemKeyring, isolated: true }).remove("default")).toEqual([])
+    expect(credentials.remove("default")).toEqual([])
+    expect(warnings).toEqual([
+      "kept default in the OS keyring: it is the owner's sign-in, shared with every run, and a run with moved " +
+        "folders never removes it",
+    ])
+  })
+
+  it("claims no owner's sign-in was kept when there is none", () => {
+    const configDir = dir()
+    stubSystemKeyring()
+    const warnings: string[] = []
+    const credentials = make({ configDir, keyring: systemKeyring, isolated: true, warn: (m) => warnings.push(m) })
+    credentials.write("default", "throwaway")
+
+    expect(credentials.remove("default")).toEqual(["keyring"])
+    expect(make({ keyring: systemKeyring, isolated: true, warn: (m) => warnings.push(m) }).remove("work")).toEqual([])
+    expect(warnings).toEqual([])
+  })
+
+  it("still removes the temporary entry when the owner's cannot be looked up", () => {
+    const configDir = dir()
+    const keyring = stubSystemKeyring({ [`${movedRunService("max-cli", configDir)}/default`]: "throwaway" })
+    keyring.get.mockImplementation(() => {
+      throw new Error("locked")
+    })
+    const warnings: string[] = []
+    const credentials = make({
+      configDir,
+      keyring: systemKeyring,
+      isolated: true,
+      storage: "keyring",
+      warn: (m) => warnings.push(m),
+    })
+
+    expect(credentials.remove("default")).toEqual(["keyring"])
+    expect(warnings).toEqual([])
   })
 
   it("still removes a file sign-in, so `session start --credential-storage file` then end works", () => {

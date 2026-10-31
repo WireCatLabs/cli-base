@@ -130,10 +130,13 @@ export class Credentials {
       if (this.#tryKeyring(() => this.#keyring.delete(this.#temporaryService ?? this.#service, account))) {
         removed.push("keyring")
       }
-      if (this.#temporaryService) {
+      if (this.#temporaryService && this.#ownersEntryExists(account)) {
         this.#warn(
-          `kept ${account} in the OS keyring: it is the owner's sign-in, shared with every run, and a run with moved ` +
-            "folders never removes it",
+          removed.includes("keyring")
+            ? `removed this run's own sign-in of ${account} from the OS keyring and kept the owner's: a run with ` +
+                "moved folders never removes it"
+            : `kept ${account} in the OS keyring: it is the owner's sign-in, shared with every run, and a run with ` +
+                "moved folders never removes it",
         )
       }
     }
@@ -146,6 +149,15 @@ export class Credentials {
     }
 
     return removed
+  }
+
+  /** Only for the warning: a keyring that fails here must not fail a removal that already happened. */
+  #ownersEntryExists(account: string): boolean {
+    try {
+      return this.#keyring.get(this.#service, account) !== null
+    } catch {
+      return false
+    }
   }
 
   #path(): string {
