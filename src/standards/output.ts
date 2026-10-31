@@ -48,6 +48,15 @@ export const missingSchema = v.strictObject({
 
 const limit = v.pipe(v.number(), v.integer(), v.minValue(1))
 
+/**
+ * How many match, every page together, as Elasticsearch's `hits.total`: `eq` is the exact count, `gte` a lower bound
+ * (counting stopped at a cap, or could not be done cheaply).
+ */
+export const totalSchema = v.strictObject({
+  value: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  relation: v.picklist(["eq", "gte"]),
+})
+
 /** `has_more`: another page exists. A cursor source never pretends to have page numbers. */
 export const pageSchema = v.variant("mode", [
   v.strictObject({
@@ -55,9 +64,18 @@ export const pageSchema = v.variant("mode", [
     limit,
     has_more: v.boolean(),
     next_page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(2))),
+    total: v.optional(totalSchema),
   }),
-  v.strictObject({ mode: v.literal("cursor"), limit, has_more: v.boolean(), next_cursor: v.optional(text) }),
+  v.strictObject({
+    mode: v.literal("cursor"),
+    limit,
+    has_more: v.boolean(),
+    next_cursor: v.optional(text),
+    total: v.optional(totalSchema),
+  }),
 ])
+
+export type Total = v.InferOutput<typeof totalSchema>
 
 /** A source that failed or was skipped: the answer holds what the others gave. */
 export const issueSchema = v.strictObject({

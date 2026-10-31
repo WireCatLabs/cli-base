@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`page.total`: how many match, every page together** (WC-OUT-5). An optional `{ value, relation }`, shaped as
+  Elasticsearch's `hits.total`: `eq` is the exact count, `gte` a lower bound. A search answer can now say "20 of 144"
+  without the caller paging to the end. `totalSchema` and the `Total` type are exported from
+  `@wirecat/cli-base/standards`. Optional, so every existing answer stays valid.
+
 ### Fixed
 
 - **WC-LIFE-15 says a success is kept by default.** It described `--record` as the way to keep a success and said

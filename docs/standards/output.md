@@ -63,7 +63,9 @@ JSON Schema 2020-12.
 - **Why:** a cursor source has no page numbers, and pretending it has them sends the caller to the wrong place.
 - **Enforced by:** review only.
 - **Example:** `{ mode: "page", limit, has_more, next_page? }`, or `{ mode: "cursor", limit, has_more,
-  next_cursor? }` for a source with its own position, such as a message history.
+  next_cursor? }` for a source with its own position, such as a message history. A search that can count its
+  matches adds `total: { value, relation }`, shaped as Elasticsearch's `hits.total`: `relation` is `eq` for an exact
+  count and `gte` for a lower bound, when counting stopped at a cap or could not be done cheaply.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
