@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import { CliError } from "../errors.js"
-import { parseLucene } from "./parser.js"
+import { implicitTextTerms, parseLucene } from "./parser.js"
 import { QUERY_LIMITS } from "./types.js"
 
 interface Reference {
@@ -147,5 +147,12 @@ describe("a list's query", () => {
     )
     for (const text of ['subject:"note:42"', "unread_count>0", "title:*work*", "local_path:* -text:*", 'date<"2h ago"'])
       expect(parseLucene(text, { defaultField: "none" })).toMatchObject({ version: 1 })
+  })
+})
+
+describe("implicit text terms", () => {
+  it("counts a bare number as a word of the question, not a field value", () => {
+    expect([...implicitTextTerms("logs expire after 21 days")]).toEqual([0, 5, 12, 18, 21])
+    expect([...implicitTextTerms("budget 1.5 size:>2")]).toEqual([0, 7])
   })
 })

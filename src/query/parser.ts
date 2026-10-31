@@ -332,7 +332,7 @@ export const implicitTextTerms = (text: string): Set<number> => {
   if (tokens.some(({ kind }) => ["AND", "OR", "NOT", "+", "-", "!", "(", ")"].includes(kind))) return new Set()
   return new Set(
     tokens.flatMap((token, index) =>
-      token.kind === "term" &&
+      (token.kind === "term" || token.kind === "number") &&
       ![":", "=", "<", ">", "<=", ">="].includes(tokens[index - 1]?.kind ?? "") &&
       ![":", "=", "<", ">", "<=", ">="].includes(tokens[index + 1]?.kind ?? "")
         ? [token.span.start]
