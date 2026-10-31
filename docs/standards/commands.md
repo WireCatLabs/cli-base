@@ -212,10 +212,9 @@ store or files without reading the service first (`remote: "none"`, `local: "wri
 - **Example:** `annotate(send, { effects: { remote: "write", local: "write" } })`. Each side is `none`, `read` or
   `write`. A sync that reads the service and writes the local store is `{ remote: "read", local: "write" }`.
 - **Exceptions:** none. Without `effects`, the error handler never marks a failure safe to retry, and a next step
-  that runs the command is never safe to run unasked. Known gap, as of 2026-10-27: cli-base's `writes()`
-  (`src/standards/effects.ts`) still counts every local write as a write, so cli-core's MCP router serves `sync` and
-  `calendars list` through the `write` tool. The follow-up makes `writes()` true for `remote: "write"`, or for
-  `local: "write"` when `remote` is `none`.
+  that runs the command is never safe to run unasked. cli-base's `writes()` (`src/standards/effects.ts`) still
+  counts every local write as a write; cli-core's MCP router adds its own `fetchesOnly` test (cli-core 0.468.0), so
+  `sync` and `calendars list` run through `read`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (what counts as a read: cli-base 0.65.0). **Rulings:** the
   owner's ruling on what counts as a read over MCP (2026-10-27).
 
@@ -277,7 +276,9 @@ store or files without reading the service first (`remote: "none"`, `local: "wri
 - **Why:** a wire field, a port or an adapter name means nothing to the person reading help.
 - **Enforced by:** review only.
 - **Example:** an option says what it changes and its unit: `--pause <duration>` "wait this long between pages".
-- **Exceptions:** none.
+- **Exceptions:** generated commands (`bot api`, gcal's and drive's `api`) keep the help their API description
+  gives, such as Google's full sentences for `gcal api calendar-acl-delete --calendar-id`; rewriting it by hand would
+  drift from the API on the next regeneration.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CMD-24 · Give every leaf command one to three examples that run as written

@@ -239,7 +239,7 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
 
 - **Why:** user pages feed the docs site, so their Markdown form is checked more closely than developer notes.
 - **Enforced by:** `tg-cli: pnpm docs:check` · `max-cli: pnpm docs:check` · `whatsapp-cli: pnpm docs:check` ·
-  `zoom-cli: pnpm docs:check` · `cli-testing: pnpm docs:check`.
+  `zoom-cli: pnpm docs:check` · `gcal-cli: pnpm docs:check` · `cli-testing: pnpm docs:check`.
 - **Example:** `rumdl check --config config/wirecat/rumdl.toml README.md docs/*.md`, inside `docs:check`. The preset
   turns off line length (MD013), first-line heading (MD041) and relative links (MD057), because other checks cover
   them.
