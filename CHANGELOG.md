@@ -14,6 +14,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **WC-SECR-24 says how to hide the keyring from a run.** Set `DBUS_SESSION_BUS_ADDRESS=disabled:`. Removing the
   variable, as the rule said before, still reaches the keyring through the default session bus.
+- **WC-TOOL-6 counts cli-template's Node 22 job.** cli-template 0.11.0 runs its tests on Node 22.16.0, and a CLI made
+  from it gets the job with `upgrade`; only CLIs made from an older template still lack it.
 - **Five rules answer what cli-template's 0.10.0 audit found unclear.** WC-SECR-20 names the release `tag` job,
   which keeps its credentials to push the tag. WC-TOOL-6 lists cli-template and its CLIs among those that do not run
   Node 22 yet. WC-PERM-22 says a template-made CLI calls `commandPermissions` with its first command that writes to a

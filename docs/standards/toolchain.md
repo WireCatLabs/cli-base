@@ -89,10 +89,12 @@ plus community itself. cli-template follows every rule here as a CLI does
   Node 22 from 22.16.0, then 24 and later. Full validation runs on Node 24. `bun test` cannot run the vitest suite, so
   `scripts/smoke.ts` runs the built exports with plain assertions, and the Bun job runs it
   (`pnpm build && pnpm smoke:bun`). A new entry point gets a line there. Node 22 runs in the Windows install matrix of
-  tg, max and wa, in zoom's full validation and in cli-core's old-Node job.
-- **Exceptions:** cli-docs and community publish no runtime package. tg needs `^22.19.0`. memo, drive, cli-base,
-  cli-template and the CLIs made from it do not run Node 22 in any workflow yet, and cli-base's own `engines` is still `>=22`. The unit suite runs on Windows
-  and macOS for tg, max and drive (`platforms: true`); zoom and memo still fail tests there, so theirs is off.
+  tg, max and wa, in zoom's full validation, in cli-core's old-Node job and in cli-template's `node-22` job (Node
+  22.16.0, from cli-template 0.11.0), which a CLI made from the template gets with `upgrade`.
+- **Exceptions:** cli-docs and community publish no runtime package. tg needs `^22.19.0`. memo, drive, cli-base and
+  the CLIs made from a template before 0.11.0 do not run Node 22 in any workflow yet; gcal is adding its own job.
+  cli-base's own `engines` is still `>=22`. The unit suite runs on Windows and macOS for tg, max and drive
+  (`platforms: true`); zoom and memo still fail tests there, so theirs is off.
 - **Applies to:** the CLIs, cli-core and cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-11.
 
 ### WC-TOOL-7 · Let Biome format the code, and do not format by hand
