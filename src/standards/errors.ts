@@ -75,6 +75,12 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
   { reason: "access.denied", code: "permission_error", message: "this account may not do that", details: [] },
   { reason: "item.not-found", code: "not_found", message: "nothing found by that name", details: [] },
   {
+    reason: "tool.not-installed",
+    code: "not_found",
+    message: "no wcat-<name> program by that name is on PATH",
+    details: ["tool", "installed"],
+  },
+  {
     reason: "confirmation.required",
     code: "confirmation_required",
     message: "this changes something; confirm it",

@@ -7,7 +7,7 @@ lifetime it declares, the entity it prints, the query language for lists, the `m
 
 Rule ids on this page are `WC-CMD-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). What a command prints is on the [output](output.md) page. How long it runs and how it ends is on
-the [lifecycle](lifecycle.md) page.
+the [lifecycle](lifecycle.md) page. How a CLI joins the `wcat` command is under "Joining `wcat`" below.
 
 The words themselves are not copied here. They live in the cli-base registries, and `cli-dev lint` reads them from
 there:
@@ -359,6 +359,25 @@ The references, each for its own part:
   Agent Client Protocol links an editor to a coding agent; a WireCat CLI is a tool an agent calls, so it adds no
   requirement.
 - **Applies to:** all CLIs. **Since:** cli-base 0.43.0. **Rulings:** none.
+
+## Joining `wcat`
+
+### WC-CMD-29 · Answer `--wcat-describe`, and take no name WireCat reserves
+
+- **Why:** `wcat <name>` runs any `wcat-<name>` program on PATH, and `wcat --help` lists each one with what it says
+  about itself. A name WireCat reserves would be taken over by WireCat's own tool or by a `wcat` command.
+- **Enforced by:** `src/dev/wcat-lint.ts`.
+- **Example:** the bin's first call is `wcatStart({ command: "gcal", version, description, docs })` from
+  `@wirecat/cli-base/wcat/start`. `wcat-gcal --wcat-describe` then prints
+  `{"wcat_describe":1,"name":"gcal","version":"1.2.0","description":"…","docs_url":"…"}`. `cli-dev lint` warns when a
+  `"bin"` key does not start with `wcat-`, when a package outside `@wirecat/` takes a name from `RESERVED_NAMES` in
+  `@wirecat/cli-base/wcat` (`tg`, `max`, `wa`, `zm`, `drive`, `memo`, `mail`, `email`, `wcat` and the built-in commands
+  `help`, `version`, `shortcuts`, `doctor`, `update`, `upgrade`, `app`), and, with `--cli`, when the built CLI does not
+  answer `--wcat-describe`.
+- **Exceptions:** a CLI keeps its short `"bin"` name beside `wcat-<name>` until callers have moved to the new name; the
+  warning stays until then.
+- **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** cli-base 0.66.0. **Rulings:** NEED-149,
+  NEED-153, NEED-154.
 
 ## Sources
 

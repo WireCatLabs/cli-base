@@ -24,6 +24,8 @@ review guidelines for module size. The entry-point map below applies it to this 
 | `/skill` | the CLI's SKILL.md for agents: the `skill` command, the daily hint, the MCP resource | Commander at runtime, `/update`'s state file, the root's `Renderer` and `Streams` types |
 | `/mcp` | local stdio MCP entry setup and a handshake probe | Node child processes; no messenger or MCP SDK dependency |
 | `/standards` | the registries of the shared standard: vocabulary, envelope, error object and reasons, next steps, log record, lint rules | `valibot`, `@valibot/to-json-schema`; the root's error codes |
+| `/wcat` | the `wcat` umbrella: dispatching to `wcat-<name>` programs, `--wcat-describe`, the launcher and the shortcuts | Node built-ins, `cross-spawn`; the root's errors and failure rendering, loaded only when `wcat` itself runs |
+| `/wcat/start` | `wcatStart`, a CLI's first call: describe, dispatch mode, the launcher check | Node built-ins; the dispatcher only in dispatch mode |
 | `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock`, `allowNetwork` | the root |
 | `/testing/setup` | a vitest `setupFiles` entry: per-file sandbox, a keyring that throws, no network | `vitest` (optional peer) |
 

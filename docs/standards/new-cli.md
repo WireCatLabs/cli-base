@@ -70,6 +70,32 @@ A template-owned page that is wrong for this CLI is a gap in cli-template, under
 wrong sentence: fix it there, and `upgrade` brings the fix. Change it in the CLI only where the CLI must differ for
 good; `upgrade` then asks before it touches the change.
 
+## Naming the CLI and joining `wcat`
+
+`wcat <name> …` runs a command named `wcat-<name>` from PATH, the way `git foo` runs `git-foo`. Any CLI joins by
+installing that command; nothing else is registered anywhere.
+
+- **The name.** Lower-case letters, digits and `-`, starting with a letter. WireCat reserves its own tools' names and
+  `wcat`'s built-in commands: `RESERVED_NAMES` in `@wirecat/cli-base/wcat` holds the list, and
+  [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves) asks a CLI outside
+  WireCat not to take one.
+- **The command.** `"bin": { "wcat-<name>": "dist/bin/<name>.js" }`. `cli-dev lint` warns about a `"bin"` key without
+  the `wcat-` prefix. The template still writes the short name, and moves to `wcat-<name>` in a later release.
+- **The description `wcat --help` shows.** Call `wcatStart` first in the bin, before the program loads:
+
+  ```ts
+  import { wcatStart } from "@wirecat/cli-base/wcat/start"
+
+  const { code } = await wcatStart({ command: "gcal", version, description, docs: "https://example.com/gcal" })
+  if (code !== undefined) process.exitCode = code
+  else await startCli(…)
+  ```
+
+  It answers `--wcat-describe`, runs `wcat` when the `wcat` launcher starts the tool, and on any other start makes sure
+  the `wcat` launcher in the tool's bin folder works. `cli-dev lint --cli` warns when the built CLI does not answer.
+- **The short name.** `wcat shortcuts add <name>` makes `<name>` a shortcut to `wcat-<name>`, only when no program on
+  PATH has that name. A CLI does not install its short name itself.
+
 ## Four steps that need a person
 
 `new` prints these at the end.

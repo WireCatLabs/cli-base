@@ -8,6 +8,32 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.66.0 — 31.10.2026
+
+### Added
+
+- **`wcat`, one command that runs every tool: `wcat tg …` runs `wcat-tg …`** (`@wirecat/cli-base/wcat`). Another
+  program named `tg` or `drive` can sit earlier on PATH, and an agent or a script then runs it without any sign; a
+  `wcat-<name>` name is the tool's alone. Any `wcat-<name>` program on PATH joins, ours or not. `wcat --help` lists
+  what is installed with each tool's description, the WireCat tools that are not, with their install commands, and
+  warns when two programs share a name; `--json` prints the list. Built-in names (`help`, `version`, `shortcuts`,
+  `doctor`, `update`, `upgrade`, `app`) always belong to `wcat`. An unknown tool is `not_found` with the new reason
+  `tool.not-installed`. Nothing changes for a CLI until it calls `wcatStart`.
+- **`wcatStart(tool)` from `@wirecat/cli-base/wcat/start`, the first call in a CLI's bin.** It answers
+  `--wcat-describe` with the tool's name, version, description and docs page, runs `wcat` when the `wcat` launcher
+  starts the tool, and on any other start makes sure the `wcat` launcher in the tool's global bin folder works. The
+  launcher is a small marked script that starts an installed `wcat-<tool>` by name (a `.cmd` and `.ps1` pair on
+  Windows), never a link into a package folder, which pnpm renames on every upgrade. A file named `wcat` that
+  cli-base did not write is never touched. When the launcher works, the check costs a few `stat` calls; it loads
+  only Node built-ins. Call it before `startCli`, and set `process.exitCode` to the `code` it returns.
+- **`wcat shortcuts`, and `listShortcuts`, `addShortcuts` and `removeShortcuts` for a program.** A tool's short name,
+  such as `tg`, is made only when no program on PATH has it, and only shortcuts cli-base made are removed. A short
+  name the tool's package installs itself shows as `package` and is left to the package manager.
+- **`RESERVED_NAMES` and a `cli-dev lint` warning for joining `wcat`** ([WC-CMD-29](docs/standards/commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves)).
+  The lint warns when a `"bin"` key does not start with `wcat-`, when a package outside `@wirecat/` takes a reserved
+  name, and, with `--cli`, when the built CLI does not answer `--wcat-describe`. The warnings do not fail the run:
+  every CLI still installs its short name today.
+
 ## 0.65.5 — 31.10.2026
 
 ### Added

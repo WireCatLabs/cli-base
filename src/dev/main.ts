@@ -48,6 +48,7 @@ import { nextVersion } from "./next-version.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
 import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested } from "./test-matrix.js"
+import { binNameWarnings, describeWarnings, type WcatWarning } from "./wcat-lint.js"
 
 export interface DevIo {
   cwd: string
@@ -299,27 +300,8 @@ const PROBE_FLAG = "--cli-dev-run-log-probe"
  * kept. The CLI sees a new empty home and nothing else from this environment: a stray `*_STATE_DIR` or
  * `XDG_STATE_HOME` would point it at the owner's real runs.
  */
-export const probeRunLog = (cwd: string, bin: string, environment: NodeJS.ProcessEnv = process.env): RunLogProbe => {
-  const home = mkdtempSync(join(tmpdir(), "cli-dev-run-log-"))
-  const env: NodeJS.ProcessEnv = {
-    PATH: environment.PATH ?? "",
-    HOME: home,
-    USERPROFILE: home,
-    APPDATA: join(home, "AppData", "Roaming"),
-    LOCALAPPDATA: join(home, "AppData", "Local"),
-    CI: "true",
-    ...(environment.SystemRoot ? { SystemRoot: environment.SystemRoot } : {}),
-  }
-  const script = /\.[cm]?js$/.test(bin)
-  const call = (args: string[]) =>
-    spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), ...args], {
-      cwd,
-      env,
-      encoding: "utf8",
-      timeout: 60_000,
-      maxBuffer: 16 * 1024 * 1024,
-    })
-  try {
+export const probeRunLog = (cwd: string, bin: string, environment: NodeJS.ProcessEnv = process.env): RunLogProbe =>
+  inEmptyHome(cwd, bin, environment, (call) => {
     const failed = call([PROBE_FLAG])
     if (failed.status === 0) return { kept: false, detail: `\`${PROBE_FLAG}\` did not fail, so nothing could be kept` }
     const listed = call(["runs", "list", "--json"])
@@ -333,6 +315,38 @@ export const probeRunLog = (cwd: string, bin: string, environment: NodeJS.Proces
     }
     const kept = Array.isArray(items) && items.some((item) => (item as { status?: unknown })?.status === "failed")
     return kept ? { kept } : { kept, detail: `\`runs list --json\` shows no failed run after \`${PROBE_FLAG}\`` }
+  })
+
+type HomeCall = (args: string[]) => ReturnType<typeof spawn.sync>
+
+/** Runs the built CLI in a new empty home with only PATH from this environment, and removes the home after. */
+export const inEmptyHome = <T>(
+  cwd: string,
+  bin: string,
+  environment: NodeJS.ProcessEnv,
+  body: (call: HomeCall) => T,
+): T => {
+  const home = mkdtempSync(join(tmpdir(), "cli-dev-run-log-"))
+  const env: NodeJS.ProcessEnv = {
+    PATH: environment.PATH ?? "",
+    HOME: home,
+    USERPROFILE: home,
+    APPDATA: join(home, "AppData", "Roaming"),
+    LOCALAPPDATA: join(home, "AppData", "Local"),
+    CI: "true",
+    ...(environment.SystemRoot ? { SystemRoot: environment.SystemRoot } : {}),
+  }
+  const script = /\.[cm]?js$/.test(bin)
+  const call: HomeCall = (args) =>
+    spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), ...args], {
+      cwd,
+      env,
+      encoding: "utf8",
+      timeout: 60_000,
+      maxBuffer: 16 * 1024 * 1024,
+    })
+  try {
+    return body(call)
   } finally {
     rmSync(home, { recursive: true, force: true })
   }
@@ -451,7 +465,18 @@ const lintRun = (args: string[], io: DevIo) => {
   io.err(
     `lint: ${violations.length} violations — ${verdict.baselined} in the baseline, ${verdict.overridden} overridden (budget ${budget}), ${verdict.fresh.length} new`,
   )
+  for (const warning of wcatWarnings(io.cwd, values.cli))
+    io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
   return report(io, problems, "lint: ok")
+}
+
+const wcatWarnings = (cwd: string, cli: string | undefined): WcatWarning[] => {
+  const pkgPath = join(cwd, "package.json")
+  const pkg = existsSync(pkgPath) ? (readJson(pkgPath) as { name?: unknown; bin?: unknown }) : {}
+  return [
+    ...binNameWarnings(pkg),
+    ...(cli ? describeWarnings(inEmptyHome(cwd, cli, process.env, (call) => call(["--wcat-describe"]))) : []),
+  ]
 }
 
 const byCli = (pairs: readonly string[] | undefined, flag: string): Map<string, string> =>

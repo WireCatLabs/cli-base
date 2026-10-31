@@ -187,6 +187,10 @@ operation and never falls back to `any`. 64-bit integers stay exact.
 - **Update checks that never update unasked.** Which package manager installed the CLI, the command that updates it,
   and a daily notice only when a person is at a terminal. A tool holding someone's credentials does not change itself.
 - **Release checks** every CLI shares: changelog shape, dead links, package contents, versions in step.
+- **`wcat`, one command for every tool.** `wcat tg …` runs `wcat-tg …`, like `git foo` runs `git-foo`, and any
+  `wcat-<name>` program on PATH joins. `wcat --help` lists what is installed with each tool's description;
+  `wcat shortcuts add` gives a tool its short name only where no other program has it. Each tool keeps the `wcat`
+  launcher working on start, at the cost of a few `stat` calls.
 
 ## Engineering
 

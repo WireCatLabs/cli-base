@@ -13,6 +13,9 @@ data, code generation from OpenAPI and Google Discovery, release checks and the 
 ## In progress
 
 - **A lint rule that every hand-written list takes a query.**
+- **Unique `wcat-<name>` commands.** `wcat` and `wcat shortcuts` work today for a CLI that calls `wcatStart`. Next,
+  each CLI installs `wcat-<name>` beside its short name, docs and agent guides move to `wcat <tool> …`, and the short
+  `"bin"` goes; the `cli-dev lint` warning then becomes a failure.
 
 ## Next
 

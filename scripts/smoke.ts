@@ -40,6 +40,7 @@ import { setupArguments } from "../src/mcp/index.js"
 import { fakeClock } from "../src/testing/index.js"
 import { installNetworkGuard } from "../src/testing/network.js"
 import { installerOf, isNewer } from "../src/update/index.js"
+import { wcatStart } from "../src/wcat/start.js"
 
 const ESCAPE = String.fromCharCode(27)
 checkMcpImport()
@@ -202,6 +203,30 @@ try {
 } catch (error) {
   check("HTTP JSON reports its byte limit", error instanceof CliError && error.code === "invalid_response")
 }
+
+const wcatDir = mkdtempSync(join(tmpdir(), "cli-base-smoke-wcat-"))
+let describeAnswerText = ""
+check(
+  "wcat-<name> --wcat-describe answers from the tool's metadata",
+  (
+    await wcatStart(
+      { command: "smoke", version: "1.0.0", description: "smoke tool" },
+      {
+        argv: ["node", "wcat-smoke", "--wcat-describe"],
+        stdout: { write: (text: string) => (describeAnswerText += text) },
+      },
+    )
+  ).code === 0 && JSON.parse(describeAnswerText).name === "smoke",
+)
+check(
+  "wcatStart leaves a checkout's bin folder alone",
+  (
+    await wcatStart(
+      { command: "smoke", version: "1.0.0", description: "smoke tool" },
+      { argv: ["node", join(wcatDir, "wcat-smoke")], script: join(wcatDir, "dist", "start.js") },
+    )
+  ).launcher === undefined,
+)
 
 // The setup file itself needs vitest, which Bun cannot run; the guard it installs is checked here, last.
 installNetworkGuard()
