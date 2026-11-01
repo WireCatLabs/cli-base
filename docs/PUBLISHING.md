@@ -179,7 +179,8 @@ describe that login.
 **Proof.** `https://registry.modelcontextprotocol.io/v0/servers?search=dev.wirecat` shows each server's latest
 version.
 
-The template has no registry jobs; a CLI that serves MCP copies them from tg-cli's `release.yml`.
+The template carries both jobs from 0.12.0, and they skip a CLI without `server.json`. `new` makes `server.json` (a
+seed) and sets `mcpName` for a WireCatLabs CLI; an older CLI adds both itself and takes the jobs from `upgrade`.
 
 ## Claude Code plugins
 
@@ -251,7 +252,8 @@ release through CI:
 - [ ] npm: GitHub environment `npm` limited to `main`; trusted publisher names environment `npm`
 - [ ] ClawHub: `metadata.openclaw` in `SKILL.md`; `CLAWHUB_SLUG: wirecat-<cmd>` in `release.yml`; set the category
   after the first publish
-- [ ] MCP Registry, if it serves MCP: `server.json`, `mcpName`, the two jobs copied from tg-cli
+- [ ] MCP Registry: `server.json` and `mcpName` (made by `new` from cli-template 0.12.0; added by hand before that);
+  the jobs come with the template
 - [ ] claude-plugins: a pull request adding `plugins/wirecat-<cmd>/`
 - [ ] cli-docs: a `tools.json` entry (also puts the skill in the wirecat.dev index), and the skills page's lists
 - [ ] Glama, if it serves MCP: `glama.json` and `Dockerfile`, then the owner lists it
@@ -267,14 +269,13 @@ release through CI:
 | zoom | yes | 1.0.1 | yes | yes | yes | listed |
 | drive | yes | 1.0.0 | yes | yes | yes | not listed |
 | memo | yes | 1.0.4, suspicious | yes | yes | yes | not listed |
-| gcal | yes | 1.0.0 pending ([#4046](https://github.com/openclaw/clawhub/issues/4046)) | no files | yes | yes | no files |
-| mail | 0.1.0, no provenance (first version by hand) | not yet; no `metadata.openclaw` | no files | no | no | no files |
+| gcal | yes | 1.0.0 pending ([#4046](https://github.com/openclaw/clawhub/issues/4046)) | from its next release | yes | yes | no files |
+| mail | 0.1.0, no provenance (first version by hand) | from its first CI release | from its first CI release | yes | after cli-docs#463 | no files |
 
 Open:
 
-- mail-cli lacks every item of [A new CLI](#a-new-cli) but npm; its first CI release would publish `wirecat-mail` to
-  ClawHub without the install block.
-- gcal-cli has no MCP Registry files.
+- mail-cli's first release through CI publishes it to ClawHub and the MCP Registry; the site lists it once
+  cli-docs#463 merges.
 - How the ClawHub token is created, its scope and expiry, and how a second member joins `wirecat` are not written
   down.
 - `CLAWHUB_TOKEN` and `MCP_REGISTRY_PRIVATE_KEY` are visible to every repository of the organization, so anyone who
