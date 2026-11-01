@@ -14,8 +14,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **Mail words in the vocabulary: the `drafts` resource and `--cc`, `--bcc`, `--reply-all`.** mail-cli saves drafts
   in a mailbox's Drafts folder (`mail <profile> drafts list|create|update|delete`) and addresses e-mail with copies;
-  the command lint reported each as a word it did not know. `--to` (`<chat>`) and `--subject` (`<ref>`) keep their
-  meanings here: an e-mail address and a subject line are a second meaning of each, which the owner decides.
+  the command lint reported each as a word it did not know.
+- **`--to` takes a chat or an e-mail address, `--subject` takes a reference or a subject line.** The owner ruled
+  (NEED-2113) that mail shares these two words with the messengers and notes instead of renaming them. `--to` is now
+  `<chat|address>`, a `string` (was an `id`); `--subject` is `<ref|text>`. The meaning per domain is in each flag's
+  text, so `flag-two-meanings` stops reporting mail's use. Mail-cli can drop its overrides for both.
 
 ### Fixed
 
