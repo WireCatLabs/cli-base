@@ -8,6 +8,20 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.71.0 — 01.11.2026
+
+### Added
+
+- **A vocabulary flag can list the value names other domains give it (`otherValues`).** `--to` stays `<chat>` and also
+  takes `<address>` (mail); `--subject` stays `<ref>` and also takes `<text>`. `flag-two-meanings` accepts those and
+  reports any other value name. A CLI that declares `--to <address>` or `--subject <text>` needs no override.
+
+### Fixed
+
+- **0.70.0 made every messenger CLI fail `flag-two-meanings`.** It wrote `--to` as `<chat|address>` and `--subject`
+  as `<ref|text>`, and the lint compares the value name as written, so `--to <chat>` was reported. Both go back to
+  the original value name, and mail's names are listed beside them. Do not use 0.70.0.
+
 ## 0.70.0 — 01.11.2026
 
 ### Added

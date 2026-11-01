@@ -286,7 +286,10 @@ const CHECKS: Record<string, Check> = {
   },
   "flag-two-meanings": (document, vocabulary) => {
     const registered = new Map(
-      vocabulary.flags.map((flag) => [flag.name, flag.value?.slice(1, -1).toLowerCase() ?? "switch"]),
+      vocabulary.flags.map((flag) => [
+        flag.name,
+        [flag.value?.slice(1, -1).toLowerCase() ?? "switch", ...(flag.otherValues ?? [])],
+      ]),
     )
     const uses = new Map<string, Map<string, string[]>>()
     const note = (option: OptionInfo, where: string) => {
@@ -301,8 +304,8 @@ const CHECKS: Record<string, Check> = {
     const found: Omit<Violation, "rule">[] = []
     for (const [name, kinds] of [...uses].sort(([a], [b]) => byText(a, b))) {
       const expected = registered.get(name)
-      const off = expected === undefined ? [] : [...kinds.keys()].filter((kind) => kind !== expected)
-      if (kinds.size < 2 && off.length === 0) continue
+      const off = expected === undefined ? [] : [...kinds.keys()].filter((kind) => !expected.includes(kind))
+      if (expected === undefined ? kinds.size < 2 : off.length === 0) continue
       const described = [...kinds]
         .map(([kind, where]) => `${kind === "switch" ? "a switch" : `<${kind}>`} in ${where.slice(0, 3).join(", ")}`)
         .join("; ")
@@ -311,7 +314,7 @@ const CHECKS: Record<string, Check> = {
         message:
           expected === undefined
             ? `${name} has ${kinds.size} meanings: ${described}`
-            : `${name} is ${expected === "switch" ? "a switch" : `<${expected}>`} in the vocabulary, but: ${described}`,
+            : `${name} is ${expected[0] === "switch" ? "a switch" : expected.map((kind) => `<${kind}>`).join(" or ")} in the vocabulary, but: ${described}`,
       })
     }
     return found
