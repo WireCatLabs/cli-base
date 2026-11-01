@@ -19,6 +19,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`markdownFiles` passes over a worktree or clone inside the checkout** (a folder with its own `.git`, such as
+  `.worktrees/<topic>`). Its pages are another branch's, and their broken links failed cli-template's release check.
+  Every CLI's `docs:check` gets this through its own `docs-rules.ts`, with no change there.
+
 - **`cli-dev docs-check` reads a heading's anchor as GitHub does when it has `<â€¦>` in code.** It dropped
   `` `v<version>` `` as an HTML tag and wanted `tag-v-only`, where GitHub makes `tag-vversion-only`. So a working link
   failed and a broken one passed. Two links in `architecture.md` were broken that way and are fixed. After this
