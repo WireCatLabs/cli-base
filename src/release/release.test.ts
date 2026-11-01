@@ -217,6 +217,19 @@ describe("markdownFiles", () => {
     expect(markdownFiles(root).sort()).toEqual([join(root, "README.md"), join(root, "linked.md")])
     rmSync(root, { recursive: true, force: true })
   })
+
+  it("passes over a worktree or clone inside the checkout", () => {
+    const root = mkdtempSync(join(tmpdir(), "markdown-files-"))
+    writeFileSync(join(root, "README.md"), "# x\n")
+    mkdirSync(join(root, ".worktrees", "other", "docs"), { recursive: true })
+    writeFileSync(join(root, ".worktrees", "other", ".git"), "gitdir: elsewhere\n")
+    writeFileSync(join(root, ".worktrees", "other", "docs", "page.md"), "[x](missing.md)\n")
+    mkdirSync(join(root, "docs"))
+    writeFileSync(join(root, "docs", "page.md"), "# y\n")
+
+    expect(markdownFiles(root).sort()).toEqual([join(root, "README.md"), join(root, "docs", "page.md")])
+    rmSync(root, { recursive: true, force: true })
+  })
 })
 
 describe("docsProblems", () => {

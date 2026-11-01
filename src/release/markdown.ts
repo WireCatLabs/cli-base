@@ -134,7 +134,10 @@ const anchorsOf = (text: string) => {
   return anchors
 }
 
-/** Every `.md` under `directory`, not descending into a directory named in `skip`. */
+/**
+ * Every `.md` under `directory`, not descending into a directory named in `skip`, nor into one with its own `.git`:
+ * a worktree or clone inside the checkout is another branch's files, and its broken links are not this one's.
+ */
 export const markdownFiles = (directory: string, skip: ReadonlySet<string> = new Set()): string[] =>
   existsSync(directory)
     ? readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -143,7 +146,8 @@ export const markdownFiles = (directory: string, skip: ReadonlySet<string> = new
         // stat, not the entry's own type: Claude Code's sandbox mounts character devices over names
         // like .claude/loop.md, and the directory listing still reports what lies underneath.
         const stats = statSync(path, { throwIfNoEntry: false })
-        if (entry.isDirectory() && stats?.isDirectory()) return markdownFiles(path, skip)
+        if (entry.isDirectory() && stats?.isDirectory())
+          return existsSync(join(path, ".git")) ? [] : markdownFiles(path, skip)
         return stats?.isFile() && entry.name.endsWith(".md") ? [path] : []
       })
     : []
