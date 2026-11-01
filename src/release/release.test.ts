@@ -200,6 +200,10 @@ describe("slug", () => {
   it("makes GitHub's anchor from a Russian heading with code in it", () => {
     expect(slug("Новые сообщения сразу: `max serve` и `max watch`")).toBe("новые-сообщения-сразу-max-serve-и-max-watch")
     expect(slug("Команды и чаты по `@`")).toBe("команды-и-чаты-по-")
+    expect(slug("WC-REL-13 · Tag `v<version>` only after npm shows that version")).toBe(
+      "wc-rel-13--tag-vversion-only-after-npm-shows-that-version",
+    )
+    expect(slug("Run <kbd>Ctrl</kbd> twice")).toBe("run-ctrl-twice")
   })
 })
 

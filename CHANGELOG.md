@@ -17,6 +17,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   prove a publish happened (three jobs go green without publishing), the problems met with their fixes, a checklist
   for a new CLI, and each CLI's status. `new-cli.md` points to the checklist.
 
+### Fixed
+
+- **`cli-dev docs-check` reads a heading's anchor as GitHub does when it has `<…>` in code.** It dropped
+  `` `v<version>` `` as an HTML tag and wanted `tag-v-only`, where GitHub makes `tag-vversion-only`. So a working link
+  failed and a broken one passed. Two links in `architecture.md` were broken that way and are fixed. After this
+  release a CLI's `docs:check` may find links of its own that never worked on GitHub.
+
 ## 0.68.1 — 31.10.2026
 
 ### Added

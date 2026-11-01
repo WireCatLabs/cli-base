@@ -121,7 +121,7 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Example:** in cli-core, `src/tasks/` and `src/meetings/` are entered only through their `index.ts`, `cli/`, `mcp/`
   and `testing/` entries; its `biome.json` refuses the rest. Every repository refuses `@wirecat/<package>/src/…` and `/dist/…` outside tests. A
   package's own entry points are its `exports`
-  ([WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcindexts)).
+  ([WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcnameindexts)).
 - **Exceptions:** a test inside a module may import what it tests; a test outside the module uses the entry point.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0.
   **Rulings:** none.
@@ -208,7 +208,7 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Why:** a CLI that only speaks a socket must not depend on an HTTP stack.
 - **Enforced by:** review only.
 - **Example:** a helper that reads a status code or a header goes to `@wirecat/cli-base/http`. How an entry point
-  is added is [WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcindexts).
+  is added is [WC-LAY-5](layout.md#wc-lay-5--add-an-entry-point-as-an-exports-entry-built-from-srcnameindexts).
 - **Exceptions:** none.
 - **Applies to:** cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-15.
 

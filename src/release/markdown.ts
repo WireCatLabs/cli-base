@@ -95,11 +95,16 @@ export const changelogProblems = (
   return problems
 }
 
-/** GitHub's heading anchor: lower case, only letters, digits, `-`, `_` and spaces kept, spaces to `-`. */
+/**
+ * GitHub's heading anchor: lower case, only letters, digits, `-`, `_` and spaces kept, spaces to `-`. An HTML tag is
+ * dropped, but `<…>` inside a code span is text: `v<version>` gives `vversion`.
+ */
 export const slug = (heading: string) =>
   heading
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/<[^>]+>/g, "")
+    .split(/(`[^`]*`)/)
+    .map((part) => (part.startsWith("`") ? part : part.replace(/<[^>]+>/g, "")))
+    .join("")
     .toLowerCase()
     .replace(/[^\p{L}\p{M}\p{N}\-_ ]/gu, "")
     .replace(/ /g, "-")

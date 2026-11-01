@@ -234,7 +234,7 @@ listed without either file.
 ## GitHub releases and wiki
 
 `release.yml`'s `tag` job creates `v<version>` and a GitHub release with the changelog section as its notes, after
-npm shows the version (WC-REL-13 in [Releases](standards/releases.md)).
+npm shows the version ([WC-REL-13](standards/releases.md#wc-rel-13--tag-vversion-only-after-npm-shows-that-version)).
 cli-docs' `clawhub.yml publish` uses the latest release tag. `wiki.yml` copies `docs/*.md` to the wiki on each push
 to `main`; the wiki exists only after its first page is saved by hand on GitHub.
 
