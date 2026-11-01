@@ -17,6 +17,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   the command lint reported each as a word it did not know. `--to` (`<chat>`) and `--subject` (`<ref>`) keep their
   meanings here: an e-mail address and a subject line are a second meaning of each, which the owner decides.
 
+### Fixed
+
+- **mail is compared in its own parity group, `mail-shared`, which leaves out `search`.** mail's `search messages` is
+  cli-core's mail search, a different command from the messengers' under the same path, and `audit --complete` took
+  its twenty-odd differences as inherited. mail is compared on every other shared root, and moves back into `all`
+  once its search is aligned with the messengers' or renamed.
+
 ## 0.69.0 â€” 01.11.2026
 
 ### Added
