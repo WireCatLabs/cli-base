@@ -1,6 +1,7 @@
 import * as v from "valibot"
 import { CALENDAR_FLAGS } from "./flags-calendar.js"
 import { HOW_FLAGS } from "./flags-how.js"
+import { MAIL_FLAGS } from "./flags-mail.js"
 import { WHAT_FLAGS } from "./flags-what.js"
 import { duplicates, parseRegistry, text, word } from "./registry.js"
 
@@ -225,6 +226,7 @@ const collections: [string, string][] = [
   ["chats", "conversations in a messenger"],
   ["contacts", "identities in a messenger's contact list"],
   ["messages", "posts in a messenger chat, or emails"],
+  ["drafts", "e-mails saved in a mailbox's Drafts folder, written and not sent"],
   ["polls", "polls in a chat"],
   ["reactions", "reactions to a message"],
   ["recipients", "who a message goes to"],
@@ -376,5 +378,5 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
   ],
   views: views.map(([entry, meaning]) => ({ word: entry, meaning })),
   roots: roots.map(([entry, meaning]) => ({ word: entry, meaning })),
-  flags: [...HOW_FLAGS, ...WHAT_FLAGS, ...CALENDAR_FLAGS],
+  flags: [...HOW_FLAGS, ...WHAT_FLAGS, ...CALENDAR_FLAGS, ...MAIL_FLAGS],
 })

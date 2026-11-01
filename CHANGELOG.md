@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **Mail words in the vocabulary: the `drafts` resource and `--cc`, `--bcc`, `--reply-all`.** mail-cli saves drafts
+  in a mailbox's Drafts folder (`mail <profile> drafts list|create|update|delete`) and addresses e-mail with copies;
+  the command lint reported each as a word it did not know. `--to` (`<chat>`) and `--subject` (`<ref>`) keep their
+  meanings here: an e-mail address and a subject line are a second meaning of each, which the owner decides.
+
 ### Changed
 
 - **mail is compared in its own parity group, `mail-shared`, which leaves out `search`.** mail's `search messages` is
