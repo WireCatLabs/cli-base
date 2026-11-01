@@ -446,7 +446,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "keep a token an operation returns only in this bot profile's keyring; never print it",
   },
   { name: "--task", value: "<id>", role: "target", type: "id", meaning: "a task, by id" },
-  { name: "--to", value: "<chat>", role: "target", type: "id", meaning: "the chat it goes to" },
+  {
+    name: "--to",
+    value: "<chat|address>",
+    role: "target",
+    type: "string",
+    meaning: "who it goes to: a chat in a messenger, an e-mail address in mail; repeat it for more addresses",
+  },
   {
     name: "--topic-name",
     value: "<name>",
@@ -893,10 +899,10 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   { name: "--sticker", value: "<id>", role: "value", type: "id", meaning: "send this sticker, alone" },
   {
     name: "--subject",
-    value: "<ref>",
+    value: "<ref|text>",
     role: "value",
     type: "string",
-    meaning: "what it is about, as a reference",
+    meaning: "what it is about: a reference in a note or task, the subject line in mail",
     replaces: ["--about"],
   },
   {
