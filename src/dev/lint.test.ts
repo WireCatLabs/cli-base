@@ -566,6 +566,21 @@ describe("lint rules", () => {
     )
   })
 
+  it("accepts the value names a vocabulary flag lists for other domains, and no others", () => {
+    const root = clean()
+    chatsOf(root).command("forward").description("forward").option("--to <chat>", "to a chat")
+    root
+      .command("mail")
+      .description("mail")
+      .command("send")
+      .description("send")
+      .option("--to <address>", "to an address")
+    const only = (found: { rule: string }) => found.rule === "flag-two-meanings"
+    expect(lintOf(root).filter(only)).toEqual([])
+    root.command("notes").description("notes").command("add").description("add").option("--to <person>", "to a person")
+    expect(lintOf(root).filter(only)[0]?.message).toMatch(/^--to is <chat> or <address> in the vocabulary, but:/)
+  })
+
   it("lists every kind a two-meaning flag takes", () => {
     const root = clean()
     root

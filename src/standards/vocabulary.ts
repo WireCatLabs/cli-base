@@ -53,6 +53,11 @@ const flagSchema = v.strictObject({
   type: v.picklist(FLAG_TYPES),
   role: v.picklist(Object.keys(FLAG_ROLES) as [FlagRole, ...FlagRole[]]),
   meaning: text,
+  /**
+   * Value names a domain other than the main one gives the flag, such as mail's `--to <address>` beside the
+   * messengers' `<chat>`. The meaning for each says which is which. `flag-two-meanings` accepts these and no others.
+   */
+  otherValues: v.optional(v.array(v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]*$/, "a value name such as address")))),
   unit: v.optional(text),
   /** Other names for the same flag, which `flag-synonym` refuses. */
   replaces: v.optional(v.array(v.pipe(v.string(), v.regex(/^--[a-z][a-z0-9]*(-[a-z0-9]+)*$/, "a long flag")))),

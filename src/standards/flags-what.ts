@@ -448,10 +448,11 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   { name: "--task", value: "<id>", role: "target", type: "id", meaning: "a task, by id" },
   {
     name: "--to",
-    value: "<chat|address>",
+    value: "<chat>",
     role: "target",
-    type: "string",
-    meaning: "who it goes to: a chat in a messenger, an e-mail address in mail; repeat it for more addresses",
+    type: "id",
+    otherValues: ["address"],
+    meaning: "who it goes to: a chat in a messenger (<chat>), an e-mail address in mail (<address>, repeated for more)",
   },
   {
     name: "--topic-name",
@@ -899,10 +900,11 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   { name: "--sticker", value: "<id>", role: "value", type: "id", meaning: "send this sticker, alone" },
   {
     name: "--subject",
-    value: "<ref|text>",
+    value: "<ref>",
     role: "value",
     type: "string",
-    meaning: "what it is about: a reference in a note or task, the subject line in mail",
+    otherValues: ["text"],
+    meaning: "what it is about: a reference in a note or task (<ref>), the subject line in mail (<text>)",
     replaces: ["--about"],
   },
   {
