@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Mail words in the vocabulary: the `drafts` resource and `--cc`, `--bcc`, `--reply-all`.** mail-cli saves drafts
+  in a mailbox's Drafts folder (`mail <profile> drafts list|create|update|delete`) and addresses e-mail with copies;
+  the command lint reported each as a word it did not know. `--to` (`<chat>`) and `--subject` (`<ref>`) keep their
+  meanings here: an e-mail address and a subject line are a second meaning of each, which the owner decides.
+
 ## 0.69.0 — 01.11.2026
 
 ### Added
