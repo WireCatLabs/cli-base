@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed
+
+- **mail is compared in its own parity group, `mail-shared`, which leaves out `search`.** mail's `search messages` is
+  cli-core's mail search, a different command from the messengers' under the same path, and `audit --complete` took
+  its twenty-odd differences as inherited. mail is compared on every other shared root, and moves back into `all`
+  once its search is aligned with the messengers' or renamed.
+
 ## 0.69.0 — 01.11.2026
 
 ### Added

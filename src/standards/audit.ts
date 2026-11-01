@@ -91,22 +91,37 @@ export const defineParityGroups = (input: unknown): ParityGroup[] =>
     ]),
   ])
 
+const MEMO_HAS_NO_PROFILES = [
+  "mcp serve",
+  "mcp revoke",
+  "mcp server start",
+  "mcp server status",
+  "mcp server stop",
+].map((path) => ({
+  rule: "same-path-contract",
+  target: `${path} --profiles`,
+  absent: "memo",
+  reason:
+    "memo has no profiles: it reads other CLIs' stores and selects their accounts with --source and --account " +
+    "(https://github.com/WireCatLabs/cli-base/issues/390)",
+}))
+
 export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   { name: "messengers", members: ["tg", "max"], covers: "tree", differences: [] },
   {
     name: "all",
-    members: ["tg", "max", "memo", "drive", "zm", "wa", "mail"],
+    members: ["tg", "max", "memo", "drive", "zm", "wa"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "search", "notes", "meetings"],
-    differences: ["mcp serve", "mcp revoke", "mcp server start", "mcp server status", "mcp server stop"].map(
-      (path) => ({
-        rule: "same-path-contract",
-        target: `${path} --profiles`,
-        absent: "memo",
-        reason:
-          "memo has no profiles: it reads other CLIs' stores and selects their accounts with --source and --account " +
-          "(https://github.com/WireCatLabs/cli-base/issues/390)",
-      }),
-    ),
+    differences: MEMO_HAS_NO_PROFILES,
+  },
+  // mail's `search messages` is cli-core's mail search, not the messengers' command: --complete took their 20-odd
+  // differences as inherited (https://github.com/WireCatLabs/cli-base/issues/390). mail is compared everywhere else
+  // and moves back into "all" once its search is aligned with the messengers' or renamed.
+  {
+    name: "mail-shared",
+    members: ["tg", "max", "memo", "drive", "zm", "wa", "mail"],
+    covers: ["commands", "doctor", "skill", "mcp", "upgrade", "notes", "meetings"],
+    differences: MEMO_HAS_NO_PROFILES,
   },
   // gcal is compared on what it already shares with every CLI; doctor, mcp, search and skill wait until the published
   // CLIs agree there (https://github.com/WireCatLabs/cli-base/issues/390), then gcal moves back into "all".
