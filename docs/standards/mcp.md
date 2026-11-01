@@ -80,6 +80,8 @@ A command that reads the service and only saves what it read into the owner's lo
 - **Enforced by:** `cli-core: src/mcp/mcp.test.ts` · `cli-core: src/mcp/output-schema.test.ts`.
 - **Example:** `max_read { "command": "messages send", … }` is refused. `gcal_read { "command": "sync" }` runs:
   cli-core counts a command that only fetches into the local store as a read (`fetchesOnly`, cli-core 0.468.0).
+  `gcal_read { "command": "events export", … }` runs too: its one write is the file `--output` names, and MCP tools
+  never offer `--output` (cli-core's `writesFileOnlyWith`).
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (what counts as a read: cli-base 0.65.0). **Rulings:** the
   owner's ruling on what counts as a read over MCP (2026-10-27).

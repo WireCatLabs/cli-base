@@ -44,7 +44,7 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Comparisons](comparisons.md) | `CMP` | 11 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
 | [Releases](releases.md) | `REL` | 15 | `bin/release`, the release lock, versions, the owner's yes, trusted publishing |
 | [CI](ci.md) | `CI` | 12 | Hooks, the pull request budget, full validation, monthly runs |
-| [Time](time.md) | `TIME` | 6 | UTC in the store and in answers, the zone at input and display edges, date-only filters, tests in another zone |
+| [Time](time.md) | `TIME` | 7 | UTC in the store and in answers, the zone at input and display edges, date-only filters, tests in another zone, the time in answers agents plan by |
 | [Style](style.md) | `STYLE` | 10 | Comments, TypeScript habits, commit messages |
 | [New CLI](new-cli.md) | — | — | Starting a new CLI from the template: the command, the four manual steps, the checks |
 | [Kit surface](kit-surface.md) | — | — | The cli-base and cli-core exports the template is built on, and how a change to one reaches you |

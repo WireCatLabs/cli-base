@@ -3,6 +3,7 @@ import { dirname, join } from "node:path"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import {
+  clockMeta,
   defineLogEvents,
   defineReasons,
   defineSteps,
@@ -17,6 +18,7 @@ import {
   LOG_EVENTS,
   listEnvelopeSchema,
   logRecordSchema,
+  metaSchema,
   RegistryError,
   STEPS,
   stepOf,
@@ -178,6 +180,19 @@ describe("output registry", () => {
         meta,
       }),
     ).toBe(true)
+  })
+
+  it("gives the time an answer was made in UTC and on the zone's wall clock", () => {
+    const at = Date.parse("2026-11-02T15:03:00.000Z")
+    expect(clockMeta(at, "Europe/Madrid")).toEqual({
+      now: "2026-11-02T15:03:00.000Z",
+      now_local: "2026-11-02T16:03:00.000+01:00",
+      timezone: "Europe/Madrid",
+    })
+    expect(clockMeta(at, "America/St_Johns").now_local).toBe("2026-11-02T11:33:00.000-03:30")
+    expect(clockMeta(at, "UTC").now_local).toBe("2026-11-02T15:03:00.000+00:00")
+    expect(v.is(metaSchema, { ...meta, ...clockMeta(at, "Asia/Kolkata") })).toBe(true)
+    expect(v.is(metaSchema, { ...meta, now: "2026-11-02T16:03:00+01:00" })).toBe(false)
   })
 
   it("accepts a missing entry with no step, and refuses an unknown key", () => {

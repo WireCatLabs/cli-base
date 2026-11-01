@@ -138,9 +138,11 @@ Every key of the document is snake_case.
 query positional and last, `[query...]`, over the entity's own snake_case keys. `queryFieldsOf(schema, annotations)`
 reads the fields from the entity's Valibot schema (string → `kw`, a list of choices → `enum`, number → `num`, `isoTime` →
 `time`, boolean → `bool`, `reference` → `ref`); annotations add the exceptions: words (`text`), relations,
-`is:` states, examples, the fields a provider filters natively. `parseLucene(text, { defaultField: "none",
+`is:` states, examples, the fields a provider filters natively, and those it can also leave out (`negatable`:
+`-event_type:birthday`). `parseLucene(text, { defaultField: "none",
 command })` refuses a bare word (`query.bare-word`); `validateQuery` checks names, operators, values and
-placement and names every field when one is unknown; `fieldsHelp` prints the help's Fields section;
+placement and names every field when one is unknown; `fieldsHelp` prints the help's Fields section, and `queryDescription` the same in one sentence for an input that
+has no help beside it, such as an MCP tool's `query`;
 `QUERY_REASONS` registers the errors. A list filters where its data lives — its store or the provider — and
 never in memory: `evaluate` exists to test those compilers against. `annotate(list, { output: { entity },
 query })` puts both in `commands --json`, where `cli-dev lint` reads them.

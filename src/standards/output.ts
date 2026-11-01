@@ -11,6 +11,12 @@ export const isoTime = v.pipe(
   v.endsWith("Z", "an ISO 8601 time in UTC, ending in `Z`"),
 )
 
+/** The same moment on the wall clock of a zone, with its offset: `2026-11-02T16:03:00.000+01:00` (WC-TIME-2). */
+export const localTime = v.pipe(
+  v.string(),
+  v.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/, "an ISO 8601 time with its offset"),
+)
+
 /** The typed name of a stored thing, `msg:telegram/1/2/3` or `note:42`: what every other command takes. */
 export const reference = v.pipe(v.string(), v.regex(/^[a-z]+:\S+$/, "a reference such as `note:42`"))
 
@@ -97,8 +103,31 @@ export const metaSchema = v.strictObject({
   issues: v.optional(v.array(issueSchema)),
   truncated: v.optional(v.boolean()),
   timezone: v.optional(text),
+  /** When the command answered, for an agent that plans from "now" (WC-TIME-7); `timezone` names the zone of `now_local`. */
+  now: v.optional(isoTime),
+  now_local: v.optional(localTime),
   window: v.optional(v.strictObject({ since: v.optional(isoTime), until: v.optional(isoTime) })),
 })
+
+const offsetOf = (at: number, zone: string): string => {
+  const name =
+    new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "longOffset" })
+      .formatToParts(at)
+      .find((part) => part.type === "timeZoneName")?.value ?? "GMT"
+  return name === "GMT" ? "+00:00" : name.slice(3)
+}
+
+/**
+ * `meta.now`, `meta.now_local` and `meta.timezone` for an answer an agent plans by (WC-TIME-7): the moment in UTC, the
+ * same moment on the zone's wall clock, and the zone.
+ */
+export const clockMeta = (at: number, zone: string): { now: string; now_local: string; timezone: string } => {
+  const offset = offsetOf(at, zone)
+  const sign = offset.startsWith("-") ? -1 : 1
+  const [hours = 0, minutes = 0] = offset.slice(1).split(":").map(Number)
+  const wall = new Date(at + sign * (hours * 60 + minutes) * 60_000).toISOString().slice(0, -1)
+  return { now: new Date(at).toISOString(), now_local: `${wall}${offset}`, timezone: zone }
+}
 
 const nextSteps = v.optional(v.pipe(v.array(nextStepSchema), v.maxLength(MAX_NEXT_STEPS)))
 
