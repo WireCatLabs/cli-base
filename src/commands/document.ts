@@ -37,6 +37,7 @@ const fieldInfoSchema = v.object({
   relation: v.optional(v.string()),
   native: v.optional(v.boolean()),
   placement: v.optional(v.literal("and")),
+  negatable: v.optional(v.boolean()),
 })
 
 const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({

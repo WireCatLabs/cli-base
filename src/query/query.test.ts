@@ -4,7 +4,7 @@ import { CliError } from "../errors.js"
 import { isoTime, reference } from "../standards/output.js"
 import { evaluate } from "./evaluate.js"
 import { type FieldSpec, type QueryRegistry, queryFieldsOf } from "./fields.js"
-import { fieldsHelp } from "./help.js"
+import { fieldsHelp, queryDescription } from "./help.js"
 import { parseLucene } from "./parser.js"
 import { defineQuery, describeQuery, exampleProblems, QUERY_REASONS } from "./registry.js"
 import { queryAstSchema } from "./types.js"
@@ -125,6 +125,28 @@ describe("validateQuery", () => {
         supported: ["state", "created_at"],
       })
     }
+  })
+
+  it("says which fields a native list can leave out, in its help and in one sentence for an MCP input", () => {
+    const native: QueryRegistry = {
+      ...registry,
+      backend: "native",
+      defaults: [],
+      fields: queryFieldsOf(task, { native: ["state", "created_at"], negatable: ["state"] }),
+    }
+    expect(native.fields.find((field) => field.name === "state")?.negatable).toBe(true)
+    expect(describeQuery(native).fields.find((field) => field.name === "state")).toMatchObject({ negatable: true })
+    expect(fieldsHelp(native)).toContain("Leave out: -state:value or NOT state:value, for state")
+    expect(queryDescription(native)).toBe(
+      "field:value terms joined by AND that narrow the list; -field:value or NOT field:value leaves out what " +
+        "matches, for state only; fields: state (open|done), created_at; e.g. state:open",
+    )
+    const plain = { ...native, fields: queryFieldsOf(task, { native: ["state"] }) }
+    expect(fieldsHelp(plain)).not.toContain("Leave out")
+    expect(queryDescription(plain)).toBe(
+      "field:value terms joined by AND that narrow the list; fields: state (open|done); e.g. state:open",
+    )
+    expect(queryDescription({ ...native, fields: queryFieldsOf(task, {}) })).toMatch(/filters by none yet/)
   })
 
   it("runs a field's own check under the command's name", () => {

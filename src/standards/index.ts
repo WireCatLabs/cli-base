@@ -24,6 +24,7 @@ export {
   traceIdOf,
 } from "./log.js"
 export {
+  clockMeta,
   type Issue,
   type ItemEnvelope,
   isoTime,
@@ -34,6 +35,7 @@ export {
   jsonlOf,
   type ListEnvelope,
   listEnvelopeSchema,
+  localTime,
   MAX_NEXT_STEPS,
   type Meta,
   type Missing,

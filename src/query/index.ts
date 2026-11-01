@@ -15,7 +15,7 @@ export {
   type QueryRegistry,
   queryFieldsOf,
 } from "./fields.js"
-export { fieldsHelp, QUERY_SYNTAX } from "./help.js"
+export { fieldsHelp, QUERY_SYNTAX, queryDescription } from "./help.js"
 export { implicitTextTerms, type ParseOptions, parseLucene } from "./parser.js"
 export {
   defineQuery,

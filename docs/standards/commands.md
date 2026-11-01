@@ -214,7 +214,10 @@ store or files without reading the service first (`remote: "none"`, `local: "wri
 - **Exceptions:** none. Without `effects`, the error handler never marks a failure safe to retry, and a next step
   that runs the command is never safe to run unasked. cli-base's `writes()` (`src/standards/effects.ts`) still
   counts every local write as a write; cli-core's MCP router adds its own `fetchesOnly` test (cli-core 0.468.0), so
-  `sync` and `calendars list` run through `read`.
+  `sync` and `calendars list` run through `read`. A command whose only local write is the file an owner-only option
+  names (`mcp: false`, such as `events export --output`) stays a write, and cli-core's `writesFileOnlyWith` marks it:
+  an MCP tool never offers the option, so it runs through `read`, and `<PREFIX>_READ_ONLY` refuses only a run that
+  gives the option.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0 (what counts as a read: cli-base 0.65.0). **Rulings:** the
   owner's ruling on what counts as a read over MCP (2026-10-27).
 

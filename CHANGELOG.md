@@ -8,6 +8,24 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A native list can say which fields it can leave out (`negatable`).** `queryFieldsOf(schema, { negatable: [...] })`
+  marks a field the source can also exclude with `-field:value` or `NOT field:value`; `commands --json` carries
+  `negatable: true` on it, and `fieldsHelp` adds a `Leave out:` line. Before, only the list's own code knew, so an
+  agent learned about `-event_type:birthday` from prose alone.
+- **`queryDescription(registry)`: a list's query in one sentence.** The terms it takes, which fields `-` can leave
+  out, and every field with its values: for an input that has no Fields section beside it, such as an MCP tool's
+  `query`.
+- **`meta.now`, `meta.now_local` and `clockMeta(now, zone)` (WC-TIME-7).** An answer an agent plans by can carry the
+  time it was made, in UTC and on the wall clock of the zone in use, beside `meta.timezone`. `metaSchema` accepts
+  both keys; `localTime` is the schema of the second.
+- **WC-CMD-17 and WC-MCP-4: a write that only an owner-only option asks for is a read over MCP.** `events export`
+  prints the `.ics` text, and writes a file only with `--output`, which MCP tools never offer; cli-core's
+  `writesFileOnlyWith` runs it through `read`, and the read-only lock refuses only a run that names a file.
+
 ## 0.71.0 — 01.11.2026
 
 ### Added

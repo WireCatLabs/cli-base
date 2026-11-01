@@ -30,6 +30,8 @@ export interface FieldSpec {
   native?: boolean
   /** `and`: only as a required term, never under OR or NOT — what a relation compiled to a sub-select needs. */
   placement?: "and"
+  /** On a native list, true when the source can also leave out what matches: `-field:value` or `NOT field:value`. */
+  negatable?: boolean
   /** Checks only this field needs; throw with `queryError`. */
   validate?: (node: Predicate) => void
 }
@@ -61,6 +63,8 @@ export interface FieldAnnotations {
   examples?: Readonly<Record<string, string>>
   /** On a native list, the keys the source filters. */
   native?: readonly string[]
+  /** On a native list, the keys the source can also leave out: `-event_type:birthday`. */
+  negatable?: readonly string[]
   validate?: Readonly<Record<string, (node: Predicate) => void>>
 }
 
@@ -121,11 +125,13 @@ export const queryFieldsOf = (schema: v.GenericSchema, annotations: FieldAnnotat
   const excluded = new Set(annotations.exclude ?? [])
   const words = new Set(annotations.text ?? [])
   const native = new Set(annotations.native ?? [])
+  const negatable = new Set(annotations.negatable ?? [])
   const finish = (field: Omit<FieldSpec, "operators" | "example"> & { example?: string }): FieldSpec => ({
     ...field,
     operators: OPERATORS_BY_TYPE[field.type],
     example: annotations.examples?.[field.name] ?? field.example ?? exampleOf(field.name, field.type, field.values),
     ...(native.has(field.name) ? { native: true } : {}),
+    ...(negatable.has(field.name) ? { negatable: true } : {}),
     ...(annotations.validate?.[field.name] ? { validate: annotations.validate[field.name] } : {}),
   })
   const own = Object.entries(entries).flatMap(([name, entry]) => {

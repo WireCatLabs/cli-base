@@ -98,6 +98,22 @@ repository that stores times has a test that writes the same input under two zon
 - **Exceptions:** a repository that keeps no time skips the second test.
 - **Applies to:** all CLIs, cli-core and cli-base. **Since:** cli-base 0.48.0. **Rulings:** none.
 
+### WC-TIME-7 · Give the time and the zone in use where an agent plans from "now"
+
+An answer an agent reads to plan or schedule — a calendar's events, a meeting's preparation, a setup check — carries
+`meta.now` (the moment it answered, in UTC), `meta.now_local` (the same moment with the offset of the zone in use) and
+`meta.timezone`. cli-base's `clockMeta(now, zone)` builds the three from the command's clock.
+
+- **Why:** a model does not know the time, and guesses "today" and "next Monday" from its training. A widely used Google
+  Calendar MCP server gives its agents a `get-current-time` tool for the same reason; an answer that already carries
+  the time needs no extra call.
+- **Enforced by:** review only.
+- **Example:** `gcal personal events list --json` answers with `"meta": { "now": "2026-11-02T15:03:00.000Z",
+  "now_local": "2026-11-02T16:03:00.000+01:00", "timezone": "Europe/Madrid", … }`.
+- **Exceptions:** an answer about something other than the owner's time (a list of profiles, a tool catalogue)
+  leaves them out. The clock is the command's injected one, so a test pins it.
+- **Applies to:** all CLIs. **Since:** cli-base 0.72.0. **Rulings:** none.
+
 ## Sources
 
 - The owner's ruling of 21.10.2026: every time is stored and exchanged in UTC, in every repository.
