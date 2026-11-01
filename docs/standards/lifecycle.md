@@ -210,8 +210,8 @@ before its deadline.
 - **Example:** `progressOf` from `@wirecat/cli-core/background` builds
   `{ job, profile, done, total, remaining, state, updated_at, cursor_age_ms }`, and `progressLine` prints it on one
   line in text. `state` is `partial` or `complete`; `total` and `remaining` are `null` when the source does not say how
-  much there is. memo's `mail status` answers with it, and the messenger CLIs' `store jobs show` answers with it as
-  `progress`.
+  much there is. The mail CLI's `mail <profile> status` answers with it, and the messenger CLIs' `store jobs show`
+  answers with it as `progress`.
 - **Exceptions:** none. drive and zm print no progress shape yet; that is a known gap. Whether the last scheduled run
   failed is a different question, answered by `recordRun` and `failingNotice` in cli-core's schedules.
 - **Applies to:** every CLI with a sync. **Since:** cli-base 0.43.0. **Rulings:** none.
