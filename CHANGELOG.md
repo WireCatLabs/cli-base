@@ -16,8 +16,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   ([WC-CMD-30](docs/standards/commands.md#wc-cmd-30--write-every-setting-into-the-config-file-with-its-default-and-list-them-all-in-config-show)).
   A CLI declares each scalar setting with its default and a description through cli-core's `DeclaredSetting`. It
   fills the missing ones whenever it writes the file anyway, and on `config migrate`. A plain read never rewrites the
-  file. The owner then finds and edits every setting in the file without the docs. memo follows it first; the
-  messenger CLIs and zm are listed as known gaps.
+  file. The owner then finds and edits every setting in the file without the docs. memo follows it first. The known
+  gaps now name what cli-core's shared settings cover (tg, max, wa, mail, gcal after their cli-core bump) and what is
+  left: those CLIs' own settings, drive's own `config` (no `migrate`, writes do not fill) and zm.
 
 ## 0.75.1 â€” 02.11.2026
 
