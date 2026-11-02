@@ -11,17 +11,15 @@ const leftOut = (fields: readonly FieldInfo[]) => fields.filter((field) => field
 const has = (fields: readonly FieldInfo[], operator: FieldInfo["operators"][number]) =>
   fields.some((field) => field.operators.includes(operator))
 
-// A provider takes only field:value joined by AND, so a native list advertises no OR and no grouping.
-const syntaxOf = (shown: readonly FieldInfo[], backend: QueryRegistry["backend"] | undefined): string => {
-  if (backend !== "native") return QUERY_SYNTAX
-  return [
+// Each form is offered only when a shown field takes it, and a provider takes no OR and no grouping.
+const syntaxOf = (shown: readonly FieldInfo[], backend: QueryRegistry["backend"] | undefined): string =>
+  [
     "field:value",
     ...(has(shown, "phrase") ? ['"a phrase"'] : []),
     ...(has(shown, "wildcard") ? ["word*"] : []),
-    "terms joined by AND",
+    ...(backend === "native" ? ["terms joined by AND"] : ["AND OR NOT", "( )"]),
     ...(has(shown, "range") ? ["[a TO b] · > >= < <="] : []),
   ].join(" · ")
-}
 
 const kindOf = (field: FieldInfo): string =>
   field.values ? `${field.type}: ${field.values.join("|")}` : `${field.type}: ${field.operators.join(", ")}`
@@ -68,7 +66,7 @@ export const queryDescription = (
             ? `; -field:value or NOT field:value leaves out what matches, for ${negatable.join(", ")} only`
             : ""
         }`
-      : "field:value terms that narrow the list (Lucene: AND OR NOT, -field:value, [a TO b], > <)"
+      : `field:value terms that narrow the list (Lucene: AND OR NOT, -field:value${has(shown, "range") ? ", [a TO b], > <" : ""})`
   const fields = shown.map((field) => (field.values ? `${field.name} (${field.values.join("|")})` : field.name))
   const defaults = registry.defaults?.length ? `; unless named: ${registry.defaults.join(" ")}` : ""
   return `${terms}; fields: ${fields.join(", ")}; e.g. ${shown[0]?.example ?? ""}${defaults}`

@@ -4,7 +4,7 @@ import { CliError } from "../errors.js"
 import { isoTime, reference } from "../standards/output.js"
 import { evaluate } from "./evaluate.js"
 import { type FieldSpec, type QueryRegistry, queryFieldsOf } from "./fields.js"
-import { fieldsHelp, queryDescription } from "./help.js"
+import { fieldsHelp, QUERY_SYNTAX, queryDescription } from "./help.js"
 import { parseLucene } from "./parser.js"
 import { defineQuery, describeQuery, exampleProblems, QUERY_REASONS } from "./registry.js"
 import { queryAstSchema } from "./types.js"
@@ -150,6 +150,16 @@ describe("validateQuery", () => {
       "field:value terms joined by AND that narrow the list; fields: state (open|done); e.g. state:open",
     )
     expect(queryDescription({ ...native, fields: queryFieldsOf(task, {}) })).toMatch(/filters by none yet/)
+  })
+
+  it("offers a stored list's wildcard and range forms only when one of its fields takes them", () => {
+    expect(fieldsHelp(registry).split("\n").at(-1)).toBe(`Syntax: ${QUERY_SYNTAX}`)
+    const whole = { ...registry, fields: registry.fields.filter((field) => ["state", "urgent"].includes(field.name)) }
+    expect(fieldsHelp(whole).split("\n").at(-1)).toBe("Syntax: field:value · AND OR NOT · ( )")
+    expect(queryDescription(whole)).toMatch(
+      /^field:value terms that narrow the list \(Lucene: AND OR NOT, -field:value\);/,
+    )
+    expect(queryDescription(registry)).toContain("[a TO b], > <")
   })
 
   it("runs a field's own check under the command's name", () => {

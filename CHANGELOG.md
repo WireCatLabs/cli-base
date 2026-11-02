@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **A list's help and MCP `query` description no longer offer `word*` or ranges that none of its fields takes.**
+  `fieldsHelp`'s `Syntax:` line on a `backend: "sql"` list now lists the phrase, `word*` and `[a TO b] · > >= < <=`
+  forms only when one of its shown fields takes them, as a native list's line already did; `AND OR NOT` and `( )`
+  stay. A list of whole values only (enum, bool) said it took both, and refused them. `queryDescription` drops
+  `[a TO b], > <` the same way. A list whose fields take every form prints the same line as before.
+
 ## 0.75.0 — 02.11.2026
 
 ### Fixed
