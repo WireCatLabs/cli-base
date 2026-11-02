@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The verb `remind`.** It tells the owner once about what starts soon: it prints it, or runs the owner's own
+  program for it. gcal's `events remind` uses it, for a scheduler (cron, a systemd timer) to run every few minutes, as
+  gcalcli's `remind` is run. Before, no verb said "tell me once": `watch` keeps a process running, and `send` writes
+  to a chat.
+
 ## 0.72.0 — 02.11.2026
 
 ### Added
