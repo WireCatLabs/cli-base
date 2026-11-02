@@ -384,6 +384,26 @@ The references, each for its own part:
 - **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** cli-base 0.66.0. **Rulings:** NEED-149,
   NEED-153, NEED-154.
 
+## Settings
+
+### WC-CMD-30 · Write every setting into the config file with its default, and list them all in `config show`
+
+A CLI declares each scalar setting once, with its default and one line that says what it does, through cli-core's
+`DeclaredSetting`. `config show` lists every declared setting with its value, its default and whether the file sets
+it. Whenever the CLI writes its config file anyway, and on an explicit `config migrate`, it adds each missing setting
+at its default with `withSettingDefaults`. It keeps the owner's values, their order and unknown keys, and creates no
+section. A plain read never rewrites the file.
+
+- **Why:** the owner finds and edits every setting in the file, without reading the docs to learn that it exists.
+- **Enforced by:** review only.
+- **Example:** `memo config migrate` adds `"agent_decisions": false` to a file that lacks it; `memo config show` lists
+  it as `false (default)`.
+- **Exceptions:** lists and sections that need fields no default can give (accounts, folders, permissions) get no
+  placeholder. A secret is never declared, since `config show` prints every value. Known gaps, as of 2026-11-03:
+  tg, max, wa, mail, gcal and drive list every setting with its source in `config show`, but their starter file holds
+  only five of them and nothing fills it later; zm declares nothing yet.
+- **Applies to:** all CLIs. **Since:** cli-base 0.76.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
