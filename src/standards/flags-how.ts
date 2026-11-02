@@ -284,6 +284,7 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "refuse if what it names has changed since it was read",
     replaces: ["--expected"],
   },
+  { name: "--full-history", role: "mode", type: "switch", meaning: "keep a chat's whole history, past its limits" },
   {
     name: "--for-everyone",
     role: "mode",
