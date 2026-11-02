@@ -288,6 +288,21 @@ Three things follow from it:
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.43.1. **Rulings:** none.
 
+### WC-OUT-24 · Offer a compact text form built from the same answer
+
+- **Why:** an agent pays for every key, quote and repeated chat reference it reads. One line per item says the same
+  thing in about half the bytes, with no script to format it.
+- **Enforced by:** `cli-core: src/cli/compact.test.ts`.
+- **Example:** `tg personal messages list 111 --compact` prints one line per item, columns joined by ` · `, the
+  reference first and the free text last. When every reference shares a prefix, a header line names it once and the
+  rows print only the tail. Text is kept on one line, with control and direction characters made visible, and cut at
+  400 characters with `…(+N)`; `--full` keeps it whole. What JSON says beside the items is kept as lines that start
+  with `# `: `# more:` from `page`, `# missing:` per `missing` entry, `# next:` per next step and `# complete: false`.
+  A row never starts with `# `, so no message text can pass for one of them. The footer goes to stdout with the
+  rows. `--compact` is refused with `--json`, `--jsonl` and `--brief`, never prompts, and exits as JSON would.
+- **Exceptions:** MCP tools answer JSON.
+- **Applies to:** CLIs that run on cli-core's `run()`. **Since:** cli-base 0.74.0. **Rulings:** NEED-2131.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

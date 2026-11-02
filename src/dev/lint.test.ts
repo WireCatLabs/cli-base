@@ -9,6 +9,7 @@ import { annotate, type CommandMeta } from "../commands/index.js"
 import type { QueryRegistry } from "../query/fields.js"
 import { LINT_RULES } from "../standards/lint.js"
 import { logAttributesJsonSchema } from "../standards/log.js"
+import { COMPACT_FLAG } from "../standards/output.js"
 import { jsonSchemaOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
@@ -564,6 +565,16 @@ describe("lint rules", () => {
         ["--context-before-time", "target"],
       ]),
     )
+  })
+
+  it("knows --compact as an output switch", () => {
+    const root = clean()
+    chatsOf(root).command("search").description("search chats").option(COMPACT_FLAG, "one line per chat")
+    expect(lintOf(root).filter((found) => found.rule === "option-role")).toEqual([])
+    expect(VOCABULARY.flags.find((flag) => flag.name === COMPACT_FLAG)).toMatchObject({
+      role: "output",
+      type: "switch",
+    })
   })
 
   it("accepts the value names a vocabulary flag lists for other domains, and no others", () => {

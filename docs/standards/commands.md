@@ -165,8 +165,9 @@ catalogue and parity manifest stay in cli-core
 
 - **Why:** a script that works with one CLI works with the next.
 - **Enforced by:** review only.
-- **Example:** `--json` and `--jsonl` choose machine output. `--quiet` turns diagnostics off, but a failure is still
-  said. `-v` and `-vv` add detail, `-V` prints the version, `--trace` writes request diagnostics, `--debug` adds the
+- **Example:** `--json` and `--jsonl` choose machine output, `--compact` one line per item
+  ([WC-OUT-24](output.md#wc-out-24--offer-a-compact-text-form-built-from-the-same-answer)). `--quiet` turns
+  diagnostics off, but a failure is still said. `-v` and `-vv` add detail, `-V` prints the version, `--trace` writes request diagnostics, `--debug` adds the
   whole failure record. `--timeout <duration>` bounds the command. `--no-input` never prompts. `--dry-run` previews.
   `--yes` answers the question an `ask` permission level puts before a write.
 - **Exceptions:** none.
@@ -176,8 +177,8 @@ catalogue and parity manifest stay in cli-core
 
 - **Why:** a prompt in a pipe or under an agent waits for ever.
 - **Enforced by:** review only.
-- **Example:** `--no-input`, `--json`, `--jsonl`, a `CI` variable or a stdout that is not a terminal each switch prompts
-  and browser logins off. Data piped on stdin for an explicit command still works. Buffered stdin stops at
+- **Example:** `--no-input`, `--json`, `--jsonl`, `--compact`, a `CI` variable or a stdout that is not a terminal
+  each switch prompts and browser logins off. Data piped on stdin for an explicit command still works. Buffered stdin stops at
   `--max-input-bytes` (16 MiB by default).
 - **Exceptions:** none. `--yes` confirms a write; it never lifts a `deny`
   ([WC-PERM-10](permissions.md#wc-perm-10--a-flag-confirms-it-never-grants)).

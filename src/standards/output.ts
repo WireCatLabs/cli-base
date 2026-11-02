@@ -5,6 +5,9 @@ import { dottedId, text } from "./registry.js"
 /** At most two next steps per answer: the one to take, then one alternative. */
 export const MAX_NEXT_STEPS = 2
 
+/** The switch for one line per item (WC-OUT-24). Its name is still the owner's to settle, so it lives in one place. */
+export const COMPACT_FLAG = "--compact"
+
 export const isoTime = v.pipe(
   v.string(),
   v.isoTimestamp("an ISO 8601 time in UTC"),
