@@ -209,6 +209,16 @@ export const isServer = (words: readonly string[]): boolean => {
     .some((word, at) => word === "serve" || word === "watch" || (word === "mcp" && plain[at + 1] === undefined))
 }
 
+/**
+ * `upgrade`: the package manager replaces the files this process runs from, and pnpm deletes the old folder, so a chunk
+ * the command imports after the install is gone (MODULE_NOT_FOUND). It loads every chunk before it starts.
+ */
+export const isUpgrade = (words: readonly string[]): boolean =>
+  words
+    .filter((word) => !word.startsWith("-"))
+    .slice(0, 2)
+    .includes("upgrade")
+
 /** The bin that replaces the compiled one: `name` is the bundle's entry, `chunks` what a server preloads. */
 export const loaderSource = (name: string, version: string, chunks: readonly string[]): string => `#!/usr/bin/env node
 ${LOADER_MARK}import * as module from "node:module"
@@ -234,8 +244,9 @@ if (
           : next(specifier, context),
     })
   }
-  const running = import(${JSON.stringify(`../bundle/${name}.js`)})
   const chunks = ${JSON.stringify(chunks)}
+  if ((${isUpgrade.toString()})(words)) await Promise.allSettled(chunks.map((chunk) => import(chunk)))
+  const running = import(${JSON.stringify(`../bundle/${name}.js`)})
   // After the server answers its first request, so it starts no later.
   if (serves) setTimeout(() => void Promise.allSettled(chunks.map((chunk) => import(chunk))), 2000).unref()
   await running

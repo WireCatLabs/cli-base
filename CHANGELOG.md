@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Fixed
+
+- **`<cli> upgrade` no longer fails with `MODULE_NOT_FOUND` after the install.** pnpm deletes the folder the old
+  version runs from, and a chunk the command imported after the install was gone. The bundle's loader now loads every
+  chunk before an upgrade starts, as it does for a server.
+
 ### Added
 
 - **`--full-history`**, a mode switch: keep a chat's whole history from now on, past a messenger's history limits
