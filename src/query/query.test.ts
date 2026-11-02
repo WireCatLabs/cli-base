@@ -116,6 +116,8 @@ describe("validateQuery", () => {
       "  state       enum: open|done    state:open",
       "  created_at  time: term, range  created_at>=7d",
     ])
+    expect(fieldsHelp(native)).toContain("Syntax: field:value · terms joined by AND · [a TO b] · > >= < <=")
+    expect(fieldsHelp(native)).not.toMatch(/\bOR\b/)
     try {
       parse("urgent:true", native)
       expect.unreachable()
@@ -143,6 +145,7 @@ describe("validateQuery", () => {
     )
     const plain = { ...native, fields: queryFieldsOf(task, { native: ["state"] }) }
     expect(fieldsHelp(plain)).not.toContain("Leave out")
+    expect(fieldsHelp(plain).split("\n").at(-1)).toBe("Syntax: field:value · terms joined by AND")
     expect(queryDescription(plain)).toBe(
       "field:value terms joined by AND that narrow the list; fields: state (open|done); e.g. state:open",
     )

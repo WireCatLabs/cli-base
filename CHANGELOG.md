@@ -12,6 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **A list whose provider filters it no longer advertises `OR` in its help.** `fieldsHelp`'s `Syntax:` line on a
+  `backend: "native"` list now says only what such a list takes: `field:value` terms joined by AND, and the phrase,
+  `word*` and range forms only when one of its fields takes them. `OR`, `NOT` and `( )` were listed before, and the
+  list refused them. A negatable field keeps its `Leave out:` line. The MCP `query` description already said this
+  (0.73.0). A `sql` list's line is unchanged.
+
 - **`<cli> upgrade` no longer fails with `MODULE_NOT_FOUND` after the install.** pnpm deletes the folder the old
   version runs from, and a chunk the command imported after the install was gone. The bundle's loader now loads every
   chunk before an upgrade starts, as it does for a server.

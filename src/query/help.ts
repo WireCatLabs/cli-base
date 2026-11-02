@@ -8,6 +8,21 @@ const shownOf = (registry: Pick<QueryRegistry, "fields"> & Partial<Pick<QueryReg
 
 const leftOut = (fields: readonly FieldInfo[]) => fields.filter((field) => field.negatable).map((field) => field.name)
 
+const has = (fields: readonly FieldInfo[], operator: FieldInfo["operators"][number]) =>
+  fields.some((field) => field.operators.includes(operator))
+
+// A provider takes only field:value joined by AND, so a native list advertises no OR and no grouping.
+const syntaxOf = (shown: readonly FieldInfo[], backend: QueryRegistry["backend"] | undefined): string => {
+  if (backend !== "native") return QUERY_SYNTAX
+  return [
+    "field:value",
+    ...(has(shown, "phrase") ? ['"a phrase"'] : []),
+    ...(has(shown, "wildcard") ? ["word*"] : []),
+    "terms joined by AND",
+    ...(has(shown, "range") ? ["[a TO b] · > >= < <="] : []),
+  ].join(" · ")
+}
+
 const kindOf = (field: FieldInfo): string =>
   field.values ? `${field.type}: ${field.values.join("|")}` : `${field.type}: ${field.operators.join(", ")}`
 
@@ -31,7 +46,7 @@ export const fieldsHelp = (
     ...(negatable.length > 0
       ? [`Leave out: -${negatable[0]}:value or NOT ${negatable[0]}:value, for ${negatable.join(", ")}`]
       : []),
-    `Syntax: ${QUERY_SYNTAX}`,
+    `Syntax: ${syntaxOf(shown, registry.backend)}`,
     ...(guide ? [`Guide: ${guide}`] : []),
   ].join("\n")
 }
