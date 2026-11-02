@@ -19,6 +19,24 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   file. The owner then finds and edits every setting in the file without the docs. memo follows it first; the
   messenger CLIs and zm are listed as known gaps.
 
+### Fixed
+
+- **One bad entry in `lint/overrides.json` no longer turns off all the others.** `cli-dev lint` and `cli-dev audit`
+  dropped the whole file when one entry did not fit its shape, so every violation the good entries covered came back
+  as new, and the cause was one line among them. Now the bad entry fails the run as `entry <n> (<rule>) does not apply
+  — <why>`, and the other entries still apply.
+- **The `wcat-bin-name` and `wcat-describe` warnings can be overridden.** An entry for them was refused as "no lint
+  rule" and the warning stayed. Now an override with its reason silences the warning, counts against the budget, and
+  fails as stale once the warning is gone. gcal keeps its short `gcal` command this way.
+- **`docs:check` refuses an entry under no `###` heading in the top changelog section.** It passed one, so a release
+  could ship notes with an entry outside the five headings
+  ([the changelog rule](docs/standards/docs.md#wc-doc-15--changelog-entries-go-under-five-fixed-headings-each-at-most-once-per-section)).
+  Older sections are not checked: they are frozen, and several CLIs have such entries in them.
+- **The handbook's lines about gcal match gcal again:** `store status` (not `status`), a calendar sync's 15-minute
+  terminal deadline, all-day events matched by local date, `mcp serve --profiles` built, gcal's own Node 22 job and
+  Windows/macOS runs, its fixed package list, its generated `api` among the generated-command exceptions, and its
+  `api` writes no longer listed as all `ask`.
+
 ## 0.75.1 — 02.11.2026
 
 ### Fixed

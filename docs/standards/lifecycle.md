@@ -82,6 +82,7 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 |---|---|---|
 | one-shot | 30 s | 30 s |
 | `cooperative` ([WC-LIFE-10](#wc-life-10--mark-a-long-command-cooperative-when-it-should-stop-at-its-own-pace-and-keep-its-work)) | 5 min | 45 s |
+| `cooperative` that also declares `partial` (a resumable sync) | 15 min | 45 s |
 
 `--timeout 2m` or the `<PREFIX>_TIMEOUT` variable sets the deadline, higher or lower. Past the deadline a one-shot
 command fails with `timeout` (exit 9).
@@ -93,10 +94,10 @@ command fails with `timeout` (exit 9).
   a cut call. Claude Code waits longer ([its MCP page](https://code.claude.com/docs/en/mcp)), but a CLI does not know
   its client, so it takes the shortest.
 - **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/program.test.ts`.
-- **Example:** from cli-core 0.464.0, a calendar `sync` in a terminal may run 5 minutes; the same command called over
-  MCP stops at 45 seconds with what it saved. cli-core's `DEFAULT_COMMAND_MS`, `DEFAULT_COOPERATIVE_MS` and
-  `DEFAULT_AGENT_COOPERATIVE_MS` (`src/cli/execution.ts`) hold the three values, and `run()` picks one when it starts
-  the command.
+- **Example:** from cli-core 0.473.0, a calendar `sync` in a terminal may run 15 minutes; the same command called over
+  MCP stops at 45 seconds with what it saved. cli-core's `DEFAULT_COMMAND_MS`, `DEFAULT_COOPERATIVE_MS`,
+  `DEFAULT_SYNC_MS` and `DEFAULT_AGENT_COOPERATIVE_MS` (`src/cli/execution.ts`) hold the four values, and `run()` picks
+  one when it starts the command.
 - **Exceptions:** a `persistent` command has no deadline and ignores `--timeout`. An `interactive` command has none
   while a person is at the terminal; run headless, it keeps the deadline. `--help` and `--version` need none. A
   background fetch started with `<PREFIX>_BACKFILL_JOB` is bounded only by an explicit `--timeout`.
@@ -274,7 +275,7 @@ status command answers how far it is
 - **Enforced by:** `cli-core: src/background/budget.test.ts` · `cli-core: src/calendar/testing/sync-contract.ts`.
 - **Example:** `gcal personal sync` over MCP has 45 s: margin 6.75 s, so with gcal's 1.5 s about 25 requests. It
   answers `state: "partial"`, `stopped: "requests"`, `progress: { calendars, calendarsDone, requests, saved }`, and
-  `next` with `gcal personal sync`; `gcal personal status` shows each calendar's progress. cli-core builds the budget
+  `next` with `gcal personal sync`; `gcal personal store status` shows each calendar's progress. cli-core builds the budget
   with `runBudgetOf(command, maxPages)` from `@wirecat/cli-core/cli` over `runBudget` in
   `@wirecat/cli-core/background`.
 - **Exceptions:** known gaps, as of 2026-10-27: only the calendar sync spends a budget (see "Who follows"). The

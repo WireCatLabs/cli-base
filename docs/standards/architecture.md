@@ -86,7 +86,7 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 - **Example:** topics and polls are port groups and shared commands in cli-core. A messenger that lacks a capability
   refuses the command; it does not silently do less. A bot is another messenger with fewer capabilities, and tg and
   max share the bot code. Calendars have the same shape: cli-core's `addCalendarCommands` builds `calendars`,
-  `sync`, `status`, `events` and `search` over the `CalendarSource` and `CalendarWriter` ports, and mounts
+  `sync`, `store status`, `events` and `search` over the `CalendarSource` and `CalendarWriter` ports, and mounts
   `calendars busy` or the event writes only when the provider has them.
 - **Exceptions:** a feature stays in one CLI only when the other providers cannot have it, such as MAX's socket server,
   Telegram's app registration, or gcal's generated `api` commands.

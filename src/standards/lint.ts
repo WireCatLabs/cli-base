@@ -133,17 +133,18 @@ export const LINT_RULES: LintRule[] = defineLintRules([
 /** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */
 export const baselineSchema = v.array(text)
 
+/** One `lint/overrides.json` entry: the exception, its reason, who keeps it and when to look again. */
+export const overrideSchema = v.strictObject({
+  rule: word,
+  target: text,
+  reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
+  /** A GitHub handle or a team, `@octocat`. */
+  owner: v.pipe(v.string(), v.regex(/^@[\w.-]+(\/[\w.-]+)?$/, "a GitHub handle or team, such as @octocat")),
+  review_after: v.pipe(v.string(), v.isoDate("a date, YYYY-MM-DD")),
+})
+
 /** `lint/overrides.json`: exceptions, each with its reason, who keeps it and when to look again; counted against a budget. */
-export const overridesSchema = v.array(
-  v.strictObject({
-    rule: word,
-    target: text,
-    reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
-    /** A GitHub handle or a team, `@octocat`. */
-    owner: v.pipe(v.string(), v.regex(/^@[\w.-]+(\/[\w.-]+)?$/, "a GitHub handle or team, such as @octocat")),
-    review_after: v.pipe(v.string(), v.isoDate("a date, YYYY-MM-DD")),
-  }),
-)
+export const overridesSchema = v.array(overrideSchema)
 
 export type Override = v.InferOutput<typeof overridesSchema>[number]
 

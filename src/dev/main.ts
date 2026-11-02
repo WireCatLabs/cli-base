@@ -34,8 +34,8 @@ import {
   OVERRIDE_BUDGET,
   OVERRIDE_RULE_REVIEW,
   type Override,
+  overrideSchema,
   overridesProblems,
-  overridesSchema,
   rulesForReview,
 } from "../standards/lint.js"
 import { issuesOf, RegistryError } from "../standards/registry.js"
@@ -48,7 +48,7 @@ import { nextVersion } from "./next-version.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
 import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested } from "./test-matrix.js"
-import { binNameWarnings, describeWarnings, type WcatWarning } from "./wcat-lint.js"
+import { binNameWarnings, describeWarnings, WCAT_RULES, type WcatWarning } from "./wcat-lint.js"
 
 export interface DevIo {
   cwd: string
@@ -364,6 +364,28 @@ const readBaseline = (dir: string, label: string, problems: string[]) => {
   return baseline
 }
 
+/**
+ * Each entry on its own: one bad entry is named and ignored, and the others still apply. Dropping the whole file hid
+ * the bad entry behind every violation the good ones had covered.
+ */
+const readOverrides = (path: string, label: string, today: string, problems: string[]): Override[] => {
+  if (!existsSync(path)) return []
+  const raw = readJson(path)
+  if (!Array.isArray(raw)) {
+    problems.push(`${label}: a JSON array of overrides, so none of it applies`)
+    return []
+  }
+  const overrides = raw.flatMap((entry: unknown, index): Override[] => {
+    const read = v.safeParse(overrideSchema, entry)
+    if (read.success) return [read.output]
+    const rule = typeof entry === "object" && entry !== null && "rule" in entry ? ` (${String(entry.rule)})` : ""
+    problems.push(`${label}: entry ${index}${rule} does not apply — ${issuesOf(read.issues).join("; ")}`)
+    return []
+  })
+  for (const issue of overridesProblems(overrides, today)) problems.push(`${label}: ${issue}`)
+  return overrides
+}
+
 const lint = (args: string[], io: DevIo) => {
   try {
     return lintRun(args, io)
@@ -414,14 +436,9 @@ const lintRun = (args: string[], io: DevIo) => {
   }
 
   const problems: string[] = []
-  const overridesPath = join(io.cwd, values.overrides)
-  let overrides: Override[] = []
-  if (existsSync(overridesPath)) {
-    const read = v.safeParse(overridesSchema, readJson(overridesPath))
-    const found = read.success ? overridesProblems(read.output, today(io)) : issuesOf(read.issues)
-    if (read.success) overrides = read.output
-    problems.push(...found.map((issue) => `${values.overrides}: ${issue}`))
-  }
+  const overrides = readOverrides(join(io.cwd, values.overrides), values.overrides, today(io), problems)
+  const isWcat = (entry: Override) => (WCAT_RULES as readonly string[]).includes(entry.rule)
+  const ruleOverrides = overrides.filter((entry) => !isWcat(entry))
   const baselineDir = join(io.cwd, values.baseline)
   const baseline = readBaseline(baselineDir, values.baseline, problems)
 
@@ -441,7 +458,7 @@ const lintRun = (args: string[], io: DevIo) => {
 
   if (values["write-baseline"]) {
     mkdirSync(baselineDir, { recursive: true })
-    for (const [rule, targets] of Object.entries(baselineOf(violations, overrides))) {
+    for (const [rule, targets] of Object.entries(baselineOf(violations, ruleOverrides))) {
       const path = join(baselineDir, `${rule}.json`)
       if (targets.length > 0) writeFileSync(path, `${JSON.stringify(targets, null, 2)}\n`)
       else rmSync(path, { force: true })
@@ -449,7 +466,7 @@ const lintRun = (args: string[], io: DevIo) => {
     }
   }
 
-  const verdict = judge(violations, baseline, overrides, budget)
+  const verdict = judge(violations, baseline, ruleOverrides, budget)
   for (const id of verdict.unknownRules)
     problems.push(`no lint rule "${id}" (named in ${values.baseline} or ${values.overrides})`)
   for (const found of verdict.fresh)
@@ -460,13 +477,22 @@ const lintRun = (args: string[], io: DevIo) => {
         ? `stale baseline entry, fixed or overridden — remove it: ${values.baseline}/${entry.rule}.json "${entry.target}"`
         : `stale override, no such violation — remove it: ${entry.rule} "${entry.target}"`,
     )
-  if (verdict.overBudget) problems.push(`${overrides.length} overrides; the budget is ${budget}`)
+
+  const warnings = wcatWarnings(io.cwd, values.cli)
+  const warned = new Set(warnings.map((warning) => `${warning.rule} ${warning.target}`))
+  const wcatOverridden = new Set(overrides.filter(isWcat).map((entry) => `${entry.rule} ${entry.target}`))
+  // wcat-describe is checked only with --cli, so without it an override of it is neither used nor stale.
+  for (const entry of overrides.filter(isWcat))
+    if (!warned.has(`${entry.rule} ${entry.target}`) && (values.cli || entry.rule !== "wcat-describe"))
+      problems.push(`stale override, no such warning — remove it: ${entry.rule} "${entry.target}"`)
+  if (overrides.length > budget) problems.push(`${overrides.length} overrides; the budget is ${budget}`)
 
   io.err(
     `lint: ${violations.length} violations — ${verdict.baselined} in the baseline, ${verdict.overridden} overridden (budget ${budget}), ${verdict.fresh.length} new`,
   )
-  for (const warning of wcatWarnings(io.cwd, values.cli))
-    io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
+  for (const warning of warnings)
+    if (!wcatOverridden.has(`${warning.rule} ${warning.target}`))
+      io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
   return report(io, problems, "lint: ok")
 }
 
@@ -604,14 +630,7 @@ const auditRun = (args: string[], io: DevIo) => {
     }
     const dir = lintDirs.get(cli)
     if (dir) {
-      const overridesPath = join(at(dir), "overrides.json")
-      let overrides: Override[] = []
-      if (existsSync(overridesPath)) {
-        const read = v.safeParse(overridesSchema, readJson(overridesPath))
-        const found = read.success ? overridesProblems(read.output, today(io)) : issuesOf(read.issues)
-        if (read.success) overrides = read.output
-        problems.push(...found.map((issue) => `${dir}/overrides.json: ${issue}`))
-      }
+      const overrides = readOverrides(join(at(dir), "overrides.json"), `${dir}/overrides.json`, today(io), problems)
       input.lint = {
         baseline: readBaseline(join(at(dir), "baseline"), `${dir}/baseline`, problems),
         overrides,

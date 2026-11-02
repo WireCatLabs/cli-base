@@ -358,10 +358,9 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
   `ask` runs without a question, and each reaches people other than the owner. gcal adds its own keys for its generated
   `api <method>` commands: sharing a calendar is `ask` (NEED-1857), and emptying the main calendar
   (`api.calendar.calendars.clear`) is `deny`.
-- **Exceptions:** known gaps, as of 2026-10-31:
-  - gcal's generated `api` commands default every write to `ask`, ordinary changes included.
-  - drive keeps its own policy and `--read-only` flag, zoom reads its own `remote-meetings` key with `levelFor`, and
-    memo uses cli-core's permissions for the shared commands only. None of them declares `commandPermissions` yet.
+- **Exceptions:** known gaps, as of 2026-11-03: drive keeps its own policy and `--read-only` flag, zoom reads its own
+  `remote-meetings` key with `levelFor`, and memo uses cli-core's permissions for the shared commands only. None of
+  them declares `commandPermissions` yet.
 - **Applies to:** every CLI that writes and is not a messenger. **Since:** cli-base 0.64.0 (the levels and the shared
   keys on every path: cli-base 0.65.0). **Rulings:** NEED-1857, NEED-1883.
 

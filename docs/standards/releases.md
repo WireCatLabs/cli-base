@@ -199,7 +199,7 @@ fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/
   `scripts/smoke.ts` does, checks only that npm packs what `files` says, and cannot fail on a wrong `files` list.
   `npm pack --dry-run` in gcal-cli packed 256 files on 2026-10-27, `src/`, `scripts/`, `.github/`, `config/`,
   `contracts/`, `lint/` and `template.json` among them, because its `files` list named them; its check could not see
-  it. On 2026-10-31 (gcal-cli 0.2.0) it packs 144. The check this rule needs
+  it. gcal's check now uses a fixed list of its own (`scripts/smoke.ts`). The check this rule needs
   refuses the forbidden paths above whatever `files` says: cli-template's `scripts/smoke.ts` does since
   [cli-template#85](https://github.com/WireCatLabs/cli-template/pull/85). `scripts/` is a seed that `upgrade` never
   changes, so a CLI made before it copies the check by hand.

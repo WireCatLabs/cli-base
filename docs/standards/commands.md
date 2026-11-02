@@ -127,7 +127,7 @@ catalogue and parity manifest stay in cli-core
   before the create, so a retry finds it at the provider. A CLI whose provider takes such an id may offer both. gcal
   offers only `--operation-id` (from gcal 0.9.0): its `operation_id` is also the event's id at Google, so one value
   serves both.
-- **Exceptions:** generated commands (`bot api`) are exempt from the naming rules.
+- **Exceptions:** generated commands (`bot api`, and gcal's and drive's `api`) are exempt from the naming rules.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CMD-11 · Name an option in plain words, with the kind of value in the name
@@ -291,7 +291,7 @@ store or files without reading the service first (`remote: "none"`, `local: "wri
 - **Enforced by:** `command-example-count` · `faulty-help-example-parameters`.
 - **Example:** `annotate(list, { examples: ["max chats list --limit 20"] })`. Each example starts with the tool, runs
   its own command, and gives only arguments and options that command takes.
-- **Exceptions:** generated commands (`bot api`) need no examples.
+- **Exceptions:** generated commands (`bot api`, and gcal's and drive's `api`) need no examples.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-CMD-25 · Give a shared command and a shared option the same sentence in every CLI of its group
@@ -380,7 +380,8 @@ The references, each for its own part:
   `help`, `version`, `shortcuts`, `doctor`, `update`, `upgrade`, `app`), and, with `--cli`, when the built CLI does not
   answer `--wcat-describe`.
 - **Exceptions:** a CLI keeps its short `"bin"` name beside `wcat-<name>` until callers have moved to the new name; the
-  warning stays until then.
+  warning stays until then. A CLI that keeps the short name for good says why in `lint/overrides.json` (`"rule":
+  "wcat-bin-name"`, the target as the warning prints it), which silences the warning and counts against the budget.
 - **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** cli-base 0.66.0. **Rulings:** NEED-149,
   NEED-153, NEED-154.
 

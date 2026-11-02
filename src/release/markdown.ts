@@ -54,6 +54,7 @@ export const changelogProblems = (
   let section: string | undefined
   let subheadings = new Set<string>()
   let first = true
+  let top = false
   let legacy = false
   if (legacyHeadingsThrough !== undefined && !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(legacyHeadingsThrough))
     problems.push(`legacyHeadingsThrough: "${legacyHeadingsThrough}" is not a version`)
@@ -63,6 +64,7 @@ export const changelogProblems = (
     if (line.startsWith("## ")) {
       section = line.slice(3)
       subheadings = new Set()
+      top = first
       legacy = false
       if (section === unreleased) {
         if (release) problems.push(`${where}: "${unreleased}" is left — date it as ${version} before releasing`)
@@ -88,6 +90,11 @@ export const changelogProblems = (
       if (subheadings.has(heading)) problems.push(`${where}: "${heading}" twice in "${section}"`)
       subheadings.add(heading)
     }
+    // Only the top section: released ones are frozen, and older ones in several CLIs still have such entries.
+    if (top && !legacy && subheadings.size === 0 && /^[-*] /.test(line))
+      problems.push(
+        `${where}: an entry under no "###" heading in "${section}" — put it under one of: ${headings.join(", ")}`,
+      )
     for (const found of line.match(id) ?? []) problems.push(`${where}: internal id ${found} — say what changed instead`)
   })
 
