@@ -4,6 +4,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { brokenKeyring, memoryKeyring, systemKeyring } from "./keyring.js"
+import { takeKeyringReach } from "./testing/sandbox.js"
 
 describe("memoryKeyring", () => {
   it("stores, reads and deletes per service and account", () => {
@@ -44,6 +45,7 @@ describe("systemKeyring", () => {
     expect(() => systemKeyring.get("cli-base-test", "default")).toThrow(/real OS keyring/)
     expect(() => systemKeyring.set("cli-base-test", "default", "x")).toThrow(/real OS keyring/)
     expect(() => systemKeyring.delete("cli-base-test", "default")).toThrow(/real OS keyring/)
+    takeKeyringReach()
   })
 })
 
