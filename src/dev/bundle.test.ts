@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSy
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { beforeEach, describe, expect, it } from "vitest"
-import { isServer, LOADER_MARK } from "./bundle.js"
+import { isServer, isUpgrade, LOADER_MARK } from "./bundle.js"
 import { type DevIo, main } from "./main.js"
 
 let root: string
@@ -144,6 +144,15 @@ export const skill = async () => String(Database)
       expect(isServer(words), words.join(" ")).toBe(true)
     for (const words of [[], ["--version"], ["personal", "mcp", "config"], ["personal", "chats", "list", "--json"]])
       expect(isServer(words), words.join(" ")).toBe(false)
+  })
+
+  it("loads every chunk before an upgrade, which replaces the files the process runs from", async () => {
+    for (const words of [["upgrade"], ["upgrade", "--check"], ["--json", "upgrade"], ["personal", "upgrade"]])
+      expect(isUpgrade(words), words.join(" ")).toBe(true)
+    for (const words of [[], ["personal", "chats", "list"], ["personal", "messages", "send", "Ana", "upgrade"]])
+      expect(isUpgrade(words), words.join(" ")).toBe(false)
+    await main(["bundle", "--bin", "dist/bin/demo.js"], io)
+    expect(readFileSync(join(root, "dist/bin/demo.js"), "utf8")).toContain(isUpgrade.toString())
   })
 
   it("writes the same server check into the loader", async () => {
