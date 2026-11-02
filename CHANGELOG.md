@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--full-history`**, a mode switch: keep a chat's whole history from now on, past a messenger's history limits
+  (cli-core's `messages sync`).
+
 ## 0.74.0 — 02.11.2026
 
 ### Added
