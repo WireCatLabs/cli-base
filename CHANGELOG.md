@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--compact`, a shared output switch for one line per item (WC-OUT-24).** The vocabulary lists it with role
+  `output`, and `COMPACT_FLAG` from `@wirecat/cli-base/standards` holds its name, so a CLI builds its option from
+  that one place. The rule says what the text keeps from the JSON answer: the reference first, the text last and cut
+  with `…(+N)`, and `page`, `missing`, `next` and `meta.complete` as lines that start with `# `. cli-core's runner
+  draws it; a CLI on its own `run()` has nothing to change until it offers the switch.
+
 ## 0.73.0 — 02.11.2026
 
 ### Added

@@ -24,6 +24,7 @@ export {
   traceIdOf,
 } from "./log.js"
 export {
+  COMPACT_FLAG,
   clockMeta,
   type Issue,
   type ItemEnvelope,

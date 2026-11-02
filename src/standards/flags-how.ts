@@ -1,3 +1,4 @@
+import { COMPACT_FLAG } from "./output.js"
 import type { VocabularyFlag } from "./vocabulary.js"
 
 export const HOW_FLAGS: VocabularyFlag[] = [
@@ -85,6 +86,12 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     role: "output",
     type: "switch",
     meaning: "each item as its reference, title, time and excerpt only",
+  },
+  {
+    name: COMPACT_FLAG,
+    role: "output",
+    type: "switch",
+    meaning: "one line per item, built from the same answer as --json, with its paging and next steps as # lines",
   },
   {
     name: "--chart-kind",
