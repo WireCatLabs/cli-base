@@ -423,10 +423,10 @@ right one, never `not_found`.
 - **Enforced by:** `src/query/parser.test.ts` · `cli-core: src/domain/references.test.ts`.
 - **Example:** `memo relationships list about:project:1` and `about:chat:max/1/2` read the ref as one value;
   `max work messages list chat:max/<account>/<id>` answers as the bare id does.
-- **Exceptions:** none. Known gaps, as of 2026-11-03: the query value works from cli-base 0.76.0 in each CLI that
+- **Exceptions:** none. Known gaps, as of 2026-11-03: the query value works from cli-base 0.75.3 in each CLI that
   takes it; chat and message arguments in tg, max and wa, and `document:N` in drive's `knowledge` commands, follow
   cli-core's reference slices.
-- **Applies to:** all CLIs. **Since:** cli-base 0.76.0. **Rulings:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.75.3. **Rulings:** none.
 
 ## Sources
 
