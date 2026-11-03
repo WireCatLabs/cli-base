@@ -141,10 +141,20 @@ describe("a list's query", () => {
     expect(reason(() => parseLucene("chat:133@2"))).toBe("query.unsupported-operator")
   })
 
+  it("reads a ref after a field as one value, unquoted", () => {
+    for (const ref of ["project:1", "chat:max/1/2", "person:P1", "msg:telegram/7/-100/5", "note:42"])
+      expect(parseLucene(`about:${ref}`, { defaultField: "none" }).root).toMatchObject({
+        operator: "term",
+        value: ref,
+        span: { start: 0, end: 6 + ref.length },
+      })
+    expect(parseLucene("(about:project:1 OR about:person:2) -kind:mentions").root).toMatchObject({ kind: "boolean" })
+    expect(parseLucene("about:project").root).toMatchObject({ field: "about", value: "project" })
+    expect(reason(() => parseLucene("about:project: x"))).toBe("query.invalid-syntax")
+    expect(parseLucene("project:1").root).toMatchObject({ field: "project", value: "1" })
+  })
+
   it("reads the terms lists need: quoted values with a colon, comparisons, presence, relative dates", () => {
-    expect(failure(() => parseLucene("subject:note:42", { defaultField: "none" })).details.reason).toBe(
-      "query.invalid-syntax",
-    )
     for (const text of ['subject:"note:42"', "unread_count>0", "title:*work*", "local_path:* -text:*", 'date<"2h ago"'])
       expect(parseLucene(text, { defaultField: "none" })).toMatchObject({ version: 1 })
   })
