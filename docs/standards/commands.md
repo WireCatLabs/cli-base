@@ -391,8 +391,9 @@ The references, each for its own part:
 A CLI declares each scalar setting once, with its default and one line that says what it does, through cli-core's
 `DeclaredSetting`. `config show` lists every declared setting with its value, its default and whether the file sets
 it. Whenever the CLI writes its config file anyway, and on an explicit `config migrate`, it adds each missing setting
-at its default with `withSettingDefaults`. It keeps the owner's values, their order and unknown keys, and creates no
-section. A plain read never rewrites the file.
+at its default with `withSettingDefaults`. It keeps the owner's values, their order and unknown keys. It may create
+the top-level `defaults` section, which needs no field of its own, so every key shows; it creates no other section. A
+plain read never rewrites the file.
 
 - **Why:** the owner finds and edits every setting in the file, without reading the docs to learn that it exists.
 - **Enforced by:** review only.
