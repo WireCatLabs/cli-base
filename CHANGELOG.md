@@ -32,6 +32,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   ([WC-CMD-31](docs/standards/commands.md#wc-cmd-31--accept-every-ref-any-wirecat-cli-prints-and-never-ask-the-caller-to-translate-it)).
   Arguments, options and query values take a stored thing's ref as printed; a ref for another account or provider
   fails with an error that names the right one.
+- **Rule WC-CMD-30: every setting is in the config file with its default, and `config show` lists them all**
+  ([WC-CMD-30](docs/standards/commands.md#wc-cmd-30--write-every-setting-into-the-config-file-with-its-default-and-list-them-all-in-config-show)).
+  A CLI declares each scalar setting with its default and a description through cli-core's `DeclaredSetting`. It
+  fills the missing ones whenever it writes the file anyway, and on `config migrate`. A plain read never rewrites the
+  file. The owner then finds and edits every setting in the file without the docs. memo follows it first. The known
+  gaps now name what cli-core's shared settings cover (tg, max, wa, mail, gcal after their cli-core bump) and what is
+  left: those CLIs' own settings, drive's own `config` (no `migrate`, writes do not fill) and zm.
 
 ## 0.75.2 â€” 03.11.2026
 
@@ -41,9 +48,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   ([WC-CMD-30](docs/standards/commands.md#wc-cmd-30--write-every-setting-into-the-config-file-with-its-default-and-list-them-all-in-config-show)).
   A CLI declares each scalar setting with its default and a description through cli-core's `DeclaredSetting`. It
   fills the missing ones whenever it writes the file anyway, and on `config migrate`. A plain read never rewrites the
-  file. The owner then finds and edits every setting in the file without the docs. memo follows it first. The known
-  gaps now name what cli-core's shared settings cover (tg, max, wa, mail, gcal after their cli-core bump) and what is
-  left: those CLIs' own settings, drive's own `config` (no `migrate`, writes do not fill) and zm.
+  file. The owner then finds and edits every setting in the file without the docs. memo follows it first; the
+  messenger CLIs and zm are listed as known gaps.
 
 ### Fixed
 
