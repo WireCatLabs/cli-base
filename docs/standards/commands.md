@@ -392,17 +392,21 @@ The references, each for its own part:
 A CLI declares each scalar setting once, with its default and one line that says what it does, through cli-core's
 `DeclaredSetting`. `config show` lists every declared setting with its value, its default and whether the file sets
 it. Whenever the CLI writes its config file anyway, and on an explicit `config migrate`, it adds each missing setting
-at its default with `withSettingDefaults`. It keeps the owner's values, their order and unknown keys, and creates no
-section. A plain read never rewrites the file.
+at its default with `withSettingDefaults`. It keeps the owner's values, their order and unknown keys. It may create
+the top-level `defaults` section, which needs no field of its own, so every key shows; it creates no other section. A
+plain read never rewrites the file.
 
 - **Why:** the owner finds and edits every setting in the file, without reading the docs to learn that it exists.
 - **Enforced by:** review only.
 - **Example:** `memo config migrate` adds `"agent_decisions": false` to a file that lacks it; `memo config show` lists
   it as `false (default)`.
 - **Exceptions:** lists and sections that need fields no default can give (accounts, folders, permissions) get no
-  placeholder. A secret is never declared, since `config show` prints every value. Known gaps, as of 2026-11-03:
-  tg, max, wa, mail, gcal and drive list every setting with its source in `config show`, but their starter file holds
-  only five of them and nothing fills it later; zm declares nothing yet.
+  placeholder. A secret is never declared, since `config show` prints every value. A setting whose absence means
+  something no value says (no timeout, the terminal decides colour) is not declared either. Known gaps, as of
+  2026-11-03: cli-core's shared settings declare every shared scalar setting and give `config migrate`, so tg, max,
+  wa, mail and gcal follow once they take the cli-core release after 0.561.0; their own settings (max's `serve` and
+  `transcribe_model`, for example) are not declared yet. drive's first-run file holds them all, but drive's own
+  `config` has no `migrate` and its writes do not fill the file. zm declares nothing yet.
 - **Applies to:** all CLIs. **Since:** cli-base 0.76.0. **Rulings:** none.
 
 ## Sources
