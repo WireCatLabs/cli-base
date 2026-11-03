@@ -80,10 +80,8 @@ local midnight. The answer gives the window it used, in UTC.
   not included), matches by comparing local dates, never UTC moments: it is in the window when its dates overlap the
   local dates the window covers. So in `Europe/Madrid` a filter for 1 September returns the all-day event of
   1 September and not the one of 31 August, whatever zone the event's calendar is in.
-- **Exceptions:** none. Known gap, as of 2026-10-27, read from the code and not run: cli-core's event filter
-  (`src/store/sqlite/calendar.ts`, the `events` query) compares `starts_at` and `ends_at` with the UTC window for
-  all-day events too, and gcal stores an all-day event's start as midnight in its calendar's zone. The two agree
-  when the calendar's zone is the zone in use, and miss by a day at the edges when it is not.
+- **Exceptions:** none. cli-core's event filter matches an all-day event by its local dates
+  (`src/store/sqlite/calendar-events.ts`), and `events list` answers the window in `meta.window`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.48.0. **Rulings:** none.
 
 ### WC-TIME-6 · Run the tests in a zone that is not UTC, and prove stored values do not depend on it

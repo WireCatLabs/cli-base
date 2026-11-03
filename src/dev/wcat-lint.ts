@@ -5,8 +5,11 @@
 import { parseDescribe } from "../wcat/describe.js"
 import { DESCRIBE_FLAG, PROGRAM_PREFIX, RESERVED_NAMES, TOOL_NAME } from "../wcat/names.js"
 
+/** Warnings, not lint rules: an entry in `lint/overrides.json` silences one, with its reason, like any override. */
+export const WCAT_RULES = ["wcat-bin-name", "wcat-describe"] as const
+
 export interface WcatWarning {
-  rule: "wcat-bin-name" | "wcat-describe"
+  rule: (typeof WCAT_RULES)[number]
   target: string
   message: string
 }

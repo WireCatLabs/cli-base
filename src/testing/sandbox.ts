@@ -113,10 +113,25 @@ export const removed = (path: string, maxRetries: number, rm: typeof rmSync = rm
 
 export const REAL_KEYRING_REACHED = "a test reached the real OS keyring — pass memoryKeyring() instead"
 
+let reached: string | undefined
+
+/**
+ * Its throw alone is not enough: `Credentials` in `auto` mode catches it, warns and falls back to a file, so a test
+ * that reached the keyring still passed. The first reach is kept for `takeKeyringReach`.
+ */
 class ThrowingEntry {
   constructor() {
-    throw new Error(REAL_KEYRING_REACHED)
+    const error = new Error(REAL_KEYRING_REACHED)
+    reached ??= error.stack ?? error.message
+    throw error
   }
+}
+
+/** The stack of the first reach of the keyring stand-in since the last call, and forgets it. */
+export const takeKeyringReach = (): string | undefined => {
+  const stack = reached
+  reached = undefined
+  return stack
 }
 
 /**

@@ -153,7 +153,8 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Enforced by:** `pnpm docs:check` · `changelog-guard.yml`.
 - **Example:** `### Added`, `### Changed — may break callers`, `### Fixed`, `### Security`, `### Removed`. max-cli
   uses this fixed Russian rendering: `Что нового`, `Изменено — может сломать скрипты`, `Исправлено`, `Безопасность`,
-  `Удалено`.
+  `Удалено`. Every entry sits under one of them: `docs:check` refuses an entry under no heading in the top
+  section.
 - **Exceptions:** a released section keeps the headings it was released with, because it is never edited
   ([WC-DOC-20](#wc-doc-20--a-released-section-is-frozen-and-a-new-entry-goes-under-an-existing-heading)). A CLI that
   moves to this set puts its last version with the old headings in its changelog rules as

@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 import { systemKeyring } from "../keyring.js"
-import { enterSandbox, removed } from "./sandbox.js"
+import { enterSandbox, removed, takeKeyringReach } from "./sandbox.js"
 
 describe("enterSandbox", () => {
   it("points home, temp, XDG and every set app directory at a fresh folder, and removes it", () => {
@@ -75,8 +75,10 @@ describe("enterSandbox", () => {
 })
 
 describe("the keyring under the shared setup", () => {
-  it("throws on any use of the real keyring", () => {
+  it("throws on any use of the real keyring, and records it for the after-each check", () => {
     expect(() => systemKeyring.get("cli-base-test", "default")).toThrow(/real OS keyring/)
+    expect(takeKeyringReach()).toMatch(/real OS keyring[\s\S]*sandbox\.test\.ts/)
+    expect(takeKeyringReach()).toBeUndefined()
   })
 })
 

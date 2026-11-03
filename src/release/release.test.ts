@@ -118,6 +118,15 @@ describe("changelogProblems", () => {
     ])
   })
 
+  it("refuses an entry under no heading in the top section, and leaves older sections alone", () => {
+    const text = released.replace("## 0.19.0 — 29.09.2026\n", "## 0.19.0 — 29.09.2026\n\n- Без раздела.\n")
+    expect(changelogProblems(text, { ...rules, version: "0.19.0", release: true })).toEqual([
+      'CHANGELOG.md:5: an entry under no "###" heading in "0.19.0 — 29.09.2026" — put it under one of: Что нового, Исправлено',
+    ])
+    const older = released.replace("## 0.18.1 — 28.09.2026\n", "## 0.18.1 — 28.09.2026\n\n- Без раздела.\n")
+    expect(changelogProblems(older, { ...rules, version: "0.19.0", release: true })).toEqual([])
+  })
+
   it("refuses an unreleased section below the top", () => {
     const text = released.replace("## 0.18.1 — 28.09.2026", "## Не выпущено")
     expect(changelogProblems(text, { ...rules, release: false })).toEqual([

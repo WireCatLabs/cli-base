@@ -809,6 +809,48 @@ else process.stdout.write(${JSON.stringify(tree)})\n`,
     expect(err.filter((line) => line.startsWith("warning"))).toEqual([])
   })
 
+  it("silences a wcat-bin-name warning through an override, and fails it once the name is gone", async () => {
+    document(clean())
+    const bin = (bin: Record<string, string>) =>
+      writeFileSync(join(root, "package.json"), JSON.stringify({ name: "@wirecat/tool-cli", bin }))
+    bin({ tool: "bin.mjs", "wcat-tool": "bin.mjs" })
+    writeFileSync(
+      join(root, "overrides.json"),
+      JSON.stringify([
+        {
+          rule: "wcat-bin-name",
+          target: 'package.json "bin" tool',
+          reason: "users still type the short name",
+          ...KEPT,
+        },
+      ]),
+    )
+    expect(await lint("--overrides", "overrides.json", "--budget", "1", "--write-baseline")).toBe(0)
+    expect(err.filter((line) => line.startsWith("warning"))).toEqual([])
+
+    expect(await lint("--overrides", "overrides.json", "--budget", "0")).toBe(1)
+    expect(err).toContain("1 overrides; the budget is 0")
+
+    bin({ "wcat-tool": "bin.mjs" })
+    expect(await lint("--overrides", "overrides.json")).toBe(1)
+    expect(err).toContain('stale override, no such warning — remove it: wcat-bin-name "package.json "bin" tool"')
+  })
+
+  it("names an override entry that is not valid, and still applies the others", async () => {
+    document(broken())
+    writeFileSync(
+      join(root, "overrides.json"),
+      JSON.stringify([
+        { rule: "unknown-verb", target: "chats grab", reason: "the messenger's own word for it", ...KEPT },
+        { rule: "wcat-bin-name", target: 'package.json "bin" tool', reason: "short name", owner: "kai" },
+      ]),
+    )
+    expect(await lint("--overrides", "overrides.json", "--write-baseline")).toBe(1)
+    expect(existsSync(join(root, "lint/baseline/unknown-verb.json"))).toBe(false)
+    expect(err).toContainEqual(expect.stringMatching(/^overrides\.json: entry 1 \(wcat-bin-name\) does not apply — /))
+    expect(err.find((line) => line.startsWith("overrides.json: entry 1"))).toMatch(/owner: .*@octocat.*review_after/)
+  })
+
   const fakeCli = (keeps: boolean) => {
     const tree = JSON.stringify(commandsDocument(clean(), { cli: "tool", version: "1.0.0", contract: 0 }))
     writeFileSync(

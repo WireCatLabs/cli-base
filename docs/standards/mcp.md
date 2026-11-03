@@ -16,8 +16,9 @@ Rule ids on this page are `WC-MCP-<n>`. How to read a rule, how ids work and whi
 ### Who follows these rules today
 
 tg, max and wa serve cli-core's personal server (`<cli> <profile> mcp serve`) and bot server (`<cli> <profile> bot mcp serve`).
-`mcp serve --profiles` ([WC-MCP-9](#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)) is not
-built yet: cli-core serves one named profile.
+cli-core serves `mcp serve --profiles`
+([WC-MCP-9](#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)) from 0.470.0, for the
+messengers and for the CLIs below that use its shared server.
 zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp serve`, cli-core's
 `toolsFromCommands` and `runCommandForAgent`), and gcal does the same (`gcal <profile> mcp serve`). memo and drive have their own servers: memo has hand-written
 tools, and drive builds one tool per command from its command tree and skips commands through its own list. Those two are known
