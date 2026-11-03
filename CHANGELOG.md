@@ -15,7 +15,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **A query value takes a ref unquoted: `about:project:1` and `about:chat:max/1/2` are one value.** Every WireCat
   CLI prints refs this way, and a list refused them unless the caller quoted them. A field value made of a lower-case
   word, a colon and more text with no space now reads as one term, so `url:https://example.com` works unquoted too.
-  `about:project` alone and `project:1` as a field and value read as before. CLIs get it with this cli-base version.
+  `about:project` alone and `project:1` as a field and value read as before. A CLI gets it by updating cli-base.
 - **Rule WC-CMD-31: accept every ref any WireCat CLI prints, and never ask the caller to translate it**
   ([WC-CMD-31](docs/standards/commands.md#wc-cmd-31--accept-every-ref-any-wirecat-cli-prints-and-never-ask-the-caller-to-translate-it)).
   Arguments, options and query values take a stored thing's ref as printed; a ref for another account or provider
