@@ -8,6 +8,20 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **A new error code, `conflict`, exit 15: a write refused because what it would change moved on since the caller
+  read it** (a stale `--revision`). Until now such a refusal had to borrow `configuration_error` (exit 3), which says
+  the setup is wrong and leaves an agent to read `details.reason` to tell them apart. `errorCodes` now has 15 codes,
+  `EXIT_CODES.conflict` is 15, the fallback reason is `write.conflict`, and `retry.safe` is always false: read the
+  record again and decide on the new copy. A CLI keeps its own reason (`task.stale`) and details. What to watch for:
+  anything that lists the codes itself, or maps every code or exit number, must add this one. Every CLI's
+  `contracts/mcp-tools.json` names the codes and is regenerated at its bump; braze-cli keeps its own copy of the list;
+  the desktop app branches on codes for sync failures. cli-core moves `task.stale` (and later the other `*.stale`
+  reasons) to this code after a release.
+
 ## 0.75.2 — 03.11.2026
 
 ### Added

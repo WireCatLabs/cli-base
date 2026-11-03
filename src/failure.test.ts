@@ -57,6 +57,24 @@ describe("retryOf", () => {
   it("does not offer a retry for a failure that will repeat", () => {
     expect(retryOf("validation_error", {}, READ)).toEqual({ safe: false })
     expect(retryOf("not_found", {}, READ)).toEqual({ safe: false })
+    expect(retryOf("conflict", { retryable: true }, READ)).toEqual({ safe: false })
+  })
+
+  it("keeps a conflict's own reason, its details and exit 15", () => {
+    const stale = new CliError("conflict", "HRB-1 changed since revision 3", { reason: "task.stale", revision: 4 })
+    const context = {
+      reasons: [
+        { reason: "task.stale", code: "conflict" as const, message: "the task changed", details: ["revision"] },
+      ],
+    }
+    expect(errorObjectOf(stale, context).error).toMatchObject({
+      code: "conflict",
+      reason: "task.stale",
+      details: { revision: 4 },
+      retry: { safe: false },
+    })
+    expect(errorObjectOf(new CliError("conflict", "moved on")).error.reason).toBe("write.conflict")
+    expect(exitCodeOfError(errorObjectOf(stale, context))).toBe(15)
   })
 
   it("carries the command's effects into the error object", () => {
