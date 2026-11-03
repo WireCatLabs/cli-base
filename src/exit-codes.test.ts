@@ -19,6 +19,10 @@ describe("exit codes", () => {
     }
   })
 
+  it("gives a conflict 15, after outcome_unknown", () => {
+    expect(exitCodeFor("conflict")).toBe(15)
+  })
+
   it("uses the shell's own number for an interrupted command", () => {
     expect(exitCodeFor("cancelled")).toBe(130)
   })

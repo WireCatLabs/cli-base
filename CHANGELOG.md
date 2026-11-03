@@ -10,6 +10,18 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Changed â€” may break callers
+
+- **A new error code, `conflict`, exit 15: a write refused because what it would change moved on since the caller
+  read it** (a stale `--revision`). Until now such a refusal had to borrow `configuration_error` (exit 3), which says
+  the setup is wrong and leaves an agent to read `details.reason` to tell them apart. `errorCodes` now has 15 codes,
+  `EXIT_CODES.conflict` is 15, the fallback reason is `write.conflict`, and `retry.safe` is always false: read the
+  record again and decide on the new copy. A CLI keeps its own reason (`task.stale`) and details. What to watch for:
+  anything that lists the codes itself, or maps every code or exit number, must add this one. Every CLI's
+  `contracts/mcp-tools.json` names the codes and is regenerated at its bump; braze-cli keeps its own copy of the list;
+  the desktop app branches on codes for sync failures. cli-core moves `task.stale` (and later the other `*.stale`
+  reasons) to this code after a release.
+
 ### Added
 
 - **A query value takes a ref unquoted: `about:project:1` and `about:chat:max/1/2` are one value.** Every WireCat

@@ -110,6 +110,12 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
     details: [],
   },
   { reason: "outcome.unknown", code: "outcome_unknown", message: "it is not known whether it worked", details: [] },
+  {
+    reason: "write.conflict",
+    code: "conflict",
+    message: "it changed since it was read; read it again",
+    details: [],
+  },
   { reason: "command.cancelled", code: "cancelled", message: "the command was cancelled", details: [] },
   { reason: CRASH_REASON, code: CRASH_CODE, message: "the command failed; this is a bug", details: [] },
 ])

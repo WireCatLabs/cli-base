@@ -2,6 +2,9 @@
  * Every failure a CLI built on this package, and anything consuming its output, can see. The list
  * is closed on purpose: an agent branches on `code`, and a new code is a contract change.
  *
+ * `conflict` is a write refused because what it would change moved on since the caller read it (a stale revision):
+ * nothing is wrong with the input or the setup, and the same write on a fresh copy may work.
+ *
  * "provider" is whatever the CLI talks to — an HTTP API, a socket, a messenger. The word is
  * deliberately not "server": a provider that answered with a refusal is not the same as one that
  * never answered.
@@ -20,6 +23,7 @@ export const errorCodes = [
   "provider_unavailable",
   "invalid_response",
   "outcome_unknown",
+  "conflict",
   "cancelled",
 ] as const
 

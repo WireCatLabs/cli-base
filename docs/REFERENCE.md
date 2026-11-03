@@ -9,7 +9,7 @@ and why it is built this way.
 |---|---|
 | `streams` | the stdout/stderr split, and the capture used to test it |
 | `renderer` · `pretty` | `pretty` / `json` / `jsonl`; tables for lists, labelled lines for objects; `quiet` keeps only failures on stderr |
-| `errors` · `exit-codes` | 14 closed error codes, one exit number each, so a script can branch on `$?` |
+| `errors` · `exit-codes` | 15 closed error codes, one exit number each, so a script can branch on `$?` |
 | `keyring` | `KeyringStore` with the system, memory and deliberately-broken implementations |
 | `prepareBatch` · `readBatchInput` · `runBatch` · `projectBatchAnswers` | bounded registered-handler batches with independent correlated answers |
 | `fieldsOf` · `projectFields` | validated field selection preserving list metadata and operation identifiers |

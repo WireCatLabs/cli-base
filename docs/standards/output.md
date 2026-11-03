@@ -216,7 +216,8 @@ whole or partial.
 - **Enforced by:** `src/exit-codes.test.ts`.
 - **Example:** 0 ok · 1 internal error · 2 validation error · 3 configuration error · 4 authentication error ·
   5 permission error · 6 not found · 7 confirmation required · 8 rate limited · 9 timeout · 10 network error ·
-  11 provider error · 12 provider unavailable · 13 invalid response · 14 outcome unknown · 130 cancelled.
+  11 provider error · 12 provider unavailable · 13 invalid response · 14 outcome unknown · 15 conflict ·
+  130 cancelled.
 - **Exceptions:** on cli-core's `run()`, a one-shot command stopped by SIGTERM exits 143. A `persistent` command
   stopped by Ctrl-C or SIGTERM exits 0. A closed pipe exits 0. See the [lifecycle](lifecycle.md) page.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -237,7 +238,8 @@ whole or partial.
 - **Example:** every error has `retry: { safe, after_ms? }`. A transient failure (`timeout`, `rate_limited`,
   `network_error`, `provider_unavailable`) is safe for a command that writes nothing on the service, or for a write
   that never left (`sent: false`). A sync that only writes the local store is safe to repeat. `outcome_unknown` is
-  never safe: repeat that write only with its `--operation-id`.
+  never safe: repeat that write only with its `--operation-id`. `conflict` (the record changed since the caller read
+  it, as a `--revision` check finds) is never safe either: read the record again and decide on the new copy.
 - **Exceptions:** cli-base's `retryOf`, used on its own, also counts a local write as a write, so it is stricter
   than cli-core's runner.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
