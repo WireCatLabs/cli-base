@@ -409,6 +409,25 @@ plain read never rewrites the file.
   `config` has no `migrate` and its writes do not fill the file. zm declares nothing yet.
 - **Applies to:** all CLIs. **Since:** cli-base 0.76.0. **Rulings:** none.
 
+## References
+
+### WC-CMD-31 · Accept every ref any WireCat CLI prints, and never ask the caller to translate it
+
+A command argument, an option and a query value that take a stored thing accept its ref exactly as any WireCat CLI
+prints it ([WC-OUT-13](output.md#wc-out-13--write-times-durations-references-and-empty-values-one-way)), unquoted.
+The CLI that owns the thing opens it; a ref for another account or provider fails with an error that names the
+right one, never `not_found`.
+
+- **Why:** agents copy refs from one CLI's output into the next command. Each ref that fails costs a retry, a guess
+  or a correction from the owner: memo printed `chat:max/…`, and max read it as a chat title.
+- **Enforced by:** `src/query/parser.test.ts` · `cli-core: src/domain/references.test.ts`.
+- **Example:** `memo relationships list about:project:1` and `about:chat:max/1/2` read the ref as one value;
+  `max work messages list chat:max/<account>/<id>` answers as the bare id does.
+- **Exceptions:** none. Known gaps, as of 2026-11-03: the query value works from cli-base 0.76.0 in each CLI that
+  takes it; chat and message arguments in tg, max and wa, and `document:N` in drive's `knowledge` commands, follow
+  cli-core's reference slices.
+- **Applies to:** all CLIs. **Since:** cli-base 0.76.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

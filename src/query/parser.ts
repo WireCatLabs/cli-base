@@ -119,6 +119,18 @@ const tokensOf = (text: string, fail: Fail = queryError): Token[] => {
         if (whitespace(next) || (reserved.has(next) && next !== "+" && next !== "-")) break
         at++
       }
+      // A ref after a field (`about:project:1`, `about:chat:max/1/2`) is one value: every WireCat CLI prints refs
+      // unquoted, and Lucene would read the second colon as a stray field.
+      const [field, colon] = tokens.slice(-2)
+      if (
+        field?.kind === "term" &&
+        colon?.kind === ":" &&
+        colon.span.end === start &&
+        text[at] === ":" &&
+        /^[a-z][a-z_-]*$/u.test(text.slice(start, at)) &&
+        /^:[^\s()"]/u.test(text.slice(at))
+      )
+        while (at < text.length && !whitespace(text[at] ?? "") && !["(", ")", '"'].includes(text[at] ?? "")) at++
       const raw = text.slice(start, at)
       kind =
         ({ AND: "AND", OR: "OR", NOT: "NOT", "&&": "AND", "||": "OR" } as Record<string, string>)[raw] ??
