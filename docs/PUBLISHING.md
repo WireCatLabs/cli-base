@@ -250,6 +250,8 @@ After the [four steps that need a person](standards/new-cli.md#four-steps-that-n
 release through CI:
 
 - [ ] npm: GitHub environment `npm` limited to `main`; trusted publisher names environment `npm`
+- [ ] GitHub: banner, social preview, homepage and topics
+  ([WC-DOC-21](standards/docs.md#wc-doc-21--a-public-repository-has-a-banner-a-link-preview-a-homepage-and-topics))
 - [ ] ClawHub: `metadata.openclaw` in `SKILL.md`; `CLAWHUB_SLUG: wirecat-<cmd>` in `release.yml`; set the category
   after the first publish
 - [ ] MCP Registry: `server.json` and `mcpName` (made by `new` from cli-template 0.12.0; added by hand before that);

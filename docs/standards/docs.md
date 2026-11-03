@@ -217,6 +217,21 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
   Sections that already differed from their tag on 25.10.2026 stay as they are, and nothing reports them.
 - **Applies to:** every repository that calls the changelog guard. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+### WC-DOC-21 · A public repository has a banner, a link preview, a homepage and topics
+
+- **Why:** the GitHub page and a shared link are often the first thing a person sees. A tool without them looks
+  unfinished next to the others, and one without topics is not found in GitHub search.
+- **Enforced by:** review only.
+- **Example:** `docs/images/social-preview.png` is 1280×640 in the shared style: the command name in the
+  cyan-violet-magenta gradient, a one-line tagline and the "part of WireCat · wirecat.dev" footer. `README.md` opens
+  with it through an absolute `raw.githubusercontent.com` URL, so it also renders on npmjs.com, with the tagline as
+  its alt text. The same file is the repository's social preview (Settings → Social preview; GitHub has no API for
+  it). The homepage is the tool's wirecat.dev docs page, and the topics name the service, `cli`, `ai-agents`, `mcp`
+  where it serves MCP, and `wirecat`.
+- **Exceptions:** private repositories, and repositories that only support the tools (`.github`, `community`,
+  `cli-docs`, `cli-testing`).
+- **Applies to:** every public WireCat repository. **Since:** cli-base 0.75.3. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
