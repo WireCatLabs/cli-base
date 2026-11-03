@@ -20,6 +20,7 @@ export const EXIT_CODES: Record<ErrorCode, number> = {
   provider_unavailable: 12,
   invalid_response: 13,
   outcome_unknown: 14,
+  conflict: 15,
   cancelled: 130,
 }
 
