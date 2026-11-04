@@ -204,7 +204,7 @@ const verbs: [string, string][] = [
   ["copy", "copy a file in the source"],
   ["run", "run a saved job once, now, as its timer would"],
   ["exec", "what a timer itself starts: one saved schedule, from its file; a person uses run"],
-  // schedule's creators are named for what the timer starts, as the owner ruled (NEED-2192), not `create --kind`.
+  // schedule's creators are named for what the timer starts; the owner kept these names over `create --kind`.
   ["agent", "save a timer that starts an agent with a prompt, read-only; a verb under schedule, never a resource"],
   ["command", "save a timer that runs one of this tool's own commands; a verb under schedule"],
   ["claim", "take a thing for a while so no other agent works it at once; the claim lapses by itself"],

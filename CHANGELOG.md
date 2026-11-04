@@ -16,8 +16,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `schedule` (a profile's saved timers; the tool's own background work stays `jobs`), the verbs `agent` and `command`
   (save a timer that starts an agent, or runs one of the tool's commands) and `exec` (what the timer itself starts;
   a person uses `run`), and the collection `findings` (what an agent read in mail, staged for the owner; what it
-  proposes to do stays `actions`). The owner ruled to add the words as they are rather than rename the commands
-  (NEED-2192), so the command lint checks them instead of skipping them. What to watch for: every CLI that mounts
+  proposes to do stays `actions`). The owner ruled to add the words as they are rather than rename the commands,
+  so the command lint checks them instead of skipping them. What to watch for: every CLI that mounts
   `schedule` (tg, max, gcal, mail, memo, cli-core itself) and memo's `mail findings` has these in
   `lint/baseline/unknown-verb.json` and `unknown-resource.json`; they are stale after the bump and fail the lint
   until removed (WC-TOOL-16).
