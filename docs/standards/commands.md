@@ -22,6 +22,13 @@ A "messenger CLI" below is one of the CLIs that share cli-core's messenger comma
 catalogue and parity manifest stay in cli-core
 [`docs/dev/STANDARD.md`](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/STANDARD.md).
 
+### Who follows these rules today
+
+WC-CMD-30: cli-core's shared settings declare every shared scalar setting and give `config migrate`, so tg, max, wa,
+mail and gcal follow once they take the cli-core release after 0.561.0. Their own settings (max's `serve` and
+`transcribe_model`, for example) are not declared yet. drive's first-run file holds them all, but drive's own
+`config` has no `migrate` and its writes do not fill the file. zm declares nothing yet.
+
 ## Paths and words
 
 ### WC-CMD-1 · Build every path as resource first, then a verb or a view
@@ -402,11 +409,7 @@ plain read never rewrites the file.
   it as `false (default)`.
 - **Exceptions:** lists and sections that need fields no default can give (accounts, folders, permissions) get no
   placeholder. A secret is never declared, since `config show` prints every value. A setting whose absence means
-  something no value says (no timeout, the terminal decides colour) is not declared either. Known gaps, as of
-  2026-11-03: cli-core's shared settings declare every shared scalar setting and give `config migrate`, so tg, max,
-  wa, mail and gcal follow once they take the cli-core release after 0.561.0; their own settings (max's `serve` and
-  `transcribe_model`, for example) are not declared yet. drive's first-run file holds them all, but drive's own
-  `config` has no `migrate` and its writes do not fill the file. zm declares nothing yet.
+  something no value says (no timeout, the terminal decides colour) is not declared either.
 - **Applies to:** all CLIs. **Since:** cli-base 0.76.0. **Rulings:** none.
 
 ## References
