@@ -194,8 +194,12 @@ An agent never deletes a message for everyone, and never ends the owner's other 
 ### WC-PERM-12 · `<PREFIX>_READ_ONLY` refuses every write
 
 When this variable is set, every write answers `permission_error`, whatever `permissions` or a flag say. So does a
-command that writes only on this machine, unless cli-core marks it `destroysNothing`; a new local write is refused
-until someone marks it. Logging in or out and a change to what a later run may do (a schedule, a setting, the
+command that writes only on this machine, unless cli-core marks it `destroysNothing` or it is of the propose tier; a
+new local write is refused until someone marks it. The propose tier is a closed list, cli-core's `PROPOSE_COMMANDS`:
+`messages acknowledge` and `mail findings add`. A command passes as a proposal only when it is marked `proposesOnly`
+and its path ends with a listed one; it stages something the owner decides, or moves its caller's own processing
+mark, and nothing else. Adding a path widens what a read-only agent can write, so each addition is reviewed on its
+own. Logging in or out and a change to what a later run may do (a schedule, a setting, the
 recipient list) are refused too. A `--dry-run` preview still runs.
 
 - **Why:** an unattended agent needs one switch that the config file and `--permission` cannot undo, and that also
@@ -209,7 +213,8 @@ recipient list) are refused too. A `--dry-run` preview still runs.
   other command, an MCP session included (cli-core 0.343.0). Local writes marked `destroysNothing` run: what the store
   rebuilds (`store reindex`, `mentions rebuild`), a new file (`store backup`, `store export`, `stats charts`), and the
   task writes the follow-ups skill makes on a timer, where `tasks close` only suggests the close to the owner.
-  Embedding and analysis on this machine run; sending text to an outside service for them is refused.
+  A read-only scheduled mail agent stages what it read with `mail findings add` and moves its mark with
+  `messages acknowledge`; nothing it staged is recorded until the owner confirms. Embedding and analysis on this machine run; sending text to an outside service for them is refused.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-PERM-13 · Every write passes the write guard before it leaves
