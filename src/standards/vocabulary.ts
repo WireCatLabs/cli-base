@@ -203,6 +203,10 @@ const verbs: [string, string][] = [
   ["move", "move a thing to another place in the source: a file to a folder, an event to a calendar"],
   ["copy", "copy a file in the source"],
   ["run", "run a saved job once, now, as its timer would"],
+  ["exec", "what a timer itself starts: one saved schedule, from its file; a person uses run"],
+  // schedule's creators are named for what the timer starts, as the owner ruled (NEED-2192), not `create --kind`.
+  ["agent", "save a timer that starts an agent with a prompt, read-only; a verb under schedule, never a resource"],
+  ["command", "save a timer that runs one of this tool's own commands; a verb under schedule"],
   ["claim", "take a thing for a while so no other agent works it at once; the claim lapses by itself"],
   ["release", "give back what claim took, before it lapses"],
   ["merge", "fold a duplicate into the thing that stays; nothing is deleted"],
@@ -275,6 +279,10 @@ const collections: [string, string][] = [
   ["recordings", "the files a provider recorded of a meeting"],
   ["jobs", "work this tool runs in the background or on a timer"],
   ["actions", "what an agent proposes to do; the owner confirms or rejects each"],
+  [
+    "findings",
+    "what an agent read in stored mail, staged in batches with citations; nothing is recorded until the owner confirms. What it proposes to do is actions",
+  ],
   ["agents", "the agents whose actions are recorded in the shared store"],
   ["reminders", "scheduled notices about stored work, claimed and acknowledged with delivery receipts"],
   ["key-documents", "selected source documents that a project keeps as its starting references"],
@@ -318,6 +326,10 @@ const singulars: [string, string][] = [
   ["privacy", "who may find, see, call or add the account"],
   ["metadata", "a profile's cached source attributes"],
   ["auth", "the credentials a bot profile uses: its token and the secrets beside it"],
+  [
+    "schedule",
+    "a profile's timers the owner saved, each running a command of this tool or an agent; the tool's own background work is jobs",
+  ],
 ]
 
 const views: [string, string][] = [
