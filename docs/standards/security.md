@@ -373,6 +373,46 @@ store and runs no search. A CLI declares its provider and may replace any step.
   owner, 2026-10-30 (share the keyring entry, do not multiply it); owner, 2026-10-31 (do not replace it: a test of a
   new session writes a temporary entry and cleans it up).
 
+### WC-SECR-25 · Sign in with WireCat's app by default, and let the owner choose their own
+
+Every provider sign-in uses WireCat's OAuth app unless the owner names another. That app is read from
+`constants.json` ([WC-ARCH-23](architecture.md#wc-arch-23--a-value-that-ships-with-the-package-lives-in-the-layers-constantsjson)):
+cli-core's layer for Google and Microsoft, a tool's own layer for a provider only that tool uses, such as Zoom.
+
+- **Which app, first match wins:**
+  1. `session start --client-file <json>` or `--client-id <id>`;
+  2. `<TOOL>_<PROVIDER>_CLIENT_ID`, plus `<TOOL>_<PROVIDER>_CLIENT_SECRET` where the provider needs a secret. A
+     secret without an id is a `configuration_error`;
+  3. the account's config key `<provider>.client_id`;
+  4. WireCat's app.
+- **Stored with the account.** The app a sign-in used is saved with that account, so refresh and revoke use the same
+  app even after the default changes.
+- **Reported by `doctor`,** per provider: `oauth_client: { client: "wirecat" | "own" | null, source: "flag" | "env" |
+  "config" | "constants" | null }`. A null client comes with a one-line reason.
+- **Desktop.** A sign-in from wirecat-desktop offers WireCat's app, with a "Use my own app" choice that writes the same
+  override as step 2 or 3.
+- **A shipped secret** is allowed only where the provider documents the client as public, and the tool's gitleaks
+  allowlist names it by value ([WC-SECR-17](#wc-secr-17--a-gitleaks-rule-covers-each-secret-shape-a-cli-handles)).
+  Google's token endpoint refuses a Desktop app client without its secret (tested 2026-11-04), although
+  [Google's guide](https://developers.google.com/identity/protocols/oauth2/native-app) calls desktop apps public
+  clients that cannot keep secrets. So a Google app ships its id and secret; a Microsoft public client ships its id
+  only.
+- **A provider with no WireCat app yet** says so in `doctor` (a null client and its reason) and in its docs, and still
+  keeps the order, the stored app and the report above.
+
+- **Why:** an owner should sign in without creating an app first, and still be able to use their own; a token
+  refreshed with a different app than the one that issued it fails.
+- **Enforced by:** `cli-core: src/oauth/client-file.test.ts`.
+- **Example:** `gcal personal session start` uses WireCat's Google app and `doctor` reports
+  `{ client: "wirecat", source: "constants" }`; with `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET` set it
+  reports `{ client: "own", source: "env" }`.
+- **Exceptions:** known gaps, as of 2026-11-04: mail has no WireCat default for Google; zoom has no WireCat app until
+  Zoom Marketplace approves one; no tool reads the per-account `google.client_id` key yet; mail's Microsoft key is
+  named `microsoft_client_id`; `doctor` reports no `source` yet. gcal's default came from a file CI wrote from a
+  secret; cli-core's `constants.json` replaces it from its next release.
+- **Applies to:** every CLI that signs in with OAuth, and wirecat-desktop. **Since:** cli-base 0.76.1.
+  **Rulings:** owner, 2026-11-04.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
