@@ -24,6 +24,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`loadConstants(layers, schema)`: one way to ship values inside the packages.** Each layer (cli-base, cli-core,
+  the tool) keeps a `constants.json` at its package root; `loadConstants([BASE_CONSTANTS, core, tool], schema)` merges
+  them in that order (objects key by key, a later layer winning; arrays and scalars replaced), treats a missing file as
+  empty, validates against the caller's schema built on `baseConstantsSchema`, names the dotted path and file of a bad
+  value, and freezes the result. cli-base's own layer is `{}`. Rule
+  [WC-ARCH-23](docs/standards/architecture.md#wc-arch-23--a-value-that-ships-with-the-package-lives-in-the-layers-constantsjson):
+  such a value is never a scattered constant or a file CI writes from a secret. cli-core builds the OAuth apps on it.
 - **A query value takes a ref unquoted: `about:project:1` and `about:chat:max/1/2` are one value.** Every WireCat
   CLI prints refs this way, and a list refused them unless the caller quoted them. A field value made of a lower-case
   word, a colon and more text with no space now reads as one term, so `url:https://example.com` works unquoted too.

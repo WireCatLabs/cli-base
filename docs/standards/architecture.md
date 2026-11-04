@@ -249,6 +249,20 @@ options, its hooks) lives in a per-call context that the action receives, never 
   [CORE-41](https://github.com/WireCatLabs/cli-core/blob/main/docs/dev/BACKLOG_LATER.md). New code does not add to it.
 - **Applies to:** cli-core's command skeleton and every CLI built on it. **Since:** cli-base 0.65.3. **Rulings:** none.
 
+### WC-ARCH-23 · A value that ships with the package lives in the layer's constants.json
+
+A value that ships inside a package and is the same for every owner — an OAuth app's client id, a fixed URL — lives
+in that layer's `constants.json` and is read through `loadConstants` (cli-base, then cli-core, then the tool). It is
+never a constant scattered through the source, and never a file CI writes from a secret.
+
+- **Why:** a CI-written file goes missing when the secret does, and the release then cannot sign in (gcal 0.19.0);
+  scattered constants are copied between CLIs and drift apart.
+- **Enforced by:** review only.
+- **Example:** cli-core's `constants.json` holds the WireCat Google desktop app's `google.app.client_id`; drive and
+  gcal read it through cli-core instead of each keeping a copy. The owner's own choices stay in `config.json`.
+- **Exceptions:** none.
+- **Applies to:** cli-base, cli-core and every CLI. **Since:** cli-base 0.76.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

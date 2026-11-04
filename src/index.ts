@@ -12,6 +12,7 @@ export {
   runBatch,
 } from "./batch.js"
 export { loadConfigFile, saveConfigFile, writeSecurely } from "./config.js"
+export { BASE_CONSTANTS, baseConstantsSchema, loadConstants } from "./constants.js"
 export type {
   CredentialSource,
   CredentialStorage,
