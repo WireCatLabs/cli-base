@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "config",
+    "constants.json",
     "docs/standards",
     "README.md",
     "CHANGELOG.md",

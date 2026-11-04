@@ -19,6 +19,7 @@ and why it is built this way.
 | `logger` | the four-method interface a host adapts Pino to — this package logs nothing itself |
 | `paths` | config, state and cache in the XDG layout on Linux and macOS (`~/.config`, `~/.local/share`, `~/.cache`) and the `AppData` one on Windows, each overridable by environment variable |
 | `config` | JSON config loading that names the bad field, and an atomic write that locks the directory down |
+| `constants` | `loadConstants(layers, schema)`: the values that ship inside the packages, read once from each layer's `constants.json` (base, then cli-core, then the tool), merged, validated and frozen — see below |
 | `credentials` | environment → keyring → file, warning once and falling through when the keyring refuses |
 | `logging` | `createRecordLog`: one `LogRecord` per JSON line (OpenTelemetry field names, flat), secrets and content-naming keys redacted at any depth, top-level keys off the allow-list (`LOG_ATTRIBUTE_KEYS` + `allow`) written without their value; `logRecordOf` builds the same record for a writer of its own; a file that cannot be written is reported to `onError`, never thrown |
 | `retry` | full-jitter backoff, and the distinction between "no answer came" and "safe to repeat" |
@@ -63,6 +64,16 @@ with a 64 MiB aggregate cap; reservations are never refunded or reported as meas
 retained-result cap leaves room for correlated refusals. Errors stay with their input, while an aborted signal
 rejects the invocation. Hosts still enforce final rendered bytes, emit standard JSONL framing and close resources.
 `projectBatchAnswers` applies ordinary payload selectors to each answer while keeping result correlation/errors.
+
+**Constants are what ships with the package; settings are what the owner chooses.** Each layer keeps the values it
+ships — an OAuth app's client id, a fixed URL — in a `constants.json` at its package root, listed in `files`.
+`loadConstants([BASE_CONSTANTS, coreLayer, toolLayer], schema)` reads them in that order: plain objects merge key by
+key and a later layer wins, an array or a scalar replaces what was below it, and a layer whose file does not exist is
+empty. The merged value is checked against the caller's Valibot schema, which extends `baseConstantsSchema`; an error
+names the dotted path and the file that set it, or every file when none did. The result is frozen all the way down.
+A layer finds its file with `new URL("../constants.json", import.meta.url)` from its compiled module; `cli-dev
+bundle` keeps `import.meta.url` pointing at the installed package, so the file is found in a bundle too. cli-base's
+own layer is `{}` today. The owner's `config.json` is never read here.
 
 `createOutputBuffer({ maxOutputBytes })` retains raw output chunks until `flush(write)` or `discard()`.
 Its default limit is 4 MiB; zero disables the limit. It counts actual UTF-8 bytes, including delimiters
