@@ -21,4 +21,10 @@ export const MAIL_FLAGS: VocabularyFlag[] = [
     type: "switch",
     meaning: "with --reply-to, an e-mail reply also goes to everyone the message went to",
   },
+  {
+    name: "--trimmed",
+    role: "output",
+    type: "switch",
+    meaning: "each e-mail's own text, without the quoted earlier mail and the signature; refused with --full",
+  },
 ]
