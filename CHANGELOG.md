@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--trimmed` in the flag vocabulary (role `output`): each e-mail's own text, without the quoted earlier mail and
+  the signature.** memo's `messages show --trimmed` and `context --trimmed` give the mail-triage agent the thread and
+  the sender's earlier mail without what each reply quotes; it is the opposite of `--full`, and a command refuses
+  both together. memo can drop its two `option-role` overrides for it.
+
 ## 0.77.0 — 05.11.2026
 
 ### Added
