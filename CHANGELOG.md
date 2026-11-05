@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **WC-SECR-25 says how WireCat's shipped Google secret is kept: obscured in cli-core's `constants.json`**, revealed by
+  the schema, so the plain value is in no source file, commit or gitleaks allowlist. It said the allowlist named it by
+  value. Its known gaps now match cli-core 0.566.0 and the CLIs on it: gcal and mail sign in with WireCat's Google
+  app, `doctor` reports `source`, and the app is saved with the sign-in.
+
 ## 0.77.1 — 05.11.2026
 
 ### Added
