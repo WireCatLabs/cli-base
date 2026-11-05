@@ -24,10 +24,11 @@ catalogue and parity manifest stay in cli-core
 
 ### Who follows these rules today
 
-WC-CMD-30: cli-core's shared settings declare every shared scalar setting and give `config migrate`, so tg, max, wa,
-mail and gcal follow once they take the cli-core release after 0.561.0. Their own settings (max's `serve` and
-`transcribe_model`, for example) are not declared yet. drive's first-run file holds them all, but drive's own
-`config` has no `migrate` and its writes do not fill the file. zm declares nothing yet.
+WC-CMD-30: every CLI follows on its main branch, as of 2026-11-05, and for the owner from its next release. tg, max,
+wa, mail and gcal take cli-core 0.563.0's shared settings and `config migrate`. max declares `serve` and
+`transcribe_model`, drive `max_text_chars` beside its own `config migrate`, and zm its source and run-log settings in
+its own file. mail's `session start` fills the file it writes. drive's `picture_search` stays undeclared: it is set
+per profile, and only `defaults` is filled.
 
 ## Paths and words
 
