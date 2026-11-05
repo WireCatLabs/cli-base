@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`records`, `invoices`, `orders` and `payments` in the resource vocabulary, and `allocate` in the verbs:** memo's
+  finance commands (`invoices`, `orders`, `payments`, `records`, `payments allocate`) were listed in its lint baseline
+  because the word list lacked them. `unallocate` is not added: taking an allocation back is `payments unlink`.
+
 ### Fixed
 
 - **`re2js` is pinned to 2.8.7 (Dependabot alert 14, high):** versions 2.2.0 to 2.8.6 match lookbehind in quadratic time,
