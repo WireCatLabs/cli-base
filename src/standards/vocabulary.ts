@@ -160,6 +160,7 @@ const verbs: [string, string][] = [
   // Only when someone asks, never from a matching name: WC-ACCT-11 in docs/standards/accounts.md.
   ["link", "record that two identities are one person"],
   ["unlink", "undo a link"],
+  ["allocate", "match a payment to the invoice or order it settles, in whole or in part"],
   ["lookup", "ask the messenger who is behind a phone number"],
   [
     "inspect",
@@ -262,6 +263,13 @@ const collections: [string, string][] = [
     "derived records attached to a selected entity, with explicit coverage of included and omitted facets",
   ],
   ["organizations", "companies, teams, families or communities"],
+  [
+    "records",
+    "documents of the owner's business, such as an invoice or a receipt, kept with the things they are about",
+  ],
+  ["invoices", "bills the owner sends or receives, with their amounts and due dates"],
+  ["orders", "what a customer asked for and the owner owes or delivers"],
+  ["payments", "money that moved in or out, each one matched to the invoices it settles"],
   [
     "identities",
     "ways to reach a person or an organization: an account in one messenger or mailbox, an e-mail address, a phone",
