@@ -12,6 +12,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`re2js` is pinned to 2.8.7 (Dependabot alert 14, high):** versions 2.2.0 to 2.8.6 match lookbehind in quadratic time,
+  a denial of service. Only the dev tool `markdownlint` pulls it in, so no published package changes.
 - **WC-SECR-25's known gaps no longer list drive and gcal:** both take `session start --client-id` and read the
   per-account `google_client_id` key. The key name, shared with mail, is listed as a gap instead: cli-core's
   settings take no dotted key, so it is not `google.client_id`. mail's missing `--client-id` is listed too.
