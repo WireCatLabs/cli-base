@@ -391,25 +391,28 @@ cli-core's layer for Google and Microsoft, a tool's own layer for a provider onl
   "config" | "constants" | null }`. A null client comes with a one-line reason.
 - **Desktop.** A sign-in from wirecat-desktop offers WireCat's app, with a "Use my own app" choice that writes the same
   override as step 2 or 3.
-- **A shipped secret** is allowed only where the provider documents the client as public, and the tool's gitleaks
-  allowlist names it by value ([WC-SECR-17](#wc-secr-17--a-gitleaks-rule-covers-each-secret-shape-a-cli-handles)).
-  Google's token endpoint refuses a Desktop app client without its secret (tested 2026-11-04), although
+- **A shipped secret** is allowed only where the provider documents the client as public. It is stored obscured in the
+  layer's `constants.json` and revealed by the schema (cli-core's `src/constants/obscure.ts`, as rclone does), so
+  the plain value is in no source file, commit or gitleaks allowlist, and secret scanners do not report it. That is
+  not protection: anyone with the package can reveal it. Google's token endpoint refuses a Desktop app client without
+  its secret (tested 2026-11-04), although
   [Google's guide](https://developers.google.com/identity/protocols/oauth2/native-app) calls desktop apps public
-  clients that cannot keep secrets. So a Google app ships its id and secret; a Microsoft public client ships its id
-  only.
+  clients that cannot keep secrets. So a Google app ships its id and secret, both obscured; a Microsoft public client
+  ships its id only.
 - **A provider with no WireCat app yet** says so in `doctor` (a null client and its reason) and in its docs, and still
   keeps the order, the stored app and the report above.
 
 - **Why:** an owner should sign in without creating an app first, and still be able to use their own; a token
   refreshed with a different app than the one that issued it fails.
-- **Enforced by:** `cli-core: src/oauth/client-file.test.ts`.
+- **Enforced by:** `cli-core: src/oauth/client-file.test.ts` · `cli-core: src/constants/index.test.ts` ·
+  `cli-core: src/oauth/storage.test.ts`.
 - **Example:** `gcal personal session start` uses WireCat's Google app and `doctor` reports
   `{ client: "wirecat", source: "constants" }`; with `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET` set it
   reports `{ client: "own", source: "env" }`.
-- **Exceptions:** known gaps, as of 2026-11-04: mail has no WireCat default for Google; zoom has no WireCat app until
-  Zoom Marketplace approves one; no tool reads the per-account `google.client_id` key yet; mail's Microsoft key is
-  named `microsoft_client_id`; `doctor` reports no `source` yet. gcal's default came from a file CI wrote from a
-  secret; cli-core's `constants.json` replaces it from its next release.
+- **Exceptions:** known gaps, as of 2026-11-05: zoom has no WireCat app until Zoom Marketplace approves one; drive and
+  gcal read no per-account `google.client_id` key and take no `--client-id`; mail's per-profile keys are named
+  `google_client_id` and `microsoft_client_id`, and Google has not reviewed WireCat's Google app for Gmail's
+  restricted scope, so a Gmail sign-in with it may be refused.
 - **Applies to:** every CLI that signs in with OAuth, and wirecat-desktop. **Since:** cli-base 0.76.1.
   **Rulings:** owner, 2026-11-04.
 
