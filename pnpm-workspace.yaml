@@ -8,3 +8,4 @@ allowBuilds:
 
 overrides:
   micromark-extension-math>katex: 0.18.2
+  re2js: 2.8.7
