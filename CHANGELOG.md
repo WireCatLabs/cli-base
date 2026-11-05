@@ -12,6 +12,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **WC-SECR-25's known gaps no longer list drive and gcal:** both take `session start --client-id` and read the
+  per-account `google_client_id` key. The key name, shared with mail, is listed as a gap instead: cli-core's
+  settings take no dotted key, so it is not `google.client_id`. mail's missing `--client-id` is listed too.
 - **WC-SECR-25 says how WireCat's shipped Google secret is kept: obscured in cli-core's `constants.json`**, revealed by
   the schema, so the plain value is in no source file, commit or gitleaks allowlist. It said the allowlist named it by
   value. Its known gaps now match cli-core 0.566.0 and the CLIs on it: gcal and mail sign in with WireCat's Google

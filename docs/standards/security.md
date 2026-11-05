@@ -409,10 +409,11 @@ cli-core's layer for Google and Microsoft, a tool's own layer for a provider onl
 - **Example:** `gcal personal session start` uses WireCat's Google app and `doctor` reports
   `{ client: "wirecat", source: "constants" }`; with `GCAL_GOOGLE_CLIENT_ID` and `GCAL_GOOGLE_CLIENT_SECRET` set it
   reports `{ client: "own", source: "env" }`.
-- **Exceptions:** known gaps, as of 2026-11-05: zoom has no WireCat app until Zoom Marketplace approves one; drive and
-  gcal read no per-account `google.client_id` key and take no `--client-id`; mail's per-profile keys are named
-  `google_client_id` and `microsoft_client_id`, and Google has not reviewed WireCat's Google app for Gmail's
-  restricted scope, so a Gmail sign-in with it may be refused.
+- **Exceptions:** known gaps, as of 2026-11-05: zoom has no WireCat app until Zoom Marketplace approves one; the
+  per-account key is named `google_client_id` in drive, gcal and mail, and `microsoft_client_id` in mail, because
+  cli-core's settings take no dotted key outside `permissions.*` and `models.*`; mail takes no `--client-id`; and
+  Google has not reviewed WireCat's Google app for Gmail's restricted scope, so a Gmail sign-in with it may be
+  refused.
 - **Applies to:** every CLI that signs in with OAuth, and wirecat-desktop. **Since:** cli-base 0.76.1.
   **Rulings:** owner, 2026-11-04.
 
