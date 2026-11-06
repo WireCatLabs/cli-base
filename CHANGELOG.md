@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--write <id>` is a vocabulary flag** (role `target`): one write of a run, by the `operation_id` the run's answer
+  listed under `writes`, to undo or act on that write alone. mail's `messages restore --run <id> --write <id>` undoes
+  one write of a change run and leaves its others. It is not `--operation-id`, which repeats a write whose outcome was
+  unknown (WC-CMD-10).
+
 ## 0.79.0 — 06.11.2026
 
 ### Added
