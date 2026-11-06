@@ -270,6 +270,12 @@ const collections: [string, string][] = [
   ["invoices", "bills the owner sends or receives, with their amounts and due dates"],
   ["orders", "what a customer asked for and the owner owes or delivers"],
   ["payments", "money that moved in or out, each one matched to the invoices it settles"],
+  ["deals", "sales the owner works on, each at a stage of a pipeline, with an amount and an outcome"],
+  ["leads", "possible customers not yet qualified into a deal"],
+  ["pipelines", "ordered sets of stages a deal moves through"],
+  ["stages", "steps of a pipeline, each open, won or lost"],
+  ["products", "goods and services the owner sells, with their prices"],
+  ["users", "people who work in the owner's account at a service, such as a CRM's employees"],
   [
     "identities",
     "ways to reach a person or an organization: an account in one messenger or mailbox, an e-mail address, a phone",
