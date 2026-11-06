@@ -241,6 +241,27 @@ and which run after merge is in [CI](ci.md).
   chat (the chat with themselves). It never writes to another person, and still runs only with the owner's yes.
 - **Applies to:** all CLIs that talk to a real account. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+### WC-TEST-19 · A fake refuses what the real service refuses, and every provider name has a source
+
+A fake provider, a scripted adapter or a local fake server
+([WC-TEST-3](#wc-test-3--no-test-contacts-a-provider-or-the-network)), checks each request the way the service does.
+It refuses an unknown method, an unknown field in a select, a filter or a body, an unknown parameter and a missing
+required field, with the error the service gives. Its vocabulary comes from the provider's published schema or a
+captured answer, kept as a fixture of names only, never typed from memory. The same holds for every provider field
+name, method name and error code in the CLI's code: each has a source, a link to the provider's documentation page or
+a captured answer, beside it or in the table it comes from.
+
+- **Why:** a fake that accepts anything passes a test for a request the service refuses. bitrix24-cli asked for three
+  invented field names; every test passed, and the owner's portal refused each whole call over one unknown name.
+- **Enforced by:** review only, check planned: a strict fake helper in cli-base testing, built from a captured or
+  documented schema, that refuses unknown fields and parameters.
+- **Example:** gcal checks every request against its generated Google Discovery manifest before it leaves
+  (`validateRequest` in `src/api-contract.ts`), so a test cannot send a parameter Google does not know. A CRM fake
+  refuses an unknown `select` name with the portal's own error, from a captured `crm.item.fields` answer.
+- **Exceptions:** a fake for an unofficial protocol with no schema keeps the names seen in captured frames as its
+  vocabulary.
+- **Applies to:** all CLIs that talk to a provider. **Since:** cli-base 0.80.1. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

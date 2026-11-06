@@ -27,7 +27,7 @@ const RULE_HEADING = /^###\s+(WC-([A-Z]+)-(\d+))\s+·\s+(\S.*)$/
 const POINTER = /^(?:Moved to|Merged into)\s+\[?(WC-[A-Z]+-\d+)\]?/
 const ENFORCED = /\*\*Enforced by:\*\*\s*(.*)$/
 const CONTINUATION = /^\s{2,}(?!-\s)\S/
-const REVIEW_ONLY = /^review only\.?$/i
+const REVIEW_ONLY = /^review only(?:, check planned: [^`]+?)?\.?$/i
 const INDEX_ROW = /^\|\s*\[[^\]]+\]\(([\w-]+\.md)\)\s*\|\s*`?([A-Z]+|—)`?\s*\|\s*([^|]*?)\s*\|/
 const CROSS_REPO = /^(\S+): (.*)$/
 
