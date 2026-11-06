@@ -1,5 +1,6 @@
 import * as v from "valibot"
 import { CALENDAR_FLAGS } from "./flags-calendar.js"
+import { CRM_FLAGS } from "./flags-crm.js"
 import { HOW_FLAGS } from "./flags-how.js"
 import { MAIL_FLAGS } from "./flags-mail.js"
 import { PRIVACY_FLAGS } from "./flags-privacy.js"
@@ -412,5 +413,5 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
   ],
   views: views.map(([entry, meaning]) => ({ word: entry, meaning })),
   roots: roots.map(([entry, meaning]) => ({ word: entry, meaning })),
-  flags: [...HOW_FLAGS, ...WHAT_FLAGS, ...PRIVACY_FLAGS, ...CALENDAR_FLAGS, ...MAIL_FLAGS],
+  flags: [...HOW_FLAGS, ...WHAT_FLAGS, ...PRIVACY_FLAGS, ...CALENDAR_FLAGS, ...MAIL_FLAGS, ...CRM_FLAGS],
 })

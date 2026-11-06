@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **CRM flags in the vocabulary** (role `value`): `--pipeline <pipeline>`, `--stage <stage>`, `--amount <decimal>`,
+  `--currency <code>`, `--close-date <date>` and `--owner <user>`. cli-core's shared `deals` and `leads` write commands
+  (`create`, `update`) take them, so a CRM CLI that mounts them needs no lint override. `--owner` is the CRM user a
+  record is assigned to, not `--assignee`, which names people by their stored UID.
+
 ## 0.80.1 — 06.11.2026
 
 ### Added
