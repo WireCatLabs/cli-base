@@ -145,6 +145,19 @@ describe("repository setup", () => {
     expect(rulesetProblems(offline, "o/r")).toMatchObject({ problems: [], skipped: expect.stringContaining("reached") })
   })
 
+  it("skips only GitHub's free-plan 403 for a private repository; any other 403 fails", () => {
+    const freePlan = answering(() => ({
+      ok: false,
+      out: '{"message":"Upgrade to GitHub Pro or make this repository public to enable this feature.","status":"403"}gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)',
+    }))
+    expect(rulesetProblems(freePlan, "o/r")).toMatchObject({
+      problems: [],
+      skipped: expect.stringContaining("free plan"),
+    })
+    const forbidden = answering(() => ({ ok: false, out: "gh: Resource not accessible by integration (HTTP 403)" }))
+    expect(rulesetProblems(forbidden, "o/r").problems[0]).toContain("Resource not accessible")
+  })
+
   it("refuses the template's monthly minute in a CLI made from it, and accepts the template's own", () => {
     const taken = takenMinutes("| UTC | Repository |\n|---|---|\n| 02:17 | cli-base |\n| 03:02 | cli-template |\n")
     const workflow = (cron: string) => `on:\n  schedule:\n    - cron: "${cron}"\n`
