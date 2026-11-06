@@ -1,0 +1,9 @@
+language js
+
+or {
+  `$_.resolveSettings($...)`,
+  `resolveSettings($...)`
+} as $call where {
+  $call <: not within `baseContext($...)`,
+  register_diagnostic(span=$call, message="Take settings from cli-core's baseContext(command, configuration.resolveSettings), never by calling resolveSettings: a context built on its own skips --timeout, the run record, the MCP server's levels and the profile's permissions (WC-LIFE-17, WC-PERM-23).", severity="error")
+}

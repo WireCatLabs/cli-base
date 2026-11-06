@@ -42,6 +42,7 @@ import { issuesOf, RegistryError } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
+import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
 import { baselineOf, judge, lintCommands, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
 import { nextVersion } from "./next-version.js"
@@ -107,7 +108,8 @@ const USAGE = `usage: cli-dev <command> [options]
                                        whose modules keep their installed place, as cli-core's do;
                                        --harmless names a third-party file whose import.meta or
                                        __dirname was read and found harmless. Fails when a bundled
-                                       module would look for a file or package in the wrong place`
+                                       module would look for a file or package in the wrong place
+${CONFORMANCE_USAGE}`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -817,8 +819,11 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
     case "-h":
       io.out(USAGE)
       return 0
-    default:
+    default: {
+      const handled = conformanceCommand(command ?? "", args, io)
+      if (handled !== undefined) return handled
       io.err(command ? `cli-dev: no command "${command}"\n\n${USAGE}` : USAGE)
       return 2
+    }
   }
 }

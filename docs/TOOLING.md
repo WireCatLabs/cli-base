@@ -28,6 +28,16 @@ Write the specifier without `.json`: Biome reads anything ending in `.json` as a
 { "extends": ["@wirecat/cli-base/biome"], "files": { "includes": ["**", "!**/dist", "!**/node_modules", "!pnpm-lock.yaml"] } }
 ```
 
+**Biome plugin for a CLI on cli-core.** `config/lint/no-own-settings.grit` refuses a call to `resolveSettings` outside
+`baseContext(…)`: a context built that way skips the run, `--timeout` and the profile's permissions
+([WC-LIFE-17](standards/lifecycle.md#wc-life-17--send-every-request-to-the-provider-inside-cli-cores-command-run-with-the-runs-events)).
+Add it to your own `plugins`, for `src/` without its tests; a read that has no command yet, such as the update check,
+takes `// biome-ignore lint/plugin/no-own-settings: <why>`.
+
+```json
+{ "plugins": [{ "path": "./node_modules/@wirecat/cli-base/config/lint/no-own-settings.grit", "includes": ["src/**", "!**/*.test.ts"] }] }
+```
+
 **lefthook.** Biome and gitleaks on staged files before a commit, `pnpm typecheck` before a push.
 An extended file **overrides** your `lefthook.yml`; to change a shared hook, use `lefthook-local.yml`.
 
@@ -48,6 +58,9 @@ extends:
 
 | — | `cli-dev lint --cli dist/bin.js` (or `--commands <file>`): the command tree against the standard |
 | — | `cli-dev audit --cli <bin> --cli <bin> …`: several CLIs against the standard and against each other |
+| — | `cli-dev release-pr --base <commit> --body <file>`: a pull request that changes the version needs a `## Conformance` section ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
+| — | `cli-dev live record --script <path>` after a live check passed; `cli-dev live check` in `bin/release` ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
+| — | `cli-dev repo-check --cli <name>`: main's ruleset, the monthly cron minute and a parity group ([New CLI](standards/new-cli.md#four-steps-that-need-a-person)) |
 | `scripts/bundle.ts` (tg) | `cli-dev bundle --bin dist/bin/<cli>.js [--external <package>]…`: the published bin as an esbuild bundle and its loader ([WC-LAY-10](standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds)) |
 
 `cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and

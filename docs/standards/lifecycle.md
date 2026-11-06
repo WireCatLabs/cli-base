@@ -310,9 +310,10 @@ builds settings with `resolveSettings` and calls the provider outside the run lo
   run's events, no `run_id` or `duration_ms` in `meta`, and none of an MCP server's stricter levels. bitrix24-cli's
   own `contextOf` shipped that way, and `missing-run-log` passed, since cli-core keeps every failed command as a run
   anyway.
-- **Enforced by:** review only, check planned: a cli-core test kit contract that runs each remote command against the
-  CLI's fake with --record and expects a run named after the command, the request in its events, and a timeout (exit
-  9) from a fake that never answers.
+- **Enforced by:** `config/lint/no-own-settings.grit`, for settings resolved on their own. That the request
+  happens inside the run: review only, check planned: a cli-core test kit contract that runs each remote command
+  against the CLI's fake with --record and expects a run named after the command, the request in its events, and a
+  timeout (exit 9) from a fake that never answers.
 - **Example:** gcal's `api` command calls
   `baseContext(command, configuration.resolveSettings).run((events) => use(googleApi({ ...options, events })))`.
   `b24 work deals list --json` answers a `run_id` that names `deals-list`.

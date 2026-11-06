@@ -389,16 +389,24 @@ The program definition passes `configuration` as it is, not a struct of its part
 `toolsFromCommands(commands, { permissions: configuration.permissions, … })` in a server of the CLI's own. Otherwise
 each tool's `available` and `level` come from the messenger's keys, not the CLI's.
 
+The contract plan's `deny` block (cli-testing 0.6.0) checks it. It runs the built CLI in an empty home with no
+network. Each command that reaches the service and names a key in its `--dry-run` gets `deny` in the profile and must
+exit 5 with `permission_error`, touching no network, keyring or child process. Then each is called over `mcp serve`
+and must be refused with `permission_error`, not a `validation_error`. It fails when no read, or no write of a CLI
+that has writes, names a key. The Biome plugin refuses a `resolveSettings` call outside `baseContext`, the way a CLI
+builds a context of its own.
+
 - **Why:** a `deny` that stops nothing is worse than no setting, since the owner believes it holds. bitrix24-cli
   ignored every read `deny`, on the command line and over MCP, for three releases. The type accepts the partial
   struct, so nothing warned.
-- **Enforced by:** review only, check planned: a cli-dev lint probe that sets the first remote command to deny in an
-  empty home and expects exit 5 before any request, on the command line and over MCP.
+- **Enforced by:** `cli-testing: cli-contract deny` · `<app>: pnpm contracts:check` ·
+  `config/lint/no-own-settings.grit`.
 - **Example:** gcal's `src/program.ts` passes `configuration` to the definition and to
   `appMcpCommand(IDENTITY, configuration, …)`. With `{ "deals": "deny" }` in the profile, `b24 work deals list`
-  exits 5 (`permission_error`) and sends nothing.
-- **Exceptions:** known gaps, as of 2026-11-06: beeline's definition passes only `resolveSettings`, and the MCP
-  servers of cli-template, b24 and beeline call `toolsFromCommands` without `permissions`.
+  exits 5 (`permission_error`) and sends nothing. cli-template's `contracts/plan.json` has
+  `"deny": { "profile": "personal", "skip": {…} }`, so every CLI made from it runs the check on each pull request.
+- **Exceptions:** known gaps, as of 2026-11-07: beeline's definition passes only `resolveSettings`, and the MCP
+  servers of b24 and beeline call `toolsFromCommands` without `permissions`.
 - **Applies to:** every CLI on cli-core's `run()`. **Since:** cli-base 0.80.1. **Rulings:** none.
 
 ## Sources

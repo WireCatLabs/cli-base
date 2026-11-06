@@ -208,6 +208,29 @@ fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/
   as `release-check.ts --package-only`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+### WC-REL-17 · A release pull request says what was checked, and the release needs a recorded live check
+
+A pull request that changes `package.json`'s version has a `## Conformance` section that is not empty: the
+`release:check` result, the live check's record line, the fresh audit's report or a link to it, and the slice
+reviews ([New CLI](new-cli.md#done-when)). `cli-dev release-pr --base <commit> --body <file>` fails without one.
+After the live check of the real service passes
+([WC-TEST-18](testing.md#wc-test-18--check-the-real-service-by-hand-never-in-the-test-suite)),
+`cli-dev live record --script <its script>` appends `<version> <commit> <date> <script>` to
+`docs/dev/live-checks.txt`, committed in the release pull request. `bin/release` runs `cli-dev live check` first: it
+refuses a version with no line, and one whose `src/`, `package.json` or lockfile changed since the recorded commit.
+
+- **Why:** every automated check passed on bitrix24-cli while it ignored `deny` on reads; a release that says what
+  was checked, and a live check bound to the code released, are what a reviewer reads instead of the whole diff.
+  The record is keyed by version, and compares paths rather than commits, because a squash merge gives `main` a
+  commit the live check never saw.
+- **Enforced by:** `<app>: bin/release` · `<app>: release-pr.yml` · `src/dev/conformance.ts`.
+- **Example:** `0.4.0 3f2a2e3… 2026-11-07 bin/b24-live` in `docs/dev/live-checks.txt`. A pull request
+  `chore(release): 0.4.0` without `## Conformance` fails `release-pr.yml`. `bin/release` writes the section into
+  the pull request it opens to raise a taken number, since only the number changes.
+- **Exceptions:** cli-template's own release has no service to check; its `bin/release` skips the live check where
+  `template.json` exists, a file `new` never copies.
+- **Applies to:** every CLI made from cli-template 0.17.0 or later. **Since:** cli-base 0.80.3. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

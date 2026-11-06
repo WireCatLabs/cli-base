@@ -110,12 +110,17 @@ installing that command; nothing else is registered anywhere.
    [WC-REL-11](releases.md#wc-rel-11--publish-from-github-actions-with-npm-trusted-publishing).
 3. **Pick a monthly cron minute** between 02:17 and 03:20 UTC that is not in the list of taken minutes under
    [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing).
-   The copy of `.github/workflows/monthly.yml` keeps the template's own minute, 03:02, and no check compares minutes
-   across repositories, so change it by hand, and add the new minute to the list in the step 4 pull request.
+   The copy of `.github/workflows/monthly.yml` keeps the template's own minute, 03:02; change it by hand, and add the
+   new minute to the list in the step 4 pull request.
 4. **WireCat CLIs only: join the shared lists.** A pull request to cli-base's `PARITY_GROUPS` (at least the `all`
    group, which compares the shared root commands), a line in cli-core's `WIRECAT_TOOLS` and a line in cli-docs'
    `tools.json`. A messenger also joins cli-core's `parity.json`. A CLI outside WireCatLabs keeps its parity groups
    in its own repository and runs `cli-dev audit --groups <file>`. See [Testing](testing.md).
+
+`cli-dev repo-check --cli <name>` checks steps 1, 3 and 4 on every pull request of a CLI made from cli-template
+(`ci.yml:repo-setup`): the ruleset's four rules on `main`, a monthly minute no other repository holds, and the CLI in
+a parity group. It reads the ruleset with `gh` and the job's `GITHUB_TOKEN`; without a login or a network it says so
+and skips that part, and fails on the rest.
 
 The listings beyond npm (ClawHub, the MCP Registry, the Claude plugin, the docs site, Glama) are a checklist in
 [Publishing](../PUBLISHING.md#a-new-cli).

@@ -8,6 +8,23 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Checks a CLI made from cli-template runs so it cannot ship the mistakes bitrix24-cli shipped.**
+  `cli-dev release-pr --base <commit> --body <file>` fails a pull request that changes the version without a
+  `## Conformance` section. `cli-dev live record --script <path>` writes a passed live check to
+  `docs/dev/live-checks.txt` as `<version> <commit> <date> <script>`, and `cli-dev live check` fails a version with no
+  line, or whose `src/`, `package.json` or lockfile changed since that commit; `bin/release` runs it first
+  (WC-REL-17). `cli-dev repo-check --cli <name>` checks main's ruleset through `gh`, skipping that part with a line on
+  stderr when there is no login or network, the monthly cron minute against WC-CI-9's list, and that the CLI is in a
+  parity group.
+- **`config/lint/no-own-settings.grit`**, a Biome plugin for a CLI on cli-core: a `resolveSettings` call outside
+  `baseContext(…)` is an error, since a context built that way skips the run, `--timeout` and the profile's
+  permissions (WC-LIFE-17, WC-PERM-23). Add it to the CLI's own `plugins` for `src/`; see
+  [Shared tooling](docs/TOOLING.md).
+
 ## 0.80.2 — 06.11.2026
 
 ### Added

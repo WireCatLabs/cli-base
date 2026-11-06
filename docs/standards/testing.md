@@ -232,10 +232,13 @@ and which run after merge is in [CI](ci.md).
 ### WC-TEST-18 · Check the real service by hand, never in the test suite
 
 - **Why:** a check against a real account needs a live login and can send messages to people.
-- **Enforced by:** review only.
+- **Enforced by:** `<app>: bin/release` · `src/dev/conformance.ts`, for the record. Running the scenarios stays a
+  person's job.
 - **Example:** live scenarios run by hand, by the owner or with the owner's yes, on test profiles and test chats
   only. The cast lives in an ignored file, no profile is assumed, and the record keeps the shape of each answer,
-  never its content. When a scenario is run again, the sentence it supports is updated.
+  never its content. When a scenario is run again, the sentence it supports is updated. A passed run is recorded
+  with `cli-dev live record --script <its script>`, and `bin/release` refuses a version without one
+  ([WC-REL-17](releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)).
 - **Exceptions:** a messenger with no test accounts, such as WhatsApp, where a second account or a second linked
   device would change the owner's real one, runs live scenarios on the owner's profile and only in the owner's own
   chat (the chat with themselves). It never writes to another person, and still runs only with the owner's yes.
