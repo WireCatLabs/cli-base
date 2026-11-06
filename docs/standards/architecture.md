@@ -81,17 +81,27 @@ at start-up and the `serve` relay are in [Lifecycle](lifecycle.md); the store's 
 
 ### WC-ARCH-5 · Build a feature that another provider could have as a shared command behind a capability
 
-- **Why:** a command written once in cli-core gives every provider of a kind the same path, flags and output.
+A shared domain is built in cli-core before the first CLI of its kind: its commands and its write port. Until they
+land, that CLI builds only its connection to the service: the transport, the mappers from the provider's answers to
+cli-core's entities, and the adapter behind cli-core's ports. CRM is the first domain built this way; others follow.
+
+- **Why:** a command written once in cli-core gives every provider of a kind the same path, flags and output. A CLI
+  that builds the commands first ships a second shape for the same paths and entity, and cli-core's later breaks it.
 - **Enforced by:** review only.
 - **Example:** topics and polls are port groups and shared commands in cli-core. A messenger that lacks a capability
   refuses the command; it does not silently do less. A bot is another messenger with fewer capabilities, and tg and
   max share the bot code. Calendars have the same shape: cli-core's `addCalendarCommands` builds `calendars`,
   `sync`, `store status`, `events` and `search` over the `CalendarSource` and `CalendarWriter` ports, and mounts
-  `calendars busy` or the event writes only when the provider has them.
+  `calendars busy` or the event writes only when the provider has them. CRM: cli-core builds `addCrmCommands`
+  (`deals`, `leads`, `pipelines`, `stages`) and a write port (`create`, `update`, `move`, `close`, `remove`, each
+  with its `operation_id`); b24 builds the Bitrix24 transport, the mappers and the adapter, and mounts cli-core's
+  commands.
 - **Exceptions:** a feature stays in one CLI only when the other providers cannot have it, such as MAX's socket server,
-  Telegram's app registration, or gcal's generated `api` commands.
-- **Applies to:** messenger CLIs (tg, max, wa) and calendar CLIs (gcal). **Since:** cli-base 0.41.0. **Rulings:** NEED-820, NEED-440,
-  NEED-301, NEED-444.
+  Telegram's app registration, or gcal's generated `api` commands. Known gap, as of 2026-11-06: b24 has its own CRM
+  reads and writes, built before cli-core's, and moves to cli-core's when they land.
+- **Applies to:** messenger CLIs (tg, max, wa), calendar CLIs (gcal) and CRM CLIs (b24). **Since:** cli-base 0.41.0
+  (CRM, and the shared domain built first: cli-base 0.80.1). **Rulings:** NEED-820, NEED-440, NEED-301, NEED-444,
+  NEED-2298.
 
 ### WC-ARCH-6 · Replace a use case, not a command
 

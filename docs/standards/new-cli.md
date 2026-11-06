@@ -138,9 +138,34 @@ All of these pass on `main`, before the first release:
 - `pnpm docs:check`, with `--pages`, and the CLI's `generate:check`
 - the changelog guard on a pull request
 - `pnpm release:check`
+- a live check of the real service before each release
+  ([WC-TEST-18](testing.md#wc-test-18--check-the-real-service-by-hand-never-in-the-test-suite)), recorded in the
+  repository: the version, the date, the script and pass or fail. The owner runs it, or says yes to an agent's run.
 
-The last test is a fresh agent. Give it only this handbook's [index](README.md), the new repository and the cli-base
-workflow files its own workflows pin
+Two more tests are a fresh agent's, since no machine check reads how a command runs.
+
+**After every slice** (one planned piece of work, merged), an implementation review. Give the agent this handbook,
+the repository, the plan, the public exports of cli-core and cli-base (their `package.json` exports and type
+declarations in `node_modules`) and the source of the reference CLIs that `AGENTS.md` names. It answers each item
+below with a `file:line`:
+
+1. Each command that reaches the provider does so inside cli-core's run
+   ([WC-LIFE-17](lifecycle.md#wc-life-17--send-every-request-to-the-provider-inside-cli-cores-command-run-with-the-runs-events)).
+2. Each helper the CLI wrote (a context, a transport, a retry, a pacer, paging, an error mapper) names the cli-core
+   or cli-base export that already does it, or says "none found" with the search it ran.
+3. Each provider field name, method name and error code has a source: a documentation link or a captured answer
+   ([WC-TEST-19](testing.md#wc-test-19--a-fake-refuses-what-the-real-service-refuses-and-every-provider-name-has-a-source)).
+4. No hand-written command sits in a group that cli-core owns or will own
+   ([WC-ARCH-5](architecture.md#wc-arch-5--build-a-feature-that-another-provider-could-have-as-a-shared-command-behind-a-capability)).
+5. Each pattern taken from a reference CLI keeps this handbook; a reference can be wrong.
+6. Scripts in `bin/` and examples in the docs use flags and `--json` fields that exist.
+7. One pass or fail line for each "review only" rule on the [Permissions](permissions.md),
+   [Lifecycle](lifecycle.md) and [Security](security.md) pages.
+
+Its report goes in the slice's pull request, and each finding is fixed there or listed as a follow-up.
+
+**Before the first release**, an audit. Give a fresh agent only this handbook's [index](README.md), the new repository
+and the cli-base workflow files its own workflows pin
 ([WC-CI-8](ci.md#wc-ci-8--call-cli-base-node-ciyml-from-ciyml-pinned-to-a-tag-or-commit)), and ask it to audit the
 CLI. Every gap it lists is either a gap in the CLI, to fix before the first release, or a hole in the
 handbook, to fix here.

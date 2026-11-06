@@ -23,6 +23,13 @@ describe("standards handbook check", () => {
     ).toEqual([])
   })
 
+  it("passes review only with a planned check named in plain words, and fails one named as if it existed", () => {
+    expect(check({ "output.md": rule("### WC-OUT-1 · One", "review only, check planned: a strict fake.") })).toEqual([])
+    expect(check({ "output.md": rule("### WC-OUT-1 · One", "review only, check planned: `writeData`.") })).toEqual([
+      'output.md:4: "writeData" is not a known check — name one or say "review only"',
+    ])
+  })
+
   it("ignores the rule template inside a code fence", () => {
     const template = ["```markdown", rule("### WC-OUT-1 · <rule>", "`writeData`"), "```"].join("\n")
     expect(check({ "output.md": [template, rule("### WC-OUT-1 · One")].join("\n") })).toEqual([])

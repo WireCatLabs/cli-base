@@ -33,12 +33,12 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Output](output.md) | `OUT` | 24 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection |
 | [MCP](mcp.md) | `MCP` | 13 | The MCP tools, how they come from commands, what each permission shows |
 | [Accounts](accounts.md) | `ACCT` | 12 | The explicit profile, reads across accounts, scope flags, linked identities, sign-in commands |
-| [Permissions](permissions.md) | `PERM` | 22 | Levels, keys, defaults, hard limits, the write guard and its journal |
+| [Permissions](permissions.md) | `PERM` | 23 | Levels, keys, defaults, hard limits, the write guard and its journal, handing the keys to cli-core |
 | [Architecture](architecture.md) | `ARCH` | 19 | Layers, dependency direction, vendor types, what goes in which package, the command tree built once |
-| [Lifecycle](lifecycle.md) | `LIFE` | 15 | Opening late, who closes, deadlines, long-running commands, the `serve` relay, resumable syncs and their request budget, the run log |
+| [Lifecycle](lifecycle.md) | `LIFE` | 16 | Opening late, who closes, deadlines, long-running commands, the `serve` relay, resumable syncs and their request budget, the run log, provider requests inside the run |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
 | [Data model](data-model.md) | `DATA` | 9 | Core entities, entities and source records, `external_id`, field names, links and duplicates, files, calendar entries |
-| [Testing](testing.md) | `TEST` | 17 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity |
+| [Testing](testing.md) | `TEST` | 18 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity, fakes as strict as the service |
 | [Security](security.md) | `SECR` | 24 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting, OAuth sign-in and which app it uses, meeting secrets, keyring in moved-folder runs |
 | [Documents](docs.md) | `DOC` | 21 | User pages and developer pages, generated pages, current facts, changelog, repository page |
 | [Comparisons](comparisons.md) | `CMP` | 11 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
@@ -71,7 +71,7 @@ Every rule has the same shape. A rule may add a sentence or a short list under i
 ### WC-<AREA>-<n> · <the rule, in one short sentence>
 
 - **Why:** <one line>.
-- **Enforced by:** <check names in backticks, joined by " · ">, or the words "review only".
+- **Enforced by:** <check names in backticks, joined by " · ">, "review only", or "review only, check planned: <the check>".
 - **Example:** <a command or a piece of code that keeps the rule>.
 - **Exceptions:** <when the rule does not apply>, or "none".
 - **Applies to:** <all CLIs, or which ones>. **Since:** cli-base <version>. **Rulings:** <ids>, or "none".
@@ -85,7 +85,9 @@ Every rule has the same shape. A rule may add a sentence or a short list under i
   - a check in another repository, as `<repo>: <check>`, such as `cli-core: pnpm parity:check` or
     `cli-core: biome noRestrictedImports`. `<repo>` is the repository's name on GitHub: `cli-core`, `cli-testing`,
     `cli-docs`, `community`, `tg-cli`, `max-cli`, `cli-memo`, `drive-cli`, `zoom-cli`, `whatsapp-cli` or `gcal-cli`. `<app>`
-    stands for each CLI the rule applies to, when every one of them runs that check in its own repository.
+    stands for each CLI the rule applies to, when every one of them runs that check in its own repository;
+  - no check yet: "review only", or "review only, check planned: <the check>" when one is designed but not built.
+    The planned check is plain words, not backticks, so nobody reads it as a check that runs.
 - **Since** is the cli-base release whose handbook first carried the rule. A feature can be older than its rule.
 
 ## How ids work

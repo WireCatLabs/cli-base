@@ -139,12 +139,25 @@ command fails with `timeout` (exit 9).
 
 ### WC-LIFE-9 · Never let an abort hide a write that was in flight
 
-- **Why:** a caller that sees "cancelled" might repeat a send that already went out.
-- **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/execution.test.ts`.
+The same holds when a write's answer is lost: a timeout, a reset connection or a server error after the request
+left. The transport sends a write once and never resends it on its own, with or without an idempotency key. The one
+exception is a provider that a live check
+([WC-TEST-18](testing.md#wc-test-18--check-the-real-service-by-hand-never-in-the-test-suite)) showed keeps one copy
+for a repeated key; the transport names that check where it resends. Otherwise the command fails with
+`outcome_unknown` and names the write's `operation_id`, and the caller repeats it only with `--operation-id`
+([WC-OUT-20](output.md#wc-out-20--mark-a-failure-safe-to-retry-only-when-repeating-it-cannot-do-harm)).
+
+- **Why:** a caller that sees "cancelled" might repeat a send that already went out. A transport that resends on its
+  own makes the same second write with nobody asking: bitrix24-cli resent writes up to three times with an
+  idempotency key that nobody had checked the portal honours.
+- **Enforced by:** `cli-core: src/cli/deadline.test.ts` · `cli-core: src/cli/execution.test.ts` · a CLI's own
+  transport: review only, check planned: a transport test that a write whose answer is lost is sent once and ends in
+  outcome_unknown.
 - **Example:** when a timeout or a signal cuts a write that already left, the run fails with `outcome_unknown` and
-  names the write's `operation_id`. It is never retried automatically.
+  names the write's `operation_id`. It is never retried automatically. A read may still be retried by the transport.
 - **Exceptions:** none.
-- **Applies to:** CLIs that run on cli-core's `run()`. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** CLIs that run on cli-core's `run()`; the transport's single send, every CLI that writes to a
+  provider. **Since:** cli-base 0.41.0 (a lost answer and the single send: cli-base 0.80.1). **Rulings:** none.
 
 ### WC-LIFE-10 · Mark a long command `cooperative` when it should stop at its own pace and keep its work
 
@@ -283,6 +296,28 @@ status command answers how far it is
   command to `write`, not `read`.
 - **Applies to:** every CLI with a sync. **Since:** cli-base 0.65.0. **Rulings:** the owner's deadlines and request
   budgets (2026-10-27).
+
+## Requests to the provider
+
+### WC-LIFE-17 · Send every request to the provider inside cli-core's command run, with the run's events
+
+A command reaches the provider only inside its run: `baseContext(command, …).run((events) => …)`, a cli-core command
+factory, or `startRecording` in a program of its own. It hands that run's `events` to the transport. A helper that
+builds settings with `resolveSettings` and calls the provider outside the run loses everything the run gives.
+
+- **Why:** outside the run there is no `--timeout` deadline
+  ([WC-LIFE-5](#wc-life-5--bound-every-one-shot-command-by-a-deadline)), no record of a success, no request in the
+  run's events, no `run_id` or `duration_ms` in `meta`, and none of an MCP server's stricter levels. bitrix24-cli's
+  own `contextOf` shipped that way, and `missing-run-log` passed, since cli-core keeps every failed command as a run
+  anyway.
+- **Enforced by:** review only, check planned: a cli-core test kit contract that runs each remote command against the
+  CLI's fake with --record and expects a run named after the command, the request in its events, and a timeout (exit
+  9) from a fake that never answers.
+- **Example:** gcal's `api` command calls
+  `baseContext(command, configuration.resolveSettings).run((events) => use(googleApi({ ...options, events })))`.
+  `b24 work deals list --json` answers a `run_id` that names `deals-list`.
+- **Exceptions:** known gap, as of 2026-11-06: beeline's `session` commands build their own context and enter no run.
+- **Applies to:** every CLI that reaches a provider. **Since:** cli-base 0.80.1. **Rulings:** none.
 
 ## Sources
 

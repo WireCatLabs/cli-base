@@ -347,6 +347,15 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
   `events.delete.series`, is checked by every path that can do the same thing, the CLI's own generic API commands
   included. A gcal `api` call that deletes an event with `sendUpdates: "all"` checks `events.notify` as well as
   its own `api.calendar.events.delete`; otherwise the generic path is a way round the shared key.
+- **Command keys on every path.** The same holds for a command's own key. Every path that reaches a provider method
+  also checks the key of each command that does the same thing: the passthrough `api call <method>`, and a field
+  that implies another action. A deal's stage in an `update` or `create` body is a move, so it checks `deals.move`
+  as well as `deals.update`. The run checks each key through its keyed write guard; `commandPermissions({ alsoChecks })`
+  declares the same keys, so `--dry-run` shows each one. gcal's `events update` declares the `api.calendar.events.*`
+  keys its run checks.
+- **Passthrough methods.** A passthrough command maps each provider method it knows to its keys. A method that is not
+  in the map is `ask`. A method family that can message people or publish (send mail, post to a feed, notify, open a
+  chat) is `deny` until the owner allows it.
 - **Read-only lock and guard.** `<PREFIX>_READ_ONLY` refuses every write to the service, as in WC-PERM-12. Every
   write runs through cli-core's write guard with `permissionDefaults: configuration.permissions.defaults`
   (cli-core 0.455.0), so `ask` is a y/N question at a terminal (WC-PERM-9) and every attempt goes into the send journal
@@ -355,7 +364,9 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
   `commandPermissions`; a CLI made from it adds the call with its first such command.
 
 - **Why:** one permission model for every CLI; a CLI-own layer drifts from the shared one and is audited by nobody.
-- **Enforced by:** `cli-core: src/cli/command-permissions.test.ts` · `cli-core: src/calendar/cli/writes.test.ts`.
+- **Enforced by:** `cli-core: src/cli/command-permissions.test.ts` · `cli-core: src/calendar/cli/writes.test.ts` ·
+  a CLI's own passthrough and implied actions: review only, check planned: a table test that each write method the
+  passthrough reaches, and each field that implies another action, checks the command key.
 - **Example:** a calendar CLI takes cli-core's `CALENDAR_WRITE_DEFAULTS` and `CALENDAR_WRITE_KEYS`
   (`@wirecat/cli-core/calendar`, cli-core 0.458.0). By this rule `events create`, `update`, `respond` and `move` are
   `allow` and `events delete` is `ask`. `events.delete.series` (every occurrence of a repeating series, in every
@@ -367,7 +378,28 @@ A messenger's keys come from its resources (`messages`, `chats`). Any other CLI 
   `remote-meetings` key with `levelFor`, and memo uses cli-core's permissions for the shared commands only. None of
   them declares `commandPermissions` yet.
 - **Applies to:** every CLI that writes and is not a messenger. **Since:** cli-base 0.64.0 (the levels and the shared
-  keys on every path: cli-base 0.65.0). **Rulings:** NEED-1857, NEED-1883.
+  keys on every path: cli-base 0.65.0; command keys on every path and passthrough methods: cli-base 0.80.1).
+  **Rulings:** NEED-1857, NEED-1883.
+
+### WC-PERM-23 · Hand cli-core the whole configuration with its permission table, and the MCP server the same table
+
+The program definition passes `configuration` as it is, not a struct of its parts. `{ resolveSettings }` alone drops
+`permissions`: cli-core then skips the check of each command's key, so a `deny` on a read stops nothing, and
+`--dry-run` shows no key. The MCP server gets the same table: `appMcpCommand(IDENTITY, configuration, …)`, or
+`toolsFromCommands(commands, { permissions: configuration.permissions, … })` in a server of the CLI's own. Otherwise
+each tool's `available` and `level` come from the messenger's keys, not the CLI's.
+
+- **Why:** a `deny` that stops nothing is worse than no setting, since the owner believes it holds. bitrix24-cli
+  ignored every read `deny`, on the command line and over MCP, for three releases. The type accepts the partial
+  struct, so nothing warned.
+- **Enforced by:** review only, check planned: a cli-dev lint probe that sets the first remote command to deny in an
+  empty home and expects exit 5 before any request, on the command line and over MCP.
+- **Example:** gcal's `src/program.ts` passes `configuration` to the definition and to
+  `appMcpCommand(IDENTITY, configuration, …)`. With `{ "deals": "deny" }` in the profile, `b24 work deals list`
+  exits 5 (`permission_error`) and sends nothing.
+- **Exceptions:** known gaps, as of 2026-11-06: beeline's definition passes only `resolveSettings`, and the MCP
+  servers of cli-template, b24 and beeline call `toolsFromCommands` without `permissions`.
+- **Applies to:** every CLI on cli-core's `run()`. **Since:** cli-base 0.80.1. **Rulings:** none.
 
 ## Sources
 
