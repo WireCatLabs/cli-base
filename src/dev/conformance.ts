@@ -149,8 +149,8 @@ export const rulesetProblems = (shell: Shell, slug: string): { problems: string[
     if (!status) return { problems: [], skipped: `GitHub could not be reached: ${answer.out.split("\n")[0] ?? ""}` }
     return {
       problems: [
-        `GitHub answered ${status} for ${slug}'s rules on main: the repository does not exist yet, or this token ` +
-          "cannot read it",
+        `GitHub answered ${status} for ${slug}'s rules on main: ` +
+          (answer.out.match(/gh: ([^\n]*?) \(HTTP/)?.[1] ?? "the repository is missing or this token cannot read it"),
       ],
     }
   }
