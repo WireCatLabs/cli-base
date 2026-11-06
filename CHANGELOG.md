@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`cli-dev release-pr --body` and `cli-dev live --file` take an absolute path**, such as a CI runner's temporary
+  folder; 0.80.3 joined it onto the working folder.
+
 ## 0.80.3 — 07.11.2026
 
 ### Added

@@ -1,5 +1,5 @@
 import { appendFileSync, existsSync, readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 import { packageVersion } from "../release/index.js"
@@ -82,7 +82,7 @@ const live = (args: string[], io: DevIo, shell: Shell) => {
       file: { type: "string", default: LIVE_FILE },
     },
   })
-  const file = join(io.cwd, values.file)
+  const file = resolve(io.cwd, values.file)
   const version = values.version ?? packageVersion(io.cwd)
   if (action === "check") {
     const records = existsSync(file) ? parseLiveRecords(readFileSync(file, "utf8")) : []
@@ -128,7 +128,7 @@ const releasePr = (args: string[], io: DevIo, shell: Shell) => {
   }
   const baseVersion = String((JSON.parse(base.out) as { version?: unknown }).version)
   const problems = releasePrProblems(
-    readFileSync(join(io.cwd, values.body), "utf8"),
+    readFileSync(resolve(io.cwd, values.body), "utf8"),
     baseVersion,
     packageVersion(io.cwd),
   )

@@ -75,7 +75,7 @@ describe("release pull request", () => {
     expect(conformanceCommand("release-pr", ["--base", base, "--body", "body.md"], io)).toBe(1)
     expect(err.join("")).toContain("0.3.0 → 0.4.0")
     writeFileSync(join(cwd, "body.md"), "## Conformance\n\n- release:check passed\n")
-    expect(conformanceCommand("release-pr", ["--base", base, "--body", "body.md"], ioIn(cwd).io)).toBe(0)
+    expect(conformanceCommand("release-pr", ["--base", base, "--body", join(cwd, "body.md")], ioIn(cwd).io)).toBe(0)
   })
 })
 
