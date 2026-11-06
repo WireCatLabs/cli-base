@@ -119,8 +119,8 @@ installing that command; nothing else is registered anywhere.
 
 `cli-dev repo-check --cli <name>` checks steps 1, 3 and 4 on every pull request of a CLI made from cli-template
 (`ci.yml:repo-setup`): the ruleset's four rules on `main`, a monthly minute no other repository holds, and the CLI in
-a parity group. It reads the ruleset with `gh` and the job's `GITHUB_TOKEN`; without a login or a network it says so
-and skips that part, and fails on the rest.
+a parity group. It reads the ruleset with `gh` and the job's `GITHUB_TOKEN`; without a login or a network, or for a private
+repository on GitHub's free plan, which cannot have rulesets, it says so and skips that part, and fails on the rest.
 
 The listings beyond npm (ClawHub, the MCP Registry, the Claude plugin, the docs site, Glama) are a checklist in
 [Publishing](../PUBLISHING.md#a-new-cli).

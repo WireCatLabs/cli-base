@@ -147,6 +147,9 @@ export const rulesetProblems = (shell: Shell, slug: string): { problems: string[
     if (status === "401" || (!status && /gh auth login|GH_TOKEN/.test(answer.out)))
       return { problems: [], skipped: "gh is not signed in (set GH_TOKEN in CI)" }
     if (!status) return { problems: [], skipped: `GitHub could not be reached: ${answer.out.split("\n")[0] ?? ""}` }
+    // A private repository on the free plan cannot have rulesets at all (NEED-2331).
+    if (status === "403" && answer.out.includes("Upgrade to GitHub Pro or make this repository public"))
+      return { problems: [], skipped: "a private repository on GitHub's free plan has no rulesets" }
     return {
       problems: [
         `GitHub answered ${status} for ${slug}'s rules on main: ` +

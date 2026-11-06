@@ -12,6 +12,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **`cli-dev repo-check` skips the ruleset of a private repository on GitHub's free plan** with a line on stderr:
+  GitHub answers 403 "Upgrade to GitHub Pro or make this repository public", and such a repository cannot have one.
+  Any other 403 still fails, and the cron and parity checks still run.
 - **`cli-dev release-pr --body` and `cli-dev live --file` take an absolute path**, such as a CI runner's temporary
   folder; 0.80.3 joined it onto the working folder.
 
