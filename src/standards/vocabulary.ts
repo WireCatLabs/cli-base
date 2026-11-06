@@ -277,6 +277,7 @@ const collections: [string, string][] = [
   ["stages", "steps of a pipeline, each open, won or lost"],
   ["products", "goods and services the owner sells, with their prices"],
   ["users", "people who work in the owner's account at a service, such as a CRM's employees"],
+  ["fields", "a record type's field definitions: code, label, type and options, such as a CRM's custom fields"],
   [
     "identities",
     "ways to reach a person or an organization: an account in one messenger or mailbox, an e-mail address, a phone",
