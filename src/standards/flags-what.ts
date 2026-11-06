@@ -736,6 +736,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "never show this chat in it; repeat it for more",
   },
   {
+    name: "--field",
+    value: "<key=value>",
+    role: "value",
+    type: "string",
+    meaning: "set one named field on a write, as key=value; repeat it for more",
+  },
+  {
     name: "--file",
     value: "<file>",
     role: "value",

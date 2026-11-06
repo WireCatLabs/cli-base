@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--field <key=value>` is a vocabulary flag** (role `value`): sets one named field on a write, and is repeated for
+  more, as `gh api --field key=value` does. b24 sets a CRM's custom fields with it on `create` and `update`. The issue
+  first asked for `--set`, but max-cli's `--set <id>` already names a sticker set, and one flag must keep one meaning.
+- **`fields` in the resource vocabulary:** a record type's field definitions, with code, label, type and options, such
+  as a CRM's custom fields (`b24 <profile> fields list deals`).
+
 ## 0.80.0 — 06.11.2026
 
 ### Added
