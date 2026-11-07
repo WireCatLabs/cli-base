@@ -257,6 +257,7 @@ const collections: [string, string][] = [
   ["topics", "forum topics in a group"],
   ["models", "local or remote models"],
   ["tags", "labels the owner puts on things"],
+  ["groups", "account groups: the accounts a run in a group reads, such as work and personal (WC-ACCT-13)"],
   ["searches", "the owner's saved searches"],
   ["copies", "tables kept aside by a repair"],
   ["tables", "the tables of the local store, with their kind, row count and size"],

@@ -10,6 +10,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **The vocabulary has the noun `groups` and the option `--position`.** `groups` is memo's account groups
+  (`memo groups list|add|remove|move`, WC-ACCT-13); `--position <title>` is a person's job title on a relationship,
+  stored as `position` and never the role. memo can drop the lint baseline entries it kept for them.
+
 ### Fixed
 
 - **`hostFetch` lets go of a finished request's memory at once.** Its timeout used `AbortSignal.timeout`, whose timer,
@@ -108,6 +114,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **The new-CLI handbook names the data-folder rule for a CLI published outside `@wirecat`:** WireCat Desktop adds
   such a tool only when its `appName` is `<scope>-<name>` of the package or starts with it. It also says that the
   template now calls `wcatStart`, writes the `wcat-` command and names a reference CLI for mail and crm.
+||||||| parent of 9527137 (feat(vocabulary): the groups noun and the --position option)
 
 ## 0.82.0 â€” 07.11.2026
 
@@ -128,6 +135,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   still takes a `<duration>`. `--interval` stays another name for `--pause`, which `flag-synonym` refuses.
 - **Wider meanings, nothing renamed:** `products` covers what the owner buys as well as sells, `cancel` covers a
   subscription, and `--start-date` and `--end-date` cover a contract as well as an all-day event.
+||||||| parent of 426b796 (feat(vocabulary): the groups noun and the --position option)
 
 ## 0.81.0 â€” 07.11.2026
 
