@@ -425,6 +425,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   },
   { name: "--run", value: "<id>", role: "target", type: "id", meaning: "the run it is about" },
   {
+    name: "--who",
+    value: "<side>",
+    role: "target",
+    type: "choice",
+    meaning: "whose replies are measured: me (the owner's) or others (the other side's)",
+  },
+  {
     name: "--write",
     value: "<id>",
     role: "target",

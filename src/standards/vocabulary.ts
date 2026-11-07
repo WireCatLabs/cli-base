@@ -4,6 +4,7 @@ import { CRM_FLAGS } from "./flags-crm.js"
 import { HOW_FLAGS } from "./flags-how.js"
 import { MAIL_FLAGS } from "./flags-mail.js"
 import { PRIVACY_FLAGS } from "./flags-privacy.js"
+import { SCHEDULE_FLAGS } from "./flags-schedule.js"
 import { WHAT_FLAGS } from "./flags-what.js"
 import { duplicates, parseRegistry, text, word } from "./registry.js"
 
@@ -375,6 +376,7 @@ const views: [string, string][] = [
   ["newcomers", "members observed joining during the selected time window"],
   ["retention", "whether members of a selected cohort remain or return over time"],
   ["responses", "observed replies between participants and the time taken to answer"],
+  ["waiting", "chats whose newest message waits on the owner's reply"],
   ["discussion", "source posts compared by known views and observed discussion replies"],
   ["unanswered", "questions without an observed qualifying answer"],
   ["me", "the account a profile's token belongs to"],
@@ -413,5 +415,13 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
   ],
   views: views.map(([entry, meaning]) => ({ word: entry, meaning })),
   roots: roots.map(([entry, meaning]) => ({ word: entry, meaning })),
-  flags: [...HOW_FLAGS, ...WHAT_FLAGS, ...PRIVACY_FLAGS, ...CALENDAR_FLAGS, ...MAIL_FLAGS, ...CRM_FLAGS],
+  flags: [
+    ...HOW_FLAGS,
+    ...WHAT_FLAGS,
+    ...PRIVACY_FLAGS,
+    ...CALENDAR_FLAGS,
+    ...MAIL_FLAGS,
+    ...CRM_FLAGS,
+    ...SCHEDULE_FLAGS,
+  ],
 })

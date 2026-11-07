@@ -325,6 +325,7 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "tell the people it concerns about it: the chat's members, or an event's attendees",
   },
   { name: "--no-notify", role: "mode", type: "switch", meaning: "tell nobody about it" },
+  { name: "--open-new", role: "mode", type: "switch", meaning: "a read again for tasks also opens new tasks" },
   { name: "--offline", role: "mode", type: "switch", meaning: "answer from what was recorded and never connect" },
   {
     name: "--operation-id",
