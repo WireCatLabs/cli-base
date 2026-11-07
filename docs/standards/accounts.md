@@ -53,7 +53,7 @@ profile.
 - **Exceptions:** `mcp serve --profiles <names|all>` names the profiles one server serves ([WC-MCP-9](mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)). It is used in
   place of the first word, never with it. memo has no profiles of its own, so it has no `--profiles`, and its first
   word is an account group, not a profile: `memo work search all invoice`
-  ([WC-ACCT-13](#wc-acct-13--memos-first-word-is-an-account-group-and-personal-holds-every-account-no-other-group-lists)).
+  ([WC-ACCT-13](#wc-acct-13--memos-first-word-is-an-account-group-and-the-default-group-all-holds-every-account)).
   It selects the accounts of other CLIs with `--source` and `--account`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84, NEED-294, NEED-1881, NEED-2378.
 
@@ -193,15 +193,15 @@ Every CLI that signs in has four commands under `session`:
   ([WC-CMD-8](commands.md#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)).
 - **Applies to:** every CLI that signs in. **Since:** cli-base 0.65.0. **Rulings:** NEED-1884.
 
-### WC-ACCT-13 · memo's first word is an account group, and `personal` holds every account no other group lists
+### WC-ACCT-13 · memo's first word is an account group, and the default group `all` holds every account
 
 A group is a list of accounts that the owner saves, store-wide, as `account_groups.<name>`; every reader takes it as
-`--source group:<name>`. Membership is explicit:
+`--source group:<name>`. The default reads everything; groups and the lock are opt-in narrowing for agents.
 
-- A saved group holds exactly the accounts it lists. A member is saved as `provider:account`, so renaming a profile
-  changes nothing.
-- `personal` always exists. It holds every account that no other saved group lists, plus any account that
-  `account_groups.personal` lists. With nothing saved, `personal` is every account, and a new account lands in it.
+- `all` is the default group. It always holds every account and is never saved or edited. No group word means `all`,
+  as before, and `memo all …`, `MEMO_GROUP=all` and `MEMO_GROUP_LOCK=all` restrict nothing.
+- Any other group holds exactly the accounts it lists, `personal` like any other, and a group never saved does not
+  exist. A member is saved as `provider:account`, so renaming a profile changes nothing.
 - One account may be in several groups. This is allowed and shown, not refused: a groups list gives each member its
   profile names in every CLI and `also_in` (its other groups), and the answer has a `duplicates` summary.
 - A profile named like a group never puts its account in the group. A groups list only suggests it
@@ -211,29 +211,30 @@ A group is a list of accounts that the owner saves, store-wide, as `account_grou
 
 `memo <group> …` reads only that group: a read without `--source` reads `group:<group>`, an explicit `--source`
 narrows inside it, and an account outside it is `validation_error`, as is a write's `--account` outside it.
-`MEMO_GROUP=<group>` does the same as the first word, and `all` is no group. `MEMO_GROUP_LOCK=<group>` pins the
-process as WC-ACCT-5 pins a profile: another group, `all`, or an account outside the group is `permission_error`.
-Under the lock every source list holds only the group's accounts, so a read that names no group stays inside it.
-The lock fails closed: a command runs only when it is marked as keeping to a group (`groupAware`), and any reference
-in its arguments or options whose thing belongs only to accounts outside the group is refused. A thing the owner made
-passes, a note written in memo belongs to `personal`, and a person passes when one of their identities is in the
-group.
-Without the lock, a group is a convenience and not a boundary.
+`MEMO_GROUP=<group>` does the same as the first word. `MEMO_GROUP_LOCK=<group>` pins the process as WC-ACCT-5 pins a
+profile: another group, `all`, or an account outside the group is `permission_error`. Under the lock every source
+list holds only the group's accounts, so a read that names no group stays inside it. The lock fails closed: a command
+runs only when it is marked as keeping to a group (`groupAware`), and a reference in its arguments or options to
+account data outside the group is refused: a message, a chat, mail, a calendar event, a CRM row, or a person seen only
+by outside accounts. What the owner made, with no account (memo's notes, projects, tasks, invoices, owner deals and
+organizations, memories, facts), is visible in every group. Without the lock, a group is a convenience and not a
+boundary.
 
-- **Why:** the owner reads work and private accounts apart, across every CLI, without naming each account. A
-  default group that holds everything not sorted yet keeps a new account out of `work` by accident.
-- **Enforced by:** `cli-core: src/search/groups.test.ts` · `cli-core: src/crm/sync.test.ts`.
+- **Why:** an agent can be held to the owner's work accounts across every CLI, without naming each account, while the
+  owner's own default still reads everything.
+- **Enforced by:** `cli-core: src/search/groups.test.ts` · `cli-core: src/cli/group-lock.test.ts` ·
+  `cli-core: src/crm/sync.test.ts`.
 - **Example:** with `account_groups.work` set to `telegram:102,bitrix24:acme.bitrix24.ru`, `memo work search all
-  invoice` reads those two accounts, and `memo personal …` reads every other one. `memo work search all x --source
-  telegram:101` is refused because `telegram:101` is not in `work`. With nothing saved, `memo work …` is refused with
-  the groups listed (`personal`), and the profiles named `work` are suggested. The first CRM sync of an account that
-  is only in `personal` answers `group_hint`, ``add it to a work group: `memo groups add work <provider>:<account>` ``.
-  Only the CRM sync answer carries it.
+  invoice` reads those two accounts, and `memo search all invoice` reads every account. `memo work search all x
+  --source telegram:101` is refused because `telegram:101` is not in `work`. With nothing saved, `memo work …` is
+  refused with the groups listed (`all`), and the profiles named `work` are suggested. The first CRM sync of an
+  account no saved group lists answers `group_hint`, ``add it to a work group: `memo groups add work
+  <provider>:<account>` ``. Only the CRM sync answer carries it.
 - **Exceptions:** the bare word `personal` in a `--source` list still means the messenger accounts that are not bots;
-  only `group:personal` is this group. The CLIs that can save a group today are tg and max (`config set
-  account_groups.<name>`); they refuse `all` and `bots` but not a memo command word. memo does not read the first
+  only `group:personal` is a saved group of that name. The CLIs that can save a group today are tg and max (`config
+  set account_groups.<name>`); they refuse `all` and `bots` but not a memo command word. memo does not read the first
   word yet.
-- **Applies to:** memo, and cli-core's source lists in every CLI. **Since:** cli-base 0.81.1. **Rulings:** NEED-2378,
+- **Applies to:** memo, and cli-core's source lists in every CLI. **Since:** cli-base 0.82.1. **Rulings:** NEED-2378,
   NEED-2389.
 
 ## Sources
