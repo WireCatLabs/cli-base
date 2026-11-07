@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`cli-dev audit` and `repo-check` know bitrix24-cli (`b24`) and beeline-cli (`beeline`).** Both join a new parity
+  group, `shared-roots`, compared with the other CLIs on `commands`, `doctor`, `skill`, `mcp` and `upgrade` only:
+  b24's `search all` is cli-core's CRM search and beeline's `meetings` take call recordings, so each differs from the
+  others there by design. WC-CI-9's list holds their monthly minutes, 02:34 for bitrix24-cli and 03:09 for
+  beeline-cli.
+
 ## 0.80.5 — 07.11.2026
 
 ### Added
@@ -23,7 +33,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 - **`cli-dev lint --allow-stale`** prints a stale baseline entry or override as a warning instead of failing. For
   cli-core's CI, which lints each CLI built against its branch: a word cli-core's branch adds to the vocabulary makes
   that CLI's entry stale, and removing it is the CLI's cleanup on its next bump, not a break.
-
 ## 0.80.4 — 07.11.2026
 
 ### Fixed
