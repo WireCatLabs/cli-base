@@ -39,7 +39,7 @@ export const CRM_FLAGS: VocabularyFlag[] = [
   },
   {
     name: "--status",
-    value: "<status>",
+    value: "<state>",
     role: "value",
     type: "choice",
     meaning: "the state to put it in; the command lists the states",

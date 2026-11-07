@@ -20,8 +20,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   an order or an invoice). New verb: `match`, which links waiting records to what their identifiers name; a name alone
   never matches, so it is not `link`. New value flags: `--status`, `--product`, `--contract`, `--payment`,
   `--refund-of`, `--wallet`, `--supplier`, `--customer`, `--trial-end-date`, `--notice-days`, `--auto-renew`,
-  `--opening-balance`, `--opening-date`, `--institution`, `--unit`, `--sku` and `--archived`. A CLI that kept a lint
-  override for `--status`, such as memo's `tasks add`, `tasks update` and `tasks move`, can drop it.
+  `--opening-balance`, `--opening-date`, `--institution`, `--unit`, `--sku` and `--archived`. `--status` takes
+  `<state>`, as memo's task board already does, so a CLI that kept a lint override for `--status`, such as memo's
+  `tasks add`, `tasks update` and `tasks move`, can drop it.
 - **`--every` also takes a count and a calendar unit, such as `1-month`,** for how often a charge repeats. A timer
   still takes a `<duration>`. `--interval` stays another name for `--pause`, which `flag-synonym` refuses.
 - **Wider meanings, nothing renamed:** `products` covers what the owner buys as well as sells, `cancel` covers a
