@@ -4,14 +4,23 @@
  * dispatch mode, and each tool repairs it on start.
  *
  * A CLI's bin imports `wcatStart` from `@wirecat/cli-base/wcat/start`, which loads only Node built-ins; this entry
- * point is the whole library, for WireCat Desktop and for tests.
+ * point is the whole library, for WireCat Desktop and for tests. `@wirecat/cli-base/wcat/manifest` builds and checks
+ * `contracts/wirecat.json`.
  */
-export { type DescribeAnswer, describeAnswer, parseDescribe, type WcatTool } from "./describe.js"
+export {
+  type DescribeAnswer,
+  type DescribedTool,
+  describeAnswer,
+  parseDescribe,
+  type ShippedManifest,
+  type WcatTool,
+} from "./describe.js"
 export { type ListedTool, listTools, runWcat, type WcatContext } from "./dispatch.js"
 export { type BinFolder, binFolder, ensureLauncher, type LauncherState } from "./launcher.js"
 export {
   BUILT_IN_COMMANDS,
   DESCRIBE_FLAG,
+  DESCRIBE_MAX_BYTES,
   DISPATCH_FLAG,
   FIRST_PARTY_TOOLS,
   PROGRAM_PREFIX,

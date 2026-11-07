@@ -306,6 +306,10 @@ else await startCli(…)
 ```
 
 - **`--wcat-describe`** prints `{"wcat_describe":1,"name","version","description","docs_url"}` and returns `{ code: 0 }`.
+  When the package ships `contracts/wirecat.json` (found next to the `package.json` nearest the bin), it prints format
+  2: the same keys with `"wcat_describe": 2`, plus the file's `desktop` object and `manifest_sha256`, the SHA-256 of
+  the file's bytes. It reads the file and never rebuilds it. An unreadable file, or an answer past the 64 KiB cap
+  (`DESCRIBE_MAX_BYTES`), answers format 1. `parseDescribe` reads either format.
 - **`--wcat-dispatch …`**, which only the launcher passes, runs `runWcat` with the rest of the words.
 - **Any other start** checks the launcher and returns `{ launcher }`: `kept`, `written`, `foreign`, `newer` or
   `failed`, or nothing when the tool is not a global npm, pnpm or bun install (npx, a checkout, a project's
@@ -316,6 +320,43 @@ else await startCli(…)
 The launcher, like a shortcut, is a marked file that starts a program in the same folder by its stable name, never a
 link into a package: pnpm keeps packages in folders named after their version. On Linux and macOS it is a `sh`
 script; on Windows a `.cmd` and a `.ps1`, the pair npm writes for its own commands. `parseShim` reads the mark.
+
+**`contracts/wirecat.json`, from `@wirecat/cli-base/wcat/manifest`**, is what WireCat Desktop reads, out of the npm
+tarball and without running the package, to add a tool it has not checked
+([WC-CMD-29](standards/commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves)).
+`buildManifest({ identity, commands, pkg, skills })` builds it and `cli-dev manifest` writes it:
+
+```sh
+cli-dev manifest --program dist/program.js --identity dist/wcat.js          # writes the file
+cli-dev manifest --program dist/program.js --identity dist/wcat.js --check  # fails when it is stale
+```
+
+`--program` exports `createProgram`; `--identity` exports `WCAT`, a `ManifestIdentity`: the `wcatStart` argument
+(`command`, `version`, `description`, `docs`) plus cli-core's `appName` and `envPrefix`, and the only texts the
+developer types: `tagline` (at most 55 characters), `signIn: { gives, asks }` and, when the CLI has a sync command,
+`syncs` (what it copies, at most 40 characters). An optional
+`permissionOf(path)` names each command's permission key. `package` and `bin` (`wcat-<command>`, else `<command>`)
+come from `package.json`.
+
+| Key | Contents |
+|---|---|
+| `wcat_manifest`, `name`, `description`, `docs_url`, `package`, `bin` | `2`, then the identity and `package.json`; no `version`, so a release leaves the file as it is (Desktop reads the version from npm) |
+| `commands` | `{ path, effects, permission? }` for each command that runs; undeclared `effects` are written as a write |
+| `desktop.doctor` | `[{profile}] doctor --record --json`; a CLI without `doctor` is refused |
+| `desktop.profiles` | `account list` or `session list`, `--no-record --json`, shape `items`; `{profile}` leads `doctor` and `setup` only then |
+| `desktop.setup` | `[{profile}] setup`, else `[{profile}] session start` |
+| `desktop.runs` | `runs list {query} --limit {limit} --page {page}` and `runs show {run}`, `--no-record --json` |
+| `desktop.skill` | `skill status`, `skill install --for {target}`, `skill show`, when `skills/` ships too |
+| `desktop.mcpServer` | `mcp server start --port {port}`, `stop`, `status`, `mcp revoke`, `mcp config`; `--public-url` and `--profiles all` where the command takes them. No `port`: Desktop gives the tool a free port no catalog tool uses and fills `{port}` |
+| `desktop.sync` | for a root `sync`, or the only `<noun> sync`: `run` is `[{profile}] <path> --record --json`; `last` is `runs list command:sync status:success --limit 50 --no-record --json` for a root `sync` with `runs list`, else `null` (`runs list` matches `command:` exactly, and a plain word cannot hold the space of `contacts sync`); `lastShape: "runs"`, `what` from `syncs`, `note: null`. A sync without `syncs` is refused |
+| `desktop.storage` | `{ app: appName, env: envPrefix }` |
+| `desktop.tagline`, `desktop.signIn` | as declared; `signIn` is `null` when not |
+| every other catalog key | `null`: `search`, `tasks`, `settings` and the `store*` keys |
+
+Every string in every array is a plain word, Desktop's own rule (`PLAIN_WORD`): letters, digits and `._:=,/+@-`, at
+most two leading dashes, `--` alone and `{name}` slots. `buildManifest` throws a `ManifestError` naming the key and
+the word instead of writing anything else. `manifestSchema` (valibot) and `manifestJsonSchema()` check a manifest;
+`manifestText` gives the exact bytes the command writes.
 
 `runWcat(args, context)` is the command itself:
 

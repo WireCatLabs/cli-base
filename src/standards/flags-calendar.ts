@@ -7,14 +7,14 @@ export const CALENDAR_FLAGS: VocabularyFlag[] = [
     value: "<date>",
     role: "value",
     type: "time",
-    meaning: "the first day of something that lasts whole days, such as an all-day event",
+    meaning: "the first day of something that lasts whole days, such as an all-day event or a contract",
   },
   {
     name: "--end-date",
     value: "<date>",
     role: "value",
     type: "time",
-    meaning: "the last day of something that lasts whole days, such as an all-day event",
+    meaning: "the last day of something that lasts whole days, such as an all-day event or a contract",
   },
   { name: "--location", value: "<text>", role: "value", type: "string", meaning: "where it takes place" },
   {

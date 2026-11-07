@@ -29,5 +29,8 @@ export const PROGRAM_PREFIX = "wcat-"
 /** The first argument `wcat-<name> --wcat-describe` answers with its JSON description. */
 export const DESCRIBE_FLAG = "--wcat-describe"
 
+/** The most a `--wcat-describe` answer may print before `wcat` stops reading it. */
+export const DESCRIBE_MAX_BYTES = 64 * 1024
+
 /** The first argument the `wcat` launcher passes, so the tool runs `wcat` instead of its own program. */
 export const DISPATCH_FLAG = "--wcat-dispatch"

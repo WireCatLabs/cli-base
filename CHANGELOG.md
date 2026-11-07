@@ -18,8 +18,62 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   repository's own `release.yml` with the merged commit. It needs a GitHub App token, because a pull request opened
   with `GITHUB_TOKEN` does not run its checks on its own. Nothing calls it yet; setup and the open points are in
   [`docs/dev/release-workflow.md`](docs/dev/release-workflow.md).
+- **The new-CLI handbook names the data-folder rule for a CLI published outside `@wirecat`:** WireCat Desktop adds
+  such a tool only when its `appName` is `<scope>-<name>` of the package or starts with it. It also says that the
+  template now calls `wcatStart`, writes the `wcat-` command and names a reference CLI for mail and crm.
+
+## 0.82.0 — 07.11.2026
+
+### Added
+
+- **`--from-app`**, a mode switch: the owner did this in the app that runs the tool (WireCat Desktop), so the tool
+  records it as the owner's with no terminal question. It is the app's word, not a security check (memo's decisions).
+- **Vocabulary words for business records.** cli-memo adds products, contracts, subscriptions, wallets and bank
+  transactions (cli-core's business entities plan), and `cli-dev lint` would report each new command word as unknown.
+  New resources: `contracts`, `subscriptions`, `prices`, `wallets`, `transactions`, `splits` and `lines` (the rows of
+  an order or an invoice). New verb: `match`, which links waiting records to what their identifiers name; a name alone
+  never matches, so it is not `link`. New value flags: `--status`, `--product`, `--contract`, `--payment`,
+  `--refund-of`, `--wallet`, `--supplier`, `--customer`, `--trial-end-date`, `--notice-days`, `--auto-renew`,
+  `--opening-balance`, `--opening-date`, `--institution`, `--unit`, `--sku` and `--archived`. `--status` takes
+  `<state>`, as memo's task board already does, so a CLI that kept a lint override for `--status`, such as memo's
+  `tasks add`, `tasks update` and `tasks move`, can drop it.
+- **`--every` also takes a count and a calendar unit, such as `1-month`,** for how often a charge repeats. A timer
+  still takes a `<duration>`. `--interval` stays another name for `--pause`, which `flag-synonym` refuses.
+- **Wider meanings, nothing renamed:** `products` covers what the owner buys as well as sells, `cancel` covers a
+  subscription, and `--start-date` and `--end-date` cover a contract as well as an all-day event.
+
+## 0.81.0 — 07.11.2026
+
+### Added
+
+- **`cli-dev manifest` writes `contracts/wirecat.json`, the file WireCat Desktop reads to add a tool it has not
+  checked.** Desktop's catalog entry for a tool outside WireCat was written by hand, and every command word in it was
+  copied from the CLI. `cli-dev manifest --program dist/program.js --identity dist/wcat.js` now builds it from the
+  command tree (`createProgram`) and the identity (`WCAT`, a `ManifestIdentity` from
+  `@wirecat/cli-base/wcat/manifest`): each runnable command with its `effects` (left out, a write) and, with
+  `permissionOf`, its permission key, then a `desktop` object holding Desktop's catalog keys. `doctor`, `profiles`,
+  `setup`, `runs`, `skill`, `mcpServer`, `sync` and `storage` come from the standard commands, the `skills/` folder
+  and the identity's `appName` and `envPrefix`; only `tagline`, `signIn` and, for a CLI with a sync command, `syncs`
+  are typed by the developer. The file holds no version, so a release does not make it stale: Desktop reads the
+  version from npm. `mcpServer` names no port: Desktop gives the tool a free one and fills `{port}`. It refuses,
+  naming the key, any word Desktop's rule would refuse. `--check` fails when the file is stale and prints the command
+  that rewrites it. List `contracts/wirecat.json` in the package's `files`;
+  it is the one file of `contracts/` a package ships (WC-REL-16). `manifestSchema` and `manifestJsonSchema()` check a
+  manifest anywhere.
+- **`--wcat-describe` answers format 2 when the package ships `contracts/wirecat.json`.** The format-1 keys stay, with
+  `"wcat_describe": 2`, the file's `desktop` object and `manifest_sha256`, the SHA-256 of the file's bytes as shipped,
+  so Desktop can tell the installed tool is the one it showed. `wcatStart` reads the file next to the `package.json`
+  nearest the bin and never rebuilds it. Without the file, or past `wcat`'s 64 KiB cap, the answer is format 1 as
+  before. `parseDescribe` returns `manifestSha256` for a format-2 answer; `listTools` is unchanged.
 
 ## 0.80.9 — 07.11.2026
+
+### Added
+
+- **`browse` is a vocabulary verb.** It names a read-only listing of one level of a remote hierarchy, such as a
+  provider's folders, for a picker to step through: drive-cli's `folders browse` lists Google Drive folders so WireCat
+  Desktop can offer them before `folders add`. `list` there already names the local selection, and the `tree` view
+  names stored sources, so neither fits. `cli-dev lint` no longer reports `browse` as `unknown-verb`.
 
 ### Fixed
 
