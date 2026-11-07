@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A reusable `release-start.yml` workflow starts a release from GitHub, replacing `bin/release` on a laptop.** A CLI
+  adds a small `workflow_dispatch` caller; one run restores and folds the changelog, raises a version npm already has
+  through one pull request, merges it once GitHub reports it mergeable (required checks only), and starts the
+  repository's own `release.yml` with the merged commit. It needs a GitHub App token, because a pull request opened
+  with `GITHUB_TOKEN` does not run its checks on its own. Nothing calls it yet; setup and the open points are in
+  [`docs/dev/release-workflow.md`](docs/dev/release-workflow.md).
+
 ## 0.80.9 — 07.11.2026
 
 ### Fixed

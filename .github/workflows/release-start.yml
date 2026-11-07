@@ -1,0 +1,269 @@
+name: Start release
+
+# Called from each CLI's thin `release-start.yml` (workflow_dispatch). It does what bin/release did on a laptop: puts
+# the last release's notes back to its tag, folds Unreleased into the dated version, raises a version npm already has,
+# lands that through one pull request, then starts the repository's own release.yml with the merged commit.
+# release.yml stays the only workflow that publishes: npm trusts it by file name. See docs/dev/release-workflow.md.
+on:
+  workflow_call:
+    inputs:
+      app-client-id:
+        description: "Client ID of the GitHub App whose token opens and merges the version pull request"
+        type: string
+        required: true
+      cli-dev:
+        description: "How this repository runs cli-dev, e.g. `pnpm exec cli-dev` or `npx -y -p @wirecat/cli-base@x.y.z cli-dev`"
+        type: string
+        default: pnpm exec cli-dev
+      unreleased:
+        description: "Title of the changelog's unreleased section"
+        type: string
+        default: Unreleased
+      check:
+        description: "Shell run after the version is settled, before anything lands; $VERSION is set"
+        type: string
+        default: ""
+      after-raise:
+        description: "Shell run after the version number changes, before it is committed; $VERSION is the new one"
+        type: string
+        default: ""
+      release-inputs:
+        description: 'Extra inputs for release.yml as a JSON object, e.g. {"app_ref":"main"}'
+        type: string
+        default: "{}"
+      pass-commit:
+        description: "Pass the merged commit to release.yml as `commit` (its run refuses any other)"
+        type: boolean
+        default: true
+      node-version:
+        type: string
+        default: "24"
+    secrets:
+      app-private-key:
+        required: true
+    outputs:
+      version:
+        value: ${{ jobs.prepare.outputs.version }}
+      commit:
+        value: ${{ jobs.prepare.outputs.commit }}
+
+permissions: {}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: release-start-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.land.outputs.version }}
+      commit: ${{ steps.land.outputs.commit }}
+    steps:
+      - name: only from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::start the release from main, not $GITHUB_REF"
+          exit 1
+
+      # A pull request opened with GITHUB_TOKEN does not run pull_request workflows on its own, so its required
+      # checks would never report.
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app
+        with:
+          client-id: ${{ inputs.app-client-id }}
+          private-key: ${{ secrets.app-private-key }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app.outputs.token }}
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: settle the version
+        id: version
+        env:
+          CLI_DEV: ${{ inputs.cli-dev }}
+          UNRELEASED: ${{ inputs.unreleased }}
+          AFTER_RAISE: ${{ inputs.after-raise }}
+          CHECK: ${{ inputs.check }}
+        run: |
+          set -eu
+          package=$(node -p 'require("./package.json").name')
+          version=$(node -p 'require("./package.json").version')
+          published() { npm view "$package@$1" version --prefer-online >/dev/null 2>&1; }
+          if [ -n "$(git tag -l "v$version")" ] && [ "$(git rev-list -n 1 "v$version")" = "$(git rev-parse HEAD)" ]; then
+            echo "::error::v$version is this very commit — nothing new to release"
+            exit 1
+          fi
+
+          $CLI_DEV changelog restore --unreleased "$UNRELEASED"
+          published "$version" || $CLI_DEV changelog fold --version "$version" --unreleased "$UNRELEASED"
+
+          latest=$(npm view "$package" version --prefer-online 2>/dev/null || true)
+          versions=$(npm view "$package" versions --json --prefer-online 2>/dev/null || true)
+          next=$($CLI_DEV next-version "$version" "$latest" "$versions")
+          why=""
+          if [ "$next" != "$version" ]; then
+            taken=""
+            if published "$version"; then taken=1; why="$version is already on npm"; else why="$version is not above npm's latest $latest"; fi
+            echo "$why — releasing $next instead"
+            node -e 'const fs = require("fs"); const [o, n, taken, unreleased] = process.argv.slice(1)
+              const swap = (file, from, to, optional) => {
+                if (optional && !fs.existsSync(file)) return
+                const text = fs.readFileSync(file, "utf8")
+                if (!text.includes(from)) throw new Error(`${file} has no ${JSON.stringify(from.trim())} to raise ${o} to ${n}`)
+                fs.writeFileSync(file, text.replace(from, to))
+              }
+              swap("package.json", `"version": "${o}"`, `"version": "${n}"`)
+              swap("src/version.ts", `VERSION = "${o}"`, `VERSION = "${n}"`, true)
+              const today = new Date().toLocaleDateString("en-GB").replaceAll("/", ".")
+              if (taken) swap("CHANGELOG.md", `\n## ${unreleased}\n`, `\n## ${n} — ${today}\n`)
+              else swap("CHANGELOG.md", `\n## ${o} — `, `\n## ${n} — `)' "$version" "$next" "$taken" "$UNRELEASED"
+            version=$next
+            if [ -n "$AFTER_RAISE" ]; then VERSION=$version sh -c "$AFTER_RAISE"; fi
+          fi
+
+          top=$(sed -n '/^## /{p;q;}' CHANGELOG.md)
+          case "$top" in
+            "## $version — "[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9][0-9]) ;;
+            *) echo "::error::date the top changelog section as \"## $version — DD.MM.YYYY\" in a pull request first"; exit 1 ;;
+          esac
+          if published "$version"; then
+            echo "::error::$package@$version is already on npm — raise the version first"
+            exit 1
+          fi
+          if [ -n "$CHECK" ]; then VERSION=$version sh -c "$CHECK"; fi
+          {
+            echo "version=$version"
+            echo "why=$why"
+          } >> "$GITHUB_OUTPUT"
+
+      # main takes changes only through a pull request. Waiting on GitHub's own merge state, not on a list of checks:
+      # required checks register a few seconds late, and optional ones (a missing runner) must not hold the release.
+      - name: land the version on main
+        id: land
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          WHY: ${{ steps.version.outputs.why }}
+        run: |
+          set -eu
+          base=$(git rev-parse HEAD)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ -z "$(git status --porcelain --untracked-files=no)" ]; then
+            echo "commit=$base" >> "$GITHUB_OUTPUT"
+            echo "main already has $VERSION ready"
+            exit 0
+          fi
+
+          branch="release/$VERSION-$GITHUB_RUN_ID"
+          title="chore(release): $VERSION"
+          body="Opened by the Start release workflow (run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID). ${WHY:+$WHY. }Only the changelog and the version number change.
+
+          ## Conformance
+
+          The release pull request of the dated version recorded the checks; this one only folds the changelog or changes the number."
+          git config user.name "wirecat-release[bot]"
+          git config user.email "wirecat-release[bot]@users.noreply.github.com"
+          git switch -q -c "$branch"
+          git commit -q -am "$title" -m "$body"
+          git push -q -u origin "$branch"
+          head=$(git rev-parse HEAD)
+          pr=$(gh pr create --base main --head "$branch" --title "$title" --body "$body")
+          echo "$pr"
+
+          merged=""
+          for _ in $(seq 180); do
+            pr_state=$(gh pr view "$pr" --json state -q .state)
+            case "$pr_state" in
+              MERGED) merged=1; break ;;
+              CLOSED) echo "::error::$pr was closed without merging — nothing is published"; exit 1 ;;
+            esac
+            rc=0
+            gh pr checks "$pr" --required >/dev/null 2>&1 || rc=$?
+            [ "$rc" -ne 1 ] || { echo "::error::a required check failed on $pr — nothing is published"; exit 1; }
+            merge_state=$(gh pr view "$pr" --json mergeStateStatus -q .mergeStateStatus)
+            case "$merge_state" in
+              CLEAN | HAS_HOOKS | UNSTABLE)
+                [ "$(git ls-remote origin refs/heads/main | cut -f1)" = "$base" ] ||
+                  { echo "::error::main moved while $pr was checked — close it and start the release again"; exit 1; }
+                gh pr merge "$pr" --squash --delete-branch --match-head-commit "$head" --subject "$title (#${pr##*/})" ||
+                  echo "merge refused for now; waiting"
+                ;;
+              DIRTY) echo "::error::$pr conflicts with main — close it and start the release again"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          [ -n "$merged" ] || { echo "::error::$pr did not merge within 30 minutes — nothing is published"; exit 1; }
+          commit=$(gh pr view "$pr" --json mergeCommit -q .mergeCommit.oid)
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "merged $pr as $commit"
+
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      COMMIT: ${{ needs.prepare.outputs.commit }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_INPUTS: ${{ inputs.release-inputs }}
+      PASS_COMMIT: ${{ inputs.pass-commit }}
+    steps:
+      # workflow_dispatch is one of the two events GITHUB_TOKEN may start a run with.
+      - name: start release.yml
+        id: start
+        run: |
+          set -eu
+          list() {
+            gh run list --workflow release.yml --branch main --event workflow_dispatch --limit 1 \
+              --json databaseId --jq '.[0].databaseId // ""'
+          }
+          previous=$(list)
+          set -- release.yml --ref main
+          [ "$PASS_COMMIT" != "true" ] || set -- "$@" -f "commit=$COMMIT"
+          for pair in $(printf '%s' "$RELEASE_INPUTS" | jq -r 'to_entries[] | "\(.key)=\(.value)"'); do
+            set -- "$@" -f "$pair"
+          done
+          gh workflow run "$@"
+          for _ in $(seq 30); do
+            run=$(list)
+            [ -n "$run" ] && [ "$run" != "$previous" ] && break
+            run=""
+            sleep 2
+          done
+          [ -n "$run" ] || { echo "::error::release.yml did not start within a minute"; exit 1; }
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "Publishing $VERSION from $COMMIT: $GITHUB_SERVER_URL/$GH_REPO/actions/runs/$run" >> "$GITHUB_STEP_SUMMARY"
+
+      # gh run watch also fails when one of its own API calls does while the run goes on; only the conclusion counts.
+      - name: follow release.yml
+        env:
+          RUN: ${{ steps.start.outputs.run }}
+        run: |
+          set -eu
+          state=""
+          for _ in $(seq 30); do
+            gh run watch "$RUN" >/dev/null 2>&1 || sleep 10
+            state=$(gh run view "$RUN" --json status,conclusion --jq '.status + ":" + .conclusion' 2>/dev/null || true)
+            case "$state" in completed:*) break ;; esac
+          done
+          case "$state" in
+            completed:success) echo "published $VERSION" ;;
+            *) echo "::error::release run $RUN ended $state — see $GITHUB_SERVER_URL/$GH_REPO/actions/runs/$RUN"; exit 1 ;;
+          esac
