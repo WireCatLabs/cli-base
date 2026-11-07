@@ -26,7 +26,7 @@ the choices. Nothing is guessed.
 | `--command` | the command word people type | one word |
 | `--package` | the npm package name | a scoped name, such as `@wirecat/gcal-cli` |
 | `--owner` | the GitHub owner of the repository | an owner |
-| `--category` | what the CLI reads | `messenger`, `mail`, `notes`, `files`, `calendar`, `meetings` |
+| `--category` | what the CLI reads | `messenger`, `mail`, `notes`, `files`, `calendar`, `meetings`, `crm` |
 | `--content-lang` | the languages of the content | a list, such as `en,ru` |
 | `--sign-in` | how the CLI signs in | `oauth`, `token`, `session`, `none` |
 | `--api` | what the service offers | `official-client`, `official-docs`, `unofficial` |
@@ -38,8 +38,9 @@ Every choice question also takes `other:<your answer>`.
 
 `new` copies the template of its own package version into `<name>-cli/`, renames the command word everywhere, runs
 `git init`, records the template version in `template.json`, writes `docs/dev/DESIGN.md` from your answers and names
-a reference CLI for your category in `AGENTS.md`. It does not install packages, push, create the repository or
-publish. Then:
+a reference CLI for your category in `AGENTS.md` when the category has one. `mail`, `crm` and `other:` have none
+yet; `AGENTS.md` then says to pick the nearest one with the owner from the Reference CLIs page. It does not
+install packages, push, create the repository or publish. Then:
 
 ```sh
 cd gcal-cli && pnpm install && pnpm ci:quick
@@ -80,8 +81,9 @@ installing that command; nothing else is registered anywhere.
   [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves) asks a CLI outside
   WireCat not to take one.
 - **The command.** `"bin": { "wcat-<name>": "dist/bin/<name>.js" }`. `cli-dev lint` warns about a `"bin"` key without
-  the `wcat-` prefix. The template still writes the short name, and moves to `wcat-<name>` in a later release.
-- **The description `wcat --help` shows.** Call `wcatStart` first in the bin, before the program loads:
+  the `wcat-` prefix. The template still writes the short name, `"bin": { "<name>": "dist/bin/<name>.js" }`.
+- **The description `wcat --help` shows.** The template's bin does not call `wcatStart` yet: add it first in the bin,
+  before the program loads:
 
   ```ts
   import { wcatStart } from "@wirecat/cli-base/wcat/start"
@@ -93,6 +95,25 @@ installing that command; nothing else is registered anywhere.
 
   It answers `--wcat-describe`, runs `wcat` when the `wcat` launcher starts the tool, and on any other start makes sure
   the `wcat` launcher in the tool's bin folder works. `cli-dev lint --cli` warns when the built CLI does not answer.
+- **The manifest WireCat Desktop reads.** Export the identity for it, and commit `contracts/wirecat.json`:
+
+  ```ts
+  import type { ManifestIdentity } from "@wirecat/cli-base/wcat/manifest"
+
+  export const WCAT: ManifestIdentity = {
+    ...IDENTITY,
+    docs: "https://example.com/gcal",
+    tagline: "Google Calendar events, searchable on your computer",
+    signIn: { gives: "Lets your agent read your calendar.", asks: "Google asks to allow read-only access." },
+  }
+  ```
+
+  `cli-dev manifest --program dist/program.js --identity dist/wcat.js` writes the file; `--check` in CI fails when it
+  is stale. Pass `WCAT` to `wcatStart` too, so the two never differ. List `contracts/wirecat.json`, not all of `contracts`, in
+  `files` ([WC-REL-16](releases.md#wc-rel-16--the-package-ships-only-the-files-it-names)). A CLI with a
+  `sync` command also sets `syncs`, what it copies in at most 40 characters. The file holds no version, and
+  `mcpServer` no port: Desktop reads the version from npm and gives the tool a free port. A command the manifest lists
+  without `effects` counts as a write; `permissionOf` adds each command's permission key. See [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
 - **The short name.** `wcat shortcuts add <name>` makes `<name>` a shortcut to `wcat-<name>`, only when no program on
   PATH has that name. A CLI does not install its short name itself.
 

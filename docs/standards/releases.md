@@ -189,7 +189,9 @@ on the [CI](ci.md) page.
 A CLI's `files` holds only what the installed CLI runs from or shows its user: `dist`, the agent skill (`skills`),
 `README.md`, `LICENSE`, and files its code reads or runs after install, such as `scenarios` for `guide`, an `install`
 script, third-party notices and licenses. `CHANGELOG.md` may ship too. It never holds `src/`, tests, fakes or
-fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/`, `docs/dev/` or `template.json`.
+fixtures, `scripts/`, `.github/`, `bin/release`, `config/`, `lint/`, `contracts/`, `docs/dev/` or `template.json`. The one
+exception is `contracts/wirecat.json`, the manifest WireCat Desktop reads before it installs the tool
+([WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves)).
 
 - **Why:** a stray file in the package can leak local data and grows every install.
 - **Enforced by:** `node-ci.yml:check` · `<app>: pnpm package:check` · `whatsapp-cli: pnpm release:check`.

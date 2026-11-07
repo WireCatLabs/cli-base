@@ -99,6 +99,10 @@
       "types": "./dist/wcat/start.d.ts",
       "default": "./dist/wcat/start.js"
     },
+    "./wcat/manifest": {
+      "types": "./dist/wcat/manifest.d.ts",
+      "default": "./dist/wcat/manifest.js"
+    },
     "./biome": "./config/biome.base.json",
     "./tsconfig.base.json": "./config/tsconfig.base.json",
     "./tsconfig.test.json": "./config/tsconfig.test.json",

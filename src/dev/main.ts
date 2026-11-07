@@ -8,10 +8,11 @@ import { tmpdir } from "node:os"
 import { isAbsolute, join, relative } from "node:path"
 import { pathToFileURL } from "node:url"
 import { parseArgs } from "node:util"
+import type { Command } from "commander"
 import spawn from "cross-spawn"
 import * as v from "valibot"
 import { parseCommandsDocument } from "../commands/document.js"
-import type { CommandInfo } from "../commands/registry.js"
+import { type CommandInfo, describeProgram } from "../commands/registry.js"
 import { taggedSection } from "../release/fold.js"
 import {
   type ChangelogRules,
@@ -40,6 +41,7 @@ import {
 } from "../standards/lint.js"
 import { issuesOf, RegistryError } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
+import { buildManifest, MANIFEST_FILE, ManifestError, type ManifestIdentity, manifestText } from "../wcat/manifest.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
@@ -82,6 +84,10 @@ const USAGE = `usage: cli-dev <command> [options]
                                        docs/ against docs/meta.json, the docs portal's structure
   test-matrix --program <module> --untested <module> --name <cli> [--page <path>] [--check]
                                        docs/dev/test-matrix.md from coverage/argv.jsonl
+  manifest --program <module> --identity <module> [--check]
+                                       contracts/wirecat.json from the program's command tree (the
+                                       module's createProgram) and the identity (its WCAT export),
+                                       for WireCat Desktop; --check fails when the file is stale
   lint (--cli <bin> | --commands <file>) [--baseline <dir>] [--overrides <file>] [--budget <n>]
        [--schemas <file>] [--write-baseline] [--allow-stale]
                                        the command tree against the standard's rules; fails on a
@@ -267,6 +273,53 @@ const testMatrix = async (args: string[], io: DevIo) => {
     `test matrix: ${count("tested")} tested, ${count("untested")} untested with a reason, ${missing.length} missing`,
   )
   return failed ? 1 : 0
+}
+
+const manifest = async (args: string[], io: DevIo) => {
+  const { values } = parseArgs({
+    args,
+    options: {
+      program: { type: "string" },
+      identity: { type: "string" },
+      check: { type: "boolean", default: false },
+    },
+  })
+  if (!values.program || !values.identity) {
+    io.err("manifest needs --program and --identity")
+    return 2
+  }
+  const fix = `cli-dev manifest --program ${values.program} --identity ${values.identity}`
+  let text: string
+  try {
+    const program = ((await load(io.cwd, values.program)).createProgram as () => Command)()
+    const identity = (await load(io.cwd, values.identity)).WCAT as ManifestIdentity | undefined
+    if (!identity) throw new ManifestError([`${values.identity} exports no WCAT identity`])
+    text = manifestText(
+      buildManifest({
+        identity,
+        commands: describeProgram(program),
+        pkg: readJson(join(io.cwd, "package.json")) as { name?: unknown; bin?: unknown },
+        skills: existsSync(join(io.cwd, "skills")),
+      }),
+    )
+  } catch (error) {
+    io.err((error as Error).message)
+    return 1
+  }
+  const path = join(io.cwd, MANIFEST_FILE)
+  const shipped = existsSync(path) ? readFileSync(path, "utf8") : undefined
+  if (values.check) {
+    if (shipped === text) {
+      io.out(`${MANIFEST_FILE}: up to date`)
+      return 0
+    }
+    io.err(`${MANIFEST_FILE} is ${shipped === undefined ? "missing" : "stale"}: run ${fix}`)
+    return 1
+  }
+  mkdirSync(join(io.cwd, "contracts"), { recursive: true })
+  writeFileSync(path, text)
+  io.out(`${MANIFEST_FILE}: ${shipped === text ? "unchanged" : "written"}`)
+  return 0
 }
 
 const readJson = (path: string): unknown => {
@@ -813,6 +866,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       return docsCheck(args, io)
     case "test-matrix":
       return testMatrix(args, io)
+    case "manifest":
+      return manifest(args, io)
     case "lint":
       return lint(args, io)
     case "audit":
