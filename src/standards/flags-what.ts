@@ -798,7 +798,15 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "what kind of thing it is; the command lists the kinds",
   },
   { name: "--name", value: "<name>", role: "value", type: "string", meaning: "the name to give it" },
+  {
+    name: "--button",
+    value: "<text=data>",
+    role: "value",
+    type: "string",
+    meaning: "an inline button under a message: its text, then the data a press sends back; repeat for more in one row",
+  },
   { name: "--no-approval", role: "value", type: "switch", meaning: "anyone with the link joins at once" },
+  { name: "--no-buttons", role: "value", type: "switch", meaning: "take the buttons off the message" },
   {
     name: "--notification",
     value: "<text>",
