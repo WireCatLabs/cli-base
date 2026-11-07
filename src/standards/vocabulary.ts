@@ -141,7 +141,7 @@ const verbs: [string, string][] = [
   ["revoke", "take back what was granted, so it stops working: a login, an invite link, a consent"],
   ["install", "install a system unit"],
   ["uninstall", "remove a system unit"],
-  ["cancel", "stop a job or a pending thing"],
+  ["cancel", "stop a job, a pending thing or a subscription"],
   [
     "sync",
     "bring the local store up to date from the source: only what changed, or the whole list where the source cannot say; a mirror syncs both ways",
@@ -164,6 +164,10 @@ const verbs: [string, string][] = [
   // Only when someone asks, never from a matching name: WC-ACCT-11 in docs/standards/accounts.md.
   ["link", "record that two identities are one person"],
   ["unlink", "undo a link"],
+  [
+    "match",
+    "link each waiting record to the thing its identifiers name, such as a person by e-mail address; a name alone never matches",
+  ],
   ["allocate", "match a payment to the invoice or order it settles, in whole or in part"],
   ["lookup", "ask the messenger who is behind a phone number"],
   [
@@ -278,7 +282,14 @@ const collections: [string, string][] = [
   ["leads", "possible customers not yet qualified into a deal"],
   ["pipelines", "ordered sets of stages a deal moves through"],
   ["stages", "steps of a pipeline, each open, won or lost"],
-  ["products", "goods and services the owner sells, with their prices"],
+  ["products", "goods and services the owner sells or buys, with their prices"],
+  ["lines", "the rows of an order or an invoice: what, how many and at what price"],
+  ["contracts", "agreements the owner is a party to, with their terms, dates and renewal"],
+  ["subscriptions", "charges that repeat on a schedule, which the owner pays or is paid, with their price history"],
+  ["prices", "what a thing costs over time, each price from its start date"],
+  ["wallets", "places that hold the owner's money, such as a bank account, a card or cash"],
+  ["transactions", "money that moved in or out of a wallet, as the bank or the owner recorded it"],
+  ["splits", "parts of one transaction, each with its own amount and category"],
   ["users", "people who work in the owner's account at a service, such as a CRM's employees"],
   ["fields", "a record type's field definitions: code, label, type and options, such as a CRM's custom fields"],
   [
