@@ -139,7 +139,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   still takes a `<duration>`. `--interval` stays another name for `--pause`, which `flag-synonym` refuses.
 - **Wider meanings, nothing renamed:** `products` covers what the owner buys as well as sells, `cancel` covers a
   subscription, and `--start-date` and `--end-date` cover a contract as well as an all-day event.
-||||||| parent of 426b796 (feat(vocabulary): the groups noun and the --position option)
 
 ## 0.81.0 â€” 07.11.2026
 
