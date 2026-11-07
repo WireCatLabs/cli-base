@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { appendFileSync, existsSync, readFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -43,6 +44,13 @@ export interface LiveRecord {
   commit: string
   date: string
   script: string
+  tree: string
+}
+
+/** A squash merge drops the checked commit from main, so a record names the checked files, not only the commit. */
+export const liveTree = (shell: Shell): string | undefined => {
+  const listing = shell.run("git", ["ls-tree", "HEAD", "--", ...LIVE_PATHS])
+  return listing.ok ? createHash("sha256").update(listing.out).digest("hex") : undefined
 }
 
 export const parseLiveRecords = (text: string): LiveRecord[] =>
@@ -51,8 +59,8 @@ export const parseLiveRecords = (text: string): LiveRecord[] =>
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith("#"))
     .map((line) => {
-      const [version = "", commit = "", date = "", script = ""] = line.split(/\s+/)
-      return { version, commit, date, script }
+      const [version = "", commit = "", date = "", script = "", tree = ""] = line.split(/\s+/)
+      return { version, commit, date, script, tree }
     })
 
 export const liveCheckProblems = (shell: Shell, records: readonly LiveRecord[], version: string): string[] => {
@@ -62,6 +70,13 @@ export const liveCheckProblems = (shell: Shell, records: readonly LiveRecord[], 
       `no live check recorded for ${version} in ${LIVE_FILE}: run the live check, then ` +
         "`cli-dev live record --script <its script>` and commit the line in the release pull request",
     ]
+  if (record.tree)
+    return liveTree(shell) === record.tree
+      ? []
+      : [
+          `${LIVE_PATHS.join(", ")} changed since ${version}'s live check at ${record.commit.slice(0, 12)}: ` +
+            "check the code that is released, and record it again",
+        ]
   if (!shell.run("git", ["cat-file", "-e", `${record.commit}^{commit}`]).ok)
     return [`${version}'s live check names commit ${record.commit}, which this clone does not have; fetch it`]
   if (!shell.run("git", ["diff", "--quiet", record.commit, "HEAD", "--", ...LIVE_PATHS]).ok)
@@ -101,15 +116,20 @@ const live = (args: string[], io: DevIo, shell: Shell) => {
   }
   const dirty = shell.run("git", ["status", "--porcelain", "--", ...LIVE_PATHS])
   if (!dirty.ok || dirty.out) {
-    io.err(`commit ${LIVE_PATHS.join(", ")} first: a record names the commit that was checked`)
+    io.err(`commit ${LIVE_PATHS.join(", ")} first: a record names the code that was checked`)
     return 1
   }
   const commit = shell.run("git", ["rev-parse", "HEAD"]).out
+  const tree = liveTree(shell)
+  if (!tree) {
+    io.err(`git could not list ${LIVE_PATHS.join(", ")} at HEAD`)
+    return 1
+  }
   const date = (io.now?.() ?? new Date()).toISOString().slice(0, 10)
-  const line = `${version} ${commit} ${date} ${values.script}`
+  const line = `${version} ${commit} ${date} ${values.script} ${tree}`
   appendFileSync(
     file,
-    `${existsSync(file) ? "" : "# version commit date script — one line per passed live check\n"}${line}\n`,
+    `${existsSync(file) ? "" : "# version commit date script tree — one line per passed live check\n"}${line}\n`,
   )
   io.out(line)
   return 0
@@ -139,34 +159,102 @@ const releasePr = (args: string[], io: DevIo, shell: Shell) => {
 
 const REQUIRED_RULES = ["deletion", "non_fast_forward", "pull_request", "required_status_checks"]
 
+/** The checks cli-template's workflows report on a pull request; `conformance` comes from its release-pr.yml. */
+export const REQUIRED_CHECKS = [
+  "standards",
+  "changelog / guard",
+  "validation / ci / check",
+  "validation / ci / bun",
+  "validation / ci / secrets",
+  "validation / prose",
+  "validation / version",
+  "validation / node-22",
+  "validation / repo-setup",
+]
+
+type GhRead = { ok: true; json: unknown } | { ok: false; problems: string[]; skipped?: string; status?: string }
+
+const FREE_PLAN = "Upgrade to GitHub Pro or make this repository public"
+
 /** `skipped` when GitHub could not be asked (no gh, no login, no network): the caller says so and goes on. */
-export const rulesetProblems = (shell: Shell, slug: string): { problems: string[]; skipped?: string } => {
-  const answer = shell.run("gh", ["api", `repos/${slug}/rules/branches/main`])
-  if (!answer.ok) {
-    const status = answer.out.match(/HTTP (\d{3})/)?.[1]
-    if (status === "401" || (!status && /gh auth login|GH_TOKEN/.test(answer.out)))
-      return { problems: [], skipped: "gh is not signed in (set GH_TOKEN in CI)" }
-    if (!status) return { problems: [], skipped: `GitHub could not be reached: ${answer.out.split("\n")[0] ?? ""}` }
-    // A private repository on the free plan cannot have rulesets at all (NEED-2331).
-    if (status === "403" && answer.out.includes("Upgrade to GitHub Pro or make this repository public"))
-      return { problems: [], skipped: "a private repository on GitHub's free plan has no rulesets" }
-    return {
-      problems: [
-        `GitHub answered ${status} for ${slug}'s rules on main: ` +
-          (answer.out.match(/gh: ([^\n]*?) \(HTTP/)?.[1] ?? "the repository is missing or this token cannot read it"),
-      ],
+const ghRead = (shell: Shell, path: string, what: string): GhRead => {
+  const answer = shell.run("gh", ["api", path])
+  if (answer.ok) {
+    try {
+      return { ok: true, json: JSON.parse(answer.out) }
+    } catch {
+      return { ok: false, problems: [], skipped: "gh did not answer JSON" }
     }
   }
-  let types: string[]
-  try {
-    types = (JSON.parse(answer.out) as { type?: string }[]).map((rule) => String(rule.type))
-  } catch {
-    return { problems: [], skipped: "gh did not answer JSON" }
+  const status = answer.out.match(/HTTP (\d{3})/)?.[1]
+  if (status === "401" || (!status && /gh auth login|GH_TOKEN/.test(answer.out)))
+    return { ok: false, problems: [], skipped: "gh is not signed in (set GH_TOKEN in CI)" }
+  if (!status)
+    return { ok: false, problems: [], skipped: `GitHub could not be reached: ${answer.out.split("\n")[0] ?? ""}` }
+  // A private repository on the free plan has no rulesets or environments (NEED-2331).
+  if (status === "403" && answer.out.includes(FREE_PLAN))
+    return { ok: false, status, problems: [], skipped: "a private repository on GitHub's free plan has none" }
+  return {
+    ok: false,
+    status,
+    problems: [
+      `GitHub answered ${status} for ${what}: ` +
+        (answer.out.match(/gh: ([^\n]*?) \(HTTP/)?.[1] ?? "the repository is missing or this token cannot read it"),
+    ],
   }
+}
+
+export const rulesetProblems = (
+  shell: Shell,
+  slug: string,
+  checks: readonly string[] = REQUIRED_CHECKS,
+): { problems: string[]; skipped?: string } => {
+  const read = ghRead(shell, `repos/${slug}/rules/branches/main`, `${slug}'s rules on main`)
+  if (!read.ok) return read
+  type Rule = { type?: string; parameters?: { required_status_checks?: { context?: string }[] } }
+  const rules = Array.isArray(read.json) ? (read.json as Rule[]) : []
+  const types = rules.map((rule) => String(rule.type))
   const missing = REQUIRED_RULES.filter((rule) => !types.includes(rule))
-  return missing.length === 0
+  if (missing.length > 0)
+    return { problems: [`main's ruleset lacks ${missing.join(", ")} (cli-base docs/standards/new-cli.md, step 1)`] }
+  const required = new Set(
+    rules.flatMap((rule) => rule.parameters?.required_status_checks?.map((check) => check.context) ?? []),
+  )
+  const absent = checks.filter((check) => !required.has(check))
+  return absent.length === 0
     ? { problems: [] }
-    : { problems: [`main's ruleset lacks ${missing.join(", ")} (cli-base docs/standards/new-cli.md, step 1)`] }
+    : {
+        problems: [
+          `main's ruleset does not require ${absent.join(", ")}: add them to its required status checks ` +
+            "(cli-base docs/standards/new-cli.md, step 1)",
+        ],
+      }
+}
+
+/** npm trusts release.yml by name, so only `main` may run the job that holds the npm environment's token. */
+export const environmentProblems = (shell: Shell, slug: string): { problems: string[]; skipped?: string } => {
+  const environment = ghRead(shell, `repos/${slug}/environments/npm`, `${slug}'s npm environment`)
+  if (!environment.ok)
+    return environment.status === "404"
+      ? { problems: [], skipped: "the repository has no npm environment, so it does not publish yet" }
+      : environment
+  const policy = (environment.json as { deployment_branch_policy?: Record<string, unknown> | null })
+    .deployment_branch_policy
+  const limit = `limit the npm environment's deployment branches to main (cli-base docs/standards/new-cli.md, step 2)`
+  if (policy?.custom_branch_policies !== true || policy.protected_branches !== false)
+    return { problems: [`any branch can deploy to npm: ${limit}`] }
+  const branches = ghRead(
+    shell,
+    `repos/${slug}/environments/npm/deployment-branch-policies`,
+    `${slug}'s npm deployment branches`,
+  )
+  if (!branches.ok) return branches
+  const names = ((branches.json as { branch_policies?: { name?: string; type?: string }[] }).branch_policies ?? []).map(
+    (entry) => `${entry.type ?? "branch"}:${entry.name}`,
+  )
+  return names.length === 1 && names[0] === "branch:main"
+    ? { problems: [] }
+    : { problems: [`the npm environment deploys from ${names.join(", ") || "no branch"}, not only main: ${limit}`] }
 }
 
 /** The WC-CI-9 table of taken monthly minutes, as `HH:MM → repository`. */
@@ -221,10 +309,15 @@ const repoCheck = (args: string[], io: DevIo, shell: Shell) => {
   }
   const read = (path: string) => (existsSync(join(io.cwd, path)) ? readFileSync(join(io.cwd, path), "utf8") : undefined)
   const groups = read(values.groups)
-  const ruleset = rulesetProblems(shell, slug)
+  const checks =
+    read(".github/workflows/release-pr.yml") === undefined ? REQUIRED_CHECKS : [...REQUIRED_CHECKS, "conformance"]
+  const ruleset = rulesetProblems(shell, slug, checks)
   if (ruleset.skipped) io.err(`repo-check: ruleset not checked — ${ruleset.skipped}`)
+  const environment = environmentProblems(shell, slug)
+  if (environment.skipped) io.err(`repo-check: npm environment not checked — ${environment.skipped}`)
   const problems = [
     ...ruleset.problems,
+    ...environment.problems,
     ...cronProblems(
       read(".github/workflows/monthly.yml"),
       slug.split("/")[1] ?? "",
@@ -241,14 +334,16 @@ export const CONFORMANCE_USAGE = `  release-pr --base <commit> --body <file>
                                        a pull request that changes package.json's version since --base
                                        needs a non-empty "## Conformance" section in its description
   live record --script <path> [--file <path>]
-                                       appends "<version> <commit> <date> <script>" to ${LIVE_FILE}
-                                       after a live check passed; src/, package.json and the lockfile
-                                       must be committed
+                                       appends "<version> <commit> <date> <script> <tree>" to ${LIVE_FILE}
+                                       after a live check passed; <tree> hashes the committed src/,
+                                       package.json and lockfile, which must be committed
   live check [--version <x.y.z>] [--file <path>]
                                        fails unless that version has a record and src/, package.json
-                                       and the lockfile are unchanged since its commit
+                                       and the lockfile are the ones it hashed; needs no commit object,
+                                       so a squash-merged release branch passes
   repo-check --cli <name> [--groups <file>]
-                                       main's ruleset (through gh; skipped without a login or network),
+                                       main's ruleset and its required checks, the npm environment
+                                       limited to main (through gh; skipped without a login or network),
                                        monthly.yml's cron minute against WC-CI-9's list, and the CLI in
                                        a parity group (cli-base's, or --groups', config/parity-groups.json)`
 
