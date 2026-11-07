@@ -14,6 +14,19 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 - **`--from-app`**, a mode switch: the owner did this in the app that runs the tool (WireCat Desktop), so the tool
   records it as the owner's with no terminal question. It is the app's word, not a security check (memo's decisions).
+- **Vocabulary words for business records.** cli-memo adds products, contracts, subscriptions, wallets and bank
+  transactions (cli-core's business entities plan), and `cli-dev lint` would report each new command word as unknown.
+  New resources: `contracts`, `subscriptions`, `prices`, `wallets`, `transactions`, `splits` and `lines` (the rows of
+  an order or an invoice). New verb: `match`, which links waiting records to what their identifiers name; a name alone
+  never matches, so it is not `link`. New value flags: `--status`, `--product`, `--contract`, `--payment`,
+  `--refund-of`, `--wallet`, `--supplier`, `--customer`, `--trial-end-date`, `--notice-days`, `--auto-renew`,
+  `--opening-balance`, `--opening-date`, `--institution`, `--unit`, `--sku` and `--archived`. `--status` takes
+  `<state>`, as memo's task board already does, so a CLI that kept a lint override for `--status`, such as memo's
+  `tasks add`, `tasks update` and `tasks move`, can drop it.
+- **`--every` also takes a count and a calendar unit, such as `1-month`,** for how often a charge repeats. A timer
+  still takes a `<duration>`. `--interval` stays another name for `--pause`, which `flag-synonym` refuses.
+- **Wider meanings, nothing renamed:** `products` covers what the owner buys as well as sells, `cancel` covers a
+  subscription, and `--start-date` and `--end-date` cover a contract as well as an all-day event.
 
 ## 0.81.0 â€” 07.11.2026
 
