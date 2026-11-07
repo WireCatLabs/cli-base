@@ -26,6 +26,7 @@ review guidelines for module size. The entry-point map below applies it to this 
 | `/standards` | the registries of the shared standard: vocabulary, envelope, error object and reasons, next steps, log record, lint rules | `valibot`, `@valibot/to-json-schema`; the root's error codes |
 | `/wcat` | the `wcat` umbrella: dispatching to `wcat-<name>` programs, `--wcat-describe`, the launcher and the shortcuts | Node built-ins, `cross-spawn`; the root's errors and failure rendering, loaded only when `wcat` itself runs |
 | `/wcat/start` | `wcatStart`, a CLI's first call: describe, dispatch mode, the launcher check | Node built-ins; the dispatcher only in dispatch mode |
+| `/wcat/manifest` | `contracts/wirecat.json` for WireCat Desktop: `buildManifest`, `manifestSchema`, the plain-word rule | `valibot`; `/commands` and `/standards` |
 | `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock`, `allowNetwork` | the root |
 | `/testing/setup` | a vitest `setupFiles` entry: per-file sandbox, a keyring that throws, no network | `vitest` (optional peer) |
 
