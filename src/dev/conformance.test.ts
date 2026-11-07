@@ -7,7 +7,9 @@ import {
   conformanceCommand,
   conformanceSection,
   cronProblems,
+  environmentProblems,
   parityProblems,
+  REQUIRED_CHECKS,
   releasePrProblems,
   rulesetProblems,
   takenMinutes,
@@ -82,13 +84,40 @@ describe("release pull request", () => {
 describe("live check record", () => {
   const files = { "package.json": '{"version":"0.4.0"}\n', "src/index.ts": "export {}\n", "docs/dev/.keep": "" }
 
-  it("records the commit that was checked, and bin/release's check accepts that code", () => {
+  it("records the commit and the files that were checked, and bin/release's check accepts that code", () => {
     const cwd = repoWith(files)
     const { io, out } = ioIn(cwd)
     expect(conformanceCommand("live", ["record", "--script", "bin/x-live"], io)).toBe(0)
-    expect(out[0]).toBe(`0.4.0 ${git(cwd, "rev-parse", "HEAD")} 2026-11-07 bin/x-live`)
+    expect(out[0]).toMatch(
+      new RegExp(`^0\\.4\\.0 ${git(cwd, "rev-parse", "HEAD")} 2026-11-07 bin/x-live [0-9a-f]{64}$`),
+    )
     expect(readFileSync(join(cwd, "docs/dev/live-checks.txt"), "utf8")).toContain(out[0])
     expect(conformanceCommand("live", ["check"], ioIn(cwd).io)).toBe(0)
+  })
+
+  it("accepts the checked files after a squash merge, when the recorded commit is gone", () => {
+    const cwd = repoWith(files)
+    conformanceCommand("live", ["record", "--script", "bin/x-live"], ioIn(cwd).io)
+    const file = join(cwd, "docs/dev/live-checks.txt")
+    const commit = git(cwd, "rev-parse", "HEAD")
+    writeFileSync(file, readFileSync(file, "utf8").replace(commit, "0".repeat(40)))
+    expect(conformanceCommand("live", ["check"], ioIn(cwd).io)).toBe(0)
+    writeFileSync(join(cwd, "src/index.ts"), "export const changed = 1\n")
+    git(cwd, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam", "change")
+    const changed = ioIn(cwd)
+    expect(conformanceCommand("live", ["check"], changed.io)).toBe(1)
+    expect(changed.err[0]).toContain("changed since 0.4.0's live check")
+  })
+
+  it("still checks a record from before the tree column against its commit", () => {
+    const cwd = repoWith(files)
+    const line = `0.4.0 ${git(cwd, "rev-parse", "HEAD")} 2026-11-01 bin/x-live\n`
+    writeFileSync(join(cwd, "docs/dev/live-checks.txt"), line)
+    expect(conformanceCommand("live", ["check"], ioIn(cwd).io)).toBe(0)
+    writeFileSync(join(cwd, "docs/dev/live-checks.txt"), line.replace(/ \w{40} /, ` ${"0".repeat(40)} `))
+    const gone = ioIn(cwd)
+    expect(conformanceCommand("live", ["check"], gone.io)).toBe(1)
+    expect(gone.err[0]).toContain("this clone does not have")
   })
 
   it("refuses a version with no record, and code changed since its record", () => {
@@ -114,10 +143,17 @@ describe("live check record", () => {
 })
 
 describe("repository setup", () => {
-  const rules = (...types: string[]) => JSON.stringify(types.map((type) => ({ type })))
+  const withChecks = (contexts: readonly string[]) =>
+    JSON.stringify([
+      ...["deletion", "non_fast_forward", "pull_request"].map((type) => ({ type })),
+      {
+        type: "required_status_checks",
+        parameters: { required_status_checks: contexts.map((context) => ({ context })) },
+      },
+    ])
 
   it("passes a ruleset with the four rules new-cli.md names, and names what is missing", () => {
-    const all = rules("deletion", "non_fast_forward", "pull_request", "required_status_checks")
+    const all = withChecks(REQUIRED_CHECKS)
     expect(
       rulesetProblems(
         answering(() => ({ out: all })),
@@ -136,6 +172,72 @@ describe("repository setup", () => {
         "o/r",
       ).problems[0],
     ).toContain("404")
+  })
+
+  it("names the template's checks the ruleset does not require, across every ruleset on main", () => {
+    const some = withChecks(["standards", "changelog / guard"])
+    const missing = rulesetProblems(
+      answering(() => ({ out: some })),
+      "o/r",
+    ).problems[0]
+    expect(missing).toContain("does not require validation / ci / check")
+    expect(missing).toContain("validation / repo-setup")
+    const split = JSON.stringify([
+      ...JSON.parse(withChecks(REQUIRED_CHECKS)),
+      { type: "required_status_checks", parameters: { required_status_checks: [{ context: "conformance" }] } },
+    ])
+    expect(
+      rulesetProblems(
+        answering(() => ({ out: split })),
+        "o/r",
+        [...REQUIRED_CHECKS, "conformance"],
+      ),
+    ).toEqual({ problems: [] })
+    expect(
+      rulesetProblems(
+        answering(() => ({ out: withChecks(REQUIRED_CHECKS) })),
+        "o/r",
+        [...REQUIRED_CHECKS, "conformance"],
+      ).problems[0],
+    ).toContain("does not require conformance")
+  })
+
+  it("passes an npm environment that only main deploys to", () => {
+    const github = (environment: unknown, branches: unknown) =>
+      answering((call) => ({
+        out: JSON.stringify(call.endsWith("deployment-branch-policies") ? branches : environment),
+      }))
+    const limited = { deployment_branch_policy: { custom_branch_policies: true, protected_branches: false } }
+    const main = { branch_policies: [{ name: "main", type: "branch" }] }
+    expect(environmentProblems(github(limited, main), "o/r")).toEqual({ problems: [] })
+    expect(environmentProblems(github({ deployment_branch_policy: null }, main), "o/r").problems[0]).toContain(
+      "any branch can deploy",
+    )
+    const protectedOnly = { deployment_branch_policy: { custom_branch_policies: false, protected_branches: true } }
+    expect(environmentProblems(github(protectedOnly, main), "o/r").problems[0]).toContain("any branch")
+    const extra = { branch_policies: [...main.branch_policies, { name: "release/*", type: "branch" }] }
+    expect(environmentProblems(github(limited, extra), "o/r").problems[0]).toContain("branch:release/*")
+    expect(
+      environmentProblems(github(limited, { branch_policies: [{ name: "main", type: "tag" }] }), "o/r").problems[0],
+    ).toContain("tag:main")
+  })
+
+  it("skips the npm environment check for a repository that does not publish, or a private one on the free plan", () => {
+    const missing = answering(() => ({ ok: false, out: "gh: Not Found (HTTP 404)" }))
+    expect(environmentProblems(missing, "o/r")).toMatchObject({
+      problems: [],
+      skipped: expect.stringContaining("no npm environment"),
+    })
+    const freePlan = answering(() => ({
+      ok: false,
+      out: "gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)",
+    }))
+    expect(environmentProblems(freePlan, "o/r")).toMatchObject({
+      problems: [],
+      skipped: expect.stringContaining("free plan"),
+    })
+    const forbidden = answering(() => ({ ok: false, out: "gh: Resource not accessible by integration (HTTP 403)" }))
+    expect(environmentProblems(forbidden, "o/r").problems[0]).toContain("Resource not accessible")
   })
 
   it("skips the ruleset without a login or a network, and says why", () => {

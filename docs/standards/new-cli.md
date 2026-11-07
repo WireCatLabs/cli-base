@@ -103,10 +103,15 @@ installing that command; nothing else is registered anywhere.
 1. **Create the repository** under the owner, with a ruleset on the default branch: no deletion, no force push,
    changes only through a pull request, required status checks, and no bypass. Add the ruleset after the first
    commit is on `main`, since a pull request rule leaves an empty repository no way to get one, and the required
-   check names exist only once CI has run. See [Releases](releases.md).
+   check names exist only once CI has run. The required checks are `standards`, `changelog / guard`,
+   `validation / ci / check`, `validation / ci / bun`, `validation / ci / secrets`, `validation / prose`,
+   `validation / version`, `validation / node-22`, `validation / repo-setup` and `conformance`. See
+   [Releases](releases.md).
 2. **Set npm trusted publishing** for the new package, naming `release.yml`, and add any secrets the CI needs. npm
    offers this only once the package exists, so the owner publishes the first version with `bin/release --local`
-   and sets it right after. See
+   and sets it right after. Limit the GitHub `npm` environment's deployment branches to `main` (Settings →
+   Environments → npm → Deployment branches → Selected branches): npm trusts `release.yml` by its name, and a
+   dispatch runs that file from the branch it was started on. See
    [WC-REL-11](releases.md#wc-rel-11--publish-from-github-actions-with-npm-trusted-publishing).
 3. **Pick a monthly cron minute** between 02:17 and 03:20 UTC that is not in the list of taken minutes under
    [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing).
@@ -118,9 +123,11 @@ installing that command; nothing else is registered anywhere.
    in its own repository and runs `cli-dev audit --groups <file>`. See [Testing](testing.md).
 
 `cli-dev repo-check --cli <name>` checks steps 1, 3 and 4 on every pull request of a CLI made from cli-template
-(`ci.yml:repo-setup`): the ruleset's four rules on `main`, a monthly minute no other repository holds, and the CLI in
-a parity group. It reads the ruleset with `gh` and the job's `GITHUB_TOKEN`; without a login or a network, or for a private
-repository on GitHub's free plan, which cannot have rulesets, it says so and skips that part, and fails on the rest.
+(`ci.yml:repo-setup`): the ruleset's four rules on `main` and the required checks of step 1 (`conformance` only where
+`release-pr.yml` exists), step 2's `npm` environment limited to `main`, a monthly minute no other repository holds,
+and the CLI in a parity group. It reads GitHub with `gh` and the job's `GITHUB_TOKEN`; without a login or a network,
+for a repository with no `npm` environment yet, or for a private repository on GitHub's free plan, which has no
+rulesets or environments, it says so and skips that part, and fails on the rest.
 
 The listings beyond npm (ClawHub, the MCP Registry, the Claude plugin, the docs site, Glama) are a checklist in
 [Publishing](../PUBLISHING.md#a-new-cli).

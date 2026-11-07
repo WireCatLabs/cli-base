@@ -8,6 +8,28 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`cli-dev repo-check` reads which checks main's ruleset requires.** It fails unless they include cli-template's
+  set: `standards`, `changelog / guard`, `validation / ci / check`, `validation / ci / bun`,
+  `validation / ci / secrets`, `validation / prose`, `validation / version`, `validation / node-22`,
+  `validation / repo-setup`, and `conformance` where `.github/workflows/release-pr.yml` exists. Before, a ruleset
+  that left out `conformance` passed, so a release pull request without its `## Conformance` section could be merged.
+- **`cli-dev repo-check` checks the GitHub `npm` environment.** It fails unless only the `main` branch can deploy to
+  it: npm trusts `release.yml` by its name, and a dispatch runs that file from the branch it was started on. A
+  repository with no `npm` environment, or a private one on GitHub's free plan, is skipped with a warning.
+
+### Fixed
+
+- **`cli-dev live record` hashes the checked files, and `live check` compares that hash.** A record line is now
+  `<version> <commit> <date> <script> <tree>`, where `<tree>` is a SHA-256 of `git ls-tree HEAD -- src package.json
+  pnpm-lock.yaml`. A squash merge drops the release branch's commit from `main`, so a fresh clone could not release:
+  `live check` asked for a commit it did not have. It now needs no commit object; the commit stays as information.
+  A line recorded before this version has no `<tree>` and is still compared with its commit, so record the live check
+  again before the next release to drop the need for the branch commit.
+
 ## 0.80.7 — 07.11.2026
 
 ### Added
