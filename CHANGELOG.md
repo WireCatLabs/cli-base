@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **cli-core's schedule and stats words in the vocabulary**, so a CLI that mounts those shared commands needs no lint
+  override: `--notify-on <when>` (role `value`: when a scheduled run tells the owner) and `--deliver-to <route>` (role
+  `value`: where its result also goes, `telegram-bot:<profile>/<chat>` or `email:<profile>/<address>`, repeated for
+  more), `--max-cost-per-day <usd>` (role `budget`), `--who <side>` (role `target`: whose replies are measured),
+  `--open-new` (role `mode`: a read again for tasks also opens new ones) and the view noun `waiting` (chats whose
+  newest message waits on the owner). A route is `--deliver-to`, not `--to`: `--to` keeps one meaning, who a message
+  is for. A CLI that overrode these in `lint/overrides.json` removes the entries when it bumps; `cli-dev lint` reports
+  them as stale.
+
 ## 0.80.4 — 07.11.2026
 
 ### Fixed
