@@ -107,7 +107,7 @@ describe.skipIf(process.platform === "win32")("wcat's own commands", () => {
     expect(await wcat(["shortcuts", "add", "alpha"])).toBe(0)
     expect(out).toBe(`  alpha  made: ${join(bin, "alpha")}\n`)
     expect(parseShim(readFileSync(join(bin, "alpha"), "utf8"))).toEqual({
-      format: 1,
+      format: 2,
       kind: "shortcut",
       target: "wcat-alpha",
     })
