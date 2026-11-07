@@ -109,10 +109,10 @@ installing that command; nothing else is registered anywhere.
   ```
 
   `cli-dev manifest --program dist/program.js --identity dist/wcat.js` writes the file; `--check` in CI fails when it
-  is stale. Pass `WCAT` to `wcatStart` too, so the two never differ. The file holds the version, so run
-  `cli-dev manifest` in the build or in `prepack`, after `bin/release` sets the version, and list `contracts` in
-  `files`. A command the manifest lists without `effects` counts as a write; `permissionOf` adds each command's
-  permission key. See [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
+  is stale. Pass `WCAT` to `wcatStart` too, so the two never differ. List `contracts` in `files`. A CLI with a
+  `sync` command also sets `syncs`, what it copies in at most 40 characters. The file holds no version, and
+  `mcpServer` no port: Desktop reads the version from npm and gives the tool a free port. A command the manifest lists
+  without `effects` counts as a write; `permissionOf` adds each command's permission key. See [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
 - **The short name.** `wcat shortcuts add <name>` makes `<name>` a shortcut to `wcat-<name>`, only when no program on
   PATH has that name. A CLI does not install its short name itself.
 

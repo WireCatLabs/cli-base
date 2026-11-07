@@ -18,11 +18,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   command tree (`createProgram`) and the identity (`WCAT`, a `ManifestIdentity` from
   `@wirecat/cli-base/wcat/manifest`): each runnable command with its `effects` (left out, a write) and, with
   `permissionOf`, its permission key, then a `desktop` object holding Desktop's catalog keys. `doctor`, `profiles`,
-  `setup`, `runs`, `skill`, `mcpServer` and `storage` come from the standard commands, the `skills/` folder and the
-  identity's `appName` and `envPrefix`; only `tagline` and `signIn` are typed by the developer. It refuses, naming the
-  key, any word Desktop's rule would refuse. `--check` fails when the file is stale and prints the command that
-  rewrites it. The file holds the version, so run `cli-dev manifest` in the build or `prepack`, and list `contracts`
-  in the package's `files`. `manifestSchema` and `manifestJsonSchema()` check a manifest anywhere.
+  `setup`, `runs`, `skill`, `mcpServer`, `sync` and `storage` come from the standard commands, the `skills/` folder
+  and the identity's `appName` and `envPrefix`; only `tagline`, `signIn` and, for a CLI with a sync command, `syncs`
+  are typed by the developer. The file holds no version, so a release does not make it stale: Desktop reads the
+  version from npm. `mcpServer` names no port: Desktop gives the tool a free one and fills `{port}`. It refuses,
+  naming the key, any word Desktop's rule would refuse. `--check` fails when the file is stale and prints the command
+  that rewrites it. List `contracts` in the package's `files`. `manifestSchema` and `manifestJsonSchema()` check a
+  manifest anywhere.
 - **`--wcat-describe` answers format 2 when the package ships `contracts/wirecat.json`.** The format-1 keys stay, with
   `"wcat_describe": 2`, the file's `desktop` object and `manifest_sha256`, the SHA-256 of the file's bytes as shipped,
   so Desktop can tell the installed tool is the one it showed. `wcatStart` reads the file next to the `package.json`

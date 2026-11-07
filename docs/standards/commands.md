@@ -378,10 +378,11 @@ The references, each for its own part:
 ### WC-CMD-29 · Answer `--wcat-describe`, and take no name WireCat reserves
 
 A CLI ships `contracts/wirecat.json` (`wcat_manifest: 2`), written by `cli-dev manifest` from its command tree and
-its identity, never by hand. The developer types only `tagline` and `signIn`; the commands, their `effects` and every
-command word in `desktop` are derived, and every word passes Desktop's plain-word rule. With the file shipped,
-`--wcat-describe` answers format 2: the format-1 keys with `"wcat_describe": 2`, the file's `desktop` and
-`manifest_sha256` of its bytes. Without it the answer stays format 1.
+its identity, never by hand. The developer types only `tagline`, `signIn` and, with a sync command, `syncs`; the
+commands, their `effects` and every command word in `desktop` are derived, and every word passes Desktop's plain-word
+rule. The file holds nothing that changes per release (no version), and no MCP port: Desktop assigns one. With the
+file shipped, `--wcat-describe` answers format 2: the format-1 keys with `"wcat_describe": 2`, the file's `desktop`
+and `manifest_sha256` of its bytes. Without it the answer stays format 1.
 
 - **Why:** `wcat <name>` runs any `wcat-<name>` program on PATH, and `wcat --help` lists each one with what it says
   about itself. A name WireCat reserves would be taken over by WireCat's own tool or by a `wcat` command. WireCat

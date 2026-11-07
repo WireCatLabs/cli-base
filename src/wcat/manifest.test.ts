@@ -9,6 +9,7 @@ import * as v from "valibot"
 import { beforeEach, describe, expect, it } from "vitest"
 import { annotate, describeProgram } from "../commands/registry.js"
 import { type DevIo, main } from "../dev/main.js"
+import { parseLucene } from "../query/parser.js"
 import type { Effects } from "../standards/effects.js"
 import { describeAnswer, parseDescribe } from "./describe.js"
 import { buildManifest, type ManifestIdentity, manifestJsonSchema, manifestSchema, PLAIN_WORD } from "./manifest.js"
@@ -24,6 +25,7 @@ const program = () => {
     return effects ? annotate(command, { effects }) : command
   }
   root.addCommand(leaf("doctor", READ))
+  root.addCommand(leaf("sync", { remote: "read", local: "write" }))
   root.addCommand(new Command("session").addCommand(leaf("list", READ)).addCommand(leaf("start")))
   root.addCommand(new Command("contacts").addCommand(leaf("list", { remote: "read", local: "write" })))
   root.addCommand(new Command("runs").addCommand(leaf("list", READ)).addCommand(leaf("show", READ)))
@@ -31,9 +33,7 @@ const program = () => {
     new Command("skill").addCommand(leaf("status", READ)).addCommand(leaf("install")).addCommand(leaf("show", READ)),
   )
   const server = new Command("server")
-    .addCommand(
-      leaf("start").option("--port <port>", "the local port (default 8790)").option("--public-url <url>", "the URL"),
-    )
+    .addCommand(leaf("start").option("--port <port>", "the local port").option("--public-url <url>", "the URL"))
     .addCommand(leaf("stop"))
     .addCommand(leaf("status", READ))
   root.addCommand(new Command("mcp").addCommand(server).addCommand(leaf("revoke")))
@@ -48,6 +48,7 @@ const identity: ManifestIdentity = {
   appName: "acme-cli",
   envPrefix: "ACME",
   tagline: "Acme contacts, searchable on your computer",
+  syncs: "contacts and deals",
   signIn: { gives: "Lets your agent read your Acme contacts.", asks: "An Acme API token." },
   permissionOf: (path) => (path[0] === "contacts" ? path.join(".") : null),
 }
@@ -62,7 +63,6 @@ describe("buildManifest", () => {
     expect(manifest).toMatchObject({
       wcat_manifest: 2,
       name: "acme",
-      version: "0.3.0",
       docs_url: "https://example.com/acme",
       package: "@example/acme-cli",
       bin: "wcat-acme",
@@ -77,6 +77,7 @@ describe("buildManifest", () => {
       effects: { remote: "write", local: "write" },
     })
     expect(manifest.commands.map((command) => command.path.join(" "))).not.toContain("session")
+    expect(manifest).not.toHaveProperty("version")
     expect(manifest.desktop).toEqual({
       tagline: "Acme contacts, searchable on your computer",
       profiles: { args: ["session", "list", "--no-record", "--json"], shape: "items" },
@@ -94,7 +95,6 @@ describe("buildManifest", () => {
         show: ["skill", "show", "--no-record", "--json"],
       },
       mcpServer: {
-        port: 8790,
         start: ["mcp", "server", "start", "--port", "{port}", "--public-url", "{url}", "--json"],
         stop: ["mcp", "server", "stop", "--json"],
         status: ["mcp", "server", "status", "--no-record", "--json"],
@@ -102,7 +102,13 @@ describe("buildManifest", () => {
         config: null,
       },
       tasks: null,
-      sync: null,
+      sync: {
+        run: ["{profile}", "sync", "--record", "--json"],
+        last: ["runs", "list", "command:sync", "status:success", "--limit", "50", "--no-record", "--json"],
+        lastShape: "runs",
+        what: "contacts and deals",
+        note: null,
+      },
       storeInfo: null,
       storeTables: null,
       storeTableSizes: null,
@@ -125,12 +131,39 @@ describe("buildManifest", () => {
       skills: false,
     })
     expect(desktop).toMatchObject({ profiles: null, doctor: ["doctor", "--record", "--json"], setup: null })
-    expect([desktop.runs, desktop.skill, desktop.mcpServer, desktop.signIn]).toEqual([null, null, null, null])
+    expect([desktop.runs, desktop.skill, desktop.mcpServer, desktop.signIn, desktop.sync]).toEqual([
+      null,
+      null,
+      null,
+      null,
+      null,
+    ])
+  })
+
+  it("runs a single <noun> sync but finds its last run only for a one-word sync, which a plain word can name", () => {
+    const tree = new Command("acme")
+      .addCommand(new Command("doctor").action(() => {}))
+      .addCommand(new Command("runs").addCommand(new Command("list").action(() => {})))
+      .addCommand(new Command("contacts").addCommand(new Command("sync").action(() => {})))
+    expect(build({}, describeProgram(tree)).desktop.sync).toEqual({
+      run: ["contacts", "sync", "--record", "--json"],
+      last: null,
+      lastShape: "runs",
+      what: "contacts and deals",
+      note: null,
+    })
+  })
+
+  it("matches runs list's query: command:sync status:success are two exact terms", () => {
+    const ast = parseLucene(["command:sync", "status:success"].join(" "), { defaultField: "none" })
+    expect(JSON.stringify(ast)).toMatch(/"field":"command","operator":"term","value":"sync"/)
+    expect(JSON.stringify(ast)).toMatch(/"field":"status","operator":"term","value":"success"/)
   })
 
   it("refuses a CLI without doctor, a tagline or its wcat- bin, saying what to add", () => {
     expect(() => build({}, [])).toThrow("no doctor command")
     expect(() => build({ tagline: undefined })).toThrow("no tagline")
+    expect(() => build({ syncs: undefined })).toThrow("no syncs: `sync` exists")
     expect(() =>
       buildManifest({ identity, commands: describeProgram(program()), pkg: { ...pkg, bin: {} }, skills: true }),
     ).toThrow('"bin" installs neither wcat-acme nor acme')

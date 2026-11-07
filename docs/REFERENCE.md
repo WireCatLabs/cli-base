@@ -333,23 +333,25 @@ cli-dev manifest --program dist/program.js --identity dist/wcat.js --check  # fa
 
 `--program` exports `createProgram`; `--identity` exports `WCAT`, a `ManifestIdentity`: the `wcatStart` argument
 (`command`, `version`, `description`, `docs`) plus cli-core's `appName` and `envPrefix`, and the only texts the
-developer types, `tagline` (at most 55 characters) and `signIn: { gives, asks }`. An optional
+developer types: `tagline` (at most 55 characters), `signIn: { gives, asks }` and, when the CLI has a sync command,
+`syncs` (what it copies, at most 40 characters). An optional
 `permissionOf(path)` names each command's permission key. `package` and `bin` (`wcat-<command>`, else `<command>`)
 come from `package.json`.
 
 | Key | Contents |
 |---|---|
-| `wcat_manifest`, `name`, `version`, `description`, `docs_url`, `package`, `bin` | `2`, then the identity and `package.json` |
+| `wcat_manifest`, `name`, `description`, `docs_url`, `package`, `bin` | `2`, then the identity and `package.json`; no `version`, so a release leaves the file as it is (Desktop reads the version from npm) |
 | `commands` | `{ path, effects, permission? }` for each command that runs; undeclared `effects` are written as a write |
 | `desktop.doctor` | `[{profile}] doctor --record --json`; a CLI without `doctor` is refused |
 | `desktop.profiles` | `account list` or `session list`, `--no-record --json`, shape `items`; `{profile}` leads `doctor` and `setup` only then |
 | `desktop.setup` | `[{profile}] setup`, else `[{profile}] session start` |
 | `desktop.runs` | `runs list {query} --limit {limit} --page {page}` and `runs show {run}`, `--no-record --json` |
 | `desktop.skill` | `skill status`, `skill install --for {target}`, `skill show`, when `skills/` ships too |
-| `desktop.mcpServer` | `mcp server start/stop/status`, `mcp revoke`, `mcp config`; `--port`, `--public-url` and `--profiles all` where the command takes them. `port` is the default `mcp server start --port` names in its help, `(default N)`; without one the key is `null` |
+| `desktop.mcpServer` | `mcp server start --port {port}`, `stop`, `status`, `mcp revoke`, `mcp config`; `--public-url` and `--profiles all` where the command takes them. No `port`: Desktop gives the tool a free port no catalog tool uses and fills `{port}` |
+| `desktop.sync` | for a root `sync`, or the only `<noun> sync`: `run` is `[{profile}] <path> --record --json`; `last` is `runs list command:sync status:success --limit 50 --no-record --json` for a root `sync` with `runs list`, else `null` (`runs list` matches `command:` exactly, and a plain word cannot hold the space of `contacts sync`); `lastShape: "runs"`, `what` from `syncs`, `note: null`. A sync without `syncs` is refused |
 | `desktop.storage` | `{ app: appName, env: envPrefix }` |
 | `desktop.tagline`, `desktop.signIn` | as declared; `signIn` is `null` when not |
-| every other catalog key | `null`: `search`, `tasks`, `sync`, `settings` and the `store*` keys |
+| every other catalog key | `null`: `search`, `tasks`, `settings` and the `store*` keys |
 
 Every string in every array is a plain word, Desktop's own rule (`PLAIN_WORD`): letters, digits and `._:=,/+@-`, at
 most two leading dashes, `--` alone and `{name}` slots. `buildManifest` throws a `ManifestError` naming the key and

@@ -47,9 +47,9 @@ const desktopSchema = v.strictObject({
   setup: v.nullable(words),
   signIn: v.nullable(signInSchema),
   skill: v.nullable(v.strictObject({ status: words, install: words, show: words })),
+  /** Desktop gives an own tool a free port of its own and fills `{port}`. */
   mcpServer: v.nullable(
     v.strictObject({
-      port: v.pipe(v.number(), v.integer(), v.minValue(1024), v.maxValue(65535)),
       start: words,
       stop: words,
       status: words,
@@ -58,7 +58,15 @@ const desktopSchema = v.strictObject({
     }),
   ),
   tasks: v.null(),
-  sync: v.null(),
+  sync: v.nullable(
+    v.strictObject({
+      run: words,
+      last: v.nullable(words),
+      lastShape: v.literal("runs"),
+      what: line(40),
+      note: v.null(),
+    }),
+  ),
   storeInfo: v.null(),
   storeTables: v.null(),
   storeTableSizes: v.null(),
@@ -79,7 +87,6 @@ export type ManifestDesktop = v.InferOutput<typeof desktopSchema>
 export const manifestSchema = v.strictObject({
   wcat_manifest: v.literal(MANIFEST_FORMAT),
   name: v.pipe(v.string(), v.regex(TOOL_NAME, "lower-case letters, digits and -")),
-  version: v.pipe(v.string(), v.nonEmpty()),
   description: line(200),
   docs_url: v.optional(v.pipe(v.string(), v.url(), v.startsWith("https://", "an https link"))),
   package: v.pipe(v.string(), v.regex(/^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/, "a scoped npm package name")),
@@ -111,6 +118,8 @@ export interface ManifestIdentity extends WcatTool {
   /** At most 55 characters: Desktop's Tools page line. */
   tagline?: string
   signIn?: SignIn
+  /** What `sync` copies, at most 40 characters: "contacts and deals". Required when the CLI has a sync command. */
+  syncs?: string
   /** The permission key of a command path, such as cli-core's `CommandPermissions.keyOf`; `null` for none. */
   permissionOf?: (path: readonly string[]) => string | null
 }
@@ -148,8 +157,6 @@ const binOf = (pkg: ManifestPackage, command: string): string => {
   return found
 }
 
-const DEFAULT_PORT = /\(default (\d+)\)/
-
 export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput): Manifest => {
   const all = flatten(commands)
   const at = new Map(all.map((command) => [command.path.join(" "), command]))
@@ -168,32 +175,49 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     throw new ManifestError(["no tagline: add `tagline`, at most 55 characters, to the identity the manifest reads"])
 
   const setupPath = ["setup", "session start"].find((path) => at.has(path))
-  const port = Number(optionOf("mcp server start", "--port")?.description.match(DEFAULT_PORT)?.[1])
-  const mcpServer =
-    has("mcp server start", "mcp server stop", "mcp server status", "mcp revoke") && Number.isInteger(port)
-      ? {
-          port,
-          start: [
-            "mcp",
-            "server",
-            "start",
-            "--port",
-            "{port}",
-            ...(takes("mcp server start", "--public-url") ? ["--public-url", "{url}"] : []),
-            ...allProfiles("mcp server start"),
-            "--json",
-          ],
-          stop: ["mcp", "server", "stop", ...allProfiles("mcp server stop"), "--json"],
-          status: ["mcp", "server", "status", ...allProfiles("mcp server status"), "--no-record", "--json"],
-          revoke: ["mcp", "revoke", ...allProfiles("mcp revoke"), "--json"],
-          config: has("mcp config") ? ["mcp", "config", ...allProfiles("mcp config"), "--no-record", "--json"] : null,
-        }
+  const mcpServer = has("mcp server start", "mcp server stop", "mcp server status", "mcp revoke")
+    ? {
+        start: [
+          "mcp",
+          "server",
+          "start",
+          "--port",
+          "{port}",
+          ...(takes("mcp server start", "--public-url") ? ["--public-url", "{url}"] : []),
+          ...allProfiles("mcp server start"),
+          "--json",
+        ],
+        stop: ["mcp", "server", "stop", ...allProfiles("mcp server stop"), "--json"],
+        status: ["mcp", "server", "status", ...allProfiles("mcp server status"), "--no-record", "--json"],
+        revoke: ["mcp", "revoke", ...allProfiles("mcp revoke"), "--json"],
+        config: has("mcp config") ? ["mcp", "config", ...allProfiles("mcp config"), "--no-record", "--json"] : null,
+      }
+    : null
+
+  const nounSyncs = all.filter((command) => command.path.length === 2 && command.path[1] === "sync")
+  const syncPath = at.get("sync")?.path ?? (nounSyncs.length === 1 ? nounSyncs[0]?.path : undefined)
+  if (syncPath && !identity.syncs)
+    throw new ManifestError([
+      `no syncs: \`${syncPath.join(" ")}\` exists, so add \`syncs\`, what it copies in at most 40 characters`,
+    ])
+  // `runs list` matches `command:` exactly and a plain word holds no space, so only a one-word path can be found.
+  const last =
+    syncPath?.length === 1 && has("runs list")
+      ? ["runs", "list", "command:sync", "status:success", "--limit", "50", "--no-record", "--json"]
       : null
+  const sync = syncPath
+    ? {
+        run: [...profile, ...syncPath, "--record", "--json"],
+        last,
+        lastShape: "runs",
+        what: identity.syncs,
+        note: null,
+      }
+    : null
 
   const manifest = {
     wcat_manifest: MANIFEST_FORMAT,
     name: identity.command,
-    version: identity.version,
     description: identity.description,
     ...(identity.docs ? { docs_url: identity.docs } : {}),
     package: pkg.name,
@@ -231,7 +255,7 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
           : null,
       mcpServer,
       tasks: null,
-      sync: null,
+      sync,
       storeInfo: null,
       storeTables: null,
       storeTableSizes: null,
