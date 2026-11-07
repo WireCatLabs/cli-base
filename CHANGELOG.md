@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The new-CLI handbook names the data-folder rule for a CLI published outside `@wirecat`:** WireCat Desktop adds
+  such a tool only when its `appName` is `<scope>-<name>` of the package or starts with it. It also says that the
+  template now calls `wcatStart`, writes the `wcat-` command and names a reference CLI for mail and crm.
+
 ## 0.82.0 — 07.11.2026
 
 ### Added

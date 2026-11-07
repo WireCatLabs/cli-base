@@ -38,8 +38,8 @@ Every choice question also takes `other:<your answer>`.
 
 `new` copies the template of its own package version into `<name>-cli/`, renames the command word everywhere, runs
 `git init`, records the template version in `template.json`, writes `docs/dev/DESIGN.md` from your answers and names
-a reference CLI for your category in `AGENTS.md` when the category has one. `mail`, `crm` and `other:` have none
-yet; `AGENTS.md` then says to pick the nearest one with the owner from the Reference CLIs page. It does not
+a reference CLI for your category in `AGENTS.md`: mail-cli for `mail`, bitrix24-cli for `crm`. `other:` has none;
+`AGENTS.md` then says to pick the nearest one with the owner from the Reference CLIs page. It does not
 install packages, push, create the repository or publish. Then:
 
 ```sh
@@ -81,9 +81,9 @@ installing that command; nothing else is registered anywhere.
   [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves) asks a CLI outside
   WireCat not to take one.
 - **The command.** `"bin": { "wcat-<name>": "dist/bin/<name>.js" }`. `cli-dev lint` warns about a `"bin"` key without
-  the `wcat-` prefix. The template still writes the short name, `"bin": { "<name>": "dist/bin/<name>.js" }`.
-- **The description `wcat --help` shows.** The template's bin does not call `wcatStart` yet: add it first in the bin,
-  before the program loads:
+  the `wcat-` prefix. The template writes both `<name>` and `wcat-<name>`.
+- **The description `wcat --help` shows.** The bin calls `wcatStart` first, before the program loads; the template's
+  bin does:
 
   ```ts
   import { wcatStart } from "@wirecat/cli-base/wcat/start"
@@ -109,11 +109,17 @@ installing that command; nothing else is registered anywhere.
   ```
 
   `cli-dev manifest --program dist/program.js --identity dist/wcat.js` writes the file; `--check` in CI fails when it
-  is stale. Pass `WCAT` to `wcatStart` too, so the two never differ. List `contracts/wirecat.json`, not all of `contracts`, in
-  `files` ([WC-REL-16](releases.md#wc-rel-16--the-package-ships-only-the-files-it-names)). A CLI with a
+  is stale. `wcatStart` reads the shipped file for `--wcat-describe`, so the bin needs only the format-1 fields and
+  keeps the program out of its first import. List `contracts/wirecat.json`, not all of `contracts`, in `files`
+  ([WC-REL-16](releases.md#wc-rel-16--the-package-ships-only-the-files-it-names)). A CLI with a
   `sync` command also sets `syncs`, what it copies in at most 40 characters. The file holds no version, and
   `mcpServer` no port: Desktop reads the version from npm and gives the tool a free port. A command the manifest lists
-  without `effects` counts as a write; `permissionOf` adds each command's permission key. See [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
+  without `effects` counts as a write; `permissionOf` adds each command's permission key. See
+  [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
+- **A CLI published outside `@wirecat`.** WireCat Desktop adds it only when its data folder, the identity's `appName`,
+  is `<scope>-<name>` of the package or starts with `<scope>-<name>-`, with `.` and `_` read as `-`: `@acme/crm-cli`
+  keeps its data in `acme-crm-cli`. Only the scope's owner publishes under it, so the folder Desktop may delete is
+  theirs. `new` names it so for a package outside `@wirecat`.
 - **The short name.** `wcat shortcuts add <name>` makes `<name>` a shortcut to `wcat-<name>`, only when no program on
   PATH has that name. A CLI does not install its short name itself.
 
