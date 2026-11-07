@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`--from-app`**, a mode switch: the owner did this in the app that runs the tool (WireCat Desktop), so the tool
+  records it as the owner's with no terminal question. It is the app's word, not a security check (memo's decisions).
+
 ## 0.81.0 — 07.11.2026
 
 ### Added
