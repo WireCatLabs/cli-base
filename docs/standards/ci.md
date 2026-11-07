@@ -171,6 +171,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
   | 02:24 | whatsapp-cli |
   | 02:27 | gcal-cli |
   | 02:31 | cli-memo |
+  | 02:34 | bitrix24-cli |
   | 02:38 | cli-core |
   | 02:41 | mail-cli |
   | 02:45 | drive-cli |
@@ -178,6 +179,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
   | 02:59 | max-cli |
   | 03:02 | cli-template |
   | 03:06 | tg-cli |
+  | 03:09 | beeline-cli |
   | 03:13 | zoom-cli |
   | 03:20 | cli-docs |
 

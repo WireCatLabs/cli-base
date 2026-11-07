@@ -175,8 +175,9 @@ describe("repository setup", () => {
 
   it("finds a CLI in cli-base's parity groups or the repository's own", () => {
     expect(parityProblems("tg", undefined)).toEqual([])
-    expect(parityProblems("b24", undefined)[0]).toContain("no parity group")
-    const own = [{ name: "template", members: ["b24", "tg"], covers: ["commands"], differences: [] }]
-    expect(parityProblems("b24", own)).toEqual([])
+    expect(parityProblems("b24", undefined)).toEqual([])
+    expect(parityProblems("clidev", undefined)[0]).toContain("no parity group")
+    const own = [{ name: "template", members: ["clidev", "tg"], covers: ["commands"], differences: [] }]
+    expect(parityProblems("clidev", own)).toEqual([])
   })
 })

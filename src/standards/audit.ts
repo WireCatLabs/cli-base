@@ -131,6 +131,14 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     covers: ["commands", "upgrade", "notes", "meetings"],
     differences: [],
   },
+  // bitrix24-cli's search is cli-core's CRM `search all`, and beeline-cli's meetings take call recordings, not
+  // zoom-cli's: both are compared on the root commands every CLI shares, the way gcal and mail are on theirs.
+  {
+    name: "shared-roots",
+    members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline"],
+    covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
+    differences: MEMO_HAS_NO_PROFILES,
+  },
 ])
 
 const requiredRootSchema = v.strictObject({ path: v.pipe(v.array(segment), v.minLength(1)), meaning: text })

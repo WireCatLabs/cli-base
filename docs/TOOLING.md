@@ -97,7 +97,7 @@ a group covering the whole tree has the same paths), `same-flag-meaning`, `same-
 <cli>=<file>`) and `same-error-reason` (from `--reasons <cli>=<file>`, a JSON list of `defineReasons` entries). The two
 last rules print `n/a` for a CLI that gave no such file. `PARITY_GROUPS` names who is compared where — `messengers`
 (tg, max) over the whole tree, `all` over the shared roots, `mail-shared` and `gcal-shared` over the roots mail and
-gcal already share — and each group's declared `differences`, each with a reason, at most 10. `--groups <file>`
+gcal already share, `shared-roots` over `commands`, `doctor`, `skill`, `mcp` and `upgrade` for b24 and beeline — and each group's declared `differences`, each with a reason, at most 10. `--groups <file>`
 replaces `PARITY_GROUPS` with the JSON list of groups in that file, in the same shape and
 checked the same way, so a CLI outside WireCatLabs keeps its own groups in its repository and lists itself next to
 ours; `--differences <file>` (entries of `group`, `rule`, `target`, `expected`, `reason`) then adds to whichever groups
