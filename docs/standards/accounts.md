@@ -17,7 +17,7 @@ cli-core resolves the profile for tg, max and wa. WC-ACCT-1 needs cli-core 0.319
 and `--account` (WC-ACCT-7). memo never creates profiles of its own: it reads the stores of other CLIs and selects
 their accounts with `--source email:<name>` or `--account telegram:1`, so it has no `--profiles` either
 ([cli-base#390](https://github.com/WireCatLabs/cli-base/issues/390), owner decision 2026-10-31). memo's first
-word is an account group instead (WC-ACCT-13); cli-core after 0.602.0 has the parts, and memo does not read the word yet. zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
+word is an account group instead (WC-ACCT-13); cli-core 0.603.0 (the next release) has the parts, and memo does not read the word yet. zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
 `ZM_PROFILE_LOCK`) from zoom-cli 0.35.0, with cli-core's `liftProfile` and `usableProfileName`. drive still has its own
 profile code: it registers its own profiles. That is a known gap, not an exception. gcal resolves the profile through
 cli-core's `run()`, like tg, max and wa. Which CLIs lack a sign-in command of WC-ACCT-12 is listed in that rule.
@@ -205,7 +205,7 @@ A group is a list of accounts that the owner saves, store-wide, as `account_grou
 - One account may be in several groups. This is allowed and shown, not refused: a groups list gives each member its
   profile names in every CLI and `also_in` (its other groups), and the answer has a `duplicates` summary.
 - A profile named like a group never puts its account in the group. A groups list only suggests it
-  (`suggested`, "profile named work").
+  (`suggested`, "profile named work"), and only when another CLI's profile or a saved group uses the same name.
 - A group name is letters, digits, `-` and `_`, and starts with a letter or a digit. It is not `all`, not `bots` and
   not a memo command word.
 
@@ -213,6 +213,7 @@ A group is a list of accounts that the owner saves, store-wide, as `account_grou
 narrows inside it, and an account outside it is `validation_error`, as is a write's `--account` outside it.
 `MEMO_GROUP=<group>` does the same as the first word, and `all` is no group. `MEMO_GROUP_LOCK=<group>` pins the
 process as WC-ACCT-5 pins a profile: another group, `all`, or an account outside the group is `permission_error`.
+Under the lock every source list holds only the group's accounts, so a read that names no group stays inside it.
 Without the lock, a group is a convenience and not a boundary.
 
 - **Why:** the owner reads work and private accounts apart, across every CLI, without naming each account. A
@@ -222,10 +223,12 @@ Without the lock, a group is a convenience and not a boundary.
   invoice` reads those two accounts, and `memo personal …` reads every other one. `memo work search all x --source
   telegram:101` is refused because `telegram:101` is not in `work`. With nothing saved, `memo work …` is refused with
   the groups listed (`personal`), and the profiles named `work` are suggested. The first CRM sync of an account that
-  is only in `personal` answers a `next` hint on how to add it to `work`.
+  is only in `personal` answers `group_hint`, ``add it to a work group: `memo groups add work <provider>:<account>` ``.
+  Only the CRM sync answer carries it.
 - **Exceptions:** the bare word `personal` in a `--source` list still means the messenger accounts that are not bots;
   only `group:personal` is this group. The CLIs that can save a group today are tg and max (`config set
-  account_groups.<name>`), and they do not refuse a memo command word as a name. memo does not read the first word yet.
+  account_groups.<name>`); they refuse `all` and `bots` but not a memo command word. memo does not read the first
+  word yet.
 - **Applies to:** memo, and cli-core's source lists in every CLI. **Since:** cli-base 0.80.10. **Rulings:** NEED-2378,
   NEED-2389.
 
