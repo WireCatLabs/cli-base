@@ -214,6 +214,10 @@ narrows inside it, and an account outside it is `validation_error`, as is a writ
 `MEMO_GROUP=<group>` does the same as the first word, and `all` is no group. `MEMO_GROUP_LOCK=<group>` pins the
 process as WC-ACCT-5 pins a profile: another group, `all`, or an account outside the group is `permission_error`.
 Under the lock every source list holds only the group's accounts, so a read that names no group stays inside it.
+The lock fails closed: a command runs only when it is marked as keeping to a group (`groupAware`), and any reference
+in its arguments or options whose thing belongs only to accounts outside the group is refused. A thing the owner made
+passes, a note written in memo belongs to `personal`, and a person passes when one of their identities is in the
+group.
 Without the lock, a group is a convenience and not a boundary.
 
 - **Why:** the owner reads work and private accounts apart, across every CLI, without naming each account. A
