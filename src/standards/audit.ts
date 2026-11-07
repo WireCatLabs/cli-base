@@ -63,11 +63,13 @@ const parityGroupSchema = v.strictObject({
   differences: v.array(
     v.strictObject({
       rule: word,
-      /** `<clis> <path> <flag>`; with `absent`, only `<path> <flag>`: the CLI list is whoever else has it. */
+      /** `<clis> <path> <flag>`; with `absent` or `only`, only `<path> <flag>`: the CLI list is whoever else was compared. */
       target: text,
       expected: v.optional(text),
       /** The CLI that lacks the path or flag by design; the rest must agree, so other CLIs joining do not stale it. */
       absent: v.optional(word),
+      /** The one CLI that has the path or flag by design; every other CLI compared must lack it. */
+      only: v.optional(word),
       reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
     }),
   ),
@@ -83,11 +85,14 @@ export const defineParityGroups = (input: unknown): ParityGroup[] =>
         (both) => `${group.name}: "${both}" is listed twice`,
       ),
       ...group.differences
-        .filter((entry) => entry.absent && entry.expected)
+        .filter((entry) => (entry.absent || entry.only) && entry.expected)
         .map(
           (entry) =>
-            `${group.name}: "${entry.target}" has \`absent\`, which measures the values itself; drop \`expected\``,
+            `${group.name}: "${entry.target}" has \`${entry.absent ? "absent" : "only"}\`, which measures the values itself; drop \`expected\``,
         ),
+      ...group.differences
+        .filter((entry) => entry.absent && entry.only)
+        .map((entry) => `${group.name}: "${entry.target}" has both \`absent\` and \`only\`; keep one`),
     ]),
   ])
 
@@ -106,13 +111,22 @@ const MEMO_HAS_NO_PROFILES = [
     "(https://github.com/WireCatLabs/cli-base/issues/390)",
 }))
 
+const MEMO_DOCTOR_DEEP = {
+  rule: "same-path-contract",
+  target: "doctor --deep",
+  only: "memo",
+  reason:
+    "memo's doctor --deep also checks its own store (cli-memo #672); cli-core's shared doctor leaves --deep to " +
+    "each CLI, and no other CLI has one",
+}
+
 export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   { name: "messengers", members: ["tg", "max"], covers: "tree", differences: [] },
   {
     name: "all",
     members: ["tg", "max", "memo", "drive", "zm", "wa"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "search", "notes", "meetings"],
-    differences: MEMO_HAS_NO_PROFILES,
+    differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
   },
   // mail's `search messages` is cli-core's mail search, not the messengers' command: --complete took their 20-odd
   // differences as inherited (https://github.com/WireCatLabs/cli-base/issues/390). mail is compared everywhere else
@@ -121,7 +135,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     name: "mail-shared",
     members: ["tg", "max", "memo", "drive", "zm", "wa", "mail"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "notes", "meetings"],
-    differences: MEMO_HAS_NO_PROFILES,
+    differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
   },
   // gcal is compared on what it already shares with every CLI; doctor, mcp, search and skill wait until the published
   // CLIs agree there (https://github.com/WireCatLabs/cli-base/issues/390), then gcal moves back into "all".
@@ -137,7 +151,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     name: "shared-roots",
     members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
-    differences: MEMO_HAS_NO_PROFILES,
+    differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
   },
 ])
 

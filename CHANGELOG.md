@@ -19,6 +19,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   next `wcat` on PATH, and only then prints which file is missing and that the launcher is safe to delete. `SHIM_FORMAT`
   is 2, so every tool rewrites an older launcher on its next start. `ensureLauncher` returns `failed` and writes nothing
   when the folder holds no `wcat-<tool>` program. Shortcuts are unchanged except for the format number in their mark.
+- **`cli-dev audit` accepts memo's `doctor --deep` in every parity group that covers `doctor`.** cli-memo 0.131.47
+  gave its own doctor a `--deep` switch that no other CLI has, so every other CLI's audit failed on
+  `same-path-contract … doctor --deep` and bitrix24-cli and beeline-cli kept a local `--differences` file that pinned
+  the CLI list of that day. A parity difference may now carry `only: "<cli>"`: the one CLI that has the path or flag
+  by design, every other CLI compared must lack it, and the CLI list is whoever was compared, so a CLI joining or
+  leaving does not stale it. It is stale when that CLI is compared and no longer differs. `only` takes no `expected`
+  and cannot be combined with `absent`. A CLI that kept a local difference for `doctor --deep` can delete it.
 
 ## 0.80.8 — 07.11.2026
 

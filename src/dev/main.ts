@@ -676,6 +676,7 @@ const auditRun = (args: string[], io: DevIo) => {
         target: v.string(),
         expected: v.optional(v.string()),
         absent: v.optional(v.string()),
+        only: v.optional(v.string()),
         reason: v.string(),
       }),
     )

@@ -385,20 +385,26 @@ export const auditClis = (
       )
       .map((finding) => `${finding.rule} ${finding.target}`),
   )
-  // An `absent` difference names no CLI list: it stands for every finding where only that CLI lacks the flag.
+  // An `absent` or `only` difference names no CLI list: it stands for every finding where only that CLI lacks the
+  // flag, or only that CLI has it.
   const differences = options.groups.flatMap((group) =>
     group.differences.flatMap((entry) => {
-      if (!entry.absent) return [{ group: group.name, ...entry }]
+      const cli = entry.absent ?? entry.only
+      if (!cli) return [{ group: group.name, ...entry }]
       const matching = findings.filter((finding) => {
         if (finding.rule !== entry.rule || finding.target !== `${named(finding.clis)} ${entry.target}`) return false
-        const others = Object.entries(finding.values ?? {}).filter(([cli]) => cli !== entry.absent)
-        return (
-          finding.values?.[entry.absent as string] === "absent" && new Set(others.map(([, value]) => value)).size === 1
-        )
+        const mine = finding.values?.[cli]
+        const others = Object.entries(finding.values ?? {})
+          .filter(([name]) => name !== cli)
+          .map(([, value]) => value)
+        if (mine === undefined || others.length === 0) return false
+        return entry.absent
+          ? mine === "absent" && new Set(others).size === 1
+          : mine !== "absent" && others.every((value) => value === "absent")
       })
-      if (matching.length === 0 && clis.includes(entry.absent))
+      if (matching.length === 0 && clis.includes(cli))
         problems.push(
-          `stale difference in ${group.name}, no such divergence — remove it: ${entry.rule} ${entry.target} (absent in ${entry.absent})`,
+          `stale difference in ${group.name}, no such divergence — remove it: ${entry.rule} ${entry.target} (${entry.absent ? "absent" : "only"} in ${cli})`,
         )
       return matching.map((finding) => ({
         ...entry,
