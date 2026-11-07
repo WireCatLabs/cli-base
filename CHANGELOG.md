@@ -12,7 +12,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ### Fixed
 
-- **The `wcat` launcher no longer fails with `exec: …/wcat-max: not found` when its tool is gone (BUG-571).** A tool
+- **The `wcat` launcher no longer fails with `exec: …/wcat-max: not found` when its tool is gone.** A tool
   repaired the launcher only when it ran, never when `wcat` itself was the entry point, so a launcher left pointing at
   an uninstalled tool stayed broken, and a pnpm bin folder earlier on PATH hid a working `wcat` further down. The
   launcher script now checks its target. If it is missing it starts another `wcat-*` program of its own folder, then the
