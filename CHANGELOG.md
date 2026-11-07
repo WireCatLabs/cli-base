@@ -23,7 +23,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   are typed by the developer. The file holds no version, so a release does not make it stale: Desktop reads the
   version from npm. `mcpServer` names no port: Desktop gives the tool a free one and fills `{port}`. It refuses,
   naming the key, any word Desktop's rule would refuse. `--check` fails when the file is stale and prints the command
-  that rewrites it. List `contracts` in the package's `files`. `manifestSchema` and `manifestJsonSchema()` check a
+  that rewrites it. List `contracts/wirecat.json` in the package's `files`;
+  it is the one file of `contracts/` a package ships (WC-REL-16). `manifestSchema` and `manifestJsonSchema()` check a
   manifest anywhere.
 - **`--wcat-describe` answers format 2 when the package ships `contracts/wirecat.json`.** The format-1 keys stay, with
   `"wcat_describe": 2`, the file's `desktop` object and `manifest_sha256`, the SHA-256 of the file's bytes as shipped,

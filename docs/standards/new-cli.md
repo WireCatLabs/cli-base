@@ -95,7 +95,7 @@ installing that command; nothing else is registered anywhere.
 
   It answers `--wcat-describe`, runs `wcat` when the `wcat` launcher starts the tool, and on any other start makes sure
   the `wcat` launcher in the tool's bin folder works. `cli-dev lint --cli` warns when the built CLI does not answer.
-- **The manifest WireCat Desktop reads.** Export the identity for it, and write `contracts/wirecat.json` in the build:
+- **The manifest WireCat Desktop reads.** Export the identity for it, and commit `contracts/wirecat.json`:
 
   ```ts
   import type { ManifestIdentity } from "@wirecat/cli-base/wcat/manifest"
@@ -109,7 +109,8 @@ installing that command; nothing else is registered anywhere.
   ```
 
   `cli-dev manifest --program dist/program.js --identity dist/wcat.js` writes the file; `--check` in CI fails when it
-  is stale. Pass `WCAT` to `wcatStart` too, so the two never differ. List `contracts` in `files`. A CLI with a
+  is stale. Pass `WCAT` to `wcatStart` too, so the two never differ. List `contracts/wirecat.json`, not all of `contracts`, in
+  `files` ([WC-REL-16](releases.md#wc-rel-16--the-package-ships-only-the-files-it-names)). A CLI with a
   `sync` command also sets `syncs`, what it copies in at most 40 characters. The file holds no version, and
   `mcpServer` no port: Desktop reads the version from npm and gives the tool a free port. A command the manifest lists
   without `effects` counts as a write; `permissionOf` adds each command's permission key. See [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
