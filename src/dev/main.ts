@@ -83,10 +83,11 @@ const USAGE = `usage: cli-dev <command> [options]
   test-matrix --program <module> --untested <module> --name <cli> [--page <path>] [--check]
                                        docs/dev/test-matrix.md from coverage/argv.jsonl
   lint (--cli <bin> | --commands <file>) [--baseline <dir>] [--overrides <file>] [--budget <n>]
-       [--schemas <file>] [--write-baseline]
+       [--schemas <file>] [--write-baseline] [--allow-stale]
                                        the command tree against the standard's rules; fails on a
                                        new violation, a stale baseline entry or override, or more
-                                       overrides than the budget (10). --write-baseline rewrites
+                                       overrides than the budget (10); --allow-stale only warns on a
+                                       stale entry. --write-baseline rewrites
                                        lint/baseline/<rule>.json to today's violations. --schemas
                                        is a JSON object of the CLI's own JSON Schemas by name
   audit (--cli <bin> | --commands <file>)... [--schemas <cli>=<file>]... [--reasons <cli>=<file>]...
@@ -410,6 +411,8 @@ const lintRun = (args: string[], io: DevIo) => {
       budget: { type: "string", default: String(OVERRIDE_BUDGET) },
       schemas: { type: "string" },
       "write-baseline": { type: "boolean", default: false },
+      // For a shared package's CI building its consumers: an entry its new words made stale is their cleanup.
+      "allow-stale": { type: "boolean", default: false },
     },
   })
   if (Boolean(values.cli) === Boolean(values.commands)) {
@@ -473,12 +476,12 @@ const lintRun = (args: string[], io: DevIo) => {
     problems.push(`no lint rule "${id}" (named in ${values.baseline} or ${values.overrides})`)
   for (const found of verdict.fresh)
     problems.push(`${severity.get(found.rule) ?? "?"}  ${found.rule}  ${found.target}: ${found.message}`)
-  for (const entry of verdict.stale)
-    problems.push(
-      entry.in === "baseline"
-        ? `stale baseline entry, fixed or overridden — remove it: ${values.baseline}/${entry.rule}.json "${entry.target}"`
-        : `stale override, no such violation — remove it: ${entry.rule} "${entry.target}"`,
-    )
+  const stale = verdict.stale.map((entry) =>
+    entry.in === "baseline"
+      ? `stale baseline entry, fixed or overridden — remove it: ${values.baseline}/${entry.rule}.json "${entry.target}"`
+      : `stale override, no such violation — remove it: ${entry.rule} "${entry.target}"`,
+  )
+  if (!values["allow-stale"]) problems.push(...stale)
 
   const warnings = wcatWarnings(io.cwd, values.cli)
   const warned = new Set(warnings.map((warning) => `${warning.rule} ${warning.target}`))
@@ -495,6 +498,7 @@ const lintRun = (args: string[], io: DevIo) => {
   for (const warning of warnings)
     if (!wcatOverridden.has(`${warning.rule} ${warning.target}`))
       io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
+  if (values["allow-stale"]) for (const line of stale) io.err(`warning  ${line}`)
   return report(io, problems, "lint: ok")
 }
 

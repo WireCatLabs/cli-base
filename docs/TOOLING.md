@@ -66,7 +66,9 @@ extends:
 `cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and
 judges it by `LINT_RULES` and `VOCABULARY` from `/standards/tables`. Known violations live in
 `lint/baseline/<rule-id>.json`, one file per rule, and may only shrink: an entry with no violation left
-fails the run. `--write-baseline` rewrites those files to today's violations. Permanent exceptions go in
+fails the run, or only warns with `--allow-stale`, which a shared package's CI passes when it lints the CLIs built
+against it: a word it added makes their entries stale, and that cleanup is theirs. `--write-baseline` rewrites those
+files to today's violations. Permanent exceptions go in
 `lint/overrides.json` — `[{ "rule", "target", "reason", "owner", "review_after" }]`, `owner` a GitHub handle
 (`@octocat`), `review_after` a date — and more than `--budget` (10) of them fails, as does one past its
 `review_after`. An entry that does not fit that shape fails the run by its number and is ignored; the others still

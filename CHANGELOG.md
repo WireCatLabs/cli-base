@@ -20,6 +20,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   newest message waits on the owner). A route is `--deliver-to`, not `--to`: `--to` keeps one meaning, who a message
   is for. A CLI that overrode these in `lint/overrides.json` removes the entries when it bumps; `cli-dev lint` reports
   them as stale.
+- **`cli-dev lint --allow-stale`** prints a stale baseline entry or override as a warning instead of failing. For
+  cli-core's CI, which lints each CLI built against its branch: a word cli-core's branch adds to the vocabulary makes
+  that CLI's entry stale, and removing it is the CLI's cleanup on its next bump, not a break.
 
 ## 0.80.4 â€” 07.11.2026
 

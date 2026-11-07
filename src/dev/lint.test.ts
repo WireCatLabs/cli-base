@@ -707,6 +707,11 @@ describe("cli-dev lint", () => {
       'stale baseline entry, fixed or overridden — remove it: lint/baseline/unknown-verb.json "chats grab"',
     )
 
+    expect(await lint("--allow-stale")).toBe(0)
+    expect(err).toContain(
+      'warning  stale baseline entry, fixed or overridden — remove it: lint/baseline/unknown-verb.json "chats grab"',
+    )
+
     expect(await lint("--write-baseline")).toBe(0)
     expect(existsSync(join(root, "lint/baseline/unknown-verb.json"))).toBe(false)
   })
