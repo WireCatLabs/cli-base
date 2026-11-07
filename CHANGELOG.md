@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`browse` is a vocabulary verb.** It names a read-only listing of one level of a remote hierarchy, such as a
+  provider's folders, for a picker to step through: drive-cli's `folders browse` lists Google Drive folders so WireCat
+  Desktop can offer them before `folders add`. `list` there already names the local selection, and the `tree` view
+  names stored sources, so neither fits. `cli-dev lint` no longer reports `browse` as `unknown-verb`.
+
 ### Fixed
 
 - **The `wcat` launcher no longer fails with `exec: â€¦/wcat-max: not found` when its tool is gone.** A tool

@@ -110,6 +110,7 @@ export const defineVocabulary = (input: unknown): Vocabulary =>
 const verbs: [string, string][] = [
   ["list", "show many"],
   ["show", "show one"],
+  ["browse", "list one level of a remote hierarchy, such as a provider's folders, to choose from; reads only"],
   ["search", "find by text; the description says where it looks"],
   ["prepare", "assemble bounded cited context for a selected upcoming activity without applying findings"],
   ["related", "what is nearest in meaning to one thing, without a query"],
