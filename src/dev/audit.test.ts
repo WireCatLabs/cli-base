@@ -363,6 +363,45 @@ describe("judging an audit", () => {
     ])
   })
 
+  it("accepts a flag only one CLI has by name, however many other CLIs lack it, and fails a stale one", () => {
+    const withAll = (cli: string) => inputOf(tool(cli, notes("list notes", [["--all", "every note"]])))
+    const without = (cli: string) => inputOf(tool(cli, notes("list notes")))
+    const judge = (inputs: AuditInput[]) =>
+      auditClis(
+        inputs,
+        options({
+          groups: [
+            {
+              name: "pair",
+              members: ["a", "b", "c"],
+              covers: "tree",
+              differences: [
+                {
+                  rule: "same-path-contract",
+                  target: "notes list --all",
+                  only: "a",
+                  reason: "only a lists every note",
+                },
+              ],
+            },
+          ],
+        }),
+      )
+
+    for (const others of [["b"], ["b", "c"]]) {
+      const result = judge([withAll("a"), ...others.map(without)])
+      expect(result.problems).toEqual([])
+      expect(result.blocking.map((one) => one.target)).toEqual([])
+    }
+
+    expect(judge([withAll("a"), withAll("b"), without("c")]).blocking.map((one) => one.target)).toContain(
+      "a+b+c notes list --all",
+    )
+    expect(judge([without("a"), without("b")]).problems).toEqual([
+      "stale difference in pair, no such divergence — remove it: same-path-contract notes list --all (only in a)",
+    ])
+  })
+
   it("judges a CLI's lint rules by its own lint folder when given", () => {
     const grab = tool("a", (root) =>
       annotate(root.command("grab").description("grab it"), { effects: READS, examples: ["a grab"] }),
