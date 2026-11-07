@@ -17,7 +17,7 @@ cli-core resolves the profile for tg, max and wa. WC-ACCT-1 needs cli-core 0.319
 and `--account` (WC-ACCT-7). memo never creates profiles of its own: it reads the stores of other CLIs and selects
 their accounts with `--source email:<name>` or `--account telegram:1`, so it has no `--profiles` either
 ([cli-base#390](https://github.com/WireCatLabs/cli-base/issues/390), owner decision 2026-10-31). memo's first
-word is an account group instead (WC-ACCT-13); cli-core 0.603.0 (the next release) has the parts, and memo does not read the word yet. zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
+word is an account group instead (WC-ACCT-13); cli-core 0.605.0 (the next release) has the parts, and memo does not read the word yet. zoom resolves its own profile word by the same rules (`zm <profile> …`, `ZM_PROFILE`,
 `ZM_PROFILE_LOCK`) from zoom-cli 0.35.0, with cli-core's `liftProfile` and `usableProfileName`. drive still has its own
 profile code: it registers its own profiles. That is a known gap, not an exception. gcal resolves the profile through
 cli-core's `run()`, like tg, max and wa. Which CLIs lack a sign-in command of WC-ACCT-12 is listed in that rule.
@@ -229,7 +229,7 @@ Without the lock, a group is a convenience and not a boundary.
   only `group:personal` is this group. The CLIs that can save a group today are tg and max (`config set
   account_groups.<name>`); they refuse `all` and `bots` but not a memo command word. memo does not read the first
   word yet.
-- **Applies to:** memo, and cli-core's source lists in every CLI. **Since:** cli-base 0.80.10. **Rulings:** NEED-2378,
+- **Applies to:** memo, and cli-core's source lists in every CLI. **Since:** cli-base 0.81.1. **Rulings:** NEED-2378,
   NEED-2389.
 
 ## Sources
