@@ -97,7 +97,7 @@ describe.skipIf(process.platform === "win32")("wcat, installed like npm installs
   it("writes the launcher on the tool's first run, and wcat <tool> then runs the tool", () => {
     expect(existsSync(launcher())).toBe(false)
     expect(run(join(bin, "wcat-alpha"), ["hello"]).stdout).toBe("alpha hello\n")
-    expect(parseShim(readFileSync(launcher(), "utf8"))).toEqual({ format: 1, kind: "launcher", target: "wcat-alpha" })
+    expect(parseShim(readFileSync(launcher(), "utf8"))).toEqual({ format: 2, kind: "launcher", target: "wcat-alpha" })
 
     const through = run(join(bin, "wcat"), ["beta", "one", "two words"])
     expect(through.stdout).toBe("beta one two words\n")
@@ -145,10 +145,10 @@ describe.skipIf(process.platform === "win32")("wcat, installed like npm installs
     writeFileSync(original, saved, { mode: 0o755 })
   })
 
-  it("repairs the launcher from another tool once the tool it started is uninstalled", () => {
+  it("starts another tool at once when the one it started is uninstalled, and is repaired when a tool runs", () => {
     const link = join(bin, "wcat-alpha")
     rmSync(link)
-    expect(run(join(bin, "wcat"), ["beta"]).status).not.toBe(0)
+    expect(run(join(bin, "wcat"), ["beta", "now"]).stdout).toBe("beta now\n")
     run(join(bin, "wcat-beta"), ["hello"])
     expect(parseShim(readFileSync(launcher(), "utf8"))?.target).toBe("wcat-beta")
     expect(run(join(bin, "wcat"), ["beta", "back"]).stdout).toBe("beta back\n")

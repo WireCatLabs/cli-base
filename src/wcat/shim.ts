@@ -9,7 +9,7 @@ import { DISPATCH_FLAG } from "./names.js"
  *
  * Every file carries a mark line, so cli-base can tell its own files from anyone else's and never touches the rest.
  */
-export const SHIM_FORMAT = 1
+export const SHIM_FORMAT = 2
 
 export type ShimKind = "launcher" | "shortcut"
 
@@ -35,6 +35,34 @@ const NOTE: Record<ShimKind, string> = {
 const shellQuote = (text: string) => `'${text.replaceAll("'", `'\\''`)}'`
 
 /**
+ * The launcher is the entry point when the owner types `wcat`, so no tool has run to repair it: it looks for a
+ * working program itself. Order: its target, another `wcat-*` of the same folder, the next `wcat` on PATH. The
+ * variable stops two launchers from handing the start to each other.
+ */
+const launcherBody = (dir: string, target: string, name: string): string[] => [
+  'ok() { [ -f "$1" ] && [ -x "$1" ]; }',
+  `dir=${shellQuote(dir)}`,
+  `target=${shellQuote(join(dir, target))}`,
+  'if ! ok "$target"; then',
+  '  for t in "$dir"/wcat-*; do',
+  '    if ok "$t"; then target=$t; break; fi',
+  "  done",
+  "fi",
+  `if ok "$target"; then exec "$target" ${DISPATCH_FLAG} "$@"; fi`,
+  'if [ -z "$WIRECAT_LAUNCHER_SKIP" ]; then',
+  "  WIRECAT_LAUNCHER_SKIP=1; export WIRECAT_LAUNCHER_SKIP",
+  "  set -f; oldifs=$IFS; IFS=:",
+  "  for d in $PATH; do",
+  `    if [ -n "$d" ] && [ "$d" != "$dir" ] && ok "$d/${name}"; then IFS=$oldifs; exec "$d/${name}" "$@"; fi`,
+  "  done",
+  "  IFS=$oldifs; set +f",
+  "fi",
+  `printf '%s\\n' "${name}: $target is missing and no other ${name}-* program was found in $dir or on PATH." \\`,
+  `  "This launcher is safe to delete: $dir/${name}" >&2`,
+  "exit 127",
+]
+
+/**
  * The files of one shim: `<name>` on Linux and macOS; `<name>.cmd` and `<name>.ps1` on Windows, the pair npm writes
  * for its own commands. The POSIX file names the folder in full, so a link to it from elsewhere still works; the
  * Windows pair finds the folder from where it is, as npm's own wrappers do.
@@ -49,7 +77,13 @@ export const shimFiles = (
     return [
       {
         path: join(dir, name),
-        text: `#!/bin/sh\n# ${mark}\n# ${NOTE[kind]}\nexec ${shellQuote(join(dir, target))}${extra} "$@"\n`,
+        text: [
+          "#!/bin/sh",
+          `# ${mark}`,
+          `# ${NOTE[kind]}`,
+          ...(kind === "launcher" ? launcherBody(dir, target, name) : [`exec ${shellQuote(join(dir, target))} "$@"`]),
+          "",
+        ].join("\n"),
       },
     ]
   return [

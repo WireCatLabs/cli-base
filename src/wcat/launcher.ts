@@ -94,7 +94,8 @@ export const installed = (dir: string, program: string): boolean => {
  * - `written`: it was missing, broken or in an older format, and now starts the running tool.
  * - `foreign`: a `wcat` that cli-base did not write is there, and stays untouched.
  * - `newer`: a newer cli-base wrote it; this one leaves it alone.
- * - `failed`: it could not be written, such as a bin folder only an administrator may change.
+ * - `failed`: it could not be written, such as a bin folder only an administrator may change, or the folder holds
+ *   no installed `wcat-<tool>` to start.
  */
 export type LauncherState = "kept" | "written" | "foreign" | "newer" | "failed"
 
@@ -110,6 +111,7 @@ export const ensureLauncher = ({
   platform,
 }: BinFolder & { platform: NodeJS.Platform }): LauncherState => {
   try {
+    if (!exists(join(dir, program))) return "failed"
     const mine = shimFiles("launcher", { dir, name: NAME, target: program, platform })
     const states: FileState[] = mine.map((file) => fileState(file.path))
     if (states.some((one) => one.state === "foreign")) return "foreign"

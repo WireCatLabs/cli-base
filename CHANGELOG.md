@@ -8,6 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The `wcat` launcher no longer fails with `exec: …/wcat-max: not found` when its tool is gone (BUG-571).** A tool
+  repaired the launcher only when it ran, never when `wcat` itself was the entry point, so a launcher left pointing at
+  an uninstalled tool stayed broken, and a pnpm bin folder earlier on PATH hid a working `wcat` further down. The
+  launcher script now checks its target. If it is missing it starts another `wcat-*` program of its own folder, then the
+  next `wcat` on PATH, and only then prints which file is missing and that the launcher is safe to delete. `SHIM_FORMAT`
+  is 2, so every tool rewrites an older launcher on its next start. `ensureLauncher` returns `failed` and writes nothing
+  when the folder holds no `wcat-<tool>` program. Shortcuts are unchanged except for the format number in their mark.
+
 ## 0.80.8 — 07.11.2026
 
 ### Changed — may break callers

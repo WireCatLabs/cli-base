@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { spawnSync } from "node:child_process"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
@@ -20,7 +21,7 @@ describe("the Windows launcher pair", () => {
     expect(cmd).toBe(
       [
         "@ECHO off",
-        "REM wirecat-shim 1 launcher wcat-tg.cmd",
+        "REM wirecat-shim 2 launcher wcat-tg.cmd",
         "REM Written by @wirecat/cli-base. Any WireCat tool rewrites it when it breaks; it is safe to delete.",
         '"%~dp0wcat-tg.cmd" --wcat-dispatch %*',
         "",
@@ -33,8 +34,8 @@ describe("the Windows launcher pair", () => {
     expect(ps1).toContain("$input | & $target --wcat-dispatch @args")
     expect(ps1).toContain("exit $LASTEXITCODE")
     expect(files.map((file) => parseShim(file.text))).toEqual([
-      { format: 1, kind: "launcher", target: "wcat-tg.cmd" },
-      { format: 1, kind: "launcher", target: "wcat-tg.cmd" },
+      { format: 2, kind: "launcher", target: "wcat-tg.cmd" },
+      { format: 2, kind: "launcher", target: "wcat-tg.cmd" },
     ])
   })
 
@@ -95,11 +96,68 @@ describe("the launcher", () => {
       target: "wcat-tg",
       platform: "linux",
     })
-    expect(file?.text).toContain(`exec '/home/o'\\''neil/bin/wcat-tg' --wcat-dispatch "$@"`)
+    expect(file?.text).toContain(`dir='/home/o'\\''neil/bin'`)
+    expect(file?.text).toContain(`target='/home/o'\\''neil/bin/wcat-tg'`)
+  })
+
+  it("writes nothing into a folder that holds no program of an installed tool", () => {
+    const dir = folder()
+    expect(ensureLauncher({ dir, program: "wcat-gone", platform: "linux" })).toBe("failed")
+    expect(existsSync(join(dir, "wcat"))).toBe(false)
   })
 
   it("reports a folder it may not write instead of failing the tool", () => {
     expect(ensureLauncher({ dir: join(folder(), "missing"), program: "wcat-tg", platform: "linux" })).toBe("failed")
+  })
+})
+
+describe.skipIf(process.platform === "win32")("the POSIX launcher script when its target is gone", () => {
+  const tool = (dir: string, name: string, says: string) => touch(join(dir, name), `#!/bin/sh\necho "${says} $*"\n`)
+  const start = (dir: string, path: string, args: string[] = []) => {
+    const launcher = join(dir, "wcat")
+    const [file] = shimFiles("launcher", { dir, name: "wcat", target: "wcat-gone", platform: "linux" })
+    touch(launcher, file?.text)
+    return spawnSync("/bin/sh", [launcher, ...args], { env: { PATH: path }, encoding: "utf8" })
+  }
+
+  it("starts another wcat-* program of its own folder", () => {
+    const dir = folder()
+    tool(dir, "wcat-max", "max")
+    const result = start(dir, "/usr/bin:/bin", ["hi"])
+    expect(result.stdout).toBe("max --wcat-dispatch hi\n")
+  })
+
+  it("hands over to the next wcat on PATH, and not to itself or to a launcher that points back", () => {
+    const dir = folder()
+    const next = folder()
+    touch(join(next, "wcat"), '#!/bin/sh\necho "next $*"\n')
+    expect(start(dir, `${dir}:${next}:/usr/bin:/bin`, ["a"]).stdout).toBe("next a\n")
+
+    const [back] = shimFiles("launcher", { dir: next, name: "wcat", target: "wcat-gone", platform: "linux" })
+    touch(join(next, "wcat"), back?.text)
+    const looped = start(dir, `${dir}:${next}:/usr/bin:/bin`)
+    expect(looped.status).toBe(127)
+    expect(looped.stderr).toContain("is missing")
+  })
+
+  it("says which file is missing and that the launcher is safe to delete, when nothing else can start", () => {
+    const dir = folder()
+    const result = start(dir, "/usr/bin:/bin")
+    expect(result.status).toBe(127)
+    expect(result.stderr).toContain(`wcat: ${join(dir, "wcat-gone")} is missing`)
+    expect(result.stderr).toContain(`This launcher is safe to delete: ${join(dir, "wcat")}`)
+  })
+
+  it.skipIf(!existsSync("/usr/bin/dash"))("runs under dash", () => {
+    const dir = folder()
+    tool(dir, "wcat-max", "max")
+    const [file] = shimFiles("launcher", { dir, name: "wcat", target: "wcat-gone", platform: "linux" })
+    touch(join(dir, "wcat"), file?.text)
+    const result = spawnSync("/usr/bin/dash", [join(dir, "wcat"), "x"], {
+      env: { PATH: "/usr/bin:/bin" },
+      encoding: "utf8",
+    })
+    expect(result.stdout).toBe("max --wcat-dispatch x\n")
   })
 })
 
