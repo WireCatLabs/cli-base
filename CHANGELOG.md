@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The flag vocabulary has `--button <text=data>` and `--no-buttons`.** `--button` (value, string, repeatable) is one
+  inline button under a bot's message, as its text and the data a press sends back; `--no-buttons` takes the buttons
+  off a message being edited. Negations here are `--no-<thing>` (`--no-preview`, `--no-approval`), so this one is not
+  `--clear-buttons`; `--clear` stays the generic unset. cli-core's `bot messages send` and `edit` use them.
+
 ## 0.80.9 — 07.11.2026
 
 ### Fixed
