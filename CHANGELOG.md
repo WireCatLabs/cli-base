@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.84.0 — 08.11.2026
 
 ### Added
 
@@ -18,11 +18,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   repository's own `release.yml` with the merged commit. It needs a GitHub App token, because a pull request opened
   with `GITHUB_TOKEN` does not run its checks on its own. Nothing calls it yet; setup and the open points are in
   [`docs/dev/release-workflow.md`](docs/dev/release-workflow.md).
-
-## 0.84.0 — 08.11.2026
-
-### Added
-
 - **Vocabulary for memories that follow their sources, and for sources added by hand** (cli-memo). The verb
   `challenge`: say a record no longer holds, citing what contradicts it; it only proposes. The noun `sources`: what
   the owner adds by hand to read from. Flags `--quote <ref=words...>` (the words of an `--evidence` reference a
