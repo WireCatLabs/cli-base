@@ -91,7 +91,8 @@ shows no failed run.
 `raw-network` and `undeclared-host` read the CLI's own source under `src` (tests, fixtures, the fakes in `src/testing`,
 `dist` and `node_modules` left out), not the commands document. `raw-network` reports an import of `node:http`, `https`, `http2`, `net`, `tls`
 or `dgram` (with or without `node:`), `undici`, `axios`, `got`, `node-fetch` or `ws` (static, dynamic or `require`;
-type-only imports pass), and a call of the global `fetch` or any `globalThis.fetch`, with the target
+type-only imports pass, and so do named imports of `createServer` alone or `isIP` alone, which reach no host), and a call
+of the global `fetch` or any `globalThis.fetch` outside a comment line, with the target
 `<file> <module>` or `<file> fetch`. A file that binds its own `fetch` (`const fetch = hostFetch(…)`, an injected one)
 calls that one. `undeclared-host` reports each `http(s)://` host outside a comment line that `network.hosts` of the
 shipped `contracts/wirecat.json` does not cover, the target the host alone and the files in the message; the `docs_url` host, `example`, `test` and

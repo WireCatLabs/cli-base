@@ -230,6 +230,32 @@ describe("lint rules", () => {
     ).toEqual([])
   })
 
+  it("passes raw-network for a comment, a server that only listens and an isIP import", () => {
+    const of = (text: string) =>
+      lintOf(clean(), { network: { sources: [{ path: "src/a.ts", text }] } })
+        .filter((one) => one.rule === "raw-network")
+        .map((one) => one.target)
+    expect(
+      of(
+        [
+          " * A fetch (`remote: read`) keeps receiving",
+          "// await fetch(url)",
+          'import { createServer, type IncomingMessage } from "node:http"',
+          'import { isIP as ipVersion } from "node:net"',
+        ].join("\n"),
+      ),
+    ).toEqual([])
+    expect(
+      of(
+        [
+          'import { createServer, request } from "node:http"',
+          'import { createConnection, isIP } from "node:net"',
+          'import * as https from "node:https"',
+        ].join("\n"),
+      ),
+    ).toEqual(["src/a.ts node:http", "src/a.ts node:https", "src/a.ts node:net"])
+  })
+
   it("fails undeclared-host for a URL host the manifest does not declare, and skips without a declaration", () => {
     const text = [
       'const API = "https://api.acme.example/v1"',
