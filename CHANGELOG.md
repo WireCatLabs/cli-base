@@ -12,7 +12,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed â€” may break callers
 
-- **A charge's repeat is `--period <count-unit>`, and `--every` takes only `<duration>` again** (BUG-646). Flag
+- **A charge's repeat is `--period <count-unit>`, and `--every` takes only `<duration>` again.** Flag
   `--period` (`value`, a count and a calendar unit such as `1-month`) is how often a charge repeats. `--every` lost
   its second value kind `<count-unit>`: one flag with two kinds of value is what `cli-dev audit`'s `same-flag-meaning`
   exists to catch, and memo's `subscriptions --every` failed it beside drive, gcal, mail, max and tg. A CLI that gives
