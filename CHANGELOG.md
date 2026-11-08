@@ -17,6 +17,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   stalled download held the job until its timeout. Each download now retries up to five times, gives one attempt 60
   seconds and stops retrying after two minutes. The sha256 checks are unchanged. A caller gets this once its pin moves
   to the release that has it.
+- **Pressing Start release again closes the release pull request the last run left open.** A run that stops at a
+  failed check or a timeout leaves its `release/<version>-<run>` pull request open, and the next press opened a second
+  one for the same version (cli-template #134 and #135). The new run now closes those first, with a comment naming
+  itself, and deletes their branches.
 
 ## 0.85.0 â€” 08.11.2026
 
@@ -41,10 +45,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
-- **Pressing Start release again closes the release pull request the last run left open.** A run that stops at a
-  failed check or a timeout leaves its `release/<version>-<run>` pull request open, and the next press opened a second
-  one for the same version (cli-template #134 and #135). The new run now closes those first, with a comment naming
-  itself, and deletes their branches.
 - **The handbook says where bitrix24-cli stands today.** WC-PERM-23 lists no exceptions: b24 and beeline both hand
   `configuration` to the program and to `appMcpCommand`. WC-ARCH-5's known gap names only what is still b24's own
   (people, organizations, products, users). b24 joins "the WireCat repositories" in the CI and toolchain pages, the
