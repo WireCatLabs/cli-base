@@ -305,8 +305,9 @@ process.exit(failed === 0 ? 0 : 1)
 
 **`wcat <tool> …` runs `wcat-<tool> …`, from `@wirecat/cli-base/wcat`**, the way `git foo` runs `git-foo`. Its code
 is here, so every CLI carries a copy. The `wcat` file on PATH is a small launcher in a tool's global bin folder that
-starts that tool as `wcat-<tool> --wcat-dispatch …`; the tool's copy of cli-base then does the dispatching. A CLI's
-bin calls `wcatStart` first:
+starts that tool as `wcat-<tool> --wcat-dispatch …`; the tool's copy of cli-base then does the dispatching. A CLI
+installs `wcat-<name>` from its first release (`cli-dev release-pr` refuses a release from `0.0.0` without it), and
+its bin calls `wcatStart` first:
 
 ```ts
 import { wcatStart } from "@wirecat/cli-base/wcat/start"

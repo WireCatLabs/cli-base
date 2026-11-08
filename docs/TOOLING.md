@@ -58,7 +58,7 @@ extends:
 
 | — | `cli-dev lint --cli dist/bin.js` (or `--commands <file>`): the command tree against the standard |
 | — | `cli-dev audit --cli <bin> --cli <bin> …`: several CLIs against the standard and against each other |
-| — | `cli-dev release-pr --base <commit> --body <file>`: a pull request that changes the version needs a `## Conformance` section ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
+| — | `cli-dev release-pr --base <commit> --body <file>`: a pull request that changes the version needs a `## Conformance` section, and one that raises it from `0.0.0` a `wcat-<name>` `"bin"` key ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
 | — | `cli-dev live record --script <path>` after a live check passed; `cli-dev live check` in `bin/release` ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
 | — | `cli-dev repo-check --cli <name>`: main's ruleset and its required checks, the `npm` environment, the monthly cron minute and a parity group ([New CLI](standards/new-cli.md#four-steps-that-need-a-person)) |
 | `scripts/bundle.ts` (tg) | `cli-dev bundle --bin dist/bin/<cli>.js [--external <package>]…`: the published bin as an esbuild bundle and its loader ([WC-LAY-10](standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds)) |
@@ -72,7 +72,7 @@ files to today's violations. Permanent exceptions go in
 `lint/overrides.json` — `[{ "rule", "target", "reason", "owner", "review_after" }]`, `owner` a GitHub handle
 (`@octocat`), `review_after` a date — and more than `--budget` (10) of them fails, as does one past its
 `review_after`. An entry that does not fit that shape fails the run by its number and is ignored; the others still
-apply. The `wcat-bin-name` and `wcat-describe` warnings are overridden the same way. `cli-dev audit` names a rule overridden more than three times across the CLIs it reads, for review.
+apply. The `wcat-bin-name` and `wcat-describe` warnings are overridden the same way; an override covers a short name kept beside `wcat-<name>`, never a CLI without one, which `cli-dev release-pr` refuses at its first release. `cli-dev audit` names a rule overridden more than three times across the CLIs it reads, for review.
 `flag-synonym` reports another name for a vocabulary flag (`--take` for `--limit`, from the flag's `replaces`), and
 `identifier-name` an identifier key the glossary (`IDENTIFIERS`) names another way (`execution_id` for `run_id`).
 Every option needs a role from the vocabulary (`paging`, `output`, `sort`, `mode`, `action`, `budget`, `scope`,
