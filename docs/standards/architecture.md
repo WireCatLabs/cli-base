@@ -97,8 +97,10 @@ cli-core's entities, and the adapter behind cli-core's ports. CRM is the first d
   with its `operation_id`); b24 builds the Bitrix24 transport, the mappers and the adapter, and mounts cli-core's
   commands.
 - **Exceptions:** a feature stays in one CLI only when the other providers cannot have it, such as MAX's socket server,
-  Telegram's app registration, or gcal's generated `api` commands. Known gap, as of 2026-11-06: b24 has its own CRM
-  reads and writes, built before cli-core's, and moves to cli-core's when they land.
+  Telegram's app registration, or gcal's generated `api` commands. Known gap, as of 2026-11-08: b24's `people`,
+  `organizations`, `products` and `users` are still its own commands, read live, with its own `people` and
+  `organizations` writes; they move to cli-core's when it has them. Deals, leads, pipelines, stages and `sync` are
+  cli-core's.
 - **Applies to:** messenger CLIs (tg, max, wa), calendar CLIs (gcal) and CRM CLIs (b24). **Since:** cli-base 0.41.0
   (CRM, and the shared domain built first: cli-base 0.80.1). **Rulings:** NEED-820, NEED-440, NEED-301, NEED-444,
   NEED-2298.
