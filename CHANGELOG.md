@@ -118,7 +118,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **The new-CLI handbook names the data-folder rule for a CLI published outside `@wirecat`:** WireCat Desktop adds
   such a tool only when its `appName` is `<scope>-<name>` of the package or starts with it. It also says that the
   template now calls `wcatStart`, writes the `wcat-` command and names a reference CLI for mail and crm.
-||||||| parent of 9527137 (feat(vocabulary): the groups noun and the --position option)
 
 ## 0.82.0 â€” 07.11.2026
 
