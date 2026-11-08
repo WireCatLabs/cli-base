@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.93.0 — 09.11.2026
+
+### Added
+
+- **`--with-muted`**, a mode switch: also read the chats the owner muted. cli-core's `messages sync --all` leaves
+  muted chats out by default; this switch reads them for one run.
+
 ## 0.92.0 — 08.11.2026
 
 ### Added
