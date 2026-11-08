@@ -68,6 +68,10 @@ on:
         description: Shell lines the platforms job runs after the build, such as commands that need no login
         type: string
         default: ""
+      conflict-marker-ignore:
+        description: Git pathspecs, separated by spaces, whose merge conflict markers are fixtures on purpose
+        type: string
+        default: ""
       test-shards:
         description: >-
           2 to 8 runs test:coverage on that many runners instead of in `check`, and the `coverage` job merges them and
@@ -87,6 +91,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # A marker git leaves after a stopped merge or rebase still parses in Markdown and JSON, so no other check fails.
+      - name: Merge conflict markers
+        env:
+          IGNORE: ${{ inputs.conflict-marker-ignore }}
+        run: |
+          set -f
+          excludes=()
+          for path in $IGNORE; do excludes+=(":(exclude)$path"); done
+          if found=$(git grep -nIE '^(<<<<<<<|>>>>>>>|\|\|\|\|\|\|\|) |^=======$' -- . "${excludes[@]}"); then
+            while IFS= read -r hit; do
+              file=${hit%%:*}
+              rest=${hit#*:}
+              echo "::error file=$file,line=${rest%%:*}::Merge conflict marker committed: $hit"
+            done <<< "$found"
+            exit 1
+          elif [ $? -gt 1 ]; then
+            exit 2
+          fi
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
