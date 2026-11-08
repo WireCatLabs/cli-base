@@ -9,7 +9,9 @@ export interface Shell {
 
 export const processShell = (cwd: string): Shell => ({
   run: (command, args) => {
-    const result = spawn.sync(command, [...args], { cwd, encoding: "utf8" })
+    // Node's default 1 MiB output limit cut `git show` of a changelog past that size (cli-core 0.607.0).
+    const result = spawn.sync(command, [...args], { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
+    if (result.error) return { ok: false, out: result.error.message }
     return { ok: result.status === 0, out: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim() }
   },
   sleep: (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms),

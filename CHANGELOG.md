@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`cli-dev changelog restore` and the other `--land` steps read an output past 1 MiB.** Their git and gh calls had
+  Node's default 1 MiB output limit, so `restore` failed once a released `CHANGELOG.md` passed that size, as
+  cli-core's did at 0.607.0, and its error printed the changelog instead of the cause. The limit is now 64 MiB, the
+  same as `@wirecat/cli-base/release`, and a call that cannot run says why (`ENOBUFS`, `ENOENT`). A release script
+  that pins an older cli-base for `changelog restore` should take this version.
+
 ## 0.83.0 — 08.11.2026
 
 ### Added
