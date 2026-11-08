@@ -177,6 +177,12 @@ jobs:
           The release pull request of the dated version recorded the checks; this one only folds the changelog or changes the number."
           git config user.name "wirecat-release[bot]"
           git config user.email "wirecat-release[bot]@users.noreply.github.com"
+          # A run that stopped (a failed check, a timeout) leaves its pull request open; this press supersedes it.
+          gh pr list --base main --state open --json number,headRefName \
+            -q ".[] | select(.headRefName | startswith(\"release/$VERSION-\")) | .number" |
+            while read -r old; do
+              gh pr close "$old" --delete-branch --comment "Superseded by Start release run $GITHUB_RUN_ID."
+            done
           git switch -q -c "$branch"
           git commit -q -am "$title" -m "$body"
           git push -q -u origin "$branch"

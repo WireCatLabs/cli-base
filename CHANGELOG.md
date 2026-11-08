@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **Pressing Start release again closes the release pull request the last run left open.** A run that stops at a
+  failed check or a timeout leaves its `release/<version>-<run>` pull request open, and the next press opened a second
+  one for the same version (cli-template #134 and #135). The new run now closes those first, with a comment naming
+  itself, and deletes their branches.
+
 ## 0.84.0 — 08.11.2026
 
 ### Added
