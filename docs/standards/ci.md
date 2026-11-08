@@ -231,6 +231,19 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+### WC-CI-14 · Fail a pull request that commits a merge conflict marker
+
+- **Why:** git writes marker lines into a file when a merge, rebase or cherry-pick stops on a conflict. Markdown,
+  YAML and JSON strings still parse with them, so a marker left in `CHANGELOG.md` passed every other check twice.
+- **Enforced by:** `node-ci.yml:check`.
+- **Example:** the first step after the checkout runs `git grep` over the tracked text files and fails on a line that
+  starts with `<<<<<<<`, `|||||||` or `>>>>>>>` and a space, or is exactly `=======`. It prints one error per hit with
+  the file and line. A fixture that keeps markers on purpose goes in the `conflict-marker-ignore` input, as git path
+  patterns separated by spaces.
+- **Exceptions:** a Markdown heading underlined with exactly seven `=` fails; underline it with more, or use `#`.
+  cli-docs and community do not call `node-ci.yml`. A repository gets the check when its `node-ci.yml` pin moves.
+- **Applies to:** the CLIs, cli-base, cli-core and cli-testing. **Since:** cli-base 0.90.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
