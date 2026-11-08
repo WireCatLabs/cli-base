@@ -2,6 +2,7 @@ import * as v from "valibot"
 import { CALENDAR_FLAGS } from "./flags-calendar.js"
 import { CRM_FLAGS } from "./flags-crm.js"
 import { HOW_FLAGS } from "./flags-how.js"
+import { KNOWLEDGE_FLAGS } from "./flags-knowledge.js"
 import { MAIL_FLAGS } from "./flags-mail.js"
 import { PRIVACY_FLAGS } from "./flags-privacy.js"
 import { SCHEDULE_FLAGS } from "./flags-schedule.js"
@@ -204,6 +205,7 @@ const verbs: [string, string][] = [
   ["assign", "name the person responsible for work, with their task role"],
   ["reverse", "record that an accepted decision no longer holds, without replacing it"],
   ["invalidate", "mark a derived record whose supporting evidence no longer holds"],
+  ["challenge", "say a record no longer holds, citing what contradicts it; it only proposes, and the owner decides"],
   ["acknowledge", "record successful delivery using the exact receipt issued when the item was claimed"],
   ["confirm", "the owner accepts what an agent proposed"],
   ["reject", "the owner refuses what an agent proposed"],
@@ -265,6 +267,7 @@ const collections: [string, string][] = [
   ["tracking", "the chats whose member lists are fetched daily"],
   ["documents", "files imported from Google Drive or Docs, or linked in a chat"],
   ["notes", "text the owner writes, or files from a notes folder"],
+  ["sources", "what the owner adds by hand to read from: a file, a web page or a pasted text, kept as its text"],
   ["projects", "the owner's work units with a task key"],
   [
     "annotations",
@@ -434,6 +437,7 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
     ...PRIVACY_FLAGS,
     ...CALENDAR_FLAGS,
     ...MAIL_FLAGS,
+    ...KNOWLEDGE_FLAGS,
     ...CRM_FLAGS,
     ...SCHEDULE_FLAGS,
   ],
