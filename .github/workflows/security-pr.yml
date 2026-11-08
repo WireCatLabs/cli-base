@@ -23,7 +23,9 @@ jobs:
         # The binary, not gitleaks-action: the action asks an organisation account for a licence
         # key, and the tool itself is MIT and needs none.
         run: |
-          curl -sSfLo gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          # Release downloads fail with 5xx or hang at times.
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 20 --max-time 60 --retry-max-time 120 \
+            -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
           ./gitleaks git --log-opts=HEAD --no-banner --redact --exit-code 1 .
