@@ -224,6 +224,21 @@ describe("audit rules", () => {
     ])
   })
 
+  it("takes every kind of value the vocabulary gives a flag as one meaning, and still reports another kind", () => {
+    const every = (cli: string, ...values: string[]) =>
+      inputOf(
+        tool(cli, (root) => {
+          values.forEach((value, at) => {
+            root.command(`timer${at}`).description("a timer").option(`--every ${value}`, "repeat this often")
+          })
+        }),
+      )
+    expect(cross([every("a", "<duration>"), every("c", "<count-unit>", "<duration>")], "same-flag-meaning")).toEqual([])
+    expect(cross([every("a", "<duration>"), every("c", "<n>")], "same-flag-meaning")).toEqual([
+      "a+c --every: a: <duration>, c: <n>",
+    ])
+  })
+
   it("marks the schema and reason rules not measured for a CLI that gave no schemas or reasons", () => {
     const result = auditClis(failing["same-entity-schema"]?.() ?? [], options())
     const row = (cli: string, rule: string) => result.rows.find((one) => one.cli === cli && one.rule === rule)

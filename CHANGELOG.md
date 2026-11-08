@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`cli-dev audit` takes every kind of value the vocabulary gives a flag as the same meaning.** `same-flag-meaning`
+  reported `--every` once memo took both `<count-unit>` and `<duration>` while the other CLIs took `<duration>`, though
+  the vocabulary allows both; every CLI in memo's parity group then failed its audit. A kind the vocabulary does not
+  list for that flag is still reported.
+
 ## 0.90.0 — 08.11.2026
 
 ### Changed — may break callers

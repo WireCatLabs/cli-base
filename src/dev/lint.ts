@@ -42,6 +42,15 @@ export const kindOf = (option: OptionInfo): string => {
 
 export { summaryOf }
 
+/** The kinds of value the vocabulary lets each flag take: its own value, or `switch`, then its `otherValues`. */
+export const registeredKinds = (vocabulary: Vocabulary): Map<string, string[]> =>
+  new Map(
+    vocabulary.flags.map((flag) => [
+      flag.name,
+      [flag.value?.slice(1, -1).toLowerCase() ?? "switch", ...(flag.otherValues ?? [])],
+    ]),
+  )
+
 const label = (command: CommandInfo): string => command.path.join(" ")
 
 export interface LintContext {
@@ -288,12 +297,7 @@ const CHECKS: Record<string, Check> = {
       }))
   },
   "flag-two-meanings": (document, vocabulary) => {
-    const registered = new Map(
-      vocabulary.flags.map((flag) => [
-        flag.name,
-        [flag.value?.slice(1, -1).toLowerCase() ?? "switch", ...(flag.otherValues ?? [])],
-      ]),
-    )
+    const registered = registeredKinds(vocabulary)
     const uses = new Map<string, Map<string, string[]>>()
     const note = (option: OptionInfo, where: string) => {
       const name = longName(option.flags)
