@@ -20,7 +20,8 @@ cli-core serves `mcp serve --profiles`
 ([WC-MCP-9](#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)) from 0.470.0, for the
 messengers and for the CLIs below that use its shared server.
 zoom serves the three shared tools over its own commands from zoom-cli 0.35.0 (`zm <profile> mcp serve`, cli-core's
-`toolsFromCommands` and `runCommandForAgent`), and gcal does the same (`gcal <profile> mcp serve`). memo and drive have their own servers: memo has hand-written
+`toolsFromCommands` and `runCommandForAgent`), and gcal does the same (`gcal <profile> mcp serve`). b24 serves the
+same three tools through cli-core's `appMcpCommand` (`b24 <profile> mcp serve`). memo and drive have their own servers: memo has hand-written
 tools, and drive builds one tool per command from its command tree and skips commands through its own list. Those two are known
 gaps against these rules.
 
@@ -243,7 +244,7 @@ cli-core builds its personal and bot MCP catalogues from the command tree with `
   (WC-MCP-1) that is three names and their schemas, which do not change when a command is added. So each CLI also
   pins the command catalogue behind the tools, every command `tools_search` can return and whether it runs through
   `read` or `write`, in `contracts/mcp-catalogue.json`. A command that becomes visible to agents then shows up as a diff in
-  its pull request. tg, max and gcal keep both; wa, zm and drive pin only the tools, a known gap as of 2026-10-27.
+  its pull request. tg, max, gcal and b24 keep both; wa, zm and drive pin only the tools, a known gap as of 2026-10-27.
 
 ## Sources
 

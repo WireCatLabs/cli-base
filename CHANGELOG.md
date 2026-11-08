@@ -20,6 +20,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   telegram.** As a switch it is still a channel instead of a group. The meaning of `--file <file>` now covers a file
   read as the new text of a write, such as a template, beside an attachment to send.
 
+### Fixed
+
+- **The handbook lists bitrix24-cli where it already follows a rule.** b24 joins the enforced-by lines of WC-CI-12
+  (its main ruleset requires the pull request checks), WC-TOOL-19 and the user-page rule on correction marks, the
+  CLIs that set `userPage`, the `ci:quick` list of WC-CI-4, the MCP page (cli-core's shared server, both snapshots)
+  and the repository names an "Enforced by" line may use. WC-SECR-17 names b24's phone and e-mail rules.
+- **The New CLI page shows the template's own start file.** The bin passes `DESKTOP` from `src/identity.ts` to
+  `wcatStart`, and `src/wcat.ts` adds the permission keys as `WCAT`; the page showed an inline object and one `WCAT`.
+
 ## 0.88.0 â€” 08.11.2026
 
 ### Added
