@@ -8,19 +8,21 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## 0.84.0 — 08.11.2026
+## Unreleased
 
 ### Added
 
-<<<<<<< HEAD
 - **A reusable `release-start.yml` workflow starts a release from GitHub, replacing `bin/release` on a laptop.** A CLI
   adds a small `workflow_dispatch` caller; one run restores and folds the changelog, raises a version npm already has
   through one pull request, merges it once GitHub reports it mergeable (required checks only), and starts the
   repository's own `release.yml` with the merged commit. It needs a GitHub App token, because a pull request opened
   with `GITHUB_TOKEN` does not run its checks on its own. Nothing calls it yet; setup and the open points are in
   [`docs/dev/release-workflow.md`](docs/dev/release-workflow.md).
-||||||| 96e9ed7
-=======
+
+## 0.84.0 — 08.11.2026
+
+### Added
+
 - **Vocabulary for memories that follow their sources, and for sources added by hand** (cli-memo). The verb
   `challenge`: say a record no longer holds, citing what contradicts it; it only proposes. The noun `sources`: what
   the owner adds by hand to read from. Flags `--quote <ref=words...>` (the words of an `--evidence` reference a
@@ -46,7 +48,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   inline button under a bot's message, as its text and the data a press sends back; `--no-buttons` takes the buttons
   off a message being edited. Negations here are `--no-<thing>` (`--no-preview`, `--no-approval`), so this one is not
   `--clear-buttons`; `--clear` stays the generic unset. cli-core's `bot messages send` and `edit` use them.
->>>>>>> origin/main
 - **The new-CLI handbook names the data-folder rule for a CLI published outside `@wirecat`:** WireCat Desktop adds
   such a tool only when its `appName` is `<scope>-<name>` of the package or starts with it. It also says that the
   template now calls `wcatStart`, writes the `wcat-` command and names a reference CLI for mail and crm.
