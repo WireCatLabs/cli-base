@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The shared workflows retry their tool downloads.** `node-ci.yml`, `release-checks.yml` and `security-pr.yml`
+  fetched gitleaks and zizmor from GitHub releases once, with no time limit: a 504 from GitHub failed the check, and a
+  stalled download held the job until its timeout. Each download now retries up to five times, gives one attempt 60
+  seconds and stops retrying after two minutes. The sha256 checks are unchanged. A caller gets this once its pin moves
+  to the release that has it.
+
 ## 0.85.0 — 08.11.2026
 
 ### Added

@@ -102,7 +102,9 @@ jobs:
           ZIZMOR_SHA256: e65324f4430c2717591937edcec90ccbefaf14c174f8ec9415e03ca875b46e1a
         # Noncritical findings are reported for owner review; scanner failures still stop release.
         run: |
-          curl -sSfLo zizmor.tar.gz "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-x86_64-unknown-linux-gnu.tar.gz"
+          # Release downloads fail with 5xx or hang at times.
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 20 --max-time 60 --retry-max-time 120 \
+            -o zizmor.tar.gz "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-x86_64-unknown-linux-gnu.tar.gz"
           echo "${ZIZMOR_SHA256}  zizmor.tar.gz" | sha256sum -c -
           tar -xzf zizmor.tar.gz zizmor
           ./zizmor --offline --strict-collection --min-severity high --no-exit-codes .github
@@ -123,7 +125,8 @@ jobs:
         # The binary, not gitleaks-action: the action asks an organisation account for a licence
         # key, and the tool itself is MIT and needs none.
         run: |
-          curl -sSfLo gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 20 --max-time 60 --retry-max-time 120 \
+            -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
           ./gitleaks git --log-opts=HEAD --no-banner --redact --exit-code 1 .
