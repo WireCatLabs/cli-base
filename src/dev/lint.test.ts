@@ -224,6 +224,7 @@ describe("lint rules", () => {
           "const fetch = hostFetch({ hosts: WCAT.hosts })",
           "await fetch(url)",
           "await client.fetch(url)",
+          "const fake = { fetch: send as typeof globalThis.fetch }",
         ].join("\n"),
       ),
     ).toEqual([])

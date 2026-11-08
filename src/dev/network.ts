@@ -41,7 +41,7 @@ const MODULE_REF =
 // A file that binds its own `fetch` (an injected FetchLike, `const fetch = hostFetch(…)`) calls that one.
 const BINDS_FETCH = /\b(?:const|let|var|function)\s+fetch\b|[{,(]\s*fetch\s*[,}):=]/
 const GLOBAL_FETCH_CALL = /(?<![\w$.])fetch\s*\(/
-const GLOBAL_FETCH = /\b(?:globalThis|window|self)\s*\.\s*fetch\b/
+const GLOBAL_FETCH = /(?<!\btypeof\s+)\b(?:globalThis|window|self)\s*\.\s*fetch\b/
 
 export const rawNetwork = ({ sources }: NetworkContext): { target: string; message: string }[] =>
   sources.flatMap(({ path, text }) => {
