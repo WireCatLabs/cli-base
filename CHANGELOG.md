@@ -8,16 +8,45 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.84.0 — 08.11.2026
 
 ### Added
 
+<<<<<<< HEAD
 - **A reusable `release-start.yml` workflow starts a release from GitHub, replacing `bin/release` on a laptop.** A CLI
   adds a small `workflow_dispatch` caller; one run restores and folds the changelog, raises a version npm already has
   through one pull request, merges it once GitHub reports it mergeable (required checks only), and starts the
   repository's own `release.yml` with the merged commit. It needs a GitHub App token, because a pull request opened
   with `GITHUB_TOKEN` does not run its checks on its own. Nothing calls it yet; setup and the open points are in
   [`docs/dev/release-workflow.md`](docs/dev/release-workflow.md).
+||||||| 96e9ed7
+=======
+- **Vocabulary for memories that follow their sources, and for sources added by hand** (cli-memo). The verb
+  `challenge`: say a record no longer holds, citing what contradicts it; it only proposes. The noun `sources`: what
+  the owner adds by hand to read from. Flags `--quote <ref=words...>` (the words of an `--evidence` reference a
+  record rests on), `--suggest <text>` (wording offered to the owner, deciding nothing), `--keep-copy` (keep the
+  original file as well as its text) and `--max-chars <n>` (a cap in characters; the `--max-*-bytes` budgets count
+  bytes, and text read for a person is cut by characters).
+
+## 0.83.1 — 08.11.2026
+
+### Fixed
+
+- **`cli-dev changelog restore` and the other `--land` steps read an output past 1 MiB.** Their git and gh calls had
+  Node's default 1 MiB output limit, so `restore` failed once a released `CHANGELOG.md` passed that size, as
+  cli-core's did at 0.607.0, and its error printed the changelog instead of the cause. The limit is now 64 MiB, the
+  same as `@wirecat/cli-base/release`, and a call that cannot run says why (`ENOBUFS`, `ENOENT`). A release script
+  that pins an older cli-base for `changelog restore` should take this version.
+
+## 0.83.0 — 08.11.2026
+
+### Added
+
+- **The flag vocabulary has `--button <text=data>` and `--no-buttons`.** `--button` (value, string, repeatable) is one
+  inline button under a bot's message, as its text and the data a press sends back; `--no-buttons` takes the buttons
+  off a message being edited. Negations here are `--no-<thing>` (`--no-preview`, `--no-approval`), so this one is not
+  `--clear-buttons`; `--clear` stays the generic unset. cli-core's `bot messages send` and `edit` use them.
+>>>>>>> origin/main
 - **The new-CLI handbook names the data-folder rule for a CLI published outside `@wirecat`:** WireCat Desktop adds
   such a tool only when its `appName` is `<scope>-<name>` of the package or starts with it. It also says that the
   template now calls `wcatStart`, writes the `wcat-` command and names a reference CLI for mail and crm.

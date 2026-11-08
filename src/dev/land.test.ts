@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { beforeEach, describe, expect, it } from "vitest"
-import { landChange, landFold, newestTag, restoreChange, type Shell } from "./land.js"
+import { landChange, landFold, newestTag, processShell, restoreChange, type Shell } from "./land.js"
 
 const dated = "# Changelog\n\n## 0.9.0 — 14.10.2026\n\n### Fixed\n\n- Older fix.\n"
 const stacked = dated.replace("## 0.9.0", "## Unreleased\n\n### Fixed\n\n- Newer fix.\n\n## 0.9.0")
@@ -139,5 +139,21 @@ describe("newestTag", () => {
           : undefined,
     )
     expect(newestTag(shell, "CHANGELOG.md")).toEqual({ version: "0.10.0", text: dated })
+  })
+})
+
+describe("processShell", () => {
+  it("reads an output past 1 MiB whole", () => {
+    const size = 2 * 1024 * 1024
+    const shown = processShell(tmpdir()).run(process.execPath, ["-e", `process.stdout.write("x".repeat(${size}))`])
+    expect(shown).toMatchObject({ ok: true })
+    expect(shown.out).toHaveLength(size)
+  })
+
+  it("names the cause when the command cannot run", () => {
+    expect(processShell(tmpdir()).run("no-such-command-here", [])).toMatchObject({
+      ok: false,
+      out: expect.stringMatching(/ENOENT/),
+    })
   })
 })
