@@ -45,20 +45,46 @@ export const readSources = (cwd: string, dir = "src"): SourceFile[] => {
   return walk(root).sort((a, b) => (a.path < b.path ? -1 : 1))
 }
 
+const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/
 const MODULE_REF =
-  /\b(?:import\s+(type\s+)?(?:[\w$*{}\s,]+?\s+from\s*)?|export\s+(type\s+)?[\w$*{}\s,]*?\s*from\s*|import\s*\(\s*|require\s*\(\s*)["']([^"']+)["']/g
+  /\b(?:import\s+(type\s+)?(?:([\w$*{}\s,]+?)\s+from\s*)?|export\s+(type\s+)?[\w$*{}\s,]*?\s*from\s*|import\s*\(\s*|require\s*\(\s*)["']([^"']+)["']/g
+// A server only listens and `isIP` only parses: neither reaches a host, so hostFetch has nothing to replace.
+const OPENS_NOTHING: Readonly<Record<string, ReadonlySet<string>>> = {
+  http: new Set(["createServer", "STATUS_CODES", "METHODS"]),
+  https: new Set(["createServer"]),
+  net: new Set(["isIP", "isIPv4", "isIPv6"]),
+}
+
+const opensNothing = (module: string, clause: string | undefined): boolean => {
+  const allowed = OPENS_NOTHING[module.replace(/^node:/, "")]
+  const named = clause?.trim().match(/^\{([^}]*)\}$/)?.[1]
+  if (!allowed || named === undefined) return false
+  return named
+    .split(",")
+    .map((binding) => binding.trim())
+    .filter((binding) => binding !== "" && !binding.startsWith("type "))
+    .every((binding) => allowed.has(binding.split(/\s+as\s+/)[0] as string))
+}
+
 // A file that binds its own `fetch` (an injected FetchLike, `const fetch = hostFetch(…)`) calls that one.
 const BINDS_FETCH = /\b(?:const|let|var|function)\s+fetch\b|[{,(]\s*fetch\s*[,}):=]/
-const GLOBAL_FETCH_CALL = /(?<![\w$.])fetch\s*\(/
+const GLOBAL_FETCH_CALL = /(?<![\w$.#])fetch\s*\(/
 const GLOBAL_FETCH = /(?<!\btypeof\s+)\b(?:globalThis|window|self)\s*\.\s*fetch\b/
 
 export const rawNetwork = ({ sources }: NetworkContext): { target: string; message: string }[] =>
   sources.flatMap(({ path, text }) => {
-    const modules = [...text.matchAll(MODULE_REF)]
-      .filter(([, type, exportType, module]) => !type && !exportType && module && NETWORK_MODULES.test(module))
-      .map(([, , , module]) => module as string)
+    const code = text
+      .split("\n")
+      .filter((line) => !COMMENT_LINE.test(line))
+      .join("\n")
+    const modules = [...code.matchAll(MODULE_REF)]
+      .filter(
+        ([, type, clause, exportType, module]) =>
+          !type && !exportType && module && NETWORK_MODULES.test(module) && !opensNothing(module, clause),
+      )
+      .map(([, , , , module]) => module as string)
     const fetches = [
-      ...(GLOBAL_FETCH.test(text) || (GLOBAL_FETCH_CALL.test(text) && !BINDS_FETCH.test(text)) ? ["fetch"] : []),
+      ...(GLOBAL_FETCH.test(code) || (GLOBAL_FETCH_CALL.test(code) && !BINDS_FETCH.test(code)) ? ["fetch"] : []),
     ]
     return [...new Set([...modules, ...fetches])].map((what) => ({
       target: `${path} ${what}`,
@@ -70,7 +96,6 @@ export const rawNetwork = ({ sources }: NetworkContext): { target: string; messa
   })
 
 const URL_HOST = /\bhttps?:\/\/([a-z0-9.-]+)/gi
-const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/
 /** Names, not addresses: placeholders and schema or namespace identifiers nobody fetches. */
 const NOT_CONTACTED = /(?:^|\.)(?:example(?:\.com|\.org|\.net)?|test|invalid)$|^(?:json-schema\.org|www\.w3\.org)$/
 
@@ -87,7 +112,8 @@ export const undeclaredHosts = ({
       if (!COMMENT_LINE.test(line))
         for (const [, found] of line.matchAll(URL_HOST)) {
           const host = (found as string).toLowerCase().replace(/\.$/, "")
-          if (host === docsHost || NOT_CONTACTED.test(host) || hostCovered(host, hosts)) continue
+          // A name with no dot (`socks5://host:port`) is a placeholder or this machine, not an internet host.
+          if (!host.includes(".") || host === docsHost || NOT_CONTACTED.test(host) || hostCovered(host, hosts)) continue
           const seen = files.get(host) ?? []
           if (!seen.includes(path)) files.set(host, [...seen, path])
         }

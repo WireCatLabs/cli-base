@@ -60,7 +60,8 @@ no line numbers, so a baseline or an override does not churn:
 
 - `raw-network` (high): an import of `node:http`, `node:https`, `node:http2`, `node:net`, `node:tls`, `node:dgram`
   (with or without `node:`), `undici`, `axios`, `got`, `node-fetch` or `ws` (static, dynamic or `require`; type-only
-  imports pass), and a call of the global `fetch` or any use of `globalThis.fetch`. Target `src/x.ts node:https`.
+  imports pass, and so do named imports of only `createServer` or `isIP`), and a call of the global `fetch` or any use
+  of `globalThis.fetch`, outside a comment line. Target `src/x.ts node:https`.
 - `undeclared-host` (medium): an `http(s)://host` in the source, outside a comment line, that `network.hosts` of the
   shipped `contracts/wirecat.json` does not cover. The `docs_url` host and `example.*`, `*.test`, `*.invalid` are
   skipped. Without a shipped `network.hosts` the rule is skipped and `cli-dev lint` says so. Target: the host alone, the files in the message, so a host named in many files takes one override.

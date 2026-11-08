@@ -18,6 +18,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   how they once ran out of heap on macOS. The timer is now cleared when the request fails or its body has been read
   to the end. The timeout still bounds the whole exchange, body included. The response it hands back is a copy with
   the same status, headers, `url` and `redirected`.
+- **`raw-network` no longer reports code that reaches no host.** It reported the word "fetch (" in a doc comment, a
+  `node:net` import of `isIP` alone and a `node:http` import of `createServer` alone (a loopback sign-in server).
+  cli-core had all three. Comment lines are skipped now, as `undeclared-host` already skipped them, and a named import
+  of only `createServer`, `STATUS_CODES` or `METHODS` (`http`, `https`) or `isIP`, `isIPv4` or `isIPv6` (`net`)
+  passes. An import that also names `request` or `createConnection` is still reported. It also read `this.#fetch(`, a
+  call of a class's own fetch, as the global one (tg-cli's Bot API transport). A CLI that baselined such a finding
+  removes the entry, which `cli-dev lint` now reports as stale.
+- **`undeclared-host` no longer reports a name with no dot**, such as `host` in `http://host:port`, a placeholder in
+  tg-cli's proxy help, or `localhost`. Neither is an internet host a manifest could list.
 
 ## 0.85.1 â€” 08.11.2026
 
