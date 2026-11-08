@@ -31,6 +31,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **Pressing Start release again closes the release pull request the last run left open.** A run that stops at a
+  failed check or a timeout leaves its `release/<version>-<run>` pull request open, and the next press opened a second
+  one for the same version (cli-template #134 and #135). The new run now closes those first, with a comment naming
+  itself, and deletes their branches.
 - **The handbook says where bitrix24-cli stands today.** WC-PERM-23 lists no exceptions: b24 and beeline both hand
   `configuration` to the program and to `appMcpCommand`. WC-ARCH-5's known gap names only what is still b24's own
   (people, organizations, products, users). b24 joins "the WireCat repositories" in the CI and toolchain pages, the
