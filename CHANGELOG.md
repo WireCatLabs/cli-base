@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Vocabulary for memories that follow their sources, and for sources added by hand** (cli-memo). The verb
+  `challenge`: say a record no longer holds, citing what contradicts it; it only proposes. The noun `sources`: what
+  the owner adds by hand to read from. Flags `--quote <ref=words...>` (the words of an `--evidence` reference a
+  record rests on), `--suggest <text>` (wording offered to the owner, deciding nothing), `--keep-copy` (keep the
+  original file as well as its text) and `--max-chars <n>` (a cap in characters; the `--max-*-bytes` budgets count
+  bytes, and text read for a person is cut by characters).
+
 ## 0.83.1 — 08.11.2026
 
 ### Fixed
