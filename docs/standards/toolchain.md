@@ -15,7 +15,7 @@ The [community standards](https://github.com/WireCatLabs/community/blob/main/sta
 one source of the presets. Each repository holds a copy of them in `config/wirecat/`, installed by
 `adopt-standards.py`.
 
-"The WireCat repositories" on this page means every WireCat CLI (today tg, max, memo, drive, zoom, wa and gcal; a
+"The WireCat repositories" on this page means every WireCat CLI (today tg, max, memo, drive, zoom, wa, gcal and b24; a
 CLI made with `npx @wirecat/cli-template new` counts from its first commit), cli-base, cli-core, cli-testing, cli-docs,
 plus community itself. cli-template follows every rule here as a CLI does
 ([New CLI](new-cli.md#the-template-repository-itself)).

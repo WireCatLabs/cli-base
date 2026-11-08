@@ -10,7 +10,7 @@ Rule ids on this page are `WC-CI-<n>`. How to read a rule, how ids work and whic
 [Releases page](releases.md); which scanners must exist and how workflows are hardened is on the
 [Security page](security.md).
 
-"The WireCat repositories" on this page means every WireCat CLI (today tg, max, memo, drive, zoom, wa and gcal; a
+"The WireCat repositories" on this page means every WireCat CLI (today tg, max, memo, drive, zoom, wa, gcal and b24; a
 CLI made with `npx @wirecat/cli-template new` counts from its first commit), cli-base, cli-core, cli-testing, cli-docs,
 plus community itself. cli-template follows every rule here as a CLI does
 ([New CLI](new-cli.md#the-template-repository-itself)).
@@ -98,8 +98,8 @@ plus community itself. cli-template follows every rule here as a CLI does
   cli-docs validates its site before each deployment instead, and community has no build. Third-party security apps
   may post their own checks.
 - **Applies to:** the CLIs, cli-base, cli-core and cli-testing. cli-base, whatsapp-cli, tg-cli, max-cli, cli-core,
-  cli-memo, zoom-cli, drive-cli, gcal-cli and cli-template have `pr.yml`; cli-testing does not have it yet. **Since:**
-  cli-base 0.41.0 (pull request validation since cli-base 0.45.0). **Rulings:** none.
+  cli-memo, zoom-cli, drive-cli, gcal-cli, bitrix24-cli and cli-template have `pr.yml`; cli-testing does not have it
+  yet. **Since:** cli-base 0.41.0 (pull request validation since cli-base 0.45.0). **Rulings:** none.
 
 ### WC-CI-6 · Run the changelog guard on every pull request
 
