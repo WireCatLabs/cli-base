@@ -387,6 +387,7 @@ const views: [string, string][] = [
   ["categories", "the categories a thing takes, with what each means"],
   ["domains", "the internet domains links point to, most linked first"],
   ["places", "the street addresses confirmed as places, most mentioned first"],
+  ["mentions", "the people and organizations named in a selected thing's text"],
   ["comments", "replies attached to a selected source item"],
   ["links", "links held for a selected thing"],
   ["voters", "people whose recorded votes are visible for a selected poll"],

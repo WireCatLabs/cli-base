@@ -17,6 +17,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `changes/<name>.md` (not `changes/README.md`). cli-core collects such fragments into the version's section at
   release, so open pull requests stop conflicting in `CHANGELOG.md`. A repository gets this when its
   `changelog-guard.yml` pin moves; one without a `changes/` folder sees no difference.
+- **`mentions` is also a view noun**: the people and organizations named in one selected thing's text, as in
+  `memo sources mentions document:42`. It stays a collection too, as in `tg <profile> mentions list`. The
+  `unknown-verb` lint no longer reports `sources mentions`: memo can drop that override and take its override budget
+  back from 14 to 13 after adopting this version.
 
 ## 0.93.0 â€” 09.11.2026
 
