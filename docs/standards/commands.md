@@ -409,7 +409,7 @@ A new CLI joins from its first release: that release installs `wcat-<name>` (a `
   `lint/overrides.json`.
   A WireCat CLI listed in Desktop's own catalog needs no manifest until Desktop reads one for it.
 - **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** cli-base 0.66.0; the manifest since the
-  release after 0.80.9; `wcat-<name>` from the first release since the release after 0.86.0. **Rulings:** NEED-149,
+  release after 0.80.9; `wcat-<name>` from the first release since cli-base 0.87.0. **Rulings:** NEED-149,
   NEED-153, NEED-154, NEED-2431.
 
 ## Settings
