@@ -272,8 +272,9 @@ never a constant scattered through the source, and never a file CI writes from a
 - **Enforced by:** review only.
 - **Example:** cli-core's `constants.json` holds the WireCat Google desktop app's `google.app.client_id`; drive and
   gcal read it through cli-core instead of each keeping a copy. The owner's own choices stay in `config.json`.
-- **Exceptions:** none.
-- **Applies to:** cli-base, cli-core and every CLI. **Since:** cli-base 0.76.0. **Rulings:** none.
+- **Exceptions:** the identity in `src/identity.ts`, such as the `docs` URL of the CLI's own page, stays inline
+  there: it is the CLI's name and address, not a setting another layer reads.
+- **Applies to:** cli-base, cli-core and every CLI. **Since:** cli-base 0.76.0. **Rulings:** NEED-2448.
 
 ## Sources
 

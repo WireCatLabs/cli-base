@@ -425,7 +425,8 @@ const CHECKS: Record<string, Check> = {
   },
   "list-without-query": (document) =>
     handwrittenLeaves(document)
-      .filter((command) => command.name === "list" && command.query === undefined)
+      // WC-CMD-20's one exception: WC-ACCT-12 has session list show every profile, so it takes no query.
+      .filter((command) => command.name === "list" && command.query === undefined && label(command) !== "session list")
       .map((command) => ({
         target: label(command),
         message: "list declares no query",
