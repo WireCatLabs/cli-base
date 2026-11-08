@@ -1,9 +1,7 @@
 import { readFileSync } from "node:fs"
 import crossSpawn from "cross-spawn"
 import { parseDescribe, type WcatTool } from "./describe.js"
-import { DESCRIBE_FLAG } from "./names.js"
-
-const MAX_ANSWER_BYTES = 64 * 1024
+import { DESCRIBE_FLAG, DESCRIBE_MAX_BYTES } from "./names.js"
 
 /**
  * Asks one program to describe itself. Any program can sit on PATH under a `wcat-` name, so it gets no input, a time
@@ -41,7 +39,7 @@ export const probeDescribe = (
     const timer = setTimeout(giveUp, timeoutMs)
     child.stdout?.on("data", (chunk: Buffer) => {
       size += chunk.length
-      if (size > MAX_ANSWER_BYTES) giveUp()
+      if (size > DESCRIBE_MAX_BYTES) giveUp()
       else chunks.push(chunk)
     })
     child.once("error", () => settle(undefined))

@@ -234,6 +234,7 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "switch",
     meaning: "record the action as the owner's although an agent's terminal runs the tool",
   },
+  { name: "--from-app", role: "mode", type: "switch", meaning: "the owner acted in the app; its word, not a check" },
   {
     name: "--allow-any-file",
     role: "mode",

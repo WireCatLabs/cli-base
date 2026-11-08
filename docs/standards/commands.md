@@ -377,21 +377,32 @@ The references, each for its own part:
 
 ### WC-CMD-29 · Answer `--wcat-describe`, and take no name WireCat reserves
 
+A CLI ships `contracts/wirecat.json` (`wcat_manifest: 2`), written by `cli-dev manifest` from its command tree and
+its identity, never by hand. The developer types only `tagline`, `signIn` and, with a sync command, `syncs`; the
+commands, their `effects` and every command word in `desktop` are derived, and every word passes Desktop's plain-word
+rule. The file holds nothing that changes per release (no version), and no MCP port: Desktop assigns one. With the
+file shipped, `--wcat-describe` answers format 2: the format-1 keys with `"wcat_describe": 2`, the file's `desktop`
+and `manifest_sha256` of its bytes. Without it the answer stays format 1.
+
 - **Why:** `wcat <name>` runs any `wcat-<name>` program on PATH, and `wcat --help` lists each one with what it says
-  about itself. A name WireCat reserves would be taken over by WireCat's own tool or by a `wcat` command.
-- **Enforced by:** `src/dev/wcat-lint.ts`.
+  about itself. A name WireCat reserves would be taken over by WireCat's own tool or by a `wcat` command. WireCat
+  Desktop adds a tool it has not checked from the manifest alone, read out of the npm tarball without running the
+  package, so a manifest typed by hand or left stale shows the owner words the CLI does not have.
+- **Enforced by:** `src/dev/wcat-lint.ts` · `src/wcat/manifest.ts`.
 - **Example:** the bin's first call is `wcatStart({ command: "gcal", version, description, docs })` from
   `@wirecat/cli-base/wcat/start`. `wcat-gcal --wcat-describe` then prints
   `{"wcat_describe":1,"name":"gcal","version":"1.2.0","description":"…","docs_url":"…"}`. `cli-dev lint` warns when a
   `"bin"` key does not start with `wcat-`, when a package outside `@wirecat/` takes a name from `RESERVED_NAMES` in
   `@wirecat/cli-base/wcat` (`tg`, `max`, `wa`, `zm`, `drive`, `memo`, `mail`, `email`, `wcat` and the built-in commands
   `help`, `version`, `shortcuts`, `doctor`, `update`, `upgrade`, `app`), and, with `--cli`, when the built CLI does not
-  answer `--wcat-describe`.
+  answer `--wcat-describe`. `cli-dev manifest --program dist/program.js --identity dist/wcat.js --check` fails when
+  `contracts/wirecat.json` is stale.
 - **Exceptions:** a CLI keeps its short `"bin"` name beside `wcat-<name>` until callers have moved to the new name; the
   warning stays until then. A CLI that keeps the short name for good says why in `lint/overrides.json` (`"rule":
   "wcat-bin-name"`, the target as the warning prints it), which silences the warning and counts against the budget.
-- **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** cli-base 0.66.0. **Rulings:** NEED-149,
-  NEED-153, NEED-154.
+  A WireCat CLI listed in Desktop's own catalog needs no manifest until Desktop reads one for it.
+- **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** cli-base 0.66.0; the manifest since the
+  release after 0.80.9. **Rulings:** NEED-149, NEED-153, NEED-154.
 
 ## Settings
 
