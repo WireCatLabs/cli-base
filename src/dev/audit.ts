@@ -5,7 +5,7 @@ import { BASE_REASONS, type ErrorReason } from "../standards/errors.js"
 import { LINT_RULES, OVERRIDE_BUDGET, type Override } from "../standards/lint.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
 import { type Capabilities, capabilityDifference } from "./capabilities.js"
-import { judge, kindOf, lintCommands, longName, summaryOf, walk } from "./lint.js"
+import { judge, kindOf, lintCommands, longName, registeredKinds, summaryOf, walk } from "./lint.js"
 import { type ContractEdit, sharedContractProblems } from "./shared-contracts.js"
 
 export interface AuditInput {
@@ -186,7 +186,8 @@ const samePathContract = (inputs: readonly AuditInput[], groups: readonly Parity
   return found
 }
 
-const sameFlagMeaning = (inputs: readonly AuditInput[]): Finding[] => {
+const sameFlagMeaning = (inputs: readonly AuditInput[], vocabulary: Vocabulary): Finding[] => {
+  const registered = registeredKinds(vocabulary)
   const uses = new Map<string, Map<string, Set<string>>>()
   for (const { document } of inputs) {
     const options = [
@@ -207,7 +208,16 @@ const sameFlagMeaning = (inputs: readonly AuditInput[]): Finding[] => {
     .sort(([a], [b]) => byText(a, b))
     .flatMap(([flag, byCli]) => {
       const signatures = new Map([...byCli].map(([cli, kinds]) => [cli, [...kinds].sort(byText).join(" | ")]))
-      if (byCli.size < 2 || new Set(signatures.values()).size < 2) return []
+      const allowed = new Set((registered.get(flag) ?? []).map(shownKind))
+      const off = new Set(
+        [...byCli.values()].map((kinds) =>
+          [...kinds]
+            .filter((kind) => !allowed.has(kind))
+            .sort(byText)
+            .join(" | "),
+        ),
+      )
+      if (byCli.size < 2 || off.size < 2) return []
       const clis = [...byCli.keys()].sort(byText)
       return [{ rule: "same-flag-meaning", clis, target: `${named(clis)} ${flag}`, message: describe(signatures) }]
     })
@@ -299,7 +309,7 @@ const CROSS: Record<string, (inputs: readonly AuditInput[], options: AuditOption
     ),
   "required-root": (inputs, options) => requiredRoots(inputs, options.roots),
   "same-path-contract": (inputs, options) => samePathContract(inputs, options.groups),
-  "same-flag-meaning": (inputs) => sameFlagMeaning(inputs),
+  "same-flag-meaning": (inputs, options) => sameFlagMeaning(inputs, options.vocabulary),
   "same-entity-schema": (inputs) => sameEntitySchema(inputs),
   "same-error-reason": (inputs) => sameErrorReason(inputs),
 }
