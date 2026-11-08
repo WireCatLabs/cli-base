@@ -68,7 +68,7 @@ const opensNothing = (module: string, clause: string | undefined): boolean => {
 
 // A file that binds its own `fetch` (an injected FetchLike, `const fetch = hostFetch(…)`) calls that one.
 const BINDS_FETCH = /\b(?:const|let|var|function)\s+fetch\b|[{,(]\s*fetch\s*[,}):=]/
-const GLOBAL_FETCH_CALL = /(?<![\w$.])fetch\s*\(/
+const GLOBAL_FETCH_CALL = /(?<![\w$.#])fetch\s*\(/
 const GLOBAL_FETCH = /(?<!\btypeof\s+)\b(?:globalThis|window|self)\s*\.\s*fetch\b/
 
 export const rawNetwork = ({ sources }: NetworkContext): { target: string; message: string }[] =>
@@ -112,7 +112,8 @@ export const undeclaredHosts = ({
       if (!COMMENT_LINE.test(line))
         for (const [, found] of line.matchAll(URL_HOST)) {
           const host = (found as string).toLowerCase().replace(/\.$/, "")
-          if (host === docsHost || NOT_CONTACTED.test(host) || hostCovered(host, hosts)) continue
+          // A name with no dot (`socks5://host:port`) is a placeholder or this machine, not an internet host.
+          if (!host.includes(".") || host === docsHost || NOT_CONTACTED.test(host) || hostCovered(host, hosts)) continue
           const seen = files.get(host) ?? []
           if (!seen.includes(path)) files.set(host, [...seen, path])
         }

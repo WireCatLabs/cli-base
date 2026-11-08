@@ -240,6 +240,7 @@ describe("lint rules", () => {
         [
           " * A fetch (`remote: read`) keeps receiving",
           "// await fetch(url)",
+          "const answer = await this.#fetch(url)",
           'import { createServer, type IncomingMessage } from "node:http"',
           'import { isIP as ipVersion } from "node:net"',
         ].join("\n"),
@@ -264,6 +265,7 @@ describe("lint rules", () => {
       "// see https://commented.evil.dev",
       'const DOCS = "https://docs.acme.dev/cli"',
       'const SCHEMA = "https://json-schema.org/draft/2020-12/schema"',
+      'const SHAPES = "http://host:port or http://localhost:8080"',
     ].join("\n")
     const of = (hosts?: string[]) =>
       lintOf(clean(), {

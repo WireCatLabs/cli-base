@@ -95,7 +95,7 @@ type-only imports pass, and so do named imports of `createServer` alone or `isIP
 of the global `fetch` or any `globalThis.fetch` outside a comment line, with the target
 `<file> <module>` or `<file> fetch`. A file that binds its own `fetch` (`const fetch = hostFetch(…)`, an injected one)
 calls that one. `undeclared-host` reports each `http(s)://` host outside a comment line that `network.hosts` of the
-shipped `contracts/wirecat.json` does not cover, the target the host alone and the files in the message; the `docs_url` host, `example`, `test` and
+shipped `contracts/wirecat.json` does not cover, the target the host alone and the files in the message; the `docs_url` host, a name with no dot, `example`, `test` and
 `invalid` names, `json-schema.org` and `www.w3.org` are skipped. Without `network.hosts` it is skipped, and the run
 says so. Both are lints, not a sandbox: a dependency or a computed URL passes them.
 
