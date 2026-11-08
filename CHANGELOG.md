@@ -20,6 +20,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   telegram.** As a switch it is still a channel instead of a group. The meaning of `--file <file>` now covers a file
   read as the new text of a write, such as a template, beside an attachment to send.
 
+## 0.88.0 — 08.11.2026
+
+### Added
+
+- **Flag `--region <country>` in the vocabulary** (role `mode`, string): the two-letter country code that phone
+  numbers written without `+` are read in, so `8 900 000-00-02` with `--region ru` is `+79000000002`. It is the flag
+  for the records envelope's `options.phone_region`, for input that has no envelope, such as a vCard file. memo's
+  `records import` and `records check` take it; until this release a CLI using it needs a `lint/overrides.json` entry.
+
 ## 0.87.0 — 08.11.2026
 
 ### Added

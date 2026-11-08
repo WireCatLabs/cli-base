@@ -2,6 +2,13 @@ import type { VocabularyFlag } from "./vocabulary.js"
 
 export const SCHEDULE_FLAGS: VocabularyFlag[] = [
   {
+    name: "--locale",
+    value: "<code>",
+    role: "target",
+    type: "string",
+    meaning: "a human language, as an ISO 639-1 code such as en or ru: which language's version it acts on",
+  },
+  {
     name: "--notify-on",
     value: "<when>",
     role: "value",

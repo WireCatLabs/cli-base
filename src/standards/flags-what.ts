@@ -16,6 +16,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "who computes embeddings: a local model or a configured remote model service",
   },
   {
+    name: "--region",
+    value: "<country>",
+    role: "mode",
+    type: "string",
+    meaning: "the two-letter country code, such as ru, that phone numbers written without + are read in",
+  },
+  {
     name: "--consent-provider",
     value: "<identity>",
     role: "target",
@@ -326,13 +333,6 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     unit: "messages",
   },
   { name: "--link", value: "<link>", role: "target", type: "string", meaning: "an invite link" },
-  {
-    name: "--locale",
-    value: "<code>",
-    role: "target",
-    type: "string",
-    meaning: "a human language, as an ISO 639-1 code such as en or ru: which language's version it acts on",
-  },
   {
     name: "--lookback-days",
     value: "<days>",
