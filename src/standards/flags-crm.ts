@@ -105,6 +105,13 @@ export const CRM_FLAGS: VocabularyFlag[] = [
     meaning: "it renews by itself at its end, or it does not",
   },
   {
+    name: "--period",
+    value: "<count-unit>",
+    role: "value",
+    type: "duration",
+    meaning: "how often a charge repeats: a count and a calendar unit, such as 1-month",
+  },
+  {
     name: "--opening-balance",
     value: "<decimal>",
     role: "value",

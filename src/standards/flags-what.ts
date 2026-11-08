@@ -740,15 +740,7 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     type: "id",
     meaning: "the stored calendar event it is linked to, or none to unlink",
   },
-  {
-    name: "--every",
-    value: "<duration>",
-    role: "value",
-    type: "duration",
-    otherValues: ["count-unit"],
-    meaning:
-      "repeat this often: a length of time for a timer (<duration>), a count and a calendar unit for a charge, such as 1-month (<count-unit>)",
-  },
+  { name: "--every", value: "<duration>", role: "value", type: "duration", meaning: "repeat this often" },
   {
     name: "--evidence",
     value: "<ref...>",
