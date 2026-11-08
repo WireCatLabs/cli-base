@@ -12,6 +12,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **The flag vocabulary has `--button <text=data>` and `--no-buttons`.** `--button` (value, string, repeatable) is one
+  inline button under a bot's message, as its text and the data a press sends back; `--no-buttons` takes the buttons
+  off a message being edited. Negations here are `--no-<thing>` (`--no-preview`, `--no-approval`), so this one is not
+  `--clear-buttons`; `--clear` stays the generic unset. cli-core's `bot messages send` and `edit` use them.
 - **The new-CLI handbook names the data-folder rule for a CLI published outside `@wirecat`:** WireCat Desktop adds
   such a tool only when its `appName` is `<scope>-<name>` of the package or starts with it. It also says that the
   template now calls `wcatStart`, writes the `wcat-` command and names a reference CLI for mail and crm.
