@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`hostFetch` lets go of a finished request's memory at once.** Its timeout used `AbortSignal.timeout`, whose timer,
+  and everything the request's async context held, stayed alive until the deadline (30 s by default) after the answer
+  was read. tg-cli's Bot API tests, routed through it, peaked at 3.0 to 3.4 GB instead of 0.8 to 1.1 GB, which is
+  how they once ran out of heap on macOS. The timer is now cleared when the request fails or its body has been read
+  to the end. The timeout still bounds the whole exchange, body included. The response it hands back is a copy with
+  the same status, headers, `url` and `redirected`.
+
 ## 0.85.1 — 08.11.2026
 
 ### Fixed

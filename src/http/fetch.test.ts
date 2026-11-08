@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { hostCovered, hostFetch, hostProblems } from "./index.js"
 
 interface Sent {
@@ -87,6 +87,30 @@ describe("hostFetch", () => {
     const { send } = recorder({ "https://api.acme.example/a": redirect(302, "https://evil.example.net/") })
     const fetch = hostFetch({ hosts: ["api.acme.example"], fetch: send })
     expect((await fetch("https://api.acme.example/a", { redirect: "manual" })).status).toBe(302)
+  })
+
+  it("stops its timer once the body is read, and still cuts a body that stalls", async () => {
+    vi.useFakeTimers()
+    try {
+      const response = await hostFetch({ hosts: ["api.acme.example"], fetch: async () => new Response("ok") })(
+        "https://api.acme.example/",
+      )
+      expect(vi.getTimerCount()).toBe(1)
+      expect(await response.text()).toBe("ok")
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+    const stalls = async (_input: string | URL | Request, init?: RequestInit) =>
+      new Response(
+        new ReadableStream({
+          start: (body) => init?.signal?.addEventListener("abort", () => body.error(init.signal?.reason)),
+        }),
+      )
+    const response = await hostFetch({ hosts: ["api.acme.example"], fetch: stalls, timeoutMs: 5 })(
+      "https://api.acme.example/",
+    )
+    await expect(response.text()).rejects.toMatchObject({ name: "TimeoutError" })
   })
 
   it("names a timeout and a failed connection as CliErrors", async () => {
