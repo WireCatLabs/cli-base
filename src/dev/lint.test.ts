@@ -247,9 +247,9 @@ describe("lint rules", () => {
     expect(of(["api.acme.example", "*.cdn.acme.example"])).toEqual([
       {
         rule: "undeclared-host",
-        target: "src/a.ts collector.evil.dev",
+        target: "collector.evil.dev",
         message:
-          "collector.evil.dev is not in network.hosts: add it to `hosts` in the WCAT identity and run cli-dev manifest",
+          "named in src/a.ts but not in network.hosts: add it to `hosts` in the WCAT identity and run cli-dev manifest",
       },
     ])
   })
@@ -827,18 +827,20 @@ describe("cli-dev lint", () => {
     mkdirSync(join(root, "src/api"), { recursive: true })
     writeFileSync(join(root, "src/api/client.ts"), 'export const get = () => fetch("https://api.acme.dev/v1")\n')
     writeFileSync(join(root, "src/api/client.test.ts"), 'import { request } from "node:http"\n')
+    mkdirSync(join(root, "src/testing"))
+    writeFileSync(join(root, "src/testing/fake.ts"), 'import { createServer } from "node:http"\n')
     expect(await lint()).toBe(1)
     expect(err).toContain(
       "high  raw-network  src/api/client.ts fetch: calls the global fetch: use hostFetch from @wirecat/cli-base/http, which reaches only the declared hosts",
     )
-    expect(err.join("\n")).not.toContain("client.test.ts")
+    expect(err.join("\n")).not.toMatch(/client\.test\.ts|testing\/fake\.ts/)
     expect(err).toContain("undeclared-host: skipped, contracts/wirecat.json declares no network.hosts")
 
     mkdirSync(join(root, "contracts"))
     writeFileSync(join(root, "contracts/wirecat.json"), JSON.stringify({ network: { hosts: [] } }))
     err.length = 0
     expect(await lint()).toBe(1)
-    expect(err.join("\n")).toContain("medium  undeclared-host  src/api/client.ts api.acme.dev")
+    expect(err.join("\n")).toContain("medium  undeclared-host  api.acme.dev: named in src/api/client.ts")
   })
 
   it("fails a baseline file named after no rule", async () => {

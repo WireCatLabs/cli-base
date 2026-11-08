@@ -462,7 +462,7 @@ the machine and checks every redirect.
 - **Example:** `hosts: ["api.acme.example"]` in the identity, then
   `const fetch = hostFetch({ hosts: WCAT.hosts ?? [] })`. `raw-network` reports `src/api.ts node:https` for an
   import of `node:https` and `src/api.ts fetch` for a call of the global `fetch`; `undeclared-host` reports
-  `src/api.ts collector.acme.dev` for a URL whose host the shipped manifest does not list.
+  `collector.acme.dev`, naming the files, for a URL whose host the shipped manifest does not list.
 - **Exceptions:** network code that cannot use `hostFetch` (a socket protocol, a provider SDK) says why in
   `lint/overrides.json`, and still lists its hosts. The lint is not a sandbox: a dependency, a computed URL or `eval`
   passes it, which is why Desktop also scans the package and flags what it finds. Without `network.hosts` in the

@@ -55,7 +55,7 @@ private addresses, and it depends on cli-core's readers. A CLI using it declares
 
 ## The lint
 
-Two `cli-dev lint` rules over the CLI's own `src` (tests, fixtures, `dist` and `node_modules` skipped). Targets carry
+Two `cli-dev lint` rules over the CLI's own `src` (tests, fixtures, the fakes in `src/testing`, `dist` and `node_modules` skipped). Targets carry
 no line numbers, so a baseline or an override does not churn:
 
 - `raw-network` (high): an import of `node:http`, `node:https`, `node:http2`, `node:net`, `node:tls`, `node:dgram`
@@ -63,7 +63,7 @@ no line numbers, so a baseline or an override does not churn:
   imports pass), and a call of the global `fetch` or any use of `globalThis.fetch`. Target `src/x.ts node:https`.
 - `undeclared-host` (medium): an `http(s)://host` in the source, outside a comment line, that `network.hosts` of the
   shipped `contracts/wirecat.json` does not cover. The `docs_url` host and `example.*`, `*.test`, `*.invalid` are
-  skipped. Without a shipped `network.hosts` the rule is skipped and `cli-dev lint` says so. Target `src/x.ts host`.
+  skipped. Without a shipped `network.hosts` the rule is skipped and `cli-dev lint` says so. Target: the host alone, the files in the message, so a host named in many files takes one override.
 
 Both go through the baseline and `lint/overrides.json` like every rule. It is a lint, not a sandbox: a dependency, a
 computed URL or `eval` passes it. That is why Desktop also scans the tarball and flags what it finds.

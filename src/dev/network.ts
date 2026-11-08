@@ -17,11 +17,20 @@ export interface NetworkContext {
 }
 
 const NETWORK_MODULES = /^(?:(?:node:)?(?:http|https|http2|net|tls|dgram)|undici|axios|got|node-fetch|ws)(?:\/.*)?$/
-const SKIPPED_DIRS = new Set(["node_modules", "dist", "test", "tests", "__tests__", "fixtures", "__fixtures__"])
+const SKIPPED_DIRS = new Set([
+  "node_modules",
+  "dist",
+  "test",
+  "tests",
+  "testing",
+  "__tests__",
+  "fixtures",
+  "__fixtures__",
+])
 const SOURCE_FILE = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs)$/
 const NOT_SOURCE = /\.(?:test|spec)\.[^.]+$|\.d\.[cm]?ts$/
 
-/** The CLI's own source under `src`, tests and fixtures left out. */
+/** The CLI's own source under `src`; tests, fixtures and the fakes in `src/testing` left out. */
 export const readSources = (cwd: string, dir = "src"): SourceFile[] => {
   const root = join(cwd, dir)
   if (!existsSync(root)) return []
@@ -65,18 +74,25 @@ const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/
 /** Names, not addresses: placeholders and schema or namespace identifiers nobody fetches. */
 const NOT_CONTACTED = /(?:^|\.)(?:example(?:\.com|\.org|\.net)?|test|invalid)$|^(?:json-schema\.org|www\.w3\.org)$/
 
-export const undeclaredHosts = ({ sources, hosts, docsHost }: NetworkContext): { target: string; message: string }[] =>
-  hosts === undefined
-    ? []
-    : sources.flatMap(({ path, text }) => {
-        const found = text
-          .split("\n")
-          .filter((line) => !COMMENT_LINE.test(line))
-          .flatMap((line) => [...line.matchAll(URL_HOST)].map(([, host]) => (host as string).toLowerCase()))
-          .map((host) => host.replace(/\.$/, ""))
-          .filter((host) => host !== docsHost && !NOT_CONTACTED.test(host) && !hostCovered(host, hosts))
-        return [...new Set(found)].map((host) => ({
-          target: `${path} ${host}`,
-          message: `${host} is not in network.hosts: add it to \`hosts\` in the WCAT identity and run cli-dev manifest`,
-        }))
-      })
+/** One finding per host, so a host named in many files takes one override. */
+export const undeclaredHosts = ({
+  sources,
+  hosts,
+  docsHost,
+}: NetworkContext): { target: string; message: string }[] => {
+  if (hosts === undefined) return []
+  const files = new Map<string, string[]>()
+  for (const { path, text } of sources)
+    for (const line of text.split("\n"))
+      if (!COMMENT_LINE.test(line))
+        for (const [, found] of line.matchAll(URL_HOST)) {
+          const host = (found as string).toLowerCase().replace(/\.$/, "")
+          if (host === docsHost || NOT_CONTACTED.test(host) || hostCovered(host, hosts)) continue
+          const seen = files.get(host) ?? []
+          if (!seen.includes(path)) files.set(host, [...seen, path])
+        }
+  return [...files].map(([host, paths]) => ({
+    target: host,
+    message: `named in ${paths.join(", ")} but not in network.hosts: add it to \`hosts\` in the WCAT identity and run cli-dev manifest`,
+  }))
+}
