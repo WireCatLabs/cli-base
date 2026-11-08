@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The handbook lists bitrix24-cli where it already follows a rule.** b24 joins the enforced-by lines of WC-CI-12
+  (its main ruleset requires the pull request checks), WC-TOOL-19 and the user-page rule on correction marks, the
+  CLIs that set `userPage`, the `ci:quick` list of WC-CI-4, the MCP page (cli-core's shared server, both snapshots)
+  and the repository names an "Enforced by" line may use. WC-SECR-17 names b24's phone and e-mail rules.
+- **The New CLI page shows the template's own start file.** The bin passes `DESKTOP` from `src/identity.ts` to
+  `wcatStart`, and `src/wcat.ts` adds the permission keys as `WCAT`; the page showed an inline object and one `WCAT`.
+
 ## 0.88.0 — 08.11.2026
 
 ### Added

@@ -53,7 +53,7 @@ plus community itself. cli-template follows every rule here as a CLI does
 - **Why:** it is the first build-level answer on a pull request, so it must stay fast enough that nobody wants it gone.
 - **Enforced by:** `standards.yml:standards` · `pnpm ci:quick`.
 - **Example:** what each repository runs today:
-  - tg, max, memo, wa and cli-template: `pnpm typecheck && pnpm build && pnpm lint:commands`;
+  - tg, max, memo, wa, b24 and cli-template: `pnpm typecheck && pnpm build && pnpm lint:commands`;
   - drive: `pnpm typecheck && pnpm lint:commands`, which builds first;
   - zoom, cli-base and cli-testing: `pnpm typecheck`;
   - cli-core: `pnpm typecheck` and its command lint test;
@@ -211,7 +211,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
 - **Enforced by:** `whatsapp-cli: main ruleset required checks` · `cli-core: main ruleset required checks` ·
   `tg-cli: main ruleset required checks` · `max-cli: main ruleset required checks` ·
   `cli-memo: main ruleset required checks` · `drive-cli: main ruleset required checks` ·
-  `gcal-cli: main ruleset required checks`, plus the main rulesets of
+  `gcal-cli: main ruleset required checks` · `bitrix24-cli: main ruleset required checks`, plus the main rulesets of
   cli-base and cli-template. In each repository with pr.yml, the ruleset requires the pull request validation jobs besides the
   standards job. cli-testing and cli-docs have no pr.yml, so their rulesets require only the standards job, and
   review covers the rest. zoom-cli has pr.yml,

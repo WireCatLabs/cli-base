@@ -252,7 +252,8 @@ allowlist names synthetic values by value, never a whole file, so the file stays
 - **Enforced by:** review only.
 - **Example:** max's `.gitleaks.toml` has `max-session-token`, `max-device-identity` and `phone-number-e164`, and
   allows only `+71234567890` and other sanctioned fakes.
-- **Exceptions:** `pnpm-lock.yaml` may be allowed by path. Today only max and wa have a phone number rule.
+- **Exceptions:** `pnpm-lock.yaml` may be allowed by path. Today max, wa and b24 have a phone number rule, and b24 an
+  e-mail address rule.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-SECR-18 · Report a vulnerability privately
