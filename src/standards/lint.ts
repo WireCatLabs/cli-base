@@ -7,7 +7,7 @@ const lintRuleSchema = v.strictObject({
   id: word,
   severity: v.picklist(LINT_SEVERITIES),
   /** What the rule looks at; a violation's target names one of these. */
-  scope: v.picklist(["command", "group", "argument", "option", "flag", "key"]),
+  scope: v.picklist(["command", "group", "argument", "option", "flag", "key", "source"]),
   summary: text,
 })
 
@@ -127,6 +127,19 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     scope: "group",
     summary:
       "the CLI keeps a failed run and reads it back: `runs list`, `runs show`, global `--record` and `--no-record`",
+  },
+  {
+    id: "raw-network",
+    severity: "high",
+    scope: "source",
+    summary:
+      "the CLI's own source reaches the network only through `hostFetch`: no `node:http`, `https`, `net`, `tls`, `undici`, `axios`, `got`, `node-fetch` or `ws`, no global `fetch`",
+  },
+  {
+    id: "undeclared-host",
+    severity: "medium",
+    scope: "source",
+    summary: "every `http(s)://` host in the CLI's own source is in the manifest's `network.hosts`",
   },
 ])
 

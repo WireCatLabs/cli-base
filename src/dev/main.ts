@@ -47,6 +47,7 @@ import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
 import { baselineOf, judge, lintCommands, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
+import { type NetworkContext, readSources } from "./network.js"
 import { nextVersion } from "./next-version.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
@@ -511,6 +512,7 @@ const lintRun = (args: string[], io: DevIo) => {
     raw,
     schemas: schemas as Record<string, unknown> | undefined,
     ...(values.cli && hasRuns ? { runLog: probeRunLog(io.cwd, values.cli) } : {}),
+    network: networkContext(io.cwd),
   })
   const severity = new Map(LINT_RULES.map((rule) => [rule.id, rule.severity]))
 
@@ -552,7 +554,29 @@ const lintRun = (args: string[], io: DevIo) => {
     if (!wcatOverridden.has(`${warning.rule} ${warning.target}`))
       io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
   if (values["allow-stale"]) for (const line of stale) io.err(`warning  ${line}`)
+  if (!existsSync(join(io.cwd, MANIFEST_FILE)) || !shippedHosts(io.cwd))
+    io.err(`undeclared-host: skipped, ${MANIFEST_FILE} declares no network.hosts`)
   return report(io, problems, "lint: ok")
+}
+
+const shippedManifest = (cwd: string): { network?: { hosts?: unknown }; docs_url?: unknown } | undefined => {
+  const path = join(cwd, MANIFEST_FILE)
+  return existsSync(path) ? (readJson(path) as { network?: { hosts?: unknown }; docs_url?: unknown }) : undefined
+}
+
+const shippedHosts = (cwd: string): string[] | undefined => {
+  const hosts = shippedManifest(cwd)?.network?.hosts
+  return Array.isArray(hosts) ? hosts.filter((host): host is string => typeof host === "string") : undefined
+}
+
+const networkContext = (cwd: string): NetworkContext => {
+  const docs = shippedManifest(cwd)?.docs_url
+  const hosts = shippedHosts(cwd)
+  return {
+    sources: readSources(cwd),
+    ...(hosts ? { hosts } : {}),
+    ...(typeof docs === "string" && URL.canParse(docs) ? { docsHost: new URL(docs).hostname } : {}),
+  }
 }
 
 const wcatWarnings = (cwd: string, cli: string | undefined): WcatWarning[] => {

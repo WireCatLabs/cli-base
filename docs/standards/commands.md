@@ -7,7 +7,7 @@ lifetime it declares, the entity it prints, the query language for lists, the `m
 
 Rule ids on this page are `WC-CMD-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). What a command prints is on the [output](output.md) page. How long it runs and how it ends is on
-the [lifecycle](lifecycle.md) page. How a CLI joins the `wcat` command is under "Joining `wcat`" below.
+the [lifecycle](lifecycle.md) page. How a CLI joins the `wcat` command is under "Joining `wcat`" below, and which hosts it may reach under "Network".
 
 The words themselves are not copied here. They live in the cli-base registries, and `cli-dev lint` reads them from
 there:
@@ -379,8 +379,9 @@ The references, each for its own part:
 
 A CLI ships `contracts/wirecat.json` (`wcat_manifest: 2`), written by `cli-dev manifest` from its command tree and
 its identity, never by hand. The developer types only `tagline`, `signIn` and, with a sync command, `syncs`; the
-commands, their `effects` and every command word in `desktop` are derived, and every word passes Desktop's plain-word
-rule. The file holds nothing that changes per release (no version), and no MCP port: Desktop assigns one. With the
+commands, their `summary`, `effects` and `entity`, the fields of each entity a query covers, and every command word in
+`desktop` are derived, and every word passes Desktop's plain-word rule. The hosts it contacts are typed too
+([WC-CMD-32](#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch)). The file holds nothing that changes per release (no version), and no MCP port: Desktop assigns one. With the
 file shipped, `--wcat-describe` answers format 2: the format-1 keys with `"wcat_describe": 2`, the file's `desktop`
 and `manifest_sha256` of its bytes. Without it the answer stays format 1.
 
@@ -442,6 +443,32 @@ right one, never `not_found`.
   takes it; chat and message arguments in tg, max and wa, and `document:N` in drive's `knowledge` commands, follow
   cli-core's reference slices.
 - **Applies to:** all CLIs. **Since:** cli-base 0.75.3. **Rulings:** none.
+
+## Network
+
+### WC-CMD-32 · Declare every host the CLI contacts, and reach them only through `hostFetch`
+
+The CLI's `WCAT` identity lists every internet host it contacts in `hosts` (`["api.acme.example"]`, `[]` for none):
+lower-case hostnames with no scheme, port or path, and a leading `*.` only before two labels or more. A host the
+person chooses (a mail server, a page to read) is named in words in `userHosts`, and the CLI adds the configured host
+to the list at run time. `cli-dev manifest` writes them to `network` in `contracts/wirecat.json`. The CLI's own source
+sends HTTP only through `hostFetch` from `@wirecat/cli-base/http`, which refuses any other host before a byte leaves
+the machine and checks every redirect.
+
+- **Why:** before the person installs a CLI WireCat has not reviewed, Desktop shows where its data goes. A list the
+  developer types can be wrong, so the CLI enforces it on itself at run time, and the lint finds network code that
+  goes around it.
+- **Enforced by:** `raw-network` · `undeclared-host` · `src/http/fetch.ts` · `src/wcat/manifest.ts`.
+- **Example:** `hosts: ["api.acme.example"]` in the identity, then
+  `const fetch = hostFetch({ hosts: WCAT.hosts ?? [] })`. `raw-network` reports `src/api.ts node:https` for an
+  import of `node:https` and `src/api.ts fetch` for a call of the global `fetch`; `undeclared-host` reports
+  `src/api.ts collector.acme.dev` for a URL whose host the shipped manifest does not list.
+- **Exceptions:** network code that cannot use `hostFetch` (a socket protocol, a provider SDK) says why in
+  `lint/overrides.json`, and still lists its hosts. The lint is not a sandbox: a dependency, a computed URL or `eval`
+  passes it, which is why Desktop also scans the package and flags what it finds. Without `network.hosts` in the
+  shipped manifest, `undeclared-host` is skipped and `cli-dev lint` says so.
+- **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** the release after cli-base 0.84.0.
+  **Rulings:** none.
 
 ## Sources
 

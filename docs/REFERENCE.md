@@ -50,6 +50,17 @@ positive byte budget, then decodes strict UTF-8 JSON. It bounds declared length 
 bytes, cancels on rejection/interruption and releases its own reader. It never fetches or interprets
 HTTP status, provider fields or credentials. A caller still owns those policies and its deadline.
 
+`hostFetch({ hosts, fetch?, timeoutMs?, redirects? })` is the `fetch` a CLI sends HTTP through
+([WC-CMD-32](standards/commands.md#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch)).
+It returns a `FetchLike` that refuses, before anything is sent, a URL whose host is not in `hosts`
+(`configuration_error`, reason `network.host-undeclared`, the message naming the host and `hosts`), and any scheme
+but http and https. It follows redirects itself, at most `redirects` (5), so every hop is checked; a 303, or a 301
+or 302 after a POST, goes on as a GET without the body; a hop to another origin drops `authorization`, `cookie` and
+`proxy-authorization`. A caller's `redirect: "manual"` or `"error"` is passed on. `timeoutMs` (30 s,
+`HOST_FETCH_TIMEOUT_MS`) bounds the whole exchange, body included, beside the caller's own `signal`; a timeout is
+`timeout` and a failed connection `network_error`. `hostCovered(hostname, hosts)` and `hostProblems(hosts)` are the
+matching and the check it uses: `*.acme.example` covers `api.acme.example`, never `acme.example`.
+
 **Portable command control stays independent of provider and store lifetimes.**
 `fieldsOf("id,speaker.id")` parses up to 128 field paths; `projectFields(value, paths)` selects data
 from objects or list items while preserving the list envelope and `operation_id`.
@@ -334,14 +345,17 @@ cli-dev manifest --program dist/program.js --identity dist/wcat.js --check  # fa
 `--program` exports `createProgram`; `--identity` exports `WCAT`, a `ManifestIdentity`: the `wcatStart` argument
 (`command`, `version`, `description`, `docs`) plus cli-core's `appName` and `envPrefix`, and the only texts the
 developer types: `tagline` (at most 55 characters), `signIn: { gives, asks }` and, when the CLI has a sync command,
-`syncs` (what it copies, at most 40 characters). An optional
+`syncs` (what it copies, at most 40 characters), and `hosts` (every host it contacts, `[]` for none) with
+`userHosts` (hosts the person chooses, in words, at most 120 characters). An optional
 `permissionOf(path)` names each command's permission key. `package` and `bin` (`wcat-<command>`, else `<command>`)
 come from `package.json`.
 
 | Key | Contents |
 |---|---|
 | `wcat_manifest`, `name`, `description`, `docs_url`, `package`, `bin` | `2`, then the identity and `package.json`; no `version`, so a release leaves the file as it is (Desktop reads the version from npm) |
-| `commands` | `{ path, effects, permission? }` for each command that runs; undeclared `effects` are written as a write |
+| `commands` | `{ path, summary?, effects, permission?, entity? }` for each command that runs; `summary` is its one-line help, `entity` its `output` entity, else its query's; undeclared `effects` are written as a write |
+| `entities` | `{ <entity>: { fields } }`: the keys each query over the entity names, relations left out; an entity no query covers is not listed, and the key is absent when none is |
+| `network` | `{ hosts, user_hosts? }` from the identity's `hosts` and `userHosts`; absent when the identity has no `hosts`, which Desktop reads as "did not say". A host is a lower-case hostname, or `*.` and two labels or more |
 | `desktop.doctor` | `[{profile}] doctor --record --json`; a CLI without `doctor` is refused |
 | `desktop.profiles` | `account list` or `session list`, `--no-record --json`, shape `items`; `{profile}` leads `doctor` and `setup` only then |
 | `desktop.setup` | `[{profile}] setup`, else `[{profile}] session start` |

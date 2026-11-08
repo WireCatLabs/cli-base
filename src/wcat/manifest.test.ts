@@ -174,6 +174,62 @@ describe("buildManifest", () => {
     odd.addCommand(new Command("rm;id").action(() => {}))
     expect(() => build({}, describeProgram(odd))).toThrow(/commands\.\d+\.path\.0: "rm;id" is not a plain word/)
   })
+
+  it("says what each command touches in words: its summary, its entity and the entity's known fields", () => {
+    const tree = program()
+    const field = (name: string, relation?: string) => ({
+      name,
+      type: "kw" as const,
+      operators: ["term" as const],
+      example: `${name}:x`,
+      ...(relation ? { relation } : {}),
+    })
+    const people = new Command("people")
+    people.addCommand(
+      annotate(
+        new Command("list").summary("list people").action(() => {}),
+        {
+          effects: READ,
+          output: { entity: "person" },
+          query: {
+            entity: "person",
+            backend: "sql",
+            fields: [field("name"), field("email"), field("deals", "their deals")],
+          },
+        },
+      ),
+    )
+    people.addCommand(
+      annotate(
+        new Command("show").description("show one person\nwith every detail").action(() => {}),
+        {
+          effects: READ,
+          output: { entity: "person" },
+        },
+      ),
+    )
+    tree.addCommand(people)
+    const manifest = build({}, describeProgram(tree))
+    expect(manifest.commands.filter((command) => command.path[0] === "people")).toEqual([
+      { path: ["people", "list"], summary: "list people", effects: READ, entity: "person" },
+      { path: ["people", "show"], summary: "show one person", effects: READ, entity: "person" },
+    ])
+    expect(manifest.entities).toEqual({ person: { fields: ["name", "email"] } })
+  })
+
+  it("writes the declared hosts, and leaves network out when the CLI did not say", () => {
+    expect(build().network).toBeUndefined()
+    expect(build({ hosts: [] }).network).toEqual({ hosts: [] })
+    expect(
+      build({ hosts: ["api.acme.example", "*.cdn.acme.example"], userHosts: "the mail server you sign in to" }),
+    ).toMatchObject({
+      network: { hosts: ["api.acme.example", "*.cdn.acme.example"], user_hosts: "the mail server you sign in to" },
+    })
+    expect(() => build({ hosts: ["https://api.acme.example"] })).toThrow(/network\.hosts\.0: .* is not a host/)
+    expect(() => build({ hosts: ["*.com"] })).toThrow(/is not a host/)
+    expect(() => build({ hosts: ["api.acme.example", "api.acme.example"] })).toThrow("listed twice")
+    expect(() => build({ userHosts: "the mail server you sign in to" })).toThrow("userHosts needs hosts")
+  })
 })
 
 describe("the plain-word rule", () => {

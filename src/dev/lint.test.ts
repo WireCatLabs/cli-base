@@ -183,9 +183,74 @@ describe("lint rules", () => {
     expect(lintRuleIds().sort()).toEqual(LINT_RULES.map((rule) => rule.id).sort())
     expect(Object.keys(failing).sort()).toEqual(
       lintRuleIds()
-        .filter((id) => !["log-attribute-key", "nullable-list", "identifier-name"].includes(id))
+        .filter(
+          (id) =>
+            !["log-attribute-key", "nullable-list", "identifier-name", "raw-network", "undeclared-host"].includes(id),
+        )
         .sort(),
     )
+  })
+
+  it("fails raw-network for a network module or the global fetch, and passes hostFetch and type imports", () => {
+    const of = (text: string) =>
+      lintOf(clean(), { network: { sources: [{ path: "src/a.ts", text }] } })
+        .filter((one) => one.rule === "raw-network")
+        .map((one) => one.target)
+    expect(
+      of(
+        [
+          'import { request } from "node:https"',
+          'import axios from "axios"',
+          "const ws = require('ws')",
+          'const net = await import("net")',
+          'export { Agent } from "undici/agent"',
+          "const answer = await fetch(url)",
+        ].join("\n"),
+      ),
+    ).toEqual([
+      "src/a.ts axios",
+      "src/a.ts fetch",
+      "src/a.ts net",
+      "src/a.ts node:https",
+      "src/a.ts undici/agent",
+      "src/a.ts ws",
+    ])
+    expect(of("const send = globalThis.fetch")).toEqual(["src/a.ts fetch"])
+    expect(
+      of(
+        [
+          'import type { IncomingMessage } from "node:http"',
+          'import { hostFetch } from "@wirecat/cli-base/http"',
+          "const fetch = hostFetch({ hosts: WCAT.hosts })",
+          "await fetch(url)",
+          "await client.fetch(url)",
+        ].join("\n"),
+      ),
+    ).toEqual([])
+  })
+
+  it("fails undeclared-host for a URL host the manifest does not declare, and skips without a declaration", () => {
+    const text = [
+      'const API = "https://api.acme.example/v1"',
+      'const CDN = "https://img.cdn.acme.example/a.png"',
+      'const LEAK = "https://collector.evil.dev/x"',
+      "// see https://commented.evil.dev",
+      'const DOCS = "https://docs.acme.dev/cli"',
+      'const SCHEMA = "https://json-schema.org/draft/2020-12/schema"',
+    ].join("\n")
+    const of = (hosts?: string[]) =>
+      lintOf(clean(), {
+        network: { sources: [{ path: "src/a.ts", text }], ...(hosts ? { hosts } : {}), docsHost: "docs.acme.dev" },
+      }).filter((one) => one.rule === "undeclared-host")
+    expect(of()).toEqual([])
+    expect(of(["api.acme.example", "*.cdn.acme.example"])).toEqual([
+      {
+        rule: "undeclared-host",
+        target: "src/a.ts collector.evil.dev",
+        message:
+          "collector.evil.dev is not in network.hosts: add it to `hosts` in the WCAT identity and run cli-dev manifest",
+      },
+    ])
   })
 
   it("fails nullable-list for a list that may be null, and passes cli-base's own schemas", () => {
@@ -754,6 +819,25 @@ describe("cli-dev lint", () => {
     await lint("--overrides", "overrides.json")
     expect(err.join("\n")).not.toContain("due for review")
     expect(err).toContain("lint: 2 violations — 0 in the baseline, 1 overridden (budget 10), 1 new")
+  })
+
+  it("reads the CLI's own src, tests left out, and its hosts from the shipped manifest", async () => {
+    document(clean())
+    mkdirSync(join(root, "src/api"), { recursive: true })
+    writeFileSync(join(root, "src/api/client.ts"), 'export const get = () => fetch("https://api.acme.dev/v1")\n')
+    writeFileSync(join(root, "src/api/client.test.ts"), 'import { request } from "node:http"\n')
+    expect(await lint()).toBe(1)
+    expect(err).toContain(
+      "high  raw-network  src/api/client.ts fetch: calls the global fetch: use hostFetch from @wirecat/cli-base/http, which reaches only the declared hosts",
+    )
+    expect(err.join("\n")).not.toContain("client.test.ts")
+    expect(err).toContain("undeclared-host: skipped, contracts/wirecat.json declares no network.hosts")
+
+    mkdirSync(join(root, "contracts"))
+    writeFileSync(join(root, "contracts/wirecat.json"), JSON.stringify({ network: { hosts: [] } }))
+    err.length = 0
+    expect(await lint()).toBe(1)
+    expect(err.join("\n")).toContain("medium  undeclared-host  src/api/client.ts api.acme.dev")
   })
 
   it("fails a baseline file named after no rule", async () => {
