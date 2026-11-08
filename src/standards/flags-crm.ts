@@ -31,6 +31,13 @@ export const CRM_FLAGS: VocabularyFlag[] = [
     meaning: "the day a deal or lead is expected to close, YYYY-MM-DD",
   },
   {
+    name: "--position",
+    value: "<title>",
+    role: "value",
+    type: "string",
+    meaning: "a person's job title on a relationship, stored as position; never the role",
+  },
+  {
     name: "--owner",
     value: "<user>",
     role: "value",

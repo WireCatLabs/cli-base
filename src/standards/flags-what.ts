@@ -850,6 +850,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   { name: "--remind-time", value: "<time>", role: "value", type: "time", meaning: "when to look at it again" },
   { name: "--role", value: "<role>", role: "value", type: "string", meaning: "the part it plays, in a word or two" },
   {
+    name: "--label",
+    value: "<label>",
+    role: "value",
+    type: "string",
+    meaning: "a human-readable label for an id, such as the name shown for a custom relationship role",
+  },
+  {
     name: "--scope",
     value: "<scope>",
     role: "value",

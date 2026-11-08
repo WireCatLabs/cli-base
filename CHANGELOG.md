@@ -8,7 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.86.0 — 08.11.2026
+
+### Added
+
+- **The vocabulary has the noun `groups` and the option `--position`.** `groups` is memo's account groups
+  (`memo groups list|add|remove|move`, WC-ACCT-13); `--position <title>` is a person's job title on a relationship,
+  stored as `position` and never the role. memo can drop the lint baseline entries it kept for them.
+- **The vocabulary has the resource `roles` and the option `--label`.** `roles` is the parts a person plays in a
+  relationship (`memo relationships roles list|add|remove`); `--label <label>` is a human-readable label for an id,
+  such as a custom relationship role's name. memo can drop its `unknown-resource` and `option-role` baseline entries
+  for them.
 
 ### Fixed
 
