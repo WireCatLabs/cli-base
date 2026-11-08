@@ -327,6 +327,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   },
   { name: "--link", value: "<link>", role: "target", type: "string", meaning: "an invite link" },
   {
+    name: "--locale",
+    value: "<code>",
+    role: "target",
+    type: "string",
+    meaning: "a human language, as an ISO 639-1 code such as en or ru: which language's version it acts on",
+  },
+  {
     name: "--lookback-days",
     value: "<days>",
     role: "target",
@@ -545,7 +552,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "who joins by the link asks first, and an admin lets them in",
   },
   { name: "--can", value: "<rights>", role: "value", type: "list", meaning: "what an admin may do, comma-separated" },
-  { name: "--channel", role: "value", type: "switch", meaning: "a channel instead of a group" },
+  {
+    name: "--channel",
+    role: "value",
+    type: "switch",
+    otherValues: ["channel"],
+    meaning: "a channel instead of a group (a switch), or what a message is written for (<channel>), such as email",
+  },
   {
     name: "--certainty",
     value: "<n>",
@@ -762,7 +775,7 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     value: "<file>",
     role: "value",
     type: "path",
-    meaning: "a file to send with the message; the text becomes its caption",
+    meaning: "a file it reads: one to send with a message, the text its caption, or the new text of a write",
   },
   {
     name: "--filename",
