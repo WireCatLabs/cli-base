@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 import { packageVersion } from "../release/index.js"
 import { defineParityGroups, PARITY_GROUPS } from "../standards/audit.js"
+import { PROGRAM_PREFIX } from "../wcat/names.js"
 import { processShell, type Shell } from "./land.js"
+import { binNames } from "./wcat-lint.js"
 
 interface DevIo {
   cwd: string
@@ -38,6 +40,15 @@ export const releasePrProblems = (body: string, baseVersion: string, version: st
   if (!section) return [`the "## Conformance" section of this ${version} release pull request is empty`]
   return []
 }
+
+/** `new` writes 0.0.0, so a pull request raising it is the first release; no override in lint/ reaches this check. */
+export const firstReleaseProblems = (baseVersion: string, pkg: { name?: unknown; bin?: unknown }): string[] =>
+  baseVersion === "0.0.0" && !binNames(pkg).some((command) => command.startsWith(PROGRAM_PREFIX))
+    ? [
+        `the first release installs no ${PROGRAM_PREFIX}<name> command: add "${PROGRAM_PREFIX}<name>" to package.json ` +
+          '"bin", beside the short name if it keeps one, and call wcatStart first in the bin (WC-CMD-29)',
+      ]
+    : []
 
 export interface LiveRecord {
   version: string
@@ -147,11 +158,12 @@ const releasePr = (args: string[], io: DevIo, shell: Shell) => {
     return 2
   }
   const baseVersion = String((JSON.parse(base.out) as { version?: unknown }).version)
-  const problems = releasePrProblems(
-    readFileSync(resolve(io.cwd, values.body), "utf8"),
-    baseVersion,
-    packageVersion(io.cwd),
-  )
+  const version = packageVersion(io.cwd)
+  const pkg = JSON.parse(readFileSync(join(io.cwd, "package.json"), "utf8")) as { name?: unknown; bin?: unknown }
+  const problems = [
+    ...releasePrProblems(readFileSync(resolve(io.cwd, values.body), "utf8"), baseVersion, version),
+    ...(baseVersion === version ? [] : firstReleaseProblems(baseVersion, pkg)),
+  ]
   for (const problem of problems) io.err(problem)
   if (problems.length === 0) io.out("release pull request: ok")
   return problems.length > 0 ? 1 : 0

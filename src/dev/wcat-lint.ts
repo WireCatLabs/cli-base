@@ -17,7 +17,7 @@ export interface WcatWarning {
 const WIRECAT_SCOPE = "@wirecat/"
 
 /** The commands a `package.json` installs: its `"bin"` keys, or the package's own name for a `"bin"` string. */
-const binNames = (pkg: { name?: unknown; bin?: unknown }): string[] => {
+export const binNames = (pkg: { name?: unknown; bin?: unknown }): string[] => {
   if (typeof pkg.bin === "string") return typeof pkg.name === "string" ? [pkg.name.replace(/^@[^/]+\//, "")] : []
   return typeof pkg.bin === "object" && pkg.bin !== null ? Object.keys(pkg.bin) : []
 }

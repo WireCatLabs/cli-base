@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`cli-dev release-pr` fails a CLI's first release when it installs no `wcat-<name>` command.** A pull request that
+  raises `package.json`'s version from `0.0.0`, the version `cli-template new` writes, needs a `"bin"` key starting
+  with `wcat-`; the short name may stay beside it. A CLI that added `wcat-<name>` only in a later release left
+  `wcat <name>` unable to find it until then. An override in `lint/overrides.json` does not excuse it: it still covers
+  only the `wcat-bin-name` warning about a short name. A CLI already published is not affected.
+
 ## 0.86.0 — 08.11.2026
 
 ### Added

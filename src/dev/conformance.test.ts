@@ -8,6 +8,7 @@ import {
   conformanceSection,
   cronProblems,
   environmentProblems,
+  firstReleaseProblems,
   parityProblems,
   REQUIRED_CHECKS,
   releasePrProblems,
@@ -65,6 +66,13 @@ describe("release pull request", () => {
     expect(releasePrProblems("## Why\n\nx\n\n### Conformance\n\n- live: pass\n", "0.3.0", "0.4.0")).toEqual([])
   })
 
+  it("refuses a first release that installs no wcat-<name> command, and only a first release", () => {
+    expect(firstReleaseProblems("0.0.0", { bin: { b24: "a.js", "wcat-b24": "a.js" } })).toEqual([])
+    expect(firstReleaseProblems("0.0.0", { bin: { b24: "a.js" } })[0]).toContain("no wcat-<name> command")
+    expect(firstReleaseProblems("0.0.0", { name: "@acme/foo-cli", bin: "a.js" })).toHaveLength(1)
+    expect(firstReleaseProblems("0.6.0", { bin: { b24: "a.js" } })).toEqual([])
+  })
+
   it("reads a section up to the next heading of its level, keeping deeper ones", () => {
     expect(conformanceSection("## Conformance\n### Live\nok\n## Next\nx")).toBe("### Live\nok")
   })
@@ -78,6 +86,18 @@ describe("release pull request", () => {
     expect(err.join("")).toContain("0.3.0 → 0.4.0")
     writeFileSync(join(cwd, "body.md"), "## Conformance\n\n- release:check passed\n")
     expect(conformanceCommand("release-pr", ["--base", base, "--body", join(cwd, "body.md")], ioIn(cwd).io)).toBe(0)
+  })
+
+  it("fails the 0.0.0 release pull request of a CLI whose bin is only its short name", () => {
+    const cwd = repoWith({
+      "package.json": '{"version":"0.0.0","bin":{"b24":"dist/bin/b24.js"}}\n',
+      "body.md": "## Conformance\n\n- release:check passed\n",
+    })
+    const base = git(cwd, "rev-parse", "HEAD")
+    writeFileSync(join(cwd, "package.json"), '{"version":"0.1.0","bin":{"b24":"dist/bin/b24.js"}}\n')
+    const { io, err } = ioIn(cwd)
+    expect(conformanceCommand("release-pr", ["--base", base, "--body", "body.md"], io)).toBe(1)
+    expect(err.join("")).toContain("no wcat-<name> command")
   })
 })
 

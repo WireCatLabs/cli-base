@@ -80,8 +80,10 @@ installing that command; nothing else is registered anywhere.
   `wcat`'s built-in commands: `RESERVED_NAMES` in `@wirecat/cli-base/wcat` holds the list, and
   [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves) asks a CLI outside
   WireCat not to take one.
-- **The command.** `"bin": { "wcat-<name>": "dist/bin/<name>.js" }`. `cli-dev lint` warns about a `"bin"` key without
-  the `wcat-` prefix. The template writes both `<name>` and `wcat-<name>`.
+- **The command, from the first release.** `"bin": { "wcat-<name>": "dist/bin/<name>.js" }`, in the first version
+  published, not added later. The short name may stay beside it. The template writes both `<name>` and
+  `wcat-<name>`. `cli-dev lint` warns about a `"bin"` key without the `wcat-` prefix, and `cli-dev release-pr` fails
+  the pull request that raises the version from `0.0.0` when no key has it.
 - **The description `wcat --help` shows.** The bin calls `wcatStart` first, before the program loads; the template's
   bin does:
 
@@ -127,8 +129,8 @@ installing that command; nothing else is registered anywhere.
   is `<scope>-<name>` of the package or starts with `<scope>-<name>-`, with `.` and `_` read as `-`: `@acme/crm-cli`
   keeps its data in `acme-crm-cli`. Only the scope's owner publishes under it, so the folder Desktop may delete is
   theirs. `new` names it so for a package outside `@wirecat`.
-- **The short name.** `wcat shortcuts add <name>` makes `<name>` a shortcut to `wcat-<name>`, only when no program on
-  PATH has that name. A CLI does not install its short name itself.
+- **The short name.** A CLI may install it beside `wcat-<name>`, as the template does. Without it,
+  `wcat shortcuts add <name>` makes `<name>` a shortcut to `wcat-<name>`, only when no program on PATH has that name.
 
 ## Four steps that need a person
 
@@ -184,6 +186,7 @@ All of these pass on `main`, before the first release:
 - `pnpm docs:check`, with `--pages`, and the CLI's `generate:check`
 - the changelog guard on a pull request
 - `pnpm release:check`
+- `wcat-<name> --wcat-describe` answers, from the built bin
 - a live check of the real service before each release
   ([WC-TEST-18](testing.md#wc-test-18--check-the-real-service-by-hand-never-in-the-test-suite)), recorded in the
   repository: the version, the date, the script and pass or fail. The owner runs it, or says yes to an agent's run.

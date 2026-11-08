@@ -214,7 +214,9 @@ exception is `contracts/wirecat.json`, the manifest WireCat Desktop reads before
 
 A pull request that changes `package.json`'s version has a `## Conformance` section that is not empty: the
 `release:check` result, the live check's record line, the fresh audit's report or a link to it, and the slice
-reviews ([New CLI](new-cli.md#done-when)). `cli-dev release-pr --base <commit> --body <file>` fails without one.
+reviews ([New CLI](new-cli.md#done-when)). `cli-dev release-pr --base <commit> --body <file>` fails without one,
+and fails a first release (the base version is `0.0.0`) whose `package.json` installs no `wcat-<name>` command
+([WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves)).
 After the live check of the real service passes
 ([WC-TEST-18](testing.md#wc-test-18--check-the-real-service-by-hand-never-in-the-test-suite)),
 `cli-dev live record --script <its script>` appends `<version> <commit> <date> <script> <tree>` to
