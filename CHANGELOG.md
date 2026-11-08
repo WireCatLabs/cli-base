@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **A charge's repeat is `--period <count-unit>`, and `--every` takes only `<duration>` again.** Flag
+  `--period` (`value`, a count and a calendar unit such as `1-month`) is how often a charge repeats. `--every` lost
+  its second value kind `<count-unit>`: one flag with two kinds of value is what `cli-dev audit`'s `same-flag-meaning`
+  exists to catch, and memo's `subscriptions --every` failed it beside drive, gcal, mail, max and tg. A CLI that gives
+  `--every` a `<count-unit>` now fails `flag-two-meanings` in `cli-dev lint`: rename it to `--period`. memo is the only
+  one.
+
 ## 0.90.1 — 08.11.2026
 
 ### Fixed

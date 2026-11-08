@@ -225,17 +225,23 @@ describe("audit rules", () => {
   })
 
   it("takes every kind of value the vocabulary gives a flag as one meaning, and still reports another kind", () => {
-    const every = (cli: string, ...values: string[]) =>
+    const to = (cli: string, ...values: string[]) =>
       inputOf(
         tool(cli, (root) => {
           values.forEach((value, at) => {
-            root.command(`timer${at}`).description("a timer").option(`--every ${value}`, "repeat this often")
+            root.command(`send${at}`).description("send a message").option(`--to ${value}`, "who it goes to")
           })
         }),
       )
-    expect(cross([every("a", "<duration>"), every("c", "<count-unit>", "<duration>")], "same-flag-meaning")).toEqual([])
-    expect(cross([every("a", "<duration>"), every("c", "<n>")], "same-flag-meaning")).toEqual([
-      "a+c --every: a: <duration>, c: <n>",
+    expect(cross([to("a", "<chat>"), to("c", "<address>", "<chat>")], "same-flag-meaning")).toEqual([])
+    expect(cross([to("a", "<chat>"), to("c", "<n>")], "same-flag-meaning")).toEqual(["a+c --to: a: <chat>, c: <n>"])
+  })
+
+  it("reports --every when one CLI gives it a charge's <count-unit>, which is --period", () => {
+    const every = (cli: string, value: string) =>
+      inputOf(tool(cli, (root) => root.command("timer").description("a timer").option(`--every ${value}`, "repeat")))
+    expect(cross([every("a", "<duration>"), every("c", "<count-unit>")], "same-flag-meaning")).toEqual([
+      "a+c --every: a: <duration>, c: <count-unit>",
     ])
   })
 
