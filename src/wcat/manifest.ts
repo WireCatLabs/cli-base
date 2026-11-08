@@ -4,9 +4,10 @@
  * without running the package, so every array holds plain words only: the same rule as Desktop's `community.rs`.
  */
 import * as v from "valibot"
-import { type CommandInfo, flatten, type OptionInfo } from "../commands/registry.js"
+import { type CommandInfo, flatten, type OptionInfo, summaryOf } from "../commands/registry.js"
+import { HOST_PATTERN } from "../http/hosts.js"
 import { effectsSchema } from "../standards/effects.js"
-import { issuesOf, jsonSchemaOf } from "../standards/registry.js"
+import { issuesOf, jsonSchemaOf, SNAKE_CASE } from "../standards/registry.js"
 import type { WcatTool } from "./describe.js"
 import { PROGRAM_PREFIX, TOOL_NAME } from "./names.js"
 
@@ -84,6 +85,25 @@ const desktopSchema = v.strictObject({
 
 export type ManifestDesktop = v.InferOutput<typeof desktopSchema>
 
+const hostSchema = v.pipe(
+  v.string(),
+  v.maxLength(253),
+  v.regex(
+    HOST_PATTERN,
+    (issue) =>
+      `${JSON.stringify(issue.input)} is not a host: a lower-case hostname with no scheme, port or path, or one leading *. before two labels or more`,
+  ),
+)
+
+const networkSchema = v.strictObject({
+  /** Every host the CLI contacts; `[]` says it contacts none. */
+  hosts: v.array(hostSchema),
+  /** Hosts the person chooses, in words: "the mail server you sign in to". */
+  user_hosts: v.optional(line(120)),
+})
+
+const entityName = v.pipe(v.string(), v.regex(SNAKE_CASE, "a snake_case entity name"))
+
 export const manifestSchema = v.strictObject({
   wcat_manifest: v.literal(MANIFEST_FORMAT),
   name: v.pipe(v.string(), v.regex(TOOL_NAME, "lower-case letters, digits and -")),
@@ -94,11 +114,19 @@ export const manifestSchema = v.strictObject({
   commands: v.array(
     v.strictObject({
       path: words,
+      /** The command's one-line help; left out when it has none. */
+      summary: v.optional(line(300)),
       effects: effectsSchema,
       /** The permission key cli-core checks this command against; left out for housekeeping or when not given. */
       permission: v.optional(v.pipe(v.string(), v.nonEmpty())),
+      /** What it answers with: its output entity, else its query's. */
+      entity: v.optional(entityName),
     }),
   ),
+  /** The keys cli-base knows of each entity, from the queries over it; an entity with no query is not listed. */
+  entities: v.optional(v.record(entityName, v.strictObject({ fields: v.pipe(v.array(entityName), v.minLength(1)) }))),
+  /** Left out when the identity declares no `hosts`: the CLI did not say, which Desktop flags. */
+  network: v.optional(networkSchema),
   desktop: desktopSchema,
 })
 
@@ -120,6 +148,13 @@ export interface ManifestIdentity extends WcatTool {
   signIn?: SignIn
   /** What `sync` copies, at most 40 characters: "contacts and deals". Required when the CLI has a sync command. */
   syncs?: string
+  /**
+   * Every host the CLI contacts, as `hostFetch` checks them: `["api.acme.example", "*.cdn.acme.example"]`; `[]` for
+   * none. Written to the manifest as `network.hosts`.
+   */
+  hosts?: readonly string[]
+  /** Hosts the person chooses, at most 120 characters: "the mail server you sign in to". Needs `hosts`. */
+  userHosts?: string
   /** The permission key of a command path, such as cli-core's `CommandPermissions.keyOf`; `null` for none. */
   permissionOf?: (path: readonly string[]) => string | null
 }
@@ -215,6 +250,19 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       }
     : null
 
+  const twice = identity.hosts?.filter((host, index) => identity.hosts?.indexOf(host) !== index) ?? []
+  if (twice.length > 0) throw new ManifestError(twice.map((host) => `hosts: ${host} is listed twice`))
+  if (identity.userHosts && !identity.hosts)
+    throw new ManifestError(["userHosts needs hosts: list the fixed hosts the CLI contacts, [] when there are none"])
+  const runs = all.filter((command) => command.commands.length === 0 || command.runnable)
+  const fields = new Map<string, Set<string>>()
+  for (const { query } of all)
+    if (query) {
+      const known = fields.get(query.entity) ?? new Set<string>()
+      for (const field of query.fields) if (field.relation === undefined) known.add(field.name)
+      if (known.size > 0) fields.set(query.entity, known)
+    }
+
   const manifest = {
     wcat_manifest: MANIFEST_FORMAT,
     name: identity.command,
@@ -222,16 +270,29 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     ...(identity.docs ? { docs_url: identity.docs } : {}),
     package: pkg.name,
     bin: binOf(pkg, identity.command),
-    commands: all
-      .filter((command) => command.commands.length === 0 || command.runnable)
-      .map((command) => {
-        const permission = identity.permissionOf?.(command.path)
-        return {
-          path: [...command.path],
-          effects: command.effects ?? UNDECLARED,
-          ...(permission ? { permission } : {}),
+    commands: runs.map((command) => {
+      const permission = identity.permissionOf?.(command.path)
+      const summary = summaryOf(command)
+      const entity = command.output?.entity ?? command.query?.entity
+      return {
+        path: [...command.path],
+        ...(summary ? { summary } : {}),
+        effects: command.effects ?? UNDECLARED,
+        ...(permission ? { permission } : {}),
+        ...(entity ? { entity } : {}),
+      }
+    }),
+    ...(fields.size > 0
+      ? { entities: Object.fromEntries([...fields].map(([name, known]) => [name, { fields: [...known] }])) }
+      : {}),
+    ...(identity.hosts
+      ? {
+          network: {
+            hosts: [...identity.hosts],
+            ...(identity.userHosts ? { user_hosts: identity.userHosts } : {}),
+          },
         }
-      }),
+      : {}),
     desktop: {
       tagline: identity.tagline,
       profiles,

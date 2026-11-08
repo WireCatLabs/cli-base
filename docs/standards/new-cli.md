@@ -105,6 +105,7 @@ installing that command; nothing else is registered anywhere.
     docs: "https://example.com/gcal",
     tagline: "Google Calendar events, searchable on your computer",
     signIn: { gives: "Lets your agent read your calendar.", asks: "Google asks to allow read-only access." },
+    hosts: ["www.googleapis.com", "oauth2.googleapis.com"],
   }
   ```
 
@@ -116,6 +117,12 @@ installing that command; nothing else is registered anywhere.
   `mcpServer` no port: Desktop reads the version from npm and gives the tool a free port. A command the manifest lists
   without `effects` counts as a write; `permissionOf` adds each command's permission key. See
   [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
+- **The hosts it talks to.** `hosts` lists every host the CLI contacts (`[]` for none), and `userHosts` says in words
+  which hosts the person chooses: "the mail server you sign in to". Send HTTP through
+  `hostFetch({ hosts: WCAT.hosts ?? [] })` from `@wirecat/cli-base/http`, never `node:https`, `axios` or the global
+  `fetch`: it refuses any host not listed. `cli-dev lint` reports raw network code (`raw-network`) and URLs whose host
+  the manifest does not list (`undeclared-host`). See
+  [WC-CMD-32](commands.md#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch).
 - **A CLI published outside `@wirecat`.** WireCat Desktop adds it only when its data folder, the identity's `appName`,
   is `<scope>-<name>` of the package or starts with `<scope>-<name>-`, with `.` and `_` read as `-`: `@acme/crm-cli`
   keeps its data in `acme-crm-cli`. Only the scope's owner publishes under it, so the folder Desktop may delete is

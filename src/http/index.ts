@@ -56,3 +56,5 @@ export const statusToCode = (status: number): ErrorCode => {
 }
 
 export { type JsonResponseOptions, readJsonResponse } from "./body.js"
+export { HOST_FETCH_TIMEOUT_MS, type HostFetchOptions, hostFetch } from "./fetch.js"
+export { HOST_PATTERN, hostCovered, hostProblems } from "./hosts.js"

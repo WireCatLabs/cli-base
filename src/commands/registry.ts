@@ -139,6 +139,10 @@ export const describeProgram = (root: Command): CommandInfo[] =>
 export const describeOptions = (command: Command): OptionInfo[] =>
   command.options.filter((option) => !option.hidden).map(describeOption)
 
+/** The one-line help `--help` shows: the summary, else the description's first line. */
+export const summaryOf = (command: Pick<CommandInfo, "summary" | "description">): string =>
+  (command.summary ?? command.description.split("\n")[0] ?? "").trim()
+
 export const flatten = (commands: readonly CommandInfo[]): CommandInfo[] =>
   commands.flatMap((command) => [command, ...flatten(command.commands)])
 

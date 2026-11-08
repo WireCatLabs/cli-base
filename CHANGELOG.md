@@ -10,6 +10,25 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **The manifest says what each command touches and which hosts the CLI talks to.** `contracts/wirecat.json` gives
+  each command its one-line `summary` and its `entity`, lists under `entities` the fields each query covers, and
+  writes `network: { hosts, user_hosts? }` from the identity's new `hosts` and `userHosts`. WireCat Desktop can then
+  tell a person, before they install a CLI it has not reviewed, "reads contacts: name, email, phone" and which hosts
+  it reaches. Every key is optional inside `wcat_manifest: 2`; a reader that does not know them ignores them.
+- **`hostFetch` in `@wirecat/cli-base/http` reaches only the hosts a CLI declares.** It refuses any other host before
+  a byte is sent, checks every redirect hop, drops credentials on a hop to another origin and bounds the exchange
+  with a timeout (30 s by default). Pass it the identity's `hosts`.
+
+### Changed â€” may break callers
+
+- **`cli-dev lint` reads the CLI's own `src` with two new rules, `raw-network` and `undeclared-host`.** The first
+  fails network code that goes around `hostFetch` (`node:https`, `axios`, `undici`, `ws`, the global `fetch` and the
+  like), the second a URL host the shipped manifest's `network.hosts` does not list (skipped while it lists none).
+  A CLI that upgrades fixes them, runs `--write-baseline`, or says why in `lint/overrides.json`. Its
+  `contracts/wirecat.json` also goes stale once (the new `summary` and `entity` keys): run `cli-dev manifest`.
+
 ### Fixed
 
 - **The handbook says where bitrix24-cli stands today.** WC-PERM-23 lists no exceptions: b24 and beeline both hand

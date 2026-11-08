@@ -1,6 +1,7 @@
 import * as v from "valibot"
 import { type CommandsDocument, commandsDocumentJsonSchema } from "../commands/document.js"
 import type { CommandInfo, OptionInfo } from "../commands/index.js"
+import { summaryOf } from "../commands/registry.js"
 import { exampleProblems } from "../query/registry.js"
 import { queryAstSchema, queryNodeSchema } from "../query/types.js"
 import { errorObjectSchema } from "../standards/errors.js"
@@ -10,6 +11,7 @@ import { isContentKey, logAttributesJsonSchema, logRecordSchema } from "../stand
 import { itemEnvelopeSchema, jsonlEndSchema, jsonlItemSchema, listEnvelopeSchema } from "../standards/output.js"
 import { jsonSchemaOf, SNAKE_CASE } from "../standards/registry.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
+import { type NetworkContext, rawNetwork, undeclaredHosts } from "./network.js"
 
 export interface Violation {
   rule: string
@@ -38,8 +40,7 @@ export const kindOf = (option: OptionInfo): string => {
   return option.flags.match(/[<[]([^>\]]+)[>\]]/)?.[1]?.toLowerCase() ?? "value"
 }
 
-export const summaryOf = (command: CommandInfo): string =>
-  (command.summary ?? command.description.split("\n")[0] ?? "").trim()
+export { summaryOf }
 
 const label = (command: CommandInfo): string => command.path.join(" ")
 
@@ -53,6 +54,8 @@ export interface LintContext {
   schemas?: Readonly<Record<string, unknown>>
   /** What `cli-dev lint --cli` saw when it made the built CLI fail once in an empty home; absent with `--commands`. */
   runLog?: RunLogProbe
+  /** The CLI's own source and declared hosts, for `raw-network` and `undeclared-host`; absent, both find nothing. */
+  network?: NetworkContext
 }
 
 export interface RunLogProbe {
@@ -505,6 +508,8 @@ const CHECKS: Record<string, Check> = {
         : []),
     ]
   },
+  "raw-network": (_document, _vocabulary, context) => (context.network ? rawNetwork(context.network) : []),
+  "undeclared-host": (_document, _vocabulary, context) => (context.network ? undeclaredHosts(context.network) : []),
 }
 
 export const lintRuleIds = (): string[] => Object.keys(CHECKS)
