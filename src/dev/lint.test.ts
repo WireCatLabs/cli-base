@@ -179,6 +179,22 @@ describe("lint rules", () => {
     expect(lintOf(root).filter((finding) => finding.rule === "list-without-query")).toEqual([])
   })
 
+  it("lets session list name every profile without a query, and still flags a deeper session list", () => {
+    const root = clean()
+    const session = root.command("session").description("sign-in")
+    ran(session.command("list").description("list profiles"), {
+      examples: ["tool session list"],
+      output: { entity: "profile" },
+    })
+    ran(chatsOf(root).command("session").description("chat sessions").command("list").description("list sessions"), {
+      examples: ["tool chats session list"],
+      output: { entity: "session" },
+    })
+    expect(lintOf(root).filter((finding) => finding.rule === "list-without-query")).toEqual([
+      { rule: "list-without-query", target: "chats session list", message: "list declares no query" },
+    ])
+  })
+
   it("has a check for every rule in the registry, and a failing fixture for each", () => {
     expect(lintRuleIds().sort()).toEqual(LINT_RULES.map((rule) => rule.id).sort())
     expect(Object.keys(failing).sort()).toEqual(

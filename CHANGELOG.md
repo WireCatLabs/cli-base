@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **`list-without-query` no longer reports `session list`.** That command lists every profile on the computer, so it
+  takes no query by design. A CLI that carries a lint override for `session list` now fails with "stale override":
+  delete that override when it moves to this version.
+
+### Fixed
+
+- **The handbook lets the identity in `src/identity.ts` keep its URLs inline.** The rule that a fixed value lives in
+  `constants.json` now says the CLI's own docs or homepage URL in its identity is not such a value.
+
 ## 0.89.0 — 08.11.2026
 
 ### Added

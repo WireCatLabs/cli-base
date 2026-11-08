@@ -259,8 +259,11 @@ store or files without reading the service first (`remote: "none"`, `local: "wri
 - **Example:** `tasks list state:open priority>1`. The list takes `[query...]` last. The fields come from the entity's
   Valibot schema through `queryFieldsOf`, and every field example and default term parses and validates. The list
   filters where its data lives, in the store or at the provider, never in memory.
-- **Exceptions:** none.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Exceptions:** `<cli> session list` takes no query: it lists every profile on this computer
+  ([WC-ACCT-12](accounts.md#wc-acct-12--sign-in-is-session-start-status-and-end-and-session-list-names-the-profiles)),
+  and a filter would let a caller read one profile as the only one. `list-without-query` skips it, so a CLI needs no
+  override.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-2447.
 
 ### WC-CMD-21 · Set `mcp: false` on a command, group or option that MCP servers must not offer
 
