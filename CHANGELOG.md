@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The handbook says where bitrix24-cli stands today.** WC-PERM-23 lists no exceptions: b24 and beeline both hand
+  `configuration` to the program and to `appMcpCommand`. WC-ARCH-5's known gap names only what is still b24's own
+  (people, organizations, products, users). b24 joins "the WireCat repositories" in the CI and toolchain pages, the
+  `pr.yml` list of WC-CI-5 and the CLIs WC-STORE-1 applies to.
+
 ## 0.84.0 — 08.11.2026
 
 ### Added

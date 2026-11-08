@@ -405,8 +405,7 @@ builds a context of its own.
   `appMcpCommand(IDENTITY, configuration, …)`. With `{ "deals": "deny" }` in the profile, `b24 work deals list`
   exits 5 (`permission_error`) and sends nothing. cli-template's `contracts/plan.json` has
   `"deny": { "profile": "personal" }`, so every CLI made from it runs the check on each pull request.
-- **Exceptions:** known gaps, as of 2026-11-07: beeline's definition passes only `resolveSettings`, and the MCP
-  servers of b24 and beeline call `toolsFromCommands` without `permissions`.
+- **Exceptions:** none.
 - **Applies to:** every CLI on cli-core's `run()`. **Since:** cli-base 0.80.1. **Rulings:** none.
 
 ## Sources
