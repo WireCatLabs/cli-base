@@ -16,6 +16,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "who computes embeddings: a local model or a configured remote model service",
   },
   {
+    name: "--region",
+    value: "<country>",
+    role: "mode",
+    type: "string",
+    meaning: "the two-letter country code, such as ru, that phone numbers written without + are read in",
+  },
+  {
     name: "--consent-provider",
     value: "<identity>",
     role: "target",
