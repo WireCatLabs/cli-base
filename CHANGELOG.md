@@ -10,6 +10,16 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **The vocabulary has the verb `preview` and the options `--locale <code>` and `--undo`.** They name cli-core's
+  `templates` commands: `templates preview` renders what a message would say without sending or saving it,
+  `--locale <code>` picks a template's language by its ISO 639-1 code, and `templates edit --undo` puts back the body
+  the last change replaced. `--locale` is a human language; `--language <lucene|legacy>` stays the query language.
+- **`--channel` may also take a value, `--channel <channel>`: what a message is written for, such as email or
+  telegram.** As a switch it is still a channel instead of a group. The meaning of `--file <file>` now covers a file
+  read as the new text of a write, such as a template, beside an attachment to send.
+
 ### Fixed
 
 - **The handbook lists bitrix24-cli where it already follows a rule.** b24 joins the enforced-by lines of WC-CI-12

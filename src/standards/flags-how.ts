@@ -579,6 +579,7 @@ export const HOW_FLAGS: VocabularyFlag[] = [
   { name: "--retract", role: "action", type: "switch", meaning: "take the owner's vote back" },
   { name: "--revoke", role: "action", type: "switch", meaning: "forget every login given to a browser app" },
   { name: "--track", role: "action", type: "switch", meaning: "also do it daily while serve runs" },
+  { name: "--undo", role: "mode", type: "switch", meaning: "put back what the last change replaced, not a new value" },
   {
     name: "--transcribe",
     role: "action",
