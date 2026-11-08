@@ -16,6 +16,32 @@ const REDIRECTS = 5
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
 const CREDENTIAL_HEADERS = ["authorization", "cookie", "proxy-authorization"]
 
+const NO_BODY = new Set([204, 205, 304])
+
+// Not AbortSignal.timeout: its timer, and the async context it holds, lives to the deadline after the exchange ended.
+// tg-cli's Bot API tests peaked at 3 GB with it and 0.8 GB with this timer, cleared once the body is read.
+const deadline = (ms: number) => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(new DOMException(`no answer within ${ms} ms`, "TimeoutError")), ms)
+  timer.unref?.()
+  return { signal: controller.signal, clear: () => clearTimeout(timer) }
+}
+
+/** The response with its body read through a stream that clears the timer at its end. */
+const released = (response: Response, clear: () => void): Response => {
+  if (!response.body || NO_BODY.has(response.status) || response.status < 200 || response.status > 599) {
+    clear()
+    return response
+  }
+  const { status, statusText, headers, url, redirected } = response
+  const wrapped = new Response(response.body.pipeThrough(new TransformStream({ flush: clear })), {
+    status,
+    statusText,
+    headers,
+  })
+  return Object.defineProperties(wrapped, { url: { value: url }, redirected: { value: redirected } })
+}
+
 const undeclared = (url: URL) =>
   new CliError(
     "configuration_error",
@@ -42,8 +68,8 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
     const request = input instanceof Request ? input : undefined
     let url = checked(new URL(request?.url ?? String(input)), hosts)
     const caller = init.signal ?? request?.signal
-    const timeout = AbortSignal.timeout(timeoutMs)
-    const signal = caller ? AbortSignal.any([caller, timeout]) : timeout
+    const timeout = deadline(timeoutMs)
+    const signal = caller ? AbortSignal.any([caller, timeout.signal]) : timeout.signal
     const follow = (init.redirect ?? request?.redirect ?? "follow") === "follow"
     let method = (init.method ?? request?.method ?? "GET").toUpperCase()
     let body = init.body ?? request?.body ?? undefined
@@ -53,7 +79,7 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
       let response = await send(input, { ...init, signal, ...(follow ? { redirect: "manual" } : {}) })
       for (let hop = 0; follow && REDIRECT_STATUSES.has(response.status); hop += 1) {
         const location = response.headers.get("location")
-        if (!location) return response
+        if (!location) return released(response, timeout.clear)
         if (hop >= redirects)
           throw new CliError("invalid_response", `more than ${redirects} redirects from ${url.hostname}`)
         void response.body?.cancel().catch(() => {})
@@ -72,12 +98,13 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
         url = next
         response = await send(url, { ...init, method, headers, body, signal, redirect: "manual" })
       }
-      return response
+      return released(response, timeout.clear)
     } catch (error) {
+      timeout.clear()
       if (isCliError(error)) throw error
       if (caller?.aborted)
         throw isCliError(caller.reason) ? caller.reason : new CliError("cancelled", "request cancelled")
-      if (timeout.aborted)
+      if (timeout.signal.aborted)
         throw new CliError("timeout", `${url.hostname} did not answer within ${timeoutMs} ms`, { retryable: true })
       throw new CliError("network_error", `${url.hostname} could not be reached`, { retryable: true })
     }
