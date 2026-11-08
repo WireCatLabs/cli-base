@@ -84,32 +84,39 @@ installing that command; nothing else is registered anywhere.
   published, not added later. The short name may stay beside it. The template writes both `<name>` and
   `wcat-<name>`. `cli-dev lint` warns about a `"bin"` key without the `wcat-` prefix, and `cli-dev release-pr` fails
   the pull request that raises the version from `0.0.0` when no key has it.
-- **The description `wcat --help` shows.** The bin calls `wcatStart` first, before the program loads; the template's
-  bin does:
+- **The description `wcat --help` shows.** The bin calls `wcatStart` first, before the program loads, with the
+  `DESKTOP` identity from `src/identity.ts`; the template's bin does:
 
   ```ts
   import { wcatStart } from "@wirecat/cli-base/wcat/start"
+  import { DESKTOP } from "../identity.js"
 
-  const { code } = await wcatStart({ command: "gcal", version, description, docs: "https://example.com/gcal" })
-  if (code !== undefined) process.exitCode = code
-  else await startCli(…)
+  const wcat = await wcatStart(DESKTOP)
+  if (wcat.code !== undefined) process.exitCode = wcat.code
+  else await import("../program.js") // and runs it
   ```
 
   It answers `--wcat-describe`, runs `wcat` when the `wcat` launcher starts the tool, and on any other start makes sure
   the `wcat` launcher in the tool's bin folder works. `cli-dev lint --cli` warns when the built CLI does not answer.
-- **The manifest WireCat Desktop reads.** Export the identity for it, and commit `contracts/wirecat.json`:
+- **The manifest WireCat Desktop reads.** `src/identity.ts` exports `DESKTOP`, the texts Desktop shows, and
+  `src/wcat.ts` adds the permission keys for the manifest. Commit `contracts/wirecat.json`:
 
   ```ts
-  import type { ManifestIdentity } from "@wirecat/cli-base/wcat/manifest"
-
-  export const WCAT: ManifestIdentity = {
+  // src/identity.ts
+  export const DESKTOP: ManifestIdentity = {
     ...IDENTITY,
     docs: "https://example.com/gcal",
     tagline: "Google Calendar events, searchable on your computer",
     signIn: { gives: "Lets your agent read your calendar.", asks: "Google asks to allow read-only access." },
     hosts: ["www.googleapis.com", "oauth2.googleapis.com"],
   }
+
+  // src/wcat.ts
+  export const WCAT: ManifestIdentity = { ...DESKTOP, permissionOf: permissions.keyOf }
   ```
+
+  The bin takes `DESKTOP`, not `WCAT`: `WCAT` imports the permission table, and the start file stays thin
+  ([WC-LAY-2](layout.md#wc-lay-2--start-the-command-from-srcbincommandts-and-keep-that-file-thin)).
 
   `cli-dev manifest --program dist/program.js --identity dist/wcat.js` writes the file; `--check` in CI fails when it
   is stale. `wcatStart` reads the shipped file for `--wcat-describe`, so the bin needs only the format-1 fields and

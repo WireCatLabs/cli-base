@@ -84,7 +84,7 @@ Every rule has the same shape. A rule may add a sentence or a short list under i
     CLI's `node_modules`;
   - a check in another repository, as `<repo>: <check>`, such as `cli-core: pnpm parity:check` or
     `cli-core: biome noRestrictedImports`. `<repo>` is the repository's name on GitHub: `cli-core`, `cli-testing`,
-    `cli-docs`, `community`, `tg-cli`, `max-cli`, `cli-memo`, `drive-cli`, `zoom-cli`, `whatsapp-cli` or `gcal-cli`. `<app>`
+    `cli-docs`, `community`, `tg-cli`, `max-cli`, `cli-memo`, `drive-cli`, `zoom-cli`, `whatsapp-cli`, `gcal-cli` or `bitrix24-cli`. `<app>`
     stands for each CLI the rule applies to, when every one of them runs that check in its own repository;
   - no check yet: "review only", or "review only, check planned: <the check>" when one is designed but not built.
     The planned check is plain words, not backticks, so nobody reads it as a check that runs.

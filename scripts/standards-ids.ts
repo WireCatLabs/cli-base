@@ -10,6 +10,7 @@ export type KnownChecks = { has: (name: string) => boolean }
 // Checks in these repositories cannot be read from here, so only the shape `<repo>: <check>` is checked.
 export const OTHER_REPOSITORIES: readonly string[] = [
   "<app>",
+  "bitrix24-cli",
   "cli-core",
   "cli-docs",
   "cli-memo",
