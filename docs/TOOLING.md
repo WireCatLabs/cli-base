@@ -72,7 +72,7 @@ files to today's violations. Permanent exceptions go in
 `lint/overrides.json` — `[{ "rule", "target", "reason", "owner", "review_after" }]`, `owner` a GitHub handle
 (`@octocat`), `review_after` a date — and more than `--budget` (10) of them fails, as does one past its
 `review_after`. An entry that does not fit that shape fails the run by its number and is ignored; the others still
-apply. The `wcat-bin-name` and `wcat-describe` warnings are overridden the same way; an override covers a short name kept beside `wcat-<name>`, never a CLI without one, which `cli-dev release-pr` refuses at its first release. `cli-dev audit` names a rule overridden more than three times across the CLIs it reads, for review.
+apply. The `wcat-bin-name`, `wcat-describe` and `wcat-hosts` warnings are overridden the same way; an override covers a short name kept beside `wcat-<name>`, never a CLI without one, which `cli-dev release-pr` refuses at its first release. `cli-dev audit` names a rule overridden more than three times across the CLIs it reads, for review.
 `flag-synonym` reports another name for a vocabulary flag (`--take` for `--limit`, from the flag's `replaces`), and
 `identifier-name` an identifier key the glossary (`IDENTIFIERS`) names another way (`execution_id` for `run_id`).
 Every option needs a role from the vocabulary (`paging`, `output`, `sort`, `mode`, `action`, `budget`, `scope`,
@@ -91,13 +91,13 @@ shows no failed run.
 `raw-network` and `undeclared-host` read the CLI's own source under `src` (tests, fixtures, the fakes in `src/testing`,
 `dist` and `node_modules` left out), not the commands document. `raw-network` reports an import of `node:http`, `https`, `http2`, `net`, `tls`
 or `dgram` (with or without `node:`), `undici`, `axios`, `got`, `node-fetch` or `ws` (static, dynamic or `require`;
-type-only imports pass, and so do named imports of `createServer` alone or `isIP` alone, which reach no host), and a call
-of the global `fetch` or any `globalThis.fetch` outside a comment line, with the target
-`<file> <module>` or `<file> fetch`. A file that binds its own `fetch` (`const fetch = hostFetch(…)`, an injected one)
-calls that one. `undeclared-host` reports each `http(s)://` host outside a comment line that `network.hosts` of the
+type-only imports pass, and so do named imports of `createServer` alone or `isIP` alone, which reach no host), and the global
+`fetch` outside a comment or a string, called or handed on as a value (`options.fetch ?? fetch`), or any
+`globalThis.fetch`, with the target `<file> <module>` or `<file> fetch`; a key (`fetch:`), `options.fetch` and
+`typeof fetch` pass. A file that binds its own `fetch` (`const fetch = hostFetch(…)`, an injected one) uses that one. `undeclared-host` reports each `http(s)://` host outside a comment line that `network.hosts` of the
 shipped `contracts/wirecat.json` does not cover, the target the host alone and the files in the message; the `docs_url` host, a name with no dot, `example`, `test` and
-`invalid` names, `json-schema.org` and `www.w3.org` are skipped. Without `network.hosts` it is skipped, and the run
-says so. Both are lints, not a sandbox: a dependency or a computed URL passes them.
+`invalid` names, `json-schema.org` and `www.w3.org` are skipped. Without `network.hosts` it is skipped: a shipped manifest that
+lacks them gets the `wcat-hosts` warning, which does not fail the run, and a CLI with no manifest gets a note. Both are lints, not a sandbox: a dependency or a computed URL passes them.
 
 `cli-dev audit` reads two or more commands documents (`--cli <bin>` or `--commands <file>`, repeated) and prints a
 scorecard: per CLI and rule, what it found, what the baseline holds, what is overridden, what is new and what was

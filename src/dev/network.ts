@@ -68,8 +68,12 @@ const opensNothing = (module: string, clause: string | undefined): boolean => {
 
 // A file that binds its own `fetch` (an injected FetchLike, `const fetch = hostFetch(…)`) calls that one.
 const BINDS_FETCH = /\b(?:const|let|var|function)\s+fetch\b|[{,(]\s*fetch\s*[,}):=]/
-const GLOBAL_FETCH_CALL = /(?<![\w$.#])fetch\s*\(/
 const GLOBAL_FETCH = /(?<!\btypeof\s+)\b(?:globalThis|window|self)\s*\.\s*fetch\b/
+// A call, or a value handed on to be called later (`options.fetch ?? fetch`); a key (`fetch:`) or a type reaches nothing.
+const GLOBAL_FETCH_USE = /(?<![\w$.#]|\btypeof\s+)fetch\b(?![\w$]|\s*\??\s*:)/
+const STRINGS_AND_COMMENTS = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g
+
+const usesGlobalFetch = (code: string) => GLOBAL_FETCH_USE.test(code.replace(STRINGS_AND_COMMENTS, '""'))
 
 export const rawNetwork = ({ sources }: NetworkContext): { target: string; message: string }[] =>
   sources.flatMap(({ path, text }) => {
@@ -84,13 +88,13 @@ export const rawNetwork = ({ sources }: NetworkContext): { target: string; messa
       )
       .map(([, , , , module]) => module as string)
     const fetches = [
-      ...(GLOBAL_FETCH.test(code) || (GLOBAL_FETCH_CALL.test(code) && !BINDS_FETCH.test(code)) ? ["fetch"] : []),
+      ...(GLOBAL_FETCH.test(code) || (!BINDS_FETCH.test(code) && usesGlobalFetch(code)) ? ["fetch"] : []),
     ]
     return [...new Set([...modules, ...fetches])].map((what) => ({
       target: `${path} ${what}`,
       message:
         what === "fetch"
-          ? "calls the global fetch: use hostFetch from @wirecat/cli-base/http, which reaches only the declared hosts"
+          ? "uses the global fetch: use hostFetch from @wirecat/cli-base/http, which reaches only the declared hosts"
           : `imports ${what}: send HTTP through hostFetch from @wirecat/cli-base/http, or say why in lint/overrides.json`,
     }))
   })

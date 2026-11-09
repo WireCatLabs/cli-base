@@ -21,6 +21,26 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `memo sources mentions document:42`. It stays a collection too, as in `tg <profile> mentions list`. The
   `unknown-verb` lint no longer reports `sources mentions`: memo can drop that override and take its override budget
   back from 14 to 13 after adopting this version.
+- **`cli-dev lint` warns when the shipped manifest lists no hosts.** A `contracts/wirecat.json` without
+  `network.hosts` skips `undeclared-host`, and the lint used to pass with only a note. It now prints the `wcat-hosts`
+  warning, which does not fail the run: list the hosts in `hosts` of the WCAT identity, `[]` for none, and run
+  `cli-dev manifest`. bitrix24-cli is one such CLI. A CLI with no manifest at all still gets only the note. See
+  [WC-CMD-32](docs/standards/commands.md#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch).
+
+### Changed — may break callers
+
+- **`raw-network` also reports the global `fetch` handed on as a value.** `this.#fetch = options.fetch ?? fetch`
+  passed, because only a call was matched, so a transport could fall back to the global `fetch` and reach any host. A
+  key (`fetch:`), `options.fetch`, `typeof fetch` and the word in a string or comment still pass. Watch for: a CLI
+  with that fallback now fails `cli-dev lint` with `<file> fetch`. Those seen are bitrix24-cli,
+  whatsapp-cli, mail-cli and cli-template: default to `hostFetch({ hosts: WCAT.hosts ?? [] })` instead, or baseline
+  the target.
+- **`cli-dev docs-check` fails an empty pending section.** The [changelog rules](docs/standards/docs.md) already said never to keep one, yet a
+  `## Unreleased` with no entry before the next `## ` passed; one with only `###` headings counts as empty too. Watch
+  for: cli-memo's changelog has one now, and its `bin/release` writes one back when npm already has the version;
+  bitrix24-cli's `bin/release` needs the heading in that case. Remove the heading, and date the version without it,
+  as cli-core's `bin/release` does. The changelog rules now also describe the
+  `changes/<branch>.md` fragments that the changelog guard accepts.
 
 ## 0.93.0 — 09.11.2026
 

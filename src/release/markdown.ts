@@ -59,9 +59,17 @@ export const changelogProblems = (
   if (legacyHeadingsThrough !== undefined && !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(legacyHeadingsThrough))
     problems.push(`legacyHeadingsThrough: "${legacyHeadingsThrough}" is not a version`)
 
+  let emptyPending: string | undefined
+  const closePending = () => {
+    if (emptyPending)
+      problems.push(`${emptyPending}: "${unreleased}" has no entries — remove the heading until there is one`)
+    emptyPending = undefined
+  }
+
   text.split("\n").forEach((line, index) => {
     const where = `CHANGELOG.md:${index + 1}`
     if (line.startsWith("## ")) {
+      closePending()
       section = line.slice(3)
       subheadings = new Set()
       top = first
@@ -69,6 +77,7 @@ export const changelogProblems = (
       if (section === unreleased) {
         if (release) problems.push(`${where}: "${unreleased}" is left — date it as ${version} before releasing`)
         else if (!first) problems.push(`${where}: "${unreleased}" must be the top section`)
+        if (!release) emptyPending = where
       } else {
         const found = VERSION_HEADING.exec(line)
         if (!found) problems.push(`${where}: "${line}" is not "## <version> — DD.MM.YYYY"`)
@@ -84,6 +93,7 @@ export const changelogProblems = (
       first = false
       return
     }
+    if (line.trim() !== "" && !line.startsWith("#")) emptyPending = undefined
     if (line.startsWith("### ") && !legacy) {
       const heading = line.slice(4)
       if (!headings.includes(heading)) problems.push(`${where}: "${heading}" is not one of: ${headings.join(", ")}`)
@@ -97,6 +107,7 @@ export const changelogProblems = (
       )
     for (const found of line.match(id) ?? []) problems.push(`${where}: internal id ${found} — say what changed instead`)
   })
+  closePending()
 
   if (release && first) problems.push(`CHANGELOG.md: no section for ${version}`)
   return problems
