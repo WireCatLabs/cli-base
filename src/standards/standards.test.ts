@@ -195,6 +195,26 @@ describe("output registry", () => {
     expect(v.is(metaSchema, { ...meta, now: "2026-11-02T16:03:00+01:00" })).toBe(false)
   })
 
+  it("takes what a model did to the order in meta.ranking, and still refuses an unknown key there or in meta", () => {
+    const ranking = {
+      applied: false,
+      reason_id: "harder.timeout",
+      provider: "anthropic",
+      model: "claude-haiku-5-5",
+      endpoint: "https://api.anthropic.com",
+      sent: 30,
+      cost_usd: null,
+      ms: 5001,
+    }
+    expect(v.is(metaSchema, { ...meta, ranking })).toBe(true)
+    expect(
+      v.is(metaSchema, { ...meta, ranking: { ...ranking, cost_usd: 0.0003, usage: { input: 2900, output: 20 } } }),
+    ).toBe(true)
+    expect(v.is(metaSchema, { ...meta, ranking: { ...ranking, reason: "too slow" } })).toBe(false)
+    expect(v.is(metaSchema, { ...meta, ranking: { ...ranking, reason_id: "Timeout" } })).toBe(false)
+    expect(v.is(metaSchema, { ...meta, harder: ranking })).toBe(false)
+  })
+
   it("accepts a missing entry with no step, and refuses an unknown key", () => {
     const item = itemEnvelopeSchema(v.string())
     expect(v.is(item, { item: "x", missing: [{ field: "text", why: "not read" }], meta })).toBe(true)
