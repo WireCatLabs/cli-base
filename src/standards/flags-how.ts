@@ -227,7 +227,6 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "expose meeting preparation tools, including their remote schedule reads",
   },
   { name: "--dry-run", role: "mode", type: "switch", meaning: "judge and plan; do nothing", replaces: ["--estimate"] },
-  { name: "--accept-terms", role: "mode", type: "switch", meaning: "accept the model's licence terms" },
   {
     name: "--as-owner",
     role: "mode",

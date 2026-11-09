@@ -3,6 +3,12 @@ import type { VocabularyFlag } from "./vocabulary.js"
 /** Memories and facts that rest on cited sources, and sources the owner adds by hand. */
 export const KNOWLEDGE_FLAGS: VocabularyFlag[] = [
   {
+    name: "--accept-terms",
+    role: "mode",
+    type: "switch",
+    meaning: "no longer needed; kept so older scripts still run",
+  },
+  {
     name: "--quote",
     value: "<ref=words...>",
     role: "value",
