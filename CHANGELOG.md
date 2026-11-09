@@ -12,6 +12,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`meta.ranking`: what a hosted model did to the order of a search's hits.** An optional, typed block of the answer
+  envelope's `meta`: `{ applied, reason_id?, provider, model, endpoint, sent, cost_usd, usage?, ms }`, so a program
+  reads whether memo's `search all --harder` reordered, why not (`harder.timeout`â€¦), with which model and at what cost,
+  instead of an English sentence under `missing`. `meta` stays strict: any other key is still refused. See
+  [WC-OUT-7](docs/standards/output.md#wc-out-7--put-the-facts-about-the-run-in-meta).
 - **The changelog guard accepts a changelog fragment for a breaking title.** A pull request titled `feat!:` or
   `fix(x)!:` passes with a new line under the unreleased heading, as before, or with an added or edited
   `changes/<name>.md` (not `changes/README.md`). cli-core collects such fragments into the version's section at

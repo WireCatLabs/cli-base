@@ -98,6 +98,27 @@ export const issueSchema = v.strictObject({
  * `complete: false` (with `issues`): some source failed or was skipped. `truncated`: a size cap cut the answer.
  * Neither is `page.has_more`.
  */
+/**
+ * What a hosted model did to the order of a search's hits (memo's `search all --harder`): `applied` when its order
+ * replaced the plain one, else `reason_id` says why. `cost_usd` is null for a model with no known price.
+ */
+export const rankingSchema = v.strictObject({
+  applied: v.boolean(),
+  reason_id: v.optional(dottedId),
+  provider: text,
+  model: text,
+  endpoint: text,
+  sent: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  cost_usd: v.nullable(v.pipe(v.number(), v.minValue(0))),
+  usage: v.optional(
+    v.strictObject({
+      input: v.pipe(v.number(), v.integer(), v.minValue(0)),
+      output: v.pipe(v.number(), v.integer(), v.minValue(0)),
+    }),
+  ),
+  ms: v.pipe(v.number(), v.integer(), v.minValue(0)),
+})
+
 export const metaSchema = v.strictObject({
   run_id: text,
   duration_ms: v.pipe(v.number(), v.integer(), v.minValue(0)),
@@ -110,6 +131,7 @@ export const metaSchema = v.strictObject({
   now: v.optional(isoTime),
   now_local: v.optional(localTime),
   window: v.optional(v.strictObject({ since: v.optional(isoTime), until: v.optional(isoTime) })),
+  ranking: v.optional(rankingSchema),
 })
 
 const offsetOf = (at: number, zone: string): string => {
@@ -156,6 +178,7 @@ export type Missing = v.InferOutput<typeof missingSchema>
 export type Page = v.InferOutput<typeof pageSchema>
 export type Issue = v.InferOutput<typeof issueSchema>
 export type Meta = v.InferOutput<typeof metaSchema>
+export type Ranking = v.InferOutput<typeof rankingSchema>
 export interface ListEnvelope<T> {
   items: T[]
   page: Page

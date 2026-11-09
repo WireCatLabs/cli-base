@@ -46,6 +46,8 @@ export {
   nextStepSchema,
   type Page,
   pageSchema,
+  type Ranking,
+  rankingSchema,
   reference,
   type Total,
   totalSchema,
