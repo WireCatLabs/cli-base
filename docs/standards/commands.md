@@ -468,16 +468,21 @@ the machine and checks every redirect.
 - **Why:** before the person installs a CLI WireCat has not reviewed, Desktop shows where its data goes. A list the
   developer types can be wrong, so the CLI enforces it on itself at run time, and the lint finds network code that
   goes around it.
-- **Enforced by:** `raw-network` · `undeclared-host` · `src/http/fetch.ts` · `src/wcat/manifest.ts`.
+- **Enforced by:** `raw-network` · `undeclared-host` · `src/dev/wcat-lint.ts` ·
+  `src/http/fetch.ts` · `src/wcat/manifest.ts`.
 - **Example:** `hosts: ["api.acme.example"]` in the identity, then
   `const fetch = hostFetch({ hosts: WCAT.hosts ?? [] })`. `raw-network` reports `src/api.ts node:https` for an
-  import of `node:https` and `src/api.ts fetch` for a call of the global `fetch`; `undeclared-host` reports
-  `collector.acme.dev`, naming the files, for a URL whose host the shipped manifest does not list.
+  import of `node:https`, and `src/api.ts fetch` for the global `fetch` called or handed on as a value
+  (`options.fetch ?? fetch`); `undeclared-host` reports `collector.acme.dev`, naming the files, for a URL whose host
+  the shipped manifest does not list.
 - **Exceptions:** network code that cannot use `hostFetch` (a socket protocol, a provider SDK) says why in
   `lint/overrides.json`, and still lists its hosts. The lint is not a sandbox: a dependency, a computed URL or `eval`
-  passes it, which is why Desktop also scans the package and flags what it finds. Without `network.hosts` in the
-  shipped manifest, `undeclared-host` is skipped and `cli-dev lint` says so.
-- **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** the release after cli-base 0.84.0.
+  passes it, which is why Desktop also scans the package and flags what it finds. A shipped manifest without
+  `network.hosts` skips `undeclared-host`, and `cli-dev lint` warns (`wcat-hosts`) but passes, because many CLIs list
+  no hosts yet; the warning becomes a failure once they do. With no manifest at all, the run only says the check is
+  skipped.
+- **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** the release after cli-base 0.84.0; the
+  global fetch as a value and the missing-hosts warning since the release after 0.93.0.
   **Rulings:** none.
 
 ## Sources

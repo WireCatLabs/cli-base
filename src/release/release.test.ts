@@ -89,6 +89,19 @@ describe("changelogProblems", () => {
     expect(changelogProblems(unreleased, { ...rules, release: false })).toEqual([])
   })
 
+  it("refuses an empty unreleased section on a pull request, even one with only headings", () => {
+    const empty = released.replace("## 0.19.0", "## Не выпущено\n\n## 0.19.0")
+    const problem = 'CHANGELOG.md:3: "Не выпущено" has no entries — remove the heading until there is one'
+    expect(changelogProblems(empty, { ...rules, release: false })).toEqual([problem])
+    expect(
+      changelogProblems(empty.replace("## Не выпущено\n", "## Не выпущено\n\n### Исправлено\n"), {
+        ...rules,
+        release: false,
+      }),
+    ).toEqual([problem])
+    expect(changelogProblems("# Изменения\n\n## Не выпущено\n", { ...rules, release: false })).toEqual([problem])
+  })
+
   it("refuses a heading the release notes would not match", () => {
     const [problem] = changelogProblems(released.replace("0.19.0 — 29.09.2026", "0.19.0 - 29.09.2026"), {
       ...rules,

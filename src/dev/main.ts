@@ -52,7 +52,7 @@ import { nextVersion } from "./next-version.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
 import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested } from "./test-matrix.js"
-import { binNameWarnings, describeWarnings, WCAT_RULES, type WcatWarning } from "./wcat-lint.js"
+import { binNameWarnings, describeWarnings, hostsWarnings, WCAT_RULES, type WcatWarning } from "./wcat-lint.js"
 
 export interface DevIo {
   cwd: string
@@ -554,8 +554,7 @@ const lintRun = (args: string[], io: DevIo) => {
     if (!wcatOverridden.has(`${warning.rule} ${warning.target}`))
       io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
   if (values["allow-stale"]) for (const line of stale) io.err(`warning  ${line}`)
-  if (!existsSync(join(io.cwd, MANIFEST_FILE)) || !shippedHosts(io.cwd))
-    io.err(`undeclared-host: skipped, ${MANIFEST_FILE} declares no network.hosts`)
+  if (!existsSync(join(io.cwd, MANIFEST_FILE))) io.err(`undeclared-host: skipped, no ${MANIFEST_FILE}`)
   return report(io, problems, "lint: ok")
 }
 
@@ -584,6 +583,7 @@ const wcatWarnings = (cwd: string, cli: string | undefined): WcatWarning[] => {
   const pkg = existsSync(pkgPath) ? (readJson(pkgPath) as { name?: unknown; bin?: unknown }) : {}
   return [
     ...binNameWarnings(pkg),
+    ...hostsWarnings(shippedManifest(cwd)),
     ...(cli ? describeWarnings(inEmptyHome(cwd, cli, process.env, (call) => call(["--wcat-describe"]))) : []),
   ]
 }

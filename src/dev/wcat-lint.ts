@@ -1,12 +1,14 @@
 /**
- * `cli-dev lint`'s checks for joining `wcat` (WC-CMD-29). They warn and never fail the run: every CLI still installs
- * its short name until it moves to `wcat-<name>`, and the warning becomes a failure once they have.
+ * `cli-dev lint`'s checks for joining `wcat` (WC-CMD-29) and for the hosts its manifest declares (WC-CMD-32). They warn
+ * and never fail the run: every CLI still installs its short name until it moves to `wcat-<name>`, many declare no
+ * hosts yet, and each warning becomes a failure once they do.
  */
 import { parseDescribe } from "../wcat/describe.js"
+import { MANIFEST_FILE } from "../wcat/manifest.js"
 import { DESCRIBE_FLAG, PROGRAM_PREFIX, RESERVED_NAMES, TOOL_NAME } from "../wcat/names.js"
 
 /** Warnings, not lint rules: an entry in `lint/overrides.json` silences one, with its reason, like any override. */
-export const WCAT_RULES = ["wcat-bin-name", "wcat-describe"] as const
+export const WCAT_RULES = ["wcat-bin-name", "wcat-describe", "wcat-hosts"] as const
 
 export interface WcatWarning {
   rule: (typeof WCAT_RULES)[number]
@@ -52,5 +54,21 @@ export const describeWarnings = (answer: { status: number | null; stdout: unknow
           rule: "wcat-describe",
           target: DESCRIBE_FLAG,
           message: `the CLI does not answer ${DESCRIBE_FLAG}: call wcatStart from @wirecat/cli-base/wcat/start first in its bin`,
+        },
+      ]
+
+/**
+ * A shipped manifest lists `network.hosts`, `[]` for none; without it `undeclared-host` has nothing to compare. A CLI
+ * with no manifest at all may still wait for one (WC-CMD-29), so only the run's note says the check is skipped.
+ */
+export const hostsWarnings = (manifest: { network?: { hosts?: unknown } } | undefined): WcatWarning[] =>
+  manifest === undefined || Array.isArray(manifest.network?.hosts)
+    ? []
+    : [
+        {
+          rule: "wcat-hosts",
+          target: MANIFEST_FILE,
+          message:
+            "declares no network.hosts, so undeclared-host is skipped: list every host the CLI contacts in `hosts` of the WCAT identity, [] for none, and run cli-dev manifest",
         },
       ]

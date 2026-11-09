@@ -143,9 +143,17 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Example:** `## Unreleased` at the top while work is merged; a release dates it as `## 0.41.0 — 17.10.2026`. Each
   version heading and the pending heading appear once. The pending section exists only while it has entries: after a
   release the changelog opens on the dated section, and the next entry adds `## Unreleased` back. Never keep an empty
-  one.
-- **Exceptions:** max-cli names the pending section `## Не выпущено`.
-- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+  one: `cli-dev docs-check` fails a pending heading with no entry before the next `## `, also one with only `###`
+  headings under it.
+- **Exceptions:** max-cli names the pending section `## Не выпущено`. A repository may keep its pending entries in
+  changelog fragments instead, so open pull requests stop conflicting on the same lines: each pull request adds
+  `changes/<branch>.md` (lower case, `/` as `-`) with one or more of the WC-DOC-15 headings as `###` and its entries
+  under them. Its release collects them into the version's section and deletes them, so `CHANGELOG.md` then usually
+  has no pending section at all. cli-core, cli-memo and bitrix24-cli do this, each with its own
+  `scripts/changelog-fragments.ts` in `pnpm docs:check` for the fragments' names and headings; `cli-dev docs-check`
+  does not read them.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0; the empty-section check since the
+  release after 0.93.0. **Rulings:** none.
 
 ### WC-DOC-15 · Changelog entries go under five fixed headings, each at most once per section
 
@@ -199,8 +207,12 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 
 - **Why:** a breaking change with no changelog line reaches callers with no warning.
 - **Enforced by:** `changelog-guard.yml`.
-- **Example:** a title `feat(store)!: …` fails the guard unless the pull request adds a line under `## Unreleased`.
-- **Exceptions:** none.
+- **Example:** a title `feat(store)!: …` fails the guard unless the pull request adds a line under `## Unreleased`,
+  or adds or edits a changelog fragment (WC-DOC-14): a file `changes/<name>.md`, other than `changes/README.md`, with
+  at least one line that is not blank and not a heading. The guard checks neither the file's name nor its headings;
+  the repository's own `docs:check` does.
+- **Exceptions:** the guard accepts a fragment only when `changelog-guard.yml` is pinned at cli-base #555's commit or
+  later, which every release after cli-base 0.93.0 includes.
 - **Applies to:** every repository that calls the changelog guard. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-DOC-20 · A released section is frozen, and a new entry goes under an existing heading

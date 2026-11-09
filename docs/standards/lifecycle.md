@@ -24,9 +24,11 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
   `feat/runs` branch (2026-10-25). zm's `resolveSettings` also returns `keepFailedRuns: false`, which turns off the
   failure log cli-core's `run` would keep.
 - **WC-LIFE-16:** cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal has it. The
-  deadlines of WC-LIFE-5 come with the same release. The other syncs (`messages sync` in tg, max and wa, drive's
-  `sync`, memo's mail import, zm's `recordings sync`) are cooperative but spend no request budget yet. gcal sets
-  `requestMs` to 1.5 s.
+  deadlines of WC-LIFE-5 come with the same release. cli-core's shared CRM `sync`, from cli-core 0.591.0 (cli-core
+  #2553), declares `cooperative` and `partial` and takes `--max-pages`; b24 has it. The other syncs (`messages sync`
+  in tg, max and wa, drive's `sync`, memo's mail import, zm's `recordings sync`) are cooperative but spend no request
+  budget yet. gcal sets `requestMs` to 1.5 s, b24 to 1 s: a Bitrix24 portal allows 2 requests a second, shared by
+  every app and webhook.
 
 ## One-shot commands
 
@@ -288,10 +290,12 @@ status command answers how far it is
 - **Enforced by:** `cli-core: src/background/budget.test.ts` · `cli-core: src/calendar/testing/sync-contract.ts`.
 - **Example:** `gcal personal sync` over MCP has 45 s: margin 6.75 s, so with gcal's 1.5 s about 25 requests. It
   answers `state: "partial"`, `stopped: "requests"`, `progress: { calendars, calendarsDone, requests, saved }`, and
-  `next` with `gcal personal sync`; `gcal personal store status` shows each calendar's progress. cli-core builds the budget
+  `next` with `gcal personal sync`; `gcal personal store status` shows each calendar's progress. `b24 work sync`, with
+  b24's 1 s, gets 38 requests in the same 45 s. cli-core builds the budget
   with `runBudgetOf(command, maxPages)` from `@wirecat/cli-core/cli` over `runBudget` in
   `@wirecat/cli-core/background`.
-- **Exceptions:** known gaps, as of 2026-10-27: only the calendar sync spends a budget (see "Who follows"). The
+- **Exceptions:** known gaps, as of 2026-11-09: only cli-core's calendar and CRM syncs spend a budget, so gcal and
+  b24 (see "Who follows"). The
   continuing step names the command, not the MCP tool, and until the WC-CMD-17 follow-up the router sends that
   command to `write`, not `read`.
 - **Applies to:** every CLI with a sync. **Since:** cli-base 0.65.0. **Rulings:** the owner's deadlines and request

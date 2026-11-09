@@ -232,6 +232,22 @@ describe("lint rules", () => {
       "src/a.ts ws",
     ])
     expect(of("const send = globalThis.fetch")).toEqual(["src/a.ts fetch"])
+    expect(of("this.#fetch = options.fetch ?? fetch")).toEqual(["src/a.ts fetch"])
+    expect(
+      of(
+        [
+          "interface Options {",
+          "  timeoutMs?: number",
+          "  fetch?: FetchLike",
+          "}",
+          "export type FetchLike = typeof fetch",
+          "const send = options?.fetch ?? this.#fetch",
+          'const usage = "list, fetch, sync"',
+          'import { hostFetch } from "../http/fetch.js"',
+          "const go = (url: string) => send(url) // fetch it",
+        ].join("\n"),
+      ),
+    ).toEqual([])
     expect(
       of(
         [
@@ -875,16 +891,25 @@ describe("cli-dev lint", () => {
     writeFileSync(join(root, "src/testing/fake.ts"), 'import { createServer } from "node:http"\n')
     expect(await lint()).toBe(1)
     expect(err).toContain(
-      "high  raw-network  src/api/client.ts fetch: calls the global fetch: use hostFetch from @wirecat/cli-base/http, which reaches only the declared hosts",
+      "high  raw-network  src/api/client.ts fetch: uses the global fetch: use hostFetch from @wirecat/cli-base/http, which reaches only the declared hosts",
     )
     expect(err.join("\n")).not.toMatch(/client\.test\.ts|testing\/fake\.ts/)
-    expect(err).toContain("undeclared-host: skipped, contracts/wirecat.json declares no network.hosts")
+    expect(err).toContain("undeclared-host: skipped, no contracts/wirecat.json")
+    expect(err.join("\n")).not.toContain("wcat-hosts")
 
     mkdirSync(join(root, "contracts"))
+    writeFileSync(join(root, "contracts/wirecat.json"), JSON.stringify({ desktop: {} }))
+    err.length = 0
+    expect(await lint()).toBe(1)
+    expect(err).toContain(
+      "warning  wcat-hosts  contracts/wirecat.json: declares no network.hosts, so undeclared-host is skipped: list every host the CLI contacts in `hosts` of the WCAT identity, [] for none, and run cli-dev manifest",
+    )
+
     writeFileSync(join(root, "contracts/wirecat.json"), JSON.stringify({ network: { hosts: [] } }))
     err.length = 0
     expect(await lint()).toBe(1)
     expect(err.join("\n")).toContain("medium  undeclared-host  api.acme.dev: named in src/api/client.ts")
+    expect(err.join("\n")).not.toContain("wcat-hosts")
   })
 
   it("fails a baseline file named after no rule", async () => {
@@ -941,6 +966,8 @@ describe("cli-dev lint", () => {
       `if (process.argv[2] === "--wcat-describe") process.stdout.write('{"wcat_describe":1,"name":"tool","version":"1.0.0","description":"d"}')
 else process.stdout.write(${JSON.stringify(tree)})\n`,
     )
+    mkdirSync(join(root, "contracts"))
+    writeFileSync(join(root, "contracts/wirecat.json"), JSON.stringify({ network: { hosts: [] } }))
     expect(await main(["lint", "--cli", "bin.mjs"], io)).toBe(0)
     expect(err.filter((line) => line.startsWith("warning"))).toEqual([])
   })
@@ -950,6 +977,8 @@ else process.stdout.write(${JSON.stringify(tree)})\n`,
     const bin = (bin: Record<string, string>) =>
       writeFileSync(join(root, "package.json"), JSON.stringify({ name: "@wirecat/tool-cli", bin }))
     bin({ tool: "bin.mjs", "wcat-tool": "bin.mjs" })
+    mkdirSync(join(root, "contracts"))
+    writeFileSync(join(root, "contracts/wirecat.json"), JSON.stringify({ network: { hosts: [] } }))
     writeFileSync(
       join(root, "overrides.json"),
       JSON.stringify([
