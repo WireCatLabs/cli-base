@@ -22,6 +22,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `unknown-verb` lint no longer reports `sources mentions`: memo can drop that override and take its override budget
   back from 14 to 13 after adopting this version.
 
+### Fixed
+
+- **`--accept-terms` now reads "no longer needed; kept so older scripts still run".** Since cli-core 0.619.0 the
+  default embedding model is EmbeddingGemma, which has no licence terms to accept, so the flag does nothing. The
+  text matches cli-core's help and its `STANDARD.md` table, which is checked against it. The flag stays in the
+  vocabulary so older scripts that pass it still lint.
+
 ## 0.93.0 â€” 09.11.2026
 
 ### Added
