@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`node-ci.yml`: re-running a failed test shard can turn `coverage` green.** `gh run rerun --failed` kept the failed
+  attempt's shard report under the same artifact name, and `coverage` merged whichever copy it downloaded last, so a
+  flaky test that passed on the re-run still failed coverage on every re-run (cli-core release #2799). The shard and
+  argv artifacts now carry the run attempt, and `coverage` takes each shard's latest attempt. A caller picks it up
+  by moving its `node-ci.yml` pin.
+
 ## 0.94.0 — 09.11.2026
 
 ### Added
