@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The changelog guard accepts a changelog fragment for a breaking title.** A pull request titled `feat!:` or
+  `fix(x)!:` passes with a new line under the unreleased heading, as before, or with an added or edited
+  `changes/<name>.md` (not `changes/README.md`). cli-core collects such fragments into the version's section at
+  release, so open pull requests stop conflicting in `CHANGELOG.md`. A repository gets this when its
+  `changelog-guard.yml` pin moves; one without a `changes/` folder sees no difference.
+
 ## 0.93.0 — 09.11.2026
 
 ### Added
