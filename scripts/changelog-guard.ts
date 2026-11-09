@@ -2,7 +2,8 @@
 //
 //   node scripts/changelog-guard.ts "<PR title>" <base sha> <head sha>
 //
-// 1. A title marked breaking (`feat!:`, `fix(watch)!:`) adds a line under the unreleased heading.
+// 1. A title marked breaking (`feat!:`, `fix(watch)!:`) adds a line under the unreleased heading, or adds or edits a
+//    changelog fragment, `changes/<name>.md`, which the repository's release collects into its version's section.
 // 2. A section whose version is already tagged `v<version>` is not edited. A dated heading alone does
 //    not mean released: a release is dated in a pull request, merged, and tagged only after npm has it,
 //    and that window still takes changelog fixes. An incorrect historical section may only be restored to its tag.
@@ -19,6 +20,7 @@ const BREAKING_TITLE = /^\w+(\([^)]*\))?!:/
 const CHANGELOG_TITLE = /^\w+\((release|changelog)\)!?:/
 const UNRELEASED = /^## (Unreleased|Не выпущено)\s*$/i
 const DATED = /^## v?(\d+\.\d+\.\d+\S*) [—–-] \S/
+export const FRAGMENTS = /^changes\/(?!README\.md$)[^/]+\.md$/
 
 function duplicateHeading(text: string): string | undefined {
   const seen = new Set<string>()
@@ -63,6 +65,8 @@ export function checkChangelog(input: {
   head: string
   tags: string[]
   releasedText?: (version: string) => string | undefined
+  /** The text of each `changes/*.md` fragment the pull request adds or edits. */
+  fragments?: string[]
 }): string | undefined {
   const repeated = duplicateHeading(input.head)
   if (repeated) return `CHANGELOG.md: duplicate heading for ${repeated}; keep one section per version`
@@ -100,10 +104,12 @@ export function checkChangelog(input: {
   if (repeat) return `CHANGELOG.md: ${repeat}; put the entry under the heading that is already there`
 
   if (!BREAKING_TITLE.test(input.title)) return undefined
+  const entry = (line: string) => line.trim() !== "" && !line.startsWith("#")
+  if (input.fragments?.some((text) => text.split("\n").some(entry))) return undefined
   const unreleased = (all: Sections) => [...all].find(([heading]) => UNRELEASED.test(heading))?.[1] ?? []
   const old = new Set(unreleased(base))
   if (!unreleased(head).some((line) => line.trim() !== "" && !old.has(line)))
-    return `CHANGELOG.md: a breaking title ("${input.title}") needs an entry under the unreleased heading`
+    return `CHANGELOG.md: a breaking title ("${input.title}") needs a line under the unreleased heading or in changes/`
   return undefined
 }
 
@@ -125,8 +131,13 @@ function main() {
       return ""
     }
   }
+  const fragments = git("diff", "--name-only", "--diff-filter=AM", mergeBase, headSha, "--", "changes")
+    .split("\n")
+    .filter((path) => FRAGMENTS.test(path))
+    .map((path) => git("show", `${headSha}:${path}`))
   const message = checkChangelog({
     title,
+    fragments,
     base: show(mergeBase),
     head: show(headSha),
     tags: git("tag", "--list", "v*").split("\n").filter(Boolean),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { checkChangelog } from "./changelog-guard.ts"
+import { checkChangelog, FRAGMENTS } from "./changelog-guard.ts"
 
 const entry = "- **Changed.** The thing, because of the reason."
 const base = (unreleasedHeading: string) =>
@@ -60,6 +60,29 @@ describe("changelog guard", () => {
     const noUnreleased = base("Unreleased").replace(/## Unreleased[\s\S]*?(?=## 0\.52\.0)/, "")
     const head = `${noUnreleased.replace("## 0.52.0", `## Unreleased\n\n${entry}\n\n## 0.52.0`)}`
     expect(checkChangelog({ title: "feat!: x", base: noUnreleased, head, tags: ["v0.52.0"] })).toBeUndefined()
+  })
+
+  it("passes a breaking title with a changelog fragment instead", () => {
+    const fragments = [`### Changed — may break callers\n\n${entry}\n`]
+    expect(
+      checkChangelog({ title: "feat!: x", base: base("Unreleased"), head: base("Unreleased"), tags: [], fragments }),
+    ).toBeUndefined()
+    expect(
+      checkChangelog({
+        title: "feat!: x",
+        base: base("Unreleased"),
+        head: base("Unreleased"),
+        tags: [],
+        fragments: ["### Fixed\n"],
+      }),
+    ).toMatch(/breaking title/)
+  })
+
+  it("reads only changes/<name>.md as a fragment", () => {
+    expect(FRAGMENTS.test("changes/feat-links.md")).toBe(true)
+    expect(FRAGMENTS.test("changes/README.md")).toBe(false)
+    expect(FRAGMENTS.test("changes/old/x.md")).toBe(false)
+    expect(FRAGMENTS.test("docs/changes/x.md")).toBe(false)
   })
 
   it("does not count a line added to a released section as the breaking entry", () => {
