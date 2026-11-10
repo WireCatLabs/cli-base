@@ -8,6 +8,20 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Security
+
+- **A test that resolves the owner's real folders now fails, even when the shared test setup did not load.** Under
+  vitest (`VITEST` in the `env` passed), `resolvePaths` throws when the config, state or cache folder is, or is inside,
+  the account's own folder for that app; the skill commands throw when the home they write under is the account's own
+  (`~/.claude/skills`, `~/.agents/skills`, Hermes); and `systemKeyring` throws while `HOME` is the account's own. A
+  probe run as `vitest run --root <folder outside the repository>` reads no `vitest.config.ts`, so the sandbox never
+  loaded, and it wrote test accounts and runs into the owner's real data. The account's home comes from the user
+  database, not `HOME`. To watch for: a test that builds an `env` with `VITEST` and the owner's real `HOME` and then
+  resolves paths from it now throws; an `env` without `VITEST`, such as `{ HOME: userInfo().homedir }` used to find
+  the owner's folders on purpose, is left alone.
+
 ## 0.95.0 — 09.11.2026
 
 ### Fixed

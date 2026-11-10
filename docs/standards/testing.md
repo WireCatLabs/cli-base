@@ -29,7 +29,7 @@ and which run after merge is in [CI](ci.md).
 ### WC-TEST-1 · Point every path a test could write at a temporary directory
 
 - **Why:** one test that falls back to a default path writes into the owner's config, state, cache or store.
-- **Enforced by:** `src/testing/sandbox.test.ts`.
+- **Enforced by:** `src/testing/sandbox.test.ts` · `src/paths.test.ts`.
 - **Example:** a CLI adopts the shared setup with one line in `vitest.config.ts`:
   `setupFiles: ["@wirecat/cli-base/testing/setup"]`. It holds for every test file, including the next one. Each
   file gets a fresh directory: `TMPDIR`, `TMP`, `TEMP`, `HOME`, `USERPROFILE`, the XDG and Windows folders, and
@@ -41,7 +41,9 @@ and which run after merge is in [CI](ci.md).
   sandboxed home stays within the 104-byte limit. When the file is done, after its own hooks have closed their
   resources, the setup restores the variables and removes the directory; when the file fails while loading or its
   own `afterAll` throws, vitest skips that step and the directory is removed as the worker ends. A CLI's own setup
-  file, listed after the shared one, adds only what is its own, such as a default profile.
+  file, listed after the shared one, adds only what is its own, such as a default profile. Behind the sandbox,
+  `resolvePaths` and the skill commands throw under vitest when they would resolve the owner's own folders, so a run
+  that skips `setupFiles` (`vitest run --root` outside the repository) fails instead of writing there.
 - **Exceptions:** keep coverage reports and debug traces outside the sandbox, with bounded retention. Never clean
   another session's scratch directory as test teardown.
 - **Applies to:** all CLIs and the shared packages. cli-base, cli-core, every CLI and cli-template load the shared
@@ -51,11 +53,12 @@ and which run after merge is in [CI](ci.md).
 
 - **Why:** the owner's tokens live in the real keychain, and a messenger's device keys in a file of their own; one
   test that forgets an option would read or write the real one.
-- **Enforced by:** `src/keyring.test.ts` · `whatsapp-cli: src/testing/sandbox.test.ts`.
+- **Enforced by:** `src/keyring.test.ts` · `src/testing/sandbox.test.ts` · `whatsapp-cli: src/testing/sandbox.test.ts`.
 - **Example:** every test passes `memoryKeyring()` from `@wirecat/cli-base/testing`. The shared setup
   (`@wirecat/cli-base/testing/setup`, [WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory))
   also replaces `@napi-rs/keyring` with a module that throws, so a forgotten option fails the test instead of
-  reaching the keychain, and `src/keyring.test.ts` asserts that `systemKeyring` throws under it.
+  reaching the keychain, and `src/keyring.test.ts` asserts that `systemKeyring` throws under it. Without the shared
+  setup, `systemKeyring` itself throws under vitest while `HOME` is the account's own.
   A credential store that is a file, such as WhatsApp's linked-device keys in `private.db`, resolves under the
   sandbox's state directory, and a sandbox test asserts that its path is inside the temporary root, as wa's does.
 - **Exceptions:** none. Until a CLI adopts the shared setup, its sandbox does not replace `@napi-rs/keyring`; tg and

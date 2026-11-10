@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isMovedRun, pathsAreOverridden, resolvePaths } from "./paths.js"
+import { isMovedRun, pathsAreOverridden, refuseOwnerHomeInTests, resolvePaths } from "./paths.js"
 
 describe("resolvePaths", () => {
   it("derives the environment variable names from the app name", () => {
@@ -83,5 +83,47 @@ describe("isMovedRun", () => {
     const win = (env: NodeJS.ProcessEnv) => isMovedRun({ appName: "gcal-cli", env, platform: "win32", home: winHome })
     expect(win({ USERPROFILE: winHome, APPDATA: `${winHome}\\AppData\\Roaming` })).toBe(false)
     expect(win({ USERPROFILE: "C:\\Temp\\x" })).toBe(true)
+  })
+})
+
+describe("the owner's folders under vitest", () => {
+  const home = "/home/alice"
+  const test = { VITEST: "true" }
+
+  it("are refused when a test resolves them, through HOME or through an override into them", () => {
+    expect(() => resolvePaths({ appName: "tg-cli", env: { ...test, HOME: home }, home })).toThrow(
+      /owner's real folder.*\/home\/alice\/.config\/tg-cli/,
+    )
+    const override = { ...test, HOME: "/tmp/x", TG_STATE_DIR: `${home}/.local/share/tg-cli/runs` }
+    expect(() => resolvePaths({ appName: "tg-cli", prefix: "TG", env: override, home })).toThrow(/owner's real folder/)
+  })
+
+  it("are left alone outside tests, for a moved HOME, and for a sibling folder", () => {
+    expect(resolvePaths({ appName: "tg-cli", env: { HOME: home }, home }).state).toBe(`${home}/.local/share/tg-cli`)
+    expect(() => resolvePaths({ appName: "tg-cli", env: { ...test, HOME: `${home}/tmp/sandbox` }, home })).not.toThrow()
+    const sibling = { ...test, HOME: "/tmp/x", TG_STATE_DIR: `${home}/.local/share/tg-cli-old` }
+    expect(() => resolvePaths({ appName: "tg-cli", prefix: "TG", env: sibling, home })).not.toThrow()
+    expect(() => resolvePaths({ appName: "tg-cli", env: { ...test, HOME: home }, home: undefined })).not.toThrow()
+  })
+
+  it("compares Windows folders with the account's own", () => {
+    const winHome = "C:\\Users\\alice"
+    const env = { ...test, USERPROFILE: winHome }
+    expect(() => resolvePaths({ appName: "tg-cli", platform: "win32", env, home: winHome })).toThrow(/owner's real/)
+    expect(() =>
+      resolvePaths({
+        appName: "tg-cli",
+        platform: "win32",
+        env: { ...test, USERPROFILE: "C:\\Temp\\x" },
+        home: winHome,
+      }),
+    ).not.toThrow()
+  })
+
+  it("refuses the account's own home to a test, and nothing else", () => {
+    expect(() => refuseOwnerHomeInTests(`${home}/`, { env: test, account: home })).toThrow(/owner's real folder/)
+    expect(() => refuseOwnerHomeInTests(`${home}/sandbox`, { env: test, account: home })).not.toThrow()
+    expect(() => refuseOwnerHomeInTests(home, { env: {}, account: home })).not.toThrow()
+    expect(() => refuseOwnerHomeInTests(home, { env: test, account: undefined })).not.toThrow()
   })
 })

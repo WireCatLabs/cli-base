@@ -1,4 +1,5 @@
 import { createRequire } from "node:module"
+import { homeIsMoved } from "./paths.js"
 
 /**
  * The one seam through which the OS keychain is reached.
@@ -47,7 +48,12 @@ const entryClass = (): EntryConstructor => {
   return cached
 }
 
-const entry = (service: string, account: string): Entry => new (entryClass())(service, account, ENTRY_OPTIONS)
+// The test sandbox moves HOME and swaps in a throwing stand-in, so this fires only for a run that skipped it.
+const entry = (service: string, account: string): Entry => {
+  if (process.env.VITEST !== undefined && !homeIsMoved())
+    throw new Error("a test reached the owner's real OS keyring outside the test sandbox; pass memoryKeyring()")
+  return new (entryClass())(service, account, ENTRY_OPTIONS)
+}
 
 export const systemKeyring: KeyringStore = {
   // Returns null for an absent entry rather than throwing — measured against @napi-rs/keyring
