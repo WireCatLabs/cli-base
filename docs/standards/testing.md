@@ -42,8 +42,8 @@ and which run after merge is in [CI](ci.md).
   resources, the setup restores the variables and removes the directory; when the file fails while loading or its
   own `afterAll` throws, vitest skips that step and the directory is removed as the worker ends. A CLI's own setup
   file, listed after the shared one, adds only what is its own, such as a default profile. Behind the sandbox,
-  `resolvePaths` and the skill commands throw under vitest when they would resolve the owner's own folders, so a run
-  that skips `setupFiles` (`vitest run --root` outside the repository) fails instead of writing there.
+  `resolvePaths` and the skill commands throw under vitest while `HOME` is the account's own, so a run that skips
+  `setupFiles` (`vitest run --root` outside the repository) fails instead of writing into the owner's folders.
 - **Exceptions:** keep coverage reports and debug traces outside the sandbox, with bounded retention. Never clean
   another session's scratch directory as test teardown.
 - **Applies to:** all CLIs and the shared packages. cli-base, cli-core, every CLI and cli-template load the shared

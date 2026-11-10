@@ -1,5 +1,5 @@
 import { createRequire } from "node:module"
-import { homeIsMoved } from "./paths.js"
+import { refuseOwnerHomeInTests } from "./paths.js"
 
 /**
  * The one seam through which the OS keychain is reached.
@@ -48,11 +48,14 @@ const entryClass = (): EntryConstructor => {
   return cached
 }
 
-// The test sandbox moves HOME and swaps in a throwing stand-in, so this fires only for a run that skipped it.
+const STAND_IN = Symbol.for("@wirecat/cli-base/testing/keyring-stand-in")
+
+// The keyring has no env of its own, so the global one says whether a test runs. The shared setup's stand-in goes
+// first: it records the reach that `Credentials` would otherwise swallow by falling back to a file.
 const entry = (service: string, account: string): Entry => {
-  if (process.env.VITEST !== undefined && !homeIsMoved())
-    throw new Error("a test reached the owner's real OS keyring outside the test sandbox; pass memoryKeyring()")
-  return new (entryClass())(service, account, ENTRY_OPTIONS)
+  const Entry = entryClass()
+  if (!(STAND_IN in Entry)) refuseOwnerHomeInTests()
+  return new Entry(service, account, ENTRY_OPTIONS)
 }
 
 export const systemKeyring: KeyringStore = {

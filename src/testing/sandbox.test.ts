@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir, userInfo } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { systemKeyring } from "../keyring.js"
 import { enterSandbox, removed, takeKeyringReach } from "./sandbox.js"
 
@@ -80,7 +80,7 @@ describe("a vitest run from outside the repository, which loads no setup", () =>
   // The child gets the account's real HOME, as the 2026-10-26 probe had, so it only resolves paths and never writes.
   it("refuses the owner's folders and keyring instead of returning them", () => {
     const root = join(tmpdir(), "outside-root")
-    mkdirSync(root)
+    mkdirSync(root, { recursive: true })
     writeFileSync(
       join(root, "probe.test.ts"),
       [
@@ -90,22 +90,27 @@ describe("a vitest run from outside the repository, which loads no setup", () =>
         `import { hermesHome, skillPath } from ${source("../skill/index.ts")}`,
         'it("probe", () => {',
         "  expect(process.env.HOME).not.toMatch(/wirecat-test-/)",
-        '  expect(() => resolvePaths({ appName: "wirecat-guard-probe" })).toThrow(/owner.s real folder/)',
-        '  expect(() => skillPath("claude", "wirecat-guard-probe", process.env)).toThrow(/owner.s real folder/)',
-        "  expect(() => hermesHome(process.env)).toThrow(/owner.s real folder/)",
-        '  expect(() => systemKeyring.get("wirecat-guard-probe", "x")).toThrow(/outside the test sandbox/)',
+        '  expect(() => resolvePaths({ appName: "wirecat-guard-probe" })).toThrow(/owner.s real home/)',
+        '  expect(() => skillPath("claude", "wirecat-guard-probe", process.env)).toThrow(/owner.s real home/)',
+        "  expect(() => hermesHome(process.env)).toThrow(/owner.s real home/)",
+        '  expect(() => systemKeyring.get("wirecat-guard-probe", "x")).toThrow(/owner.s real home/)',
         "})",
       ].join("\n"),
     )
-    const env = Object.fromEntries(
-      Object.entries(process.env).filter(
-        ([key]) => !/^(VITEST|XDG_|APPDATA$|LOCALAPPDATA$|USERPROFILE$)|_(CONFIG|STATE|CACHE)_DIR$/.test(key),
-      ),
-    )
+    // The sandbox's XDG folders, overrides and a HERMES_HOME stay: the real HOME alone must be refused.
+    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("VITEST")))
     const vitest = fileURLToPath(new URL("../../node_modules/vitest/vitest.mjs", import.meta.url))
     const run = spawnSync(process.execPath, [vitest, "run", "--root", root, "--reporter=verbose"], {
-      env: { ...env, HOME: userInfo().homedir, DBUS_SESSION_BUS_ADDRESS: "disabled:", NO_COLOR: "1", FORCE_COLOR: "0" },
+      env: {
+        ...env,
+        HOME: userInfo().homedir,
+        HERMES_HOME: join(root, "hermes"),
+        DBUS_SESSION_BUS_ADDRESS: "disabled:",
+        NO_COLOR: "1",
+        FORCE_COLOR: "0",
+      },
       encoding: "utf8",
+      timeout: 25_000,
     })
 
     expect(run.stdout + run.stderr).toMatch(/✓ probe\.test\.ts > probe/)
@@ -114,6 +119,16 @@ describe("a vitest run from outside the repository, which loads no setup", () =>
 })
 
 describe("the keyring under the shared setup", () => {
+  it("still records the reach when a test puts the owner's real HOME back", () => {
+    vi.stubEnv("HOME", userInfo().homedir)
+    try {
+      expect(() => systemKeyring.get("cli-base-test", "default")).toThrow(/real OS keyring/)
+    } finally {
+      vi.unstubAllEnvs()
+    }
+    expect(takeKeyringReach()).toMatch(/real OS keyring/)
+  })
+
   it("throws on any use of the real keyring, and records it for the after-each check", () => {
     expect(() => systemKeyring.get("cli-base-test", "default")).toThrow(/real OS keyring/)
     expect(takeKeyringReach()).toMatch(/real OS keyring[\s\S]*sandbox\.test\.ts/)

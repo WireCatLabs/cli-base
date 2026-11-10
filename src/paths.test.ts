@@ -1,3 +1,6 @@
+import { mkdtempSync, symlinkSync } from "node:fs"
+import { tmpdir, userInfo } from "node:os"
+import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { isMovedRun, pathsAreOverridden, refuseOwnerHomeInTests, resolvePaths } from "./paths.js"
 
@@ -86,44 +89,33 @@ describe("isMovedRun", () => {
   })
 })
 
-describe("the owner's folders under vitest", () => {
-  const home = "/home/alice"
+describe("the owner's home under vitest", () => {
   const test = { VITEST: "true" }
+  const alice = () => "/home/alice"
 
-  it("are refused when a test resolves them, through HOME or through an override into them", () => {
-    expect(() => resolvePaths({ appName: "tg-cli", env: { ...test, HOME: home }, home })).toThrow(
-      /owner's real folder.*\/home\/alice\/.config\/tg-cli/,
-    )
-    const override = { ...test, HOME: "/tmp/x", TG_STATE_DIR: `${home}/.local/share/tg-cli/runs` }
-    expect(() => resolvePaths({ appName: "tg-cli", prefix: "TG", env: override, home })).toThrow(/owner's real folder/)
+  it("is refused to a test, with a trailing slash too, and through resolvePaths", () => {
+    expect(() => refuseOwnerHomeInTests({ ...test, HOME: "/home/alice/" }, "linux", alice)).toThrow(/owner's real home/)
+    const real = { ...test, HOME: userInfo().homedir, XDG_DATA_HOME: "/elsewhere", TG_STATE_DIR: "/elsewhere/tg" }
+    expect(() => resolvePaths({ appName: "tg-cli", prefix: "TG", env: real })).toThrow(/owner's real home/)
   })
 
-  it("are left alone outside tests, for a moved HOME, and for a sibling folder", () => {
-    expect(resolvePaths({ appName: "tg-cli", env: { HOME: home }, home }).state).toBe(`${home}/.local/share/tg-cli`)
-    expect(() => resolvePaths({ appName: "tg-cli", env: { ...test, HOME: `${home}/tmp/sandbox` }, home })).not.toThrow()
-    const sibling = { ...test, HOME: "/tmp/x", TG_STATE_DIR: `${home}/.local/share/tg-cli-old` }
-    expect(() => resolvePaths({ appName: "tg-cli", prefix: "TG", env: sibling, home })).not.toThrow()
-    expect(() => resolvePaths({ appName: "tg-cli", env: { ...test, HOME: home }, home: undefined })).not.toThrow()
+  it("is refused through a symlink to it", () => {
+    const owner = mkdtempSync(join(tmpdir(), "owner-"))
+    const link = join(tmpdir(), `link-${Date.now()}`)
+    symlinkSync(owner, link)
+    expect(() => refuseOwnerHomeInTests({ ...test, HOME: link }, "linux", () => owner)).toThrow(/owner's real home/)
   })
 
-  it("compares Windows folders with the account's own", () => {
-    const winHome = "C:\\Users\\alice"
-    const env = { ...test, USERPROFILE: winHome }
-    expect(() => resolvePaths({ appName: "tg-cli", platform: "win32", env, home: winHome })).toThrow(/owner's real/)
-    expect(() =>
-      resolvePaths({
-        appName: "tg-cli",
-        platform: "win32",
-        env: { ...test, USERPROFILE: "C:\\Temp\\x" },
-        home: winHome,
-      }),
-    ).not.toThrow()
+  it("is left alone outside tests, for a moved HOME, and without an account home", () => {
+    expect(() => refuseOwnerHomeInTests({ HOME: "/home/alice" }, "linux", alice)).not.toThrow()
+    expect(() => refuseOwnerHomeInTests({ ...test, HOME: "/home/alice/sandbox" }, "linux", alice)).not.toThrow()
+    expect(() => refuseOwnerHomeInTests({ ...test, HOME: "/home/alice" }, "linux", () => undefined)).not.toThrow()
+    expect(resolvePaths({ appName: "tg-cli", env: { HOME: userInfo().homedir } }).config).toContain("tg-cli")
   })
 
-  it("refuses the account's own home to a test, and nothing else", () => {
-    expect(() => refuseOwnerHomeInTests(`${home}/`, { env: test, account: home })).toThrow(/owner's real folder/)
-    expect(() => refuseOwnerHomeInTests(`${home}/sandbox`, { env: test, account: home })).not.toThrow()
-    expect(() => refuseOwnerHomeInTests(home, { env: {}, account: home })).not.toThrow()
-    expect(() => refuseOwnerHomeInTests(home, { env: test, account: undefined })).not.toThrow()
+  it("reads USERPROFILE on Windows", () => {
+    const owner = () => "C:\\Users\\alice"
+    expect(() => refuseOwnerHomeInTests({ ...test, USERPROFILE: "C:\\Users\\alice" }, "win32", owner)).toThrow()
+    expect(() => refuseOwnerHomeInTests({ ...test, USERPROFILE: "C:\\Temp\\x" }, "win32", owner)).not.toThrow()
   })
 })

@@ -127,6 +127,9 @@ class ThrowingEntry {
   }
 }
 
+// `keyring.ts` lets the stand-in throw first, so the reach is recorded even when the test put the owner's HOME back.
+Object.assign(ThrowingEntry, { [Symbol.for("@wirecat/cli-base/testing/keyring-stand-in")]: true })
+
 /** The stack of the first reach of the keyring stand-in since the last call, and forgets it. */
 export const takeKeyringReach = (): string | undefined => {
   const stack = reached
