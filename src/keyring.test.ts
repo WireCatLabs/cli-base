@@ -58,7 +58,9 @@ describe("systemKeyring with the binding replaced", () => {
     require.cache[path] = guard
   })
 
-  const withBinding = async (Entry: unknown) => {
+  // Marked as the sandbox's stand-in is: under vitest, any other binding is refused as the real keyring.
+  const withBinding = async (Entry: object) => {
+    Object.assign(Entry, { [Symbol.for("@wirecat/cli-base/testing/keyring-stand-in")]: true })
     require.cache[path] = { ...guard, exports: { Entry } } as NodeJS.Module
     vi.resetModules()
     return import("./keyring.js")

@@ -10,17 +10,18 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ## Unreleased
 
-### Security
+### Changed — may break callers
 
-- **A test that still has the owner's real home now fails, even when the shared test setup did not load.** Under
-  vitest (`VITEST` in the `env` passed), `resolvePaths`, the skill commands (`~/.claude/skills`, `~/.agents/skills`,
-  Hermes, `HERMES_HOME` included) and `systemKeyring` throw while `HOME` (`USERPROFILE` on Windows) is the account's
-  own, read from the user database and compared through symlinks. A probe run as
-  `vitest run --root <folder outside the repository>` reads no `vitest.config.ts`, so the sandbox never loaded, and it
-  wrote test accounts and runs into the owner's real data. Inside the sandbox nothing changes: `HOME` is moved, and the
-  sandbox's throwing keyring still records a reach. To watch for: a test that builds an `env` with `VITEST` and the
-  owner's real `HOME` now throws, whatever its XDG folders or `<PREFIX>_*_DIR` overrides say; an `env` without
-  `VITEST`, such as `{ HOME: userInfo().homedir }` built to find the owner's folders on purpose, is left alone.
+- **A test that still has the owner's real home, or reaches the real keyring, now fails even when the shared test
+  setup did not load.** Under vitest (`VITEST` in the `env` passed, or in the process when that `env` names no home),
+  `resolvePaths` and the skill commands (`~/.claude/skills`, `~/.agents/skills`, Hermes, `HERMES_HOME` included) throw
+  while `HOME` or `USERPROFILE` is the account's own, read from the user database and compared through symlinks; and
+  `systemKeyring` throws under vitest whenever the shared setup's throwing stand-in is not loaded, whatever `HOME`
+  says. A probe run as `vitest run --root <folder outside the repository>` reads no `vitest.config.ts`, so the sandbox
+  never loaded, and it wrote test accounts and runs into the owner's real data. Inside the sandbox nothing changes.
+  To watch for: a test that builds an `env` with `VITEST` and the owner's real `HOME` now throws, whatever its XDG
+  folders or `<PREFIX>_*_DIR` overrides say; an `env` without `VITEST`, such as `{ HOME: userInfo().homedir }` built to
+  find the owner's folders on purpose, is left alone.
 
 ## 0.95.0 — 09.11.2026
 

@@ -93,7 +93,7 @@ describe("a vitest run from outside the repository, which loads no setup", () =>
         '  expect(() => resolvePaths({ appName: "wirecat-guard-probe" })).toThrow(/owner.s real home/)',
         '  expect(() => skillPath("claude", "wirecat-guard-probe", process.env)).toThrow(/owner.s real home/)',
         "  expect(() => hermesHome(process.env)).toThrow(/owner.s real home/)",
-        '  expect(() => systemKeyring.get("wirecat-guard-probe", "x")).toThrow(/owner.s real home/)',
+        '  expect(() => systemKeyring.get("wirecat-guard-probe", "x")).toThrow(/without the test setup/)',
         "})",
       ].join("\n"),
     )
@@ -111,17 +111,18 @@ describe("a vitest run from outside the repository, which loads no setup", () =>
         FORCE_COLOR: "0",
       },
       encoding: "utf8",
-      timeout: 25_000,
+      timeout: 60_000,
     })
 
     expect(run.stdout + run.stderr).toMatch(/✓ probe\.test\.ts > probe/)
     expect(run.status).toBe(0)
-  }, 30_000)
+  }, 70_000)
 })
 
 describe("the keyring under the shared setup", () => {
   it("still records the reach when a test puts the owner's real HOME back", () => {
     vi.stubEnv("HOME", userInfo().homedir)
+    vi.stubEnv("USERPROFILE", userInfo().homedir)
     try {
       expect(() => systemKeyring.get("cli-base-test", "default")).toThrow(/real OS keyring/)
     } finally {

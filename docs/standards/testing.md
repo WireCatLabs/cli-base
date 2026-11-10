@@ -58,7 +58,7 @@ and which run after merge is in [CI](ci.md).
   (`@wirecat/cli-base/testing/setup`, [WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory))
   also replaces `@napi-rs/keyring` with a module that throws, so a forgotten option fails the test instead of
   reaching the keychain, and `src/keyring.test.ts` asserts that `systemKeyring` throws under it. Without the shared
-  setup, `systemKeyring` itself throws under vitest while `HOME` is the account's own.
+  setup, `systemKeyring` itself throws under vitest.
   A credential store that is a file, such as WhatsApp's linked-device keys in `private.db`, resolves under the
   sandbox's state directory, and a sandbox test asserts that its path is inside the temporary root, as wa's does.
 - **Exceptions:** none. Until a CLI adopts the shared setup, its sandbox does not replace `@napi-rs/keyring`; tg and

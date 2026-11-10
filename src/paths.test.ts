@@ -1,5 +1,5 @@
 import { mkdtempSync, symlinkSync } from "node:fs"
-import { tmpdir, userInfo } from "node:os"
+import { homedir, tmpdir, userInfo } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { isMovedRun, pathsAreOverridden, refuseOwnerHomeInTests, resolvePaths } from "./paths.js"
@@ -106,6 +106,14 @@ describe("the owner's home under vitest", () => {
     const link = join(tmpdir(), `link-${Date.now()}`)
     symlinkSync(owner, link)
     expect(() => refuseOwnerHomeInTests({ ...test, HOME: link }, "linux", () => owner)).toThrow(/owner's real home/)
+  })
+
+  it("checks HOME and USERPROFILE both, and the process's own home when the env names neither", () => {
+    expect(() =>
+      refuseOwnerHomeInTests({ ...test, HOME: "/tmp/x", USERPROFILE: "/home/alice" }, "linux", alice),
+    ).toThrow()
+    expect(() => refuseOwnerHomeInTests({}, "linux", () => homedir())).toThrow(/owner's real home/)
+    expect(() => refuseOwnerHomeInTests({}, "linux", alice)).not.toThrow()
   })
 
   it("is left alone outside tests, for a moved HOME, and without an account home", () => {

@@ -57,8 +57,8 @@ from one line in its `vitest.config.ts`: `setupFiles: ["@wirecat/cli-base/testin
 
 - **The owner's home refuses a test even without this setup.** A run that skips `setupFiles` — `vitest run --root`
   at a folder outside the repository reads no `vitest.config.ts` — keeps the real `HOME`. Under vitest (`VITEST` in
-  the `env` passed), `resolvePaths`, the skill commands and `systemKeyring` throw while `HOME` is the account's own
-  (`refuseOwnerHomeInTests` in `src/paths.ts`). The account's home comes from the user database, since `HOME` is what
+  the `env` passed), `resolvePaths` and the skill commands throw while `HOME` or `USERPROFILE` is the account's own
+  (`refuseOwnerHomeInTests` in `src/paths.ts`), and `systemKeyring` throws whenever the stand-in is not loaded. The account's home comes from the user database, since `HOME` is what
   the run failed to move. `src/testing/sandbox.test.ts` runs such a child vitest with the real `HOME` and
   `DBUS_SESSION_BUS_ADDRESS=disabled:`; it only resolves, never writes.
 
