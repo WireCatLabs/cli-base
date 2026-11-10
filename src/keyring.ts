@@ -47,7 +47,17 @@ const entryClass = (): EntryConstructor => {
   return cached
 }
 
-const entry = (service: string, account: string): Entry => new (entryClass())(service, account, ENTRY_OPTIONS)
+const STAND_IN = Symbol.for("@wirecat/cli-base/testing/keyring-stand-in")
+
+// The keyring is reached over D-Bus or the OS keychain whatever HOME says, so a test without the shared setup's
+// stand-in is refused outright. The stand-in itself goes first: it records the reach that `Credentials` would
+// otherwise swallow by falling back to a file.
+const entry = (service: string, account: string): Entry => {
+  const Entry = entryClass()
+  if (!(STAND_IN in Entry) && process.env.VITEST !== undefined)
+    throw new Error("a test reached the real OS keyring without the test setup; pass memoryKeyring()")
+  return new Entry(service, account, ENTRY_OPTIONS)
+}
 
 export const systemKeyring: KeyringStore = {
   // Returns null for an absent entry rather than throwing — measured against @napi-rs/keyring

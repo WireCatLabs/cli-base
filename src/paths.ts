@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs"
 import { homedir, userInfo } from "node:os"
 import { join, posix, win32 } from "node:path"
 
@@ -52,12 +53,54 @@ export const defaultPaths = ({ appName, env = process.env, platform = process.pl
   }
 }
 
+const accountHome = (): string | undefined => {
+  try {
+    return userInfo().homedir
+  } catch {
+    return undefined
+  }
+}
+
+const sameFolder = (a: string, b: string, platform: NodeJS.Platform): boolean => {
+  if ((platform === "win32" ? win32 : posix).relative(a, b) === "") return true
+  try {
+    return realpathSync.native(a) === realpathSync.native(b)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Under vitest, throws while `env` still has the account's own home. The test sandbox lives in `setupFiles`, and a run
+ * that skips the config (`vitest --root` outside the repository) once wrote test accounts and runs into the owner's real
+ * data (2026-10-26). The `env` passed in says whether this is a test: a caller that builds `{ HOME: <owner's home> }`
+ * on purpose, to find the owner's folders, carries no `VITEST`. An `env` that names no home falls back to the process's
+ * own, so the process's own `VITEST` decides then.
+ */
+export const refuseOwnerHomeInTests = (
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  platform: NodeJS.Platform = process.platform,
+  account: () => string | undefined = accountHome,
+): void => {
+  const named = [env.HOME, env.USERPROFILE].filter((home): home is string => Boolean(home))
+  if ((named.length > 0 ? env.VITEST : (env.VITEST ?? process.env.VITEST)) === undefined) return
+  const owner = account()
+  if (owner === undefined) return
+  for (const home of named.length > 0 ? named : [homedir()])
+    if (sameFolder(owner, home, platform))
+      throw new Error(
+        `a test is running with the owner's real home (${home}); load @wirecat/cli-base/testing/setup ` +
+          "(`vitest --root` outside the repository skips it) or give the test a HOME of its own",
+      )
+}
+
 /**
  * Each directory is overridable by environment variable, which is what makes a test — and a
  * throwaway profile — possible without touching the real ones.
  */
 export const resolvePaths = (options: PathsOptions): Paths => {
-  const { appName, prefix, env = process.env } = options
+  const { appName, prefix, env = process.env, platform = process.platform } = options
+  refuseOwnerHomeInTests(env, platform)
   const base = defaultPaths(options)
   return {
     config: env[overrideName(appName, prefix, "config")] ?? base.config,
@@ -69,14 +112,6 @@ export const resolvePaths = (options: PathsOptions): Paths => {
 /** Whether any of the three directories came from the environment rather than the OS convention. */
 export const pathsAreOverridden = ({ appName, prefix, env = process.env }: PathsOptions): boolean =>
   PATH_KINDS.some((kind) => env[overrideName(appName, prefix, kind)] !== undefined)
-
-const accountHome = (): string | undefined => {
-  try {
-    return userInfo().homedir
-  } catch {
-    return undefined
-  }
-}
 
 /**
  * Whether `HOME` or an XDG (or Windows) folder in `env` puts the default folders anywhere but under the account's own

@@ -13,6 +13,7 @@ import crossSpawn from "cross-spawn"
 import { annotate } from "../commands/index.js"
 import { CliError } from "../errors.js"
 import { executableEnvironment, executableOnPath } from "../executable.js"
+import { refuseOwnerHomeInTests } from "../paths.js"
 import type { Renderer } from "../renderer.js"
 import type { Streams } from "../streams.js"
 import { CHECK_EVERY_MS, isNewer, readNoticeState, writeUpdateState } from "../update/index.js"
@@ -30,7 +31,10 @@ export interface SkillApp {
 export const SKILL_TARGETS = ["claude", "agents"] as const
 export type SkillTarget = (typeof SKILL_TARGETS)[number]
 
-const homeOf = (env: Env): string => env.HOME || env.USERPROFILE || homedir()
+const homeOf = (env: Env): string => {
+  refuseOwnerHomeInTests(env)
+  return env.HOME || env.USERPROFILE || homedir()
+}
 
 /** `~/.claude/skills` is Claude Code's; `~/.agents/skills` is read by Codex, Gemini CLI and OpenClaw. */
 export const skillPath = (target: SkillTarget, appName: string, env: Env): string =>
@@ -171,6 +175,7 @@ export type HermesRoute = "external_dirs" | "copy"
 
 /** `HERMES_HOME`, else the folder Hermes itself defaults to. */
 export const hermesHome = (env: Env, platform: NodeJS.Platform = process.platform): string => {
+  refuseOwnerHomeInTests(env, platform)
   const set = env.HERMES_HOME?.trim()
   if (set) return set
   if (platform === "win32") return join(env.LOCALAPPDATA || join(homeOf(env), "AppData", "Local"), "hermes")
