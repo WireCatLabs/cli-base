@@ -12,6 +12,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed â€” may break callers
 
+- **`--from` takes a person, `--from <person>`, and is in the flag vocabulary as a target**: the one identities leave
+  (`people unlink --from`, `contacts unlink --from`) or the one who sent it (`bot search messages --from`). The unlink
+  commands now require it, and without an entry they failed `option-role`. To watch for: a command that declares
+  `--from` with another placeholder, such as `--from <who>`, now fails `flag-two-meanings`; rename it to `<person>`.
+  A baseline entry for `--from` under `option-role` turns stale and fails the lint until it is removed.
+
 - **A test that still has the owner's real home, or reaches the real keyring, now fails even when the shared test
   setup did not load.** Under vitest (`VITEST` in the `env` passed, or in the process when that `env` names no home),
   `resolvePaths` and the skill commands (`~/.claude/skills`, `~/.agents/skills`, Hermes, `HERMES_HOME` included) throw
