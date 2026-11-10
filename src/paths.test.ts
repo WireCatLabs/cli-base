@@ -96,10 +96,12 @@ describe("the owner's home under vitest", () => {
   it("is refused to a test, with a trailing slash too, and through resolvePaths", () => {
     expect(() => refuseOwnerHomeInTests({ ...test, HOME: "/home/alice/" }, "linux", alice)).toThrow(/owner's real home/)
     const real = { ...test, HOME: userInfo().homedir, XDG_DATA_HOME: "/elsewhere", TG_STATE_DIR: "/elsewhere/tg" }
-    expect(() => resolvePaths({ appName: "tg-cli", prefix: "TG", env: real })).toThrow(/owner's real home/)
+    expect(() => resolvePaths({ appName: "tg-cli", prefix: "TG", env: real, platform: "linux" })).toThrow(
+      /owner's real home/,
+    )
   })
 
-  it("is refused through a symlink to it", () => {
+  it.skipIf(process.platform === "win32")("is refused through a symlink to it", () => {
     const owner = mkdtempSync(join(tmpdir(), "owner-"))
     const link = join(tmpdir(), `link-${Date.now()}`)
     symlinkSync(owner, link)

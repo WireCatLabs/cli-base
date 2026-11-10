@@ -104,6 +104,7 @@ describe("a vitest run from outside the repository, which loads no setup", () =>
       env: {
         ...env,
         HOME: userInfo().homedir,
+        USERPROFILE: userInfo().homedir,
         HERMES_HOME: join(root, "hermes"),
         DBUS_SESSION_BUS_ADDRESS: "disabled:",
         NO_COLOR: "1",
