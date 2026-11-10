@@ -321,8 +321,9 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     name: "--from",
     value: "<person>",
     role: "target",
-    type: "string",
-    meaning: "a person: the one identities leave, or the one who sent it",
+    type: "id",
+    meaning:
+      "a person: the one identities leave, or the one who sent it; a search takes it repeated for any of several",
   },
   {
     name: "--from-dir",
