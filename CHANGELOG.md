@@ -10,6 +10,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **`--from <person>` is in the flag vocabulary**, as a target: a person, either the one identities leave
+  (`people unlink --from`, `contacts unlink --from`) or the one who sent it (`bot search messages --from`).
+
 ### Changed â€” may break callers
 
 - **A test that still has the owner's real home, or reaches the real keyring, now fails even when the shared test

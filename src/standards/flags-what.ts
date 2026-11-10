@@ -318,6 +318,13 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     meaning: "the agents to install for, comma-separated",
   },
   {
+    name: "--from",
+    value: "<person>",
+    role: "target",
+    type: "string",
+    meaning: "a person: the one identities leave, or the one who sent it",
+  },
+  {
     name: "--from-dir",
     value: "<dir>",
     role: "target",
