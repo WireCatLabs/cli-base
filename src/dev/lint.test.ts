@@ -201,7 +201,14 @@ describe("lint rules", () => {
       lintRuleIds()
         .filter(
           (id) =>
-            !["log-attribute-key", "nullable-list", "identifier-name", "raw-network", "undeclared-host"].includes(id),
+            ![
+              "log-attribute-key",
+              "nullable-list",
+              "identifier-name",
+              "raw-network",
+              "undeclared-host",
+              "result-shape",
+            ].includes(id),
         )
         .sort(),
     )
@@ -910,6 +917,25 @@ describe("cli-dev lint", () => {
     expect(await lint()).toBe(1)
     expect(err.join("\n")).toContain("medium  undeclared-host  api.acme.dev: named in src/api/client.ts")
     expect(err.join("\n")).not.toContain("wcat-hosts")
+  })
+
+  it("checks the types package.json publishes, and says when it publishes none", async () => {
+    document(clean())
+    await lint()
+    expect(err).toContain("result-shape: skipped, package.json publishes no types")
+
+    mkdirSync(join(root, "dist"))
+    writeFileSync(join(root, "package.json"), JSON.stringify({ types: "./dist/index.d.ts" }))
+    writeFileSync(
+      join(root, "dist/index.d.ts"),
+      "export declare function searchNotes(query: string, limit: number): Note[];\n",
+    )
+    err.length = 0
+    expect(await lint()).toBe(1)
+    expect(err).toContain(
+      "medium  result-shape  dist/index.d.ts: searchNotes: returns a bare array: return ListResult<T> from @wirecat/cli-base/standards (WC-OUT-25)",
+    )
+    expect(err.join("\n")).not.toContain("result-shape: skipped")
   })
 
   it("fails a baseline file named after no rule", async () => {

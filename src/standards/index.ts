@@ -35,6 +35,7 @@ export {
   jsonlItemSchema,
   jsonlOf,
   type ListEnvelope,
+  type ListResult,
   listEnvelopeSchema,
   localTime,
   MAX_NEXT_STEPS,

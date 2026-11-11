@@ -30,7 +30,7 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Toolchain](toolchain.md) | `TOOL` | 20 | TypeScript, Biome, grit plugins, size caps, import cycles, spelling, Markdown, Go |
 | [Layout](layout.md) | `LAY` | 10 | Repository layout, entry points, exports, file size, one job per file, splitting a unit, the bundled bin |
 | [Commands](commands.md) | `CMD` | 32 | Paths, vocabulary, flags, arguments, effects, lifetime, query, help, external references, joining `wcat`, settings in the config file, refs, network hosts |
-| [Output](output.md) | `OUT` | 24 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection |
+| [Output](output.md) | `OUT` | 25 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection, list results in a TypeScript API |
 | [MCP](mcp.md) | `MCP` | 13 | The MCP tools, how they come from commands, what each permission shows |
 | [Accounts](accounts.md) | `ACCT` | 13 | The explicit profile, reads across accounts, scope flags, linked identities, sign-in commands, memo's account groups |
 | [Permissions](permissions.md) | `PERM` | 23 | Levels, keys, defaults, hard limits, the write guard and its journal, handing the keys to cli-core |

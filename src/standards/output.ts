@@ -86,6 +86,19 @@ export const pageSchema = v.variant("mode", [
 
 export type Total = v.InferOutput<typeof totalSchema>
 
+/**
+ * A list or search returned by a TypeScript API (WC-OUT-25). It pages by `offset` and `limit`; a source with its own
+ * position gives `nextCursor` instead. `--json` prints it as the list envelope, in snake_case.
+ */
+export interface ListResult<T> {
+  items: T[]
+  hasMore: boolean
+  /** The `offset` that reads the next page; absent on the last one. */
+  nextOffset?: number
+  nextCursor?: string
+  total?: Total
+}
+
 /** A source that failed or was skipped: the answer holds what the others gave. */
 export const issueSchema = v.strictObject({
   code: v.picklist(errorCodes),

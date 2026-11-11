@@ -309,6 +309,46 @@ Three things follow from it:
 - **Exceptions:** MCP tools answer JSON.
 - **Applies to:** CLIs that run on cli-core's `run()`. **Since:** cli-base 0.74.0. **Rulings:** NEED-2131.
 
+## TypeScript API
+
+### WC-OUT-25 · Return a list or a search from a TypeScript API as a `ListResult`
+
+- **Why:** a caller that pages one service pages all of them the same way, and a command prints any of them as the
+  list envelope with no renaming of its own.
+- **Enforced by:** `result-shape`.
+- **Example:** `ListResult<T>` from `@wirecat/cli-base/standards` is `{ items, hasMore, nextOffset?, nextCursor?,
+  total? }`. A search takes `offset` and `limit`:
+
+  ```ts
+  const page = await notes.search("invoice", { offset: 40, limit: 20 })
+  // { items: [ … ], hasMore: true, nextOffset: 60, total: { value: 312, relation: "eq" } }
+  ```
+
+  `nextOffset` is absent on the last page. A source with its own position, such as a message history or a provider's
+  page token, gives `nextCursor` instead. `total` is the `Total` of
+  [WC-OUT-5](#wc-out-5--say-in-page-how-the-source-pages). Other facts about the run sit beside these keys, in
+  camelCase: `meaningSkipped`, `accounts`. In `--json` the same result is the list envelope of
+  [WC-OUT-4](#wc-out-4--answer-every-json-request-with-one-envelope-a-list-or-one-thing), in snake_case: `hasMore` is
+  `page.has_more`, a command paged by `--page` reads `offset = (page - 1) × limit` and answers `next_page`, and
+  `nextCursor` is `page.next_cursor`. A failure throws a `CliError`, which prints as the error object of
+  [WC-OUT-14](#wc-out-14--print-a-failure-in-machine-mode-as-one-json-object-on-stderr-with-stdout-empty); a result
+  never carries an `error` key. A paged list is never a bare array, never takes a page number, and its keys are never
+  `hits`, `has_more`, `limit_reached` or `next_offset`.
+- **Exceptions:** a list that takes no limit and returns everything it has, such as the folders of an account, may
+  return an array. A type that describes the `--json` answer itself keeps the envelope's snake_case keys. A page as a
+  provider hands it to a source adapter, such as a CRM's `nextPage` token, keeps the provider's paging: an entry in
+  `lint/overrides.json` says so.
+- **Applies to:** packages whose TypeScript API other packages import: cli-core today. **Since:** cli-base 0.97.0.
+  **Rulings:** NEED-2561.
+
+`result-shape` reads the `.d.ts` files a package publishes: every `types` entry in `package.json`, and what they
+import. It checks a declaration or member named like a page (`list…`, `search…`, `history…`, or a name ending in
+`Found`, `Page`, `Result`, `Results`, `List` or `Hits`) that holds an array and a paging key. It also checks a
+function or method named like a list or a search (`list…`, `search…`, `find…`, `…List`, `…Search`) that takes a
+`limit`, an `offset`, a page, or a type that declares a `limit` or an `offset`: it must not return an array or take a
+page number. A list named otherwise, such as `memories()`, is not seen. A package that publishes no types, or has not
+built them, is skipped, and the lint says so. A declared file that is missing while others are built is a violation.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page
