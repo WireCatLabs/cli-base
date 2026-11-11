@@ -49,6 +49,7 @@ import { changelogChange, landChange, landFold, newestTag, processShell, restore
 import { baselineOf, judge, lintCommands, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
 import { type NetworkContext, readSources } from "./network.js"
 import { nextVersion } from "./next-version.js"
+import { readDeclarations } from "./result-shape.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
 import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested } from "./test-matrix.js"
@@ -508,11 +509,13 @@ const lintRun = (args: string[], io: DevIo) => {
   }
   const paths = new Set(walk(parsed.document.commands).map((command) => command.path.join(" ")))
   const hasRuns = RUN_LOG_COMMANDS.every((path) => paths.has(path))
+  const declarations = readDeclarations(io.cwd)
   const violations = lintCommands(parsed.document, VOCABULARY, LINT_RULES, {
     raw,
     schemas: schemas as Record<string, unknown> | undefined,
     ...(values.cli && hasRuns ? { runLog: probeRunLog(io.cwd, values.cli) } : {}),
     network: networkContext(io.cwd),
+    declarations,
   })
   const severity = new Map(LINT_RULES.map((rule) => [rule.id, rule.severity]))
 
@@ -555,6 +558,12 @@ const lintRun = (args: string[], io: DevIo) => {
       io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
   if (values["allow-stale"]) for (const line of stale) io.err(`warning  ${line}`)
   if (!existsSync(join(io.cwd, MANIFEST_FILE))) io.err(`undeclared-host: skipped, no ${MANIFEST_FILE}`)
+  if (declarations.files.length === 0)
+    io.err(
+      declarations.missing.length === 0
+        ? "result-shape: skipped, package.json publishes no types"
+        : "result-shape: skipped, the types package.json publishes are not built",
+    )
   return report(io, problems, "lint: ok")
 }
 

@@ -8,6 +8,21 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **One shape for a list or a search in a TypeScript API, and a lint rule for it.** The handbook's new
+  [WC-OUT-25](docs/standards/output.md#wc-out-25--return-a-list-or-a-search-from-a-typescript-api-as-a-listresult)
+  says a list or search returns `{ items, hasMore, nextOffset?, nextCursor?, total? }`, the new `ListResult<T>` type
+  in `@wirecat/cli-base/standards`; `--json` keeps the envelope of WC-OUT-4. Until now cli-core's services answered
+  `{items, hasMore}`, `{items, has_more}`, `{hits, has_more}` or a bare array. `cli-dev lint` gets the rule
+  `result-shape`: it reads the `.d.ts` files that `package.json` publishes and names each page that keeps `hits`,
+  `has_more`, `limit_reached`, `next_offset` or `nextPage`, and each paged list or search that returns an array or
+  takes a page number. To watch for: the rule checks only built types, so run it after `tsc`; with none built, or
+  none published, it is skipped with a note. Today's violations go in `lint/baseline/result-shape.json` with
+  `--write-baseline`.
+
 ## 0.96.0 — 11.11.2026
 
 ### Changed — may break callers

@@ -7,7 +7,7 @@ const lintRuleSchema = v.strictObject({
   id: word,
   severity: v.picklist(LINT_SEVERITIES),
   /** What the rule looks at; a violation's target names one of these. */
-  scope: v.picklist(["command", "group", "argument", "option", "flag", "key", "source"]),
+  scope: v.picklist(["command", "group", "argument", "option", "flag", "key", "source", "type"]),
   summary: text,
 })
 
@@ -140,6 +140,13 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     severity: "medium",
     scope: "source",
     summary: "every `http(s)://` host in the CLI's own source is in the manifest's `network.hosts`",
+  },
+  {
+    id: "result-shape",
+    severity: "medium",
+    scope: "type",
+    summary:
+      "a list or search in the published TypeScript API returns `{ items, hasMore, nextOffset?, total? }`: no bare array, no `hits` or `has_more`",
   },
 ])
 

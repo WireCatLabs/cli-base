@@ -12,6 +12,7 @@ import { itemEnvelopeSchema, jsonlEndSchema, jsonlItemSchema, listEnvelopeSchema
 import { jsonSchemaOf, SNAKE_CASE } from "../standards/registry.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
 import { type NetworkContext, rawNetwork, undeclaredHosts } from "./network.js"
+import { type Declarations, resultShape } from "./result-shape.js"
 
 export interface Violation {
   rule: string
@@ -65,6 +66,8 @@ export interface LintContext {
   runLog?: RunLogProbe
   /** The CLI's own source and declared hosts, for `raw-network` and `undeclared-host`; absent, both find nothing. */
   network?: NetworkContext
+  /** The package's published `.d.ts` files, for `result-shape`; absent, it finds nothing. */
+  declarations?: Declarations
 }
 
 export interface RunLogProbe {
@@ -515,6 +518,7 @@ const CHECKS: Record<string, Check> = {
   },
   "raw-network": (_document, _vocabulary, context) => (context.network ? rawNetwork(context.network) : []),
   "undeclared-host": (_document, _vocabulary, context) => (context.network ? undeclaredHosts(context.network) : []),
+  "result-shape": (_document, _vocabulary, context) => (context.declarations ? resultShape(context.declarations) : []),
 }
 
 export const lintRuleIds = (): string[] => Object.keys(CHECKS)
