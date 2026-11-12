@@ -24,7 +24,7 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 - **WC-LIFE-16:** cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal has it. The
   deadlines of WC-LIFE-5 come with the same release. cli-core's shared CRM `sync`, from cli-core 0.591.0 (cli-core
   #2553), declares `cooperative` and `partial` and takes `--max-pages`; b24 has it. The other syncs (`messages sync`
-  in tg, max and wa, drive's `sync`, memo's mail import, zm's `recordings sync`) are cooperative but spend no request
+  in tg, max and wa, drive's `sync`, mail's `sync`, zm's `recordings sync`) are cooperative but spend no request
   budget yet. gcal sets `requestMs` to 1.5 s, b24 to 1 s: a Bitrix24 portal allows 2 requests a second, shared by
   every app and webhook.
 
@@ -208,7 +208,7 @@ before its deadline.
 - **Enforced by:** `drive-cli: src/sync.test.ts`.
 - **Example:** a rerun skips what is stored and does not redo the listing or paging that got there. The position
   lives in the store when the store already holds it: tg and max keep the held stretch of each chat, so
-  `messages sync --all` skips a chat held to its newest message; memo keeps a resume point per mail folder; zm keeps
+  `messages sync --all` skips a chat held to its newest message; zm keeps
   the checkpoint of `recordings sync`. Otherwise it lives in a checkpoint file,
   `<state>/checkpoints/<profile>/<job>.json`, written with `saveCheckpoint` and read with `readCheckpoint` from
   `@wirecat/cli-core/background`. The write is atomic, and a torn file reads as no checkpoint: one run from the start,

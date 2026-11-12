@@ -891,6 +891,18 @@ describe("cli-dev lint", () => {
     expect(existsSync(join(root, "lint/baseline/unknown-verb.json"))).toBe(false)
   })
 
+  it("fails the CLI's own word in the baseline once cli-core marks its commands, and only warns with --allow-stale", async () => {
+    const tree = broken()
+    annotate(tree.commands.find((command) => command.name() === "doctor") as Command, { origin: "cli-core" })
+    document(tree)
+    expect(await lint("--write-baseline")).toBe(1)
+    expect(err).toContain(`the CLI's own word in the baseline — move it to the overrides: unknown-verb "chats grab"`)
+    expect(await lint("--allow-stale")).toBe(0)
+    expect(err).toContain(
+      `warning  the CLI's own word in the baseline — move it to the overrides: unknown-verb "chats grab"`,
+    )
+  })
+
   it("leaves overridden violations out of the baseline, and fails an override past the budget", async () => {
     document(broken())
     writeFileSync(

@@ -120,7 +120,7 @@ are in use. A difference may carry `review_after`: it warns from 14 days before 
 after it, as a lint override does. `--family` takes the one `--cli` of the CLI being built, installs the latest
 published CLIs of the parity groups into a temporary folder (npm, no install scripts), runs every CLI in an empty
 home with the keyring out of reach, and reads each one's `commands info --json`, so `same-entity-schema` and
-`same-error-reason` are measured; it defaults `--for` to this CLI, `--lint` to its `lint/` and `--groups` to
+`same-error-reason` are measured (their findings print as warnings, since no baseline can hold them); it defaults `--for` to this CLI, `--lint` to its `lint/` and `--groups` to
 `config/parity-groups.json`. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
 (`max+tg chats list --limit`, `tg: chats grab` for a lint violation); `--write-baseline` rewrites them. `--lint
 <cli>=<dir>` judges that CLI's lint rules by its own `lint/` folder instead. A new finding fails the run — only one

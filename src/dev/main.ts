@@ -619,8 +619,9 @@ const lintRun = (args: string[], io: DevIo) => {
   const stale = verdict.stale.filter((entry) => !advice(entry.rule)).map(staleLine)
   advised.push(...verdict.stale.filter((entry) => advice(entry.rule)).map(staleLine))
   advised.push(...overridesDueSoon(overrides, today(io)).map((line) => `${values.overrides}: ${line}`))
+  // Like a stale entry, a misfiled one is the CLI's cleanup when a shared package's CI lints it.
+  for (const line of misfiled(parsed.document, baseline, ruleOverrides)) stale.push(line)
   if (!values["allow-stale"]) problems.push(...stale)
-  for (const line of misfiled(parsed.document, baseline, ruleOverrides)) problems.push(line)
 
   const warnings = wcatWarnings(io.cwd, values.cli)
   const warned = new Set(warnings.map((warning) => `${warning.rule} ${warning.target}`))
@@ -738,6 +739,8 @@ const auditFamily = (args: string[], io: DevIo) => {
     family.close()
   }
 }
+
+const FAMILY_REPORTS = new Set(["same-entity-schema", "same-error-reason"])
 
 const auditRun = (args: string[], io: DevIo, family = false) => {
   const started = Date.now()
@@ -944,7 +947,12 @@ const auditRun = (args: string[], io: DevIo, family = false) => {
       }),
     )
   else io.out(scorecardTable(result.rows))
-  for (const finding of result.blocking) problems.push(`new  ${finding.rule}  ${finding.target}: ${finding.message}`)
+  for (const finding of result.blocking) {
+    const line = `new  ${finding.rule}  ${finding.target}: ${finding.message}`
+    // Measured for the first time by the family audit, and strict, so no baseline can hold them: shown, not failed.
+    if (family && FAMILY_REPORTS.has(finding.rule)) io.err(`warning  ${line}`)
+    else problems.push(line)
+  }
   if (values.for === undefined && result.rows.some((row) => row.fixed > 0))
     io.err(
       `warning  ${values.baseline} holds rows no CLI has any more (the "fixed" column): remove them with --write-baseline`,
