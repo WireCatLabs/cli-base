@@ -12,7 +12,7 @@ import { logAttributesJsonSchema } from "../standards/log.js"
 import { COMPACT_FLAG } from "../standards/output.js"
 import { jsonSchemaOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
-import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
+import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds, misfiled } from "./lint.js"
 import { type DevIo, main, probeRunLog } from "./main.js"
 
 const READS = { remote: "read", local: "none" } as const
@@ -267,6 +267,26 @@ describe("lint rules", () => {
         ].join("\n"),
       ),
     ).toEqual([])
+  })
+
+  it("fails raw-network when a fetch key or argument hands the global on, and passes a bound fetch", () => {
+    const of = (text: string) =>
+      lintOf(clean(), { network: { sources: [{ path: "src/a.ts", text }] } })
+        .filter((one) => one.rule === "raw-network")
+        .map((one) => one.target)
+    expect(of("const reader = makeReader({ env, fetch: deps.fetch ?? fetch })")).toEqual(["src/a.ts fetch"])
+    expect(of("const client = new Client({ fetch: options.fetch ?? fetch, timeoutMs })")).toEqual(["src/a.ts fetch"])
+    expect(of("const client = makeClient(fetch)")).toEqual(["src/a.ts fetch"])
+    for (const bound of [
+      "export const lookup = async (url: string, fetch: FetchLike) => fetch(url)",
+      "export const lookup = async (url: string, fetch: typeof globalThis.fetch) => fetch(url)",
+      "export const lookup = async (url: string, fetch = hostFetch({ hosts })) => fetch(url)",
+      "export const lookup = async ({ url, fetch }: Deps) => fetch(url)",
+      "const { fetch } = deps\nawait fetch(url)",
+      "const go = (fetch) => fetch(url)",
+      "function lookup(fetch?: FetchLike) { return fetch(url) }",
+    ])
+      expect(of(bound)).toEqual([])
   })
 
   it("passes raw-network for a comment, a server that only listens and an isIP import", () => {
@@ -794,6 +814,28 @@ describe("judge", () => {
   })
 })
 
+describe("misfiled", () => {
+  const document = (mark: boolean) => {
+    const root = clean()
+    const runs = root.commands.find((command) => command.name() === "runs") as Command
+    if (mark) for (const command of [runs, ...runs.commands]) annotate(command, { origin: "cli-core" })
+    return commandsDocument(root, { cli: "tool", version: "1.0.0", contract: 0 })
+  }
+  const overrides = [{ rule: "option-role", target: "runs list --since", reason: "kept on purpose for now", ...KEPT }]
+  const baseline = { "unknown-verb": ["chats grab", "runs list"], "missing-option-help": ["chats list --limit"] }
+
+  it("fails the CLI's own word in the baseline and cli-core's word in an override", () => {
+    expect(misfiled(document(true), baseline, overrides)).toEqual([
+      `the CLI's own word in the baseline — move it to the overrides: unknown-verb "chats grab"`,
+      `cli-core's word in an override — move it to the baseline: option-role "runs list --since"`,
+    ])
+  })
+
+  it("says nothing while no command is marked as cli-core's", () => {
+    expect(misfiled(document(false), baseline, overrides)).toEqual([])
+  })
+})
+
 describe("cli-dev lint", () => {
   let root: string
   let out: string[]
@@ -849,6 +891,18 @@ describe("cli-dev lint", () => {
     expect(existsSync(join(root, "lint/baseline/unknown-verb.json"))).toBe(false)
   })
 
+  it("fails the CLI's own word in the baseline once cli-core marks its commands, and only warns with --allow-stale", async () => {
+    const tree = broken()
+    annotate(tree.commands.find((command) => command.name() === "doctor") as Command, { origin: "cli-core" })
+    document(tree)
+    expect(await lint("--write-baseline")).toBe(1)
+    expect(err).toContain(`the CLI's own word in the baseline — move it to the overrides: unknown-verb "chats grab"`)
+    expect(await lint("--allow-stale")).toBe(0)
+    expect(err).toContain(
+      `warning  the CLI's own word in the baseline — move it to the overrides: unknown-verb "chats grab"`,
+    )
+  })
+
   it("leaves overridden violations out of the baseline, and fails an override past the budget", async () => {
     document(broken())
     writeFileSync(
@@ -863,7 +917,19 @@ describe("cli-dev lint", () => {
     expect(err).toContain("1 overrides; the budget is 0")
   })
 
-  it("fails an override past its review date, naming who keeps it", async () => {
+  it("prints a low rule's new violation as a warning, and it fails nothing", async () => {
+    document(clean())
+    const before = await lint()
+    const tree = clean()
+    failing["command-example-count"]?.(tree)
+    document(tree)
+    err.length = 0
+    expect(await lint()).toBe(before)
+    expect(err).toContain("warning  low  command-example-count  review: 0 examples; give 1 to 3")
+    expect(err.join("\n")).not.toMatch(/^low {2}command-example-count/m)
+  })
+
+  it("warns about an override two weeks either side of its review date, then fails, naming who keeps it", async () => {
     const tree = clean()
     failing["unknown-verb"]?.(tree)
     document(tree)
@@ -879,10 +945,17 @@ describe("cli-dev lint", () => {
         },
       ]),
     )
-    io.now = () => new Date("2026-10-14T12:00:00Z")
+    io.now = () => new Date("2026-10-16T12:00:00Z")
     expect(await lint("--overrides", "overrides.json")).toBe(1)
     expect(err).toContain('overrides.json: "unknown-verb chats grab" was due for review on 2026-10-01; ask @kai')
-    io.now = () => new Date("2026-09-30T12:00:00Z")
+    io.now = () => new Date("2026-10-14T12:00:00Z")
+    err.length = 0
+    await lint("--overrides", "overrides.json")
+    expect(err.join("\n")).not.toContain("was due for review")
+    expect(err).toContain(
+      'warning  overrides.json: "unknown-verb chats grab" is due for review on 2026-10-01 and fails lint after 2026-10-15; ask @kai',
+    )
+    io.now = () => new Date("2026-09-10T12:00:00Z")
     err.length = 0
     await lint("--overrides", "overrides.json")
     expect(err.join("\n")).not.toContain("due for review")

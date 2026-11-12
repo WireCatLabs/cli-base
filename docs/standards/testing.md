@@ -209,7 +209,7 @@ and which run after merge is in [CI](ci.md).
   update check, MCP logins and lock files that only cli-core writes do not count. Tests still keep them in the
   sandboxed home, like every other path
   ([WC-TEST-1](#wc-test-1--point-every-path-a-test-could-write-at-a-temporary-directory)).
-- **Applies to:** all CLIs with local state. wa has no upgrade contract yet. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Applies to:** all CLIs with local state. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-TEST-15 · A refactor keeps `commands --json` and the MCP tool list as they were
 

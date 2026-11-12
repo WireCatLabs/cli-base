@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process"
+import { createHash } from "node:crypto"
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -109,7 +110,7 @@ describe("live check record", () => {
     const { io, out } = ioIn(cwd)
     expect(conformanceCommand("live", ["record", "--script", "bin/x-live"], io)).toBe(0)
     expect(out[0]).toMatch(
-      new RegExp(`^0\\.4\\.0 ${git(cwd, "rev-parse", "HEAD")} 2026-11-07 bin/x-live [0-9a-f]{64}$`),
+      new RegExp(`^0\\.4\\.0 ${git(cwd, "rev-parse", "HEAD")} 2026-11-07 bin/x-live v2:[0-9a-f]{64}$`),
     )
     expect(readFileSync(join(cwd, "docs/dev/live-checks.txt"), "utf8")).toContain(out[0])
     expect(conformanceCommand("live", ["check"], ioIn(cwd).io)).toBe(0)
@@ -127,6 +128,29 @@ describe("live check record", () => {
     const changed = ioIn(cwd)
     expect(conformanceCommand("live", ["check"], changed.io)).toBe(1)
     expect(changed.err[0]).toContain("changed since 0.4.0's live check")
+  })
+
+  it("does not ask for a new live check when only tests or the test sandbox changed", () => {
+    const cwd = repoWith({ ...files, "src/index.test.ts": "it.todo('x')\n", "src/testing/sandbox.ts": "export {}\n" })
+    conformanceCommand("live", ["record", "--script", "bin/x-live"], ioIn(cwd).io)
+    writeFileSync(join(cwd, "src/index.test.ts"), "it.todo('y')\n")
+    writeFileSync(join(cwd, "src/testing/sandbox.ts"), "export const reset = 1\n")
+    git(cwd, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam", "tests only")
+    expect(conformanceCommand("live", ["check"], ioIn(cwd).io)).toBe(0)
+  })
+
+  it("still checks a record written before shipped-files hashing against every file", () => {
+    const cwd = repoWith({ ...files, "src/index.test.ts": "it.todo('x')\n" })
+    const listing = git(cwd, "ls-tree", "HEAD", "--", "src", "package.json", "pnpm-lock.yaml")
+    const tree = createHash("sha256").update(listing).digest("hex")
+    writeFileSync(
+      join(cwd, "docs/dev/live-checks.txt"),
+      `0.4.0 ${git(cwd, "rev-parse", "HEAD")} 2026-11-01 bin/x-live ${tree}\n`,
+    )
+    expect(conformanceCommand("live", ["check"], ioIn(cwd).io)).toBe(0)
+    writeFileSync(join(cwd, "src/index.test.ts"), "it.todo('y')\n")
+    git(cwd, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam", "tests only")
+    expect(conformanceCommand("live", ["check"], ioIn(cwd).io)).toBe(1)
   })
 
   it("still checks a record from before the tree column against its commit", () => {

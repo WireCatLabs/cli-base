@@ -55,7 +55,7 @@ export const LINT_RULES: LintRule[] = defineLintRules([
   },
   {
     id: "command-example-count",
-    severity: "medium",
+    severity: "low",
     scope: "command",
     summary: "a leaf command has one to three examples; generated commands are exempt",
   },
@@ -172,13 +172,48 @@ export type Override = v.InferOutput<typeof overridesSchema>[number]
 export const baselineProblems = (targets: readonly string[]): string[] =>
   duplicates(targets).map((target) => `"${target}" is listed twice`)
 
-/** No entry twice, and none past its `review_after` on `today` (YYYY-MM-DD, the caller's clock). */
+/**
+ * Days around an override's `review_after` that only warn: a review comes due without turning every CI run of the CLI
+ * red on one morning, and a shared word due in several CLIs at once gets two weeks to land its fix.
+ */
+export const REVIEW_GRACE_DAYS = 14
+
+const shiftDays = (date: string, days: number): string =>
+  new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
+
+/** An exception that expires: a lint override, or a parity group's difference, which may leave the date out. */
+export interface Dated {
+  rule: string
+  target: string
+  review_after?: string
+  owner?: string
+}
+
+const ask = (entry: Dated) => (entry.owner ? `; ask ${entry.owner}` : "")
+
+/** Entries more than `REVIEW_GRACE_DAYS` past their `review_after` on `today` (YYYY-MM-DD). */
+export const overdue = (entries: readonly Dated[], today: string): string[] =>
+  entries
+    .filter((entry) => entry.review_after !== undefined && shiftDays(entry.review_after, REVIEW_GRACE_DAYS) < today)
+    .map((entry) => `"${entry.rule} ${entry.target}" was due for review on ${entry.review_after}${ask(entry)}`)
+
+/** No entry twice, and none overdue. */
 export const overridesProblems = (entries: readonly Override[], today: string): string[] => [
   ...duplicates(entries.map((entry) => `${entry.rule} ${entry.target}`)).map((both) => `"${both}" is listed twice`),
-  ...entries
-    .filter((entry) => entry.review_after < today)
-    .map((entry) => `"${entry.rule} ${entry.target}" was due for review on ${entry.review_after}; ask ${entry.owner}`),
+  ...overdue(entries, today),
 ]
+
+/** Entries whose `review_after` is at most `REVIEW_GRACE_DAYS` away on either side: due soon, or due and not failing yet. */
+export const overridesDueSoon = (entries: readonly Dated[], today: string, check = "lint"): string[] =>
+  entries.flatMap((entry) =>
+    entry.review_after !== undefined &&
+    entry.review_after <= shiftDays(today, REVIEW_GRACE_DAYS) &&
+    shiftDays(entry.review_after, REVIEW_GRACE_DAYS) >= today
+      ? [
+          `"${entry.rule} ${entry.target}" is due for review on ${entry.review_after} and fails ${check} after ${shiftDays(entry.review_after, REVIEW_GRACE_DAYS)}${ask(entry)}`,
+        ]
+      : [],
+  )
 
 export const OVERRIDE_BUDGET = 10
 

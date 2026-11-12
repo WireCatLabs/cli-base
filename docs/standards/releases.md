@@ -220,10 +220,12 @@ and fails a first release (the base version is `0.0.0`) whose `package.json` ins
 After the live check of the real service passes
 ([WC-TEST-18](testing.md#wc-test-18--check-the-real-service-by-hand-never-in-the-test-suite)),
 `cli-dev live record --script <its script>` appends `<version> <commit> <date> <script> <tree>` to
-`docs/dev/live-checks.txt`, committed in the release pull request; `<tree>` is a SHA-256 of `git ls-tree HEAD -- src
-package.json pnpm-lock.yaml`. `bin/release` runs `cli-dev live check` first: it refuses a version with no line, and
-one whose `src/`, `package.json` or lockfile differ from the files the record hashed. The commit is information only;
-a line from before cli-base 0.80.8 has no `<tree>` and is still compared with its commit.
+`docs/dev/live-checks.txt`, committed in the release pull request; `<tree>` is `v2:` and a SHA-256 of
+`git ls-tree -r HEAD -- src package.json pnpm-lock.yaml` without the files that never ship: `*.test.*`, `src/testing/`,
+`__snapshots__/` and `__fixtures__/`. A merge that changes only those needs no new live check. `bin/release` runs
+`cli-dev live check` first: it refuses a version with no line, and one whose shipped files differ from the files the
+record hashed. The commit is information only. A `<tree>` without `v2:` was written before cli-base 0.98.0 and is
+still compared with every file; a line from before cli-base 0.80.8 has no `<tree>` and is compared with its commit.
 
 - **Why:** every automated check passed on bitrix24-cli while it ignored `deny` on reads; a release that says what
   was checked, and a live check bound to the code released, are what a reviewer reads instead of the whole diff.

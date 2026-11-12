@@ -209,10 +209,14 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
   comes out when the shared package catches up. A word the CLI needs that the vocabulary does not have yet goes in
   `lint/overrides.json`, never in the baseline: its `reason` links the cli-base pull request or issue that adds the
   word, and it comes out in the change that takes the cli-base release with the word. The shared package's words
-  go in the baseline, as above; the CLI's own go in the overrides, where the count and the date keep them few. A permanent exception also goes in `lint/overrides.json`, with `rule`, `target`, `reason`, `owner`
+  go in the baseline, as above; the CLI's own go in the overrides, where the count and the date keep them few. Once cli-core marks the commands it mounts
+  (`origin: "cli-core"` in `commands --json`), the lint fails a word rule's baseline entry on the CLI's own command and
+  an override on cli-core's; with `--allow-stale` it only warns. A permanent exception also goes in `lint/overrides.json`, with `rule`, `target`, `reason`, `owner`
   and `review_after`. More than 10
-  overrides fail the run, and so does one past its date. The rules themselves are on the
-  [Commands page](commands.md).
+  overrides fail the run. An override warns from 14 days before its `review_after`, and fails the run once it is more
+  than 14 days past it, so a date shared by several CLIs gives two weeks to land the fix. A rule of `low` severity
+  (`command-help-too-long`, `command-example-count`) is advice: its violations and stale baseline entries are printed
+  as warnings and fail nothing. The rules themselves are on the [Commands page](commands.md).
 - **Exceptions:** zoom runs `lint:commands` in full validation only. cli-core runs its own command lint test in
   `ci:quick`. cli-base, cli-testing, cli-docs and community have no command tree.
 - **Applies to:** the CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.

@@ -20,13 +20,11 @@ and [WC-SECR-2](security.md#wc-secr-2--a-log-keeps-only-known-attribute-keys-and
 
 ### Who follows these rules today
 
-- **WC-LIFE-15:** tg, max, wa, gcal and the template. drive, memo and zm do not keep runs yet; each is adding them on a
-  `feat/runs` branch (2026-10-25). zm's `resolveSettings` also returns `keepFailedRuns: false`, which turns off the
-  failure log cli-core's `run` would keep.
+- **WC-LIFE-15:** tg, max, wa, gcal, mail, drive, memo, zm and the template.
 - **WC-LIFE-16:** cli-core's shared calendar `sync`, from cli-core 0.464.0 (cli-core #2118); gcal has it. The
   deadlines of WC-LIFE-5 come with the same release. cli-core's shared CRM `sync`, from cli-core 0.591.0 (cli-core
   #2553), declares `cooperative` and `partial` and takes `--max-pages`; b24 has it. The other syncs (`messages sync`
-  in tg, max and wa, drive's `sync`, memo's mail import, zm's `recordings sync`) are cooperative but spend no request
+  in tg, max and wa, drive's `sync`, mail's `sync`, zm's `recordings sync`) are cooperative but spend no request
   budget yet. gcal sets `requestMs` to 1.5 s, b24 to 1 s: a Bitrix24 portal allows 2 requests a second, shared by
   every app and webhook.
 
@@ -207,10 +205,10 @@ before its deadline.
 ### WC-LIFE-13 · A rerun goes on from where the last run stopped, and starting over is an option
 
 - **Why:** a rerun that lists or pages everything again repeats the work the kill cut short.
-- **Enforced by:** `drive-cli: src/sync.test.ts` · `cli-memo: src/mail/import.test.ts`.
+- **Enforced by:** `drive-cli: src/sync.test.ts`.
 - **Example:** a rerun skips what is stored and does not redo the listing or paging that got there. The position
   lives in the store when the store already holds it: tg and max keep the held stretch of each chat, so
-  `messages sync --all` skips a chat held to its newest message; memo keeps a resume point per mail folder; zm keeps
+  `messages sync --all` skips a chat held to its newest message; zm keeps
   the checkpoint of `recordings sync`. Otherwise it lives in a checkpoint file,
   `<state>/checkpoints/<profile>/<job>.json`, written with `saveCheckpoint` and read with `readCheckpoint` from
   `@wirecat/cli-core/background`. The write is atomic, and a torn file reads as no checkpoint: one run from the start,

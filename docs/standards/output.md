@@ -137,7 +137,7 @@ JSON Schema 2020-12.
 
 - **Why:** an agent that reads one CLI's answer can read the other's.
 - **Enforced by:** `same-path-contract` (weekly audit; it does not block a pull request yet) · `same-entity-schema`
-  (not wired yet: no CLI passes its schemas to the audit).
+  (the family audit, which reads every CLI's schemas).
 - **Example:** what only one messenger knows goes under `provider_metadata`, never as a top-level field one CLI has and
   the other lacks.
 - **Exceptions:** none.
@@ -190,7 +190,7 @@ whole or partial.
 ### WC-OUT-15 · Branch on `code` and `reason`, never on `message`
 
 - **Why:** the message is for a person and may change. The code and reason are the contract.
-- **Enforced by:** `same-error-reason` (not wired yet: no CLI passes its reasons to the audit).
+- **Enforced by:** `same-error-reason` (the family audit, which reads every CLI's reasons).
 - **Example:** `reason` is a registered dotted id, such as `query.too-large`, defined with `defineReasons` where it is
   raised. `details` keeps only registered keys, and never a `cause`.
 - **Exceptions:** none.

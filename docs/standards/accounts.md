@@ -185,12 +185,12 @@ Every CLI that signs in has four commands under `session`:
 - **Enforced by:** review only.
 - **Example:** `gcal personal session status` answers whether the `personal` profile holds a Google login;
   `gcal session list` lists `personal` and `work` with no profile named.
-- **Exceptions:** known gaps, as of 2026-10-27:
+- **Exceptions:** known gaps, as of 2026-11-12 (gcal and mail have all four):
   - tg, max and wa have `session start` and `session end`, no `session status`, and list their profiles with
     `account list` instead of `session list`.
   - drive has `session start`, `session list` and `session end`, and no `session status`.
-  - zm has `session start` and `session status`, and no `session end` or `session list`.
-  - memo signs in per mail account with `mail add` and has no `session` group.
+  - zm has `session start`, `session status` and `session end`, and no `session list`.
+  - memo has no `session` group: it has no profiles and reads the stores of the other CLIs, mail's among them.
 
   A CLI that adds a missing command adds it under `session`; a renamed path keeps no alias
   ([WC-CMD-8](commands.md#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)).

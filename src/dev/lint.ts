@@ -142,7 +142,7 @@ const documentKeys = (value: unknown, path: string): [string, string][] => {
 }
 
 const handwrittenLeaves = (document: CommandsDocument): CommandInfo[] =>
-  walk(document.commands).filter((command) => command.commands.length === 0 && command.origin === "handwritten")
+  walk(document.commands).filter((command) => command.commands.length === 0 && command.origin !== "generated")
 
 /** Splits an example the way a shell would for the quoting examples use: '…', "…" and a backslash. */
 export const exampleWords = (line: string): string[] =>
@@ -262,7 +262,7 @@ const declaredWrite = ({ effects }: CommandInfo) => effects?.remote === "write" 
 const optionsOf = (document: CommandsDocument) => [
   ...document.global_options.map((option) => ({ option, target: longName(option.flags) })),
   ...walk(document.commands)
-    .filter((command) => command.origin === "handwritten")
+    .filter((command) => command.origin !== "generated")
     .flatMap((command) =>
       command.options.map((option) => ({ option, target: `${label(command)} ${longName(option.flags)}` })),
     ),
@@ -290,7 +290,7 @@ const CHECKS: Record<string, Check> = {
     const roots = new Set(vocabulary.roots.map((entry) => entry.word))
     const verbs = new Set(vocabulary.verbs.map((entry) => entry.word))
     return walk(document.commands)
-      .filter((command) => command.commands.length > 0 && command.origin === "handwritten")
+      .filter((command) => command.commands.length > 0 && command.origin !== "generated")
       .filter((command) => !nouns.has(command.name) && !roots.has(command.name))
       .map((command) => ({
         target: label(command),
@@ -310,7 +310,7 @@ const CHECKS: Record<string, Check> = {
     }
     for (const option of document.global_options) note(option, "every command")
     for (const command of walk(document.commands))
-      if (command.origin === "handwritten") for (const option of command.options) note(option, label(command))
+      if (command.origin !== "generated") for (const option of command.options) note(option, label(command))
     const found: Omit<Violation, "rule">[] = []
     for (const [name, kinds] of [...uses].sort(([a], [b]) => byText(a, b))) {
       const expected = registered.get(name)
@@ -339,7 +339,7 @@ const CHECKS: Record<string, Check> = {
       .map((command) => ({ target: label(command), message: "no effects; without them it counts as a write" })),
   "command-help-too-long": (document) =>
     walk(document.commands)
-      .filter((command) => command.origin === "handwritten" && summaryOf(command).length > SUMMARY_LIMIT)
+      .filter((command) => command.origin !== "generated" && summaryOf(command).length > SUMMARY_LIMIT)
       .map((command) => ({
         target: label(command),
         message: `summary is ${summaryOf(command).length} characters; at most ${SUMMARY_LIMIT}`,
@@ -356,7 +356,7 @@ const CHECKS: Record<string, Check> = {
       })),
   "faulty-help-example-parameters": (document) =>
     withAncestors(document.commands)
-      .filter(([command]) => command.commands.length === 0 && command.origin === "handwritten")
+      .filter(([command]) => command.commands.length === 0 && command.origin !== "generated")
       .flatMap(([command, ancestors]) =>
         (command.examples ?? []).flatMap((example) => {
           const fault = faultOf(example, command, ancestors, document)
@@ -386,7 +386,7 @@ const CHECKS: Record<string, Check> = {
     return walk(document.commands)
       .filter(
         (command) =>
-          command.origin === "handwritten" &&
+          command.origin !== "generated" &&
           !declaredWrite(command) &&
           (command.query || (["list", "events", "runs"].includes(command.name) && command.output)),
       )
@@ -605,4 +605,37 @@ export const baselineOf = (
         .sort(),
     ]),
   )
+}
+
+/** The rules about words: which list an exception goes in depends on who owns the word (WC-TOOL-16). */
+const WORD_RULES = new Set(["unknown-verb", "unknown-resource", "option-role", "flag-synonym", "flag-two-meanings"])
+
+/**
+ * A word the CLI owns belongs in its overrides, where the count and the date keep it few; a word of a command cli-core
+ * mounts belongs in the baseline until cli-core or the vocabulary catches up. Silent until cli-core marks its commands.
+ */
+export const misfiled = (
+  document: CommandsDocument,
+  baseline: Readonly<Record<string, readonly string[]>>,
+  overrides: readonly Override[],
+): string[] => {
+  const commands = walk(document.commands).sort((a, b) => b.path.length - a.path.length)
+  if (!commands.some((command) => command.origin === "cli-core")) return []
+  const ownerOf = (target: string) =>
+    commands.find((command) => {
+      const path = label(command)
+      return target === path || target.startsWith(`${path} `) || target.startsWith(`${path}:`)
+    })?.origin
+  return [
+    ...Object.entries(baseline)
+      .filter(([rule]) => WORD_RULES.has(rule))
+      .flatMap(([rule, targets]) =>
+        targets
+          .filter((target) => ownerOf(target) !== undefined && ownerOf(target) !== "cli-core")
+          .map((target) => `the CLI's own word in the baseline — move it to the overrides: ${rule} "${target}"`),
+      ),
+    ...overrides
+      .filter((entry) => WORD_RULES.has(entry.rule) && ownerOf(entry.target) === "cli-core")
+      .map((entry) => `cli-core's word in an override — move it to the baseline: ${entry.rule} "${entry.target}"`),
+  ]
 }

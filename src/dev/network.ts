@@ -66,8 +66,18 @@ const opensNothing = (module: string, clause: string | undefined): boolean => {
     .every((binding) => allowed.has(binding.split(/\s+as\s+/)[0] as string))
 }
 
-// A file that binds its own `fetch` (an injected FetchLike, `const fetch = hostFetch(…)`) calls that one.
-const BINDS_FETCH = /\b(?:const|let|var|function)\s+fetch\b|[{,(]\s*fetch\s*[,}):=]/
+// A file that binds its own `fetch` (an injected FetchLike, `const fetch = hostFetch(…)`) calls that one. Only a
+// declaration binds it: a typed or defaulted parameter, a destructuring pattern, an arrow's own parameter. An object
+// key (`{ fetch: deps.fetch ?? fetch }`) or an argument (`call(fetch)`) hands the global on and binds nothing.
+const BINDS_FETCH = new RegExp(
+  [
+    String.raw`\b(?:const|let|var|function)\s+fetch\b`,
+    String.raw`[(,]\s*fetch\s*\??\s*:\s*(?:typeof\b|[A-Z(])`,
+    String.raw`[(,]\s*fetch\s*=(?![=>])`,
+    String.raw`\{[^{}]*(?<![\w$.:]\s*)\bfetch\b(?!\s*:)[^{}]*\}\s*(?::|=(?![=>]))`,
+    String.raw`(?:\(\s*fetch\s*\)|\bfetch)\s*=>`,
+  ].join("|"),
+)
 const GLOBAL_FETCH = /(?<!\btypeof\s+)\b(?:globalThis|window|self)\s*\.\s*fetch\b/
 // A call, or a value handed on to be called later (`options.fetch ?? fetch`); a key (`fetch:`) or a type reaches nothing.
 const GLOBAL_FETCH_USE = /(?<![\w$.#]|\btypeof\s+)fetch\b(?![\w$]|\s*\??\s*:)/
