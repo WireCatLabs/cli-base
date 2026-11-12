@@ -22,6 +22,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- `PARITY_GROUPS`' `shared-roots` group takes asterisk-cli (its command is `pbx`), compared like beeline on
+  `commands`, `doctor`, `skill`, `mcp` and `upgrade`, and WC-CI-9 reserves 02:48 UTC for its monthly run.
+  `cli-dev repo-check` then passes for asterisk-cli without its own `config/parity-groups.json`.
+
 - **`cli-dev manifest` adds the hosts the shared packages reach for every CLI.** `network.hosts` now also lists
   `registry.npmjs.org` (the update check, `doctor` online, cli-core's runtime download), `huggingface.co`,
   `*.huggingface.co` and `*.hf.co` (the local models for search, speech and pictures, and the hosts Hugging Face

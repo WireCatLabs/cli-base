@@ -179,11 +179,11 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     covers: ["commands", "upgrade", "notes", "meetings"],
     differences: FAMILY_SINCE_0_98,
   },
-  // bitrix24-cli's search is cli-core's CRM `search all`, and beeline-cli's meetings take call recordings, not
-  // zoom-cli's: both are compared on the root commands every CLI shares, the way gcal and mail are on theirs.
+  // bitrix24-cli's search is cli-core's CRM `search all`, and beeline-cli's and asterisk-cli's meetings take call
+  // recordings, not zoom-cli's: they are compared on the root commands every CLI shares, the way gcal and mail are.
   {
     name: "shared-roots",
-    members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline"],
+    members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline", "pbx"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
     differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
   },
