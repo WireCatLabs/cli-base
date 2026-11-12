@@ -36,6 +36,7 @@ import {
   OVERRIDE_RULE_REVIEW,
   type Override,
   overrideSchema,
+  overridesDueSoon,
   overridesProblems,
   rulesForReview,
 } from "../standards/lint.js"
@@ -530,15 +531,22 @@ const lintRun = (args: string[], io: DevIo) => {
   }
 
   const verdict = judge(violations, baseline, ruleOverrides, budget)
+  // A low rule is advice: it is printed and never fails, so polishing help text never holds a merge.
+  const advice = (rule: string) => severity.get(rule) === "low"
+  const advised: string[] = []
   for (const id of verdict.unknownRules)
     problems.push(`no lint rule "${id}" (named in ${values.baseline} or ${values.overrides})`)
   for (const found of verdict.fresh)
-    problems.push(`${severity.get(found.rule) ?? "?"}  ${found.rule}  ${found.target}: ${found.message}`)
-  const stale = verdict.stale.map((entry) =>
+    (advice(found.rule) ? advised : problems).push(
+      `${severity.get(found.rule) ?? "?"}  ${found.rule}  ${found.target}: ${found.message}`,
+    )
+  const staleLine = (entry: (typeof verdict.stale)[number]) =>
     entry.in === "baseline"
       ? `stale baseline entry, fixed or overridden — remove it: ${values.baseline}/${entry.rule}.json "${entry.target}"`
-      : `stale override, no such violation — remove it: ${entry.rule} "${entry.target}"`,
-  )
+      : `stale override, no such violation — remove it: ${entry.rule} "${entry.target}"`
+  const stale = verdict.stale.filter((entry) => !advice(entry.rule)).map(staleLine)
+  advised.push(...verdict.stale.filter((entry) => advice(entry.rule)).map(staleLine))
+  advised.push(...overridesDueSoon(overrides, today(io)).map((line) => `${values.overrides}: ${line}`))
   if (!values["allow-stale"]) problems.push(...stale)
 
   const warnings = wcatWarnings(io.cwd, values.cli)
@@ -557,6 +565,7 @@ const lintRun = (args: string[], io: DevIo) => {
     if (!wcatOverridden.has(`${warning.rule} ${warning.target}`))
       io.err(`warning  ${warning.rule}  ${warning.target}: ${warning.message}`)
   if (values["allow-stale"]) for (const line of stale) io.err(`warning  ${line}`)
+  for (const line of advised) io.err(`warning  ${line}`)
   if (!existsSync(join(io.cwd, MANIFEST_FILE))) io.err(`undeclared-host: skipped, no ${MANIFEST_FILE}`)
   if (declarations.files.length === 0)
     io.err(

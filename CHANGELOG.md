@@ -8,6 +8,33 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Vocabulary roles for the words cli-core's shared commands use.** `account remove --keep-data` and `--delete-data`,
+  `session start --answer-stdin`, `--client-id` and `--client-file`, `--hide-phone`, and the verb `call` (`api call`)
+  now have a meaning in the vocabulary. Eight CLIs carried about 35 baseline and override lines for them. To watch for:
+  `cli-dev lint` reports each of those lines as stale; remove them in the change that takes this release.
+- **Lint gives an override's `review_after` two weeks either side.** An override warns from 14 days before its date
+  and fails only once it is more than 14 days past it. Until now every CI run of a CLI went red on the morning after
+  the date, and a date shared by several CLIs (`stats tasks show --chat`, 2026-12-01 in tg, max and wa) broke all of
+  them at once.
+- **A `low` lint rule is advice and fails nothing.** `command-help-too-long` and `command-example-count` (now `low`)
+  print their new violations and stale baseline entries as warnings. Help-text polish no longer holds a merge.
+- **A live check records only the files that ship.** `cli-dev live record` writes `v2:` and a hash that leaves out
+  `*.test.*`, `src/testing/`, `__snapshots__/` and `__fixtures__/`, so a merge that changes only tests needs no new
+  live check against the owner's account. b24's 0.15.0 took five pull requests, three of them new live records after
+  test-only merges. A record without `v2:` is still compared with every file, so existing lines keep passing.
+
+### Fixed
+
+- **`raw-network` no longer skips a file that hands the global `fetch` on through an object key or an argument.** A
+  file with `{ fetch: deps.fetch ?? fetch }` or `makeClient(fetch)` counted as one that binds its own `fetch`, so its
+  global `fetch` went unreported (mail-cli and cli-memo had such files). Only a declaration binds it now: a typed or
+  defaulted parameter, a destructuring pattern, an arrow's own parameter. To watch for: such files are now reported;
+  route them through `hostFetch`, or say why in `lint/overrides.json`.
+
 ## 0.97.0 — 11.11.2026
 
 ### Added

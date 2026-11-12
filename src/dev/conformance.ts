@@ -58,11 +58,35 @@ export interface LiveRecord {
   tree: string
 }
 
-/** A squash merge drops the checked commit from main, so a record names the checked files, not only the commit. */
-export const liveTree = (shell: Shell): string | undefined => {
+/**
+ * Files under `LIVE_PATHS` that never reach the package: a test, a fixture, the test sandbox. A change to one alone
+ * changes nothing a user runs, so it does not ask for another live check against the owner's account.
+ */
+export const LIVE_SKIPPED = /(?:^|\/)[^/]+\.test\.[cm]?[jt]sx?$|^src\/testing\/|(?:^|\/)__(?:snapshots|fixtures)__\//
+
+/** The hash version `liveTree` writes: `v2:` hashes only shipped files; a bare hash is the first form, every file. */
+const LIVE_TREE_VERSION = "v2"
+
+const everyFileTree = (shell: Shell): string | undefined => {
   const listing = shell.run("git", ["ls-tree", "HEAD", "--", ...LIVE_PATHS])
   return listing.ok ? createHash("sha256").update(listing.out).digest("hex") : undefined
 }
+
+/** A squash merge drops the checked commit from main, so a record names the checked files, not only the commit. */
+export const liveTree = (shell: Shell): string | undefined => {
+  const listing = shell.run("git", ["ls-tree", "-r", "HEAD", "--", ...LIVE_PATHS])
+  if (!listing.ok) return undefined
+  const shipped = listing.out
+    .split("\n")
+    .filter((line) => line && !LIVE_SKIPPED.test(line.split("\t")[1] ?? ""))
+    .join("\n")
+  return `${LIVE_TREE_VERSION}:${createHash("sha256").update(shipped).digest("hex")}`
+}
+
+/** A record's tree in the form it was written: a record from before `v2:` hashed every file. */
+const treeLike = (shell: Shell, recorded: string) => (recorded.includes(":") ? liveTree(shell) : everyFileTree(shell))
+
+const SHIPPED = `${LIVE_PATHS.join(", ")} (tests left out)`
 
 export const parseLiveRecords = (text: string): LiveRecord[] =>
   text
@@ -82,10 +106,10 @@ export const liveCheckProblems = (shell: Shell, records: readonly LiveRecord[], 
         "`cli-dev live record --script <its script>` and commit the line in the release pull request",
     ]
   if (record.tree)
-    return liveTree(shell) === record.tree
+    return treeLike(shell, record.tree) === record.tree
       ? []
       : [
-          `${LIVE_PATHS.join(", ")} changed since ${version}'s live check at ${record.commit.slice(0, 12)}: ` +
+          `${SHIPPED} changed since ${version}'s live check at ${record.commit.slice(0, 12)}: ` +
             "check the code that is released, and record it again",
         ]
   if (!shell.run("git", ["cat-file", "-e", `${record.commit}^{commit}`]).ok)

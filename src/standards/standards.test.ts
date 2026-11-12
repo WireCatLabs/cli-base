@@ -34,6 +34,7 @@ import {
   FIELD_RULES,
   IDENTIFIERS,
   LINT_RULES,
+  overridesDueSoon,
   overridesProblems,
   overridesSchema,
   rulesForReview,
@@ -469,10 +470,15 @@ describe("lint registry", () => {
     expect(v.is(overridesSchema, [{ ...owned, review_after: "soon" }])).toBe(false)
     expect(v.is(overridesSchema, [{ ...owned, owner: "octocat" }])).toBe(false)
     expect(v.is(overridesSchema, [owned, { ...owned, owner: "@WireCatLabs/cli" }])).toBe(true)
-    expect(overridesProblems([owned], "2027-01-01")).toEqual([])
-    expect(overridesProblems([owned], "2027-01-02")).toEqual([
+    expect(overridesProblems([owned], "2027-01-15")).toEqual([])
+    expect(overridesProblems([owned], "2027-01-16")).toEqual([
       '"unknown-verb bot api" was due for review on 2027-01-01; ask @octocat',
     ])
+    expect(overridesDueSoon([owned], "2026-12-17")).toEqual([])
+    const due = '"unknown-verb bot api" is due for review on 2027-01-01 and fails lint after 2027-01-15; ask @octocat'
+    expect(overridesDueSoon([owned], "2026-12-18")).toEqual([due])
+    expect(overridesDueSoon([owned], "2027-01-15")).toEqual([due])
+    expect(overridesDueSoon([owned], "2027-01-16")).toEqual([])
   })
 
   it("flags a rule overridden more than three times across the CLIs for review", () => {

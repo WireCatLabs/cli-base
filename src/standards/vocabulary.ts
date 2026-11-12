@@ -1,4 +1,5 @@
 import * as v from "valibot"
+import { ACCOUNT_FLAGS } from "./flags-account.js"
 import { CALENDAR_FLAGS } from "./flags-calendar.js"
 import { CRM_FLAGS } from "./flags-crm.js"
 import { HOW_FLAGS } from "./flags-how.js"
@@ -177,6 +178,7 @@ const verbs: [string, string][] = [
     "look at a source before taking anything from it: a chat link without joining, a mailbox without importing",
   ],
   ["send", "send a message"],
+  ["call", "call one provider API method by its own name, generated from the provider's method list"],
   ["edit", "change a sent message"],
   ["forward", "send an existing message on to another chat"],
   ["pin", "pin a message or chat"],
@@ -439,6 +441,7 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
     ...HOW_FLAGS,
     ...WHAT_FLAGS,
     ...PRIVACY_FLAGS,
+    ...ACCOUNT_FLAGS,
     ...CALENDAR_FLAGS,
     ...MAIL_FLAGS,
     ...KNOWLEDGE_FLAGS,

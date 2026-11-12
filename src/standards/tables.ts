@@ -23,8 +23,10 @@ export {
   OVERRIDE_BUDGET,
   OVERRIDE_RULE_REVIEW,
   type Override,
+  overridesDueSoon,
   overridesProblems,
   overridesSchema,
+  REVIEW_GRACE_DAYS,
   rulesForReview,
 } from "./lint.js"
 export {
