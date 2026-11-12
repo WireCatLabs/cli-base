@@ -10,6 +10,7 @@ import { AUDIT_RULES, PARITY_GROUPS, type ParityGroup, REQUIRED_ROOTS } from "..
 import { listEnvelopeSchema } from "../standards/output.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, type AuditOptions, auditClis, scorecardTable, snakeKeys } from "./audit.js"
+import { familyPackages } from "./family.js"
 import { type DevIo, main } from "./main.js"
 
 const READS = { remote: "read", local: "none" } as const
@@ -528,6 +529,35 @@ describe("cli-dev audit", () => {
     expect(err.at(-1)).toBe("differences.json: unknown group outside")
   })
 
+  it("warns of a difference near its review_after and fails one long past it", async () => {
+    write("max.json", tool("max", notes("list the notes", [["--limit <n>", "how many"]])))
+    writeFileSync(
+      join(root, "groups.json"),
+      JSON.stringify([{ name: "outside", members: ["tg", "max"], covers: ["notes"], differences: [] }]),
+    )
+    const differences = (review_after: string) =>
+      writeFileSync(
+        join(root, "differences.json"),
+        JSON.stringify([
+          {
+            group: "outside",
+            rule: "same-path-contract",
+            target: "max+tg notes list: summary",
+            expected: 'max: "list the notes", tg: "list notes"',
+            reason: "the two tools word the summary differently on purpose",
+            review_after,
+          },
+        ]),
+      )
+    io.now = () => new Date("2026-11-12T12:00:00Z")
+    differences("2026-11-01")
+    expect(await audit("--groups", "groups.json", "--differences", "differences.json")).toBe(0)
+    expect(err.join("\n")).toContain('warning  parity difference: "same-path-contract max+tg notes list: summary"')
+    differences("2026-10-01")
+    expect(await audit("--groups", "groups.json", "--differences", "differences.json")).toBe(1)
+    expect(err.join("\n")).toContain("was due for review on 2026-10-01")
+  })
+
   it("lists --groups in its help", async () => {
     expect(await main(["audit", "--help"], io)).toBe(0)
     expect(out.join("\n")).toContain("--groups <file>")
@@ -616,5 +646,27 @@ describe("cli-dev audit", () => {
     expect(err).toContain("--lint names zm, which is not audited")
     expect(await audit("--schemas", "tg")).toBe(2)
     expect(err.at(-1)).toBe('--schemas takes <cli>=<path>, not "tg"')
+  })
+})
+
+describe("audit --family", () => {
+  it("installs every other published CLI of the parity groups", () => {
+    expect([...familyPackages(PARITY_GROUPS, "b24")]).toEqual([
+      ["drive", "@wirecat/drive-cli"],
+      ["gcal", "@wirecat/gcal-cli"],
+      ["mail", "@wirecat/mail-cli"],
+      ["max", "@wirecat/max-cli"],
+      ["memo", "@wirecat/cli-memo"],
+      ["tg", "@wirecat/tg-cli"],
+      ["wa", "@wirecat/whatsapp-cli"],
+      ["zm", "@wirecat/zoom-cli"],
+    ])
+  })
+
+  it("takes exactly one --cli, this CLI's own", async () => {
+    const err: string[] = []
+    const io: DevIo = { cwd: tmpdir(), out: () => {}, err: (text) => err.push(text) }
+    expect(await main(["audit", "--family", "--commands", "tg.json"], io)).toBe(2)
+    expect(err).toEqual(["audit --family takes one --cli: this CLI's built bin"])
   })
 })

@@ -128,6 +128,30 @@ describe("changelog fold", () => {
   })
 })
 
+describe("changelog fragments and level", () => {
+  const changelog = "# Changelog\n\n## 1.4.0 — 12.11.2026\n\n### Fixed\n\n- old\n\n## 1.3.0 — 01.11.2026\n"
+
+  it("collects the fragments into the version's section and deletes them", async () => {
+    write("CHANGELOG.md", changelog)
+    write("changes/feat-x.md", "### Added\n\n- **X.** New.\n")
+    expect(await main(["changelog", "fragments", "--collect", "1.4.0"], io)).toBe(0)
+    expect(readFileSync(join(root, "CHANGELOG.md"), "utf8")).toContain("### Added\n\n- **X.** New.\n\n### Fixed")
+    expect(out).toEqual(["collected 1 changelog fragments into 1.4.0"])
+    expect(await main(["changelog", "level"], io)).toBe(0)
+  })
+
+  it("refuses a fragment with a journal id, and a release a level too low", async () => {
+    write("CHANGELOG.md", changelog.replace("1.4.0", "1.3.1").replace("### Fixed", "### Added"))
+    write("changes/fix-y.md", "### Fixed\n\n- BUG-7 is gone\n")
+    expect(await main(["changelog", "fragments"], io)).toBe(1)
+    expect(err).toEqual(["changes/fix-y.md:3: internal id BUG-7 — say what changed instead"])
+    expect(await main(["changelog", "level"], io)).toBe(1)
+    expect(err.at(-1)).toBe("1.3.1 raises the patch version over 1.3.0, but its changelog needs a minor release")
+    expect(await main(["changelog", "level", "--next", "1.3.1"], io)).toBe(0)
+    expect(out.at(-1)).toBe("1.4.0")
+  })
+})
+
 describe("docs-check", () => {
   const changelog = "# Changelog\n\n## Unreleased\n\n### Fixed\n\n- **A fix.** Text.\n"
 
@@ -271,5 +295,56 @@ describe("cli-dev", () => {
       process.exitCode = undefined
       write.mockRestore()
     }
+  })
+})
+
+describe("adopt", () => {
+  it("pins the version, keeping the range sign, then installs, generates and runs the quick checks", async () => {
+    const { adopt } = await import("./adopt.js")
+    write(
+      "package.json",
+      JSON.stringify({
+        scripts: { generate: "x", "ci:quick": "y" },
+        dependencies: { "@wirecat/cli-core": "0.644.0" },
+        devDependencies: { "@wirecat/cli-base": "^0.97.0" },
+      }),
+    )
+    const ran: string[] = []
+    const code = adopt(
+      root,
+      "@wirecat/cli-base",
+      "0.98.0",
+      (command, args) => ran.push(`${command} ${args.join(" ")}`) && 0,
+      (line) => err.push(line),
+    )
+    expect(code).toBe(0)
+    expect(JSON.parse(readFileSync(join(root, "package.json"), "utf8")).devDependencies).toEqual({
+      "@wirecat/cli-base": "^0.98.0",
+    })
+    expect(ran).toEqual(["pnpm install", "pnpm run generate", "pnpm run ci:quick"])
+  })
+
+  it("stops at the first failing step, and refuses a package the CLI does not use", async () => {
+    const { adopt } = await import("./adopt.js")
+    write("package.json", JSON.stringify({ dependencies: { "@wirecat/cli-core": "0.644.0" } }))
+    expect(
+      adopt(
+        root,
+        "@wirecat/cli-core",
+        "0.650.0",
+        () => 1,
+        (line) => err.push(line),
+      ),
+    ).toBe(1)
+    expect(
+      adopt(
+        root,
+        "@wirecat/cli-base",
+        "0.98.0",
+        () => 0,
+        (line) => err.push(line),
+      ),
+    ).toBe(2)
+    expect(err.at(-1)).toBe("package.json does not depend on @wirecat/cli-base")
   })
 })

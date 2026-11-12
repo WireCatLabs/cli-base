@@ -54,6 +54,10 @@ extends:
 | `scripts/next-version.mjs` | `cli-dev next-version <wanted> <latest> <versions-json>` |
 | `scripts/version.ts` | `cli-dev version [--sync] [--file src/version.ts]` |
 | `scripts/docs-check.ts` | `cli-dev docs-check --rules scripts/release/checks.ts`, or `--ids CLI,MAX` with the English defaults |
+| `scripts/changelog-fragments.ts` | `cli-dev changelog fragments [--collect <x.y.z>]`: checks `changes/<branch>.md`, or collects them into that version's section and deletes them |
+| `scripts/version-level.ts` | `cli-dev changelog level [--next <x.y.z>]`: the top section's version against its headings (`Added` a minor, a break a major, a minor before 1.0.0); `--next` prints the version a release needs |
+| `scripts/audit.sh` | `cli-dev audit --family --cli dist/bin/<cli>.js`: this CLI against the latest published CLIs of every parity group |
+| — | `cli-dev adopt <x.y.z> [--package @wirecat/cli-base]`: a cli-core (default) or cli-base bump: the pin, `pnpm install`, `generate` and `ci:quick` |
 | `scripts/test-matrix.ts` | `cli-dev test-matrix --program dist/program.js --untested scripts/test-matrix-untested.ts --name max [--check]` |
 
 | — | `cli-dev lint --cli dist/bin.js` (or `--commands <file>`): the command tree against the standard |
@@ -112,7 +116,12 @@ gcal already share, `shared-roots` over `commands`, `doctor`, `skill`, `mcp` and
 replaces `PARITY_GROUPS` with the JSON list of groups in that file, in the same shape and
 checked the same way, so a CLI outside WireCatLabs keeps its own groups in its repository and lists itself next to
 ours; `--differences <file>` (entries of `group`, `rule`, `target`, `expected`, `reason`) then adds to whichever groups
-are in use. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
+are in use. A difference may carry `review_after`: it warns from 14 days before that date and fails the audit 14 days
+after it, as a lint override does. `--family` takes the one `--cli` of the CLI being built, installs the latest
+published CLIs of the parity groups into a temporary folder (npm, no install scripts), runs every CLI in an empty
+home with the keyring out of reach, and reads each one's `commands info --json`, so `same-entity-schema` and
+`same-error-reason` are measured; it defaults `--for` to this CLI, `--lint` to its `lint/` and `--groups` to
+`config/parity-groups.json`. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
 (`max+tg chats list --limit`, `tg: chats grab` for a lint violation); `--write-baseline` rewrites them. `--lint
 <cli>=<dir>` judges that CLI's lint rules by its own `lint/` folder instead. A new finding fails the run — only one
 naming `--for <cli>` when given — and a fixed one is reported, not failed. `AUDIT_BLOCKS` decides whether a new

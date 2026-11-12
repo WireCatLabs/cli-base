@@ -4,7 +4,8 @@ import { describeQuery, type QueryInfo } from "../query/registry.js"
 import type { Effects } from "../standards/effects.js"
 import type { StepTarget } from "../standards/steps.js"
 
-export type Origin = "handwritten" | "generated"
+/** `cli-core`: a command cli-core mounts, which the CLI does not own and cannot rename. */
+export type Origin = "handwritten" | "generated" | "cli-core"
 export type CommandState = "beta" | "deprecated"
 /**
  * How long a command runs: `persistent` until it is stopped (a server, a watch), `interactive` until a person answers

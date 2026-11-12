@@ -9,6 +9,15 @@ import { join } from "node:path"
 
 export { foldUnreleased, mergeRepeatedHeadings, restoreReleased } from "./fold.js"
 export {
+  CHANGELOG_HEADINGS,
+  collectFragments,
+  type Fragment,
+  type FragmentRules,
+  fragmentProblems,
+  readFragments,
+} from "./fragments.js"
+export { levelledVersion, versionLevelProblem } from "./level.js"
+export {
   type ChangelogRules,
   changelogProblems,
   type DocsRules,

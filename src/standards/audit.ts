@@ -71,6 +71,8 @@ const parityGroupSchema = v.strictObject({
       /** The one CLI that has the path or flag by design; every other CLI compared must lack it. */
       only: v.optional(word),
       reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
+      /** Warns from 14 days before and fails 14 days after, as a lint override does. */
+      review_after: v.optional(v.pipe(v.string(), v.isoDate("a date, YYYY-MM-DD"))),
     }),
   ),
 })

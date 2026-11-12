@@ -15,14 +15,20 @@ import { parseCommandsDocument } from "../commands/document.js"
 import { type CommandInfo, describeProgram } from "../commands/registry.js"
 import { taggedSection } from "../release/fold.js"
 import {
+  CHANGELOG_HEADINGS,
   type ChangelogRules,
   changelogProblems,
+  collectFragments,
   type DocsRules,
   docsProblems,
+  fragmentProblems,
   JOURNAL_IDS,
+  levelledVersion,
   markdownFiles,
   packageVersion,
+  readFragments,
   structureProblems,
+  versionLevelProblem,
   versionScript,
 } from "../release/index.js"
 import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
@@ -35,6 +41,7 @@ import {
   OVERRIDE_BUDGET,
   OVERRIDE_RULE_REVIEW,
   type Override,
+  overdue,
   overrideSchema,
   overridesDueSoon,
   overridesProblems,
@@ -43,11 +50,13 @@ import {
 import { issuesOf, RegistryError } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { buildManifest, MANIFEST_FILE, ManifestError, type ManifestIdentity, manifestText } from "../wcat/manifest.js"
+import { adopt } from "./adopt.js"
 import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
+import { familyPackages, installFamily } from "./family.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
-import { baselineOf, judge, lintCommands, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
+import { baselineOf, judge, lintCommands, misfiled, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
 import { type NetworkContext, readSources } from "./network.js"
 import { nextVersion } from "./next-version.js"
 import { readDeclarations } from "./result-shape.js"
@@ -82,6 +91,17 @@ const USAGE = `usage: cli-dev <command> [options]
                                        the tag; an entry the tag lacks missed that release and moves
                                        to the unreleased section. Prints a line when it changed the
                                        file. --land lands it on main through a pull request
+  adopt <x.y.z> [--package <name>]    moves the CLI onto that version of a shared package
+                                       (@wirecat/cli-core): the pin in package.json, pnpm install,
+                                       then pnpm generate and ci:quick when the CLI has them
+  changelog fragments [--collect <x.y.z>] [--ids <A,B>] [--file <path>]
+                                       checks the changes/<branch>.md fragments (### headings of the
+                                       changelog, no journal ids); --collect adds them under that
+                                       version's section and deletes them
+  changelog level [--next <x.y.z>] [--file <path>]
+                                       fails when the top section's version is a lower level than its
+                                       headings need (Added: minor; a break: major, minor before
+                                       1.0.0); --next prints the version a release of x.y.z needs
   docs-check [--rules <module>] [--ids <A,B>] [--pages]
                                        links, anchors and the changelog's shape; --pages also
                                        docs/ against docs/meta.json, the docs portal's structure
@@ -101,7 +121,7 @@ const USAGE = `usage: cli-dev <command> [options]
                                        is a JSON object of the CLI's own JSON Schemas by name
   audit (--cli <bin> | --commands <file>)... [--schemas <cli>=<file>]... [--reasons <cli>=<file>]...
         [--lint <cli>=<dir>]... [--capabilities <file>] [--complete] [--groups <file>] [--differences <file>]
-        [--baseline <dir>] [--for <cli>] [--json] [--write-baseline]
+        [--baseline <dir>] [--for <cli>] [--json] [--write-baseline] [--family]
                                        several CLIs against every lint rule and against each other:
                                        required roots, same path same contract, same flag same
                                        meaning, same entity same schema, same failure same reason.
@@ -110,7 +130,12 @@ const USAGE = `usage: cli-dev <command> [options]
                                        rules by its own lint/ folder; the rest by --baseline
                                        (audit/baseline). --groups replaces PARITY_GROUPS with the
                                        JSON list of parity groups in that file; --differences adds
-                                       to the groups in use
+                                       to the groups in use. --family takes this CLI's one --cli and
+                                       installs the latest published CLIs of the parity groups beside
+                                       it (npm, without install scripts), runs each in an empty home,
+                                       reads every CLI's commands info (so same-error-reason and
+                                       same-entity-schema are measured), and defaults --for to this
+                                       CLI, --lint to its lint/ and --groups to config/parity-groups.json
   bundle --bin <dist/bin/name.js> [--external <package>]... [--anchor <package>]... [--harmless <path>]...
                                        bundles the compiled bin with esbuild (a devDependency) into
                                        dist/bundle/ and turns the bin into its loader. --external keeps
@@ -164,10 +189,52 @@ const docsCheck = async (args: string[], io: DevIo) => {
   )
 }
 
+/** `changes/<branch>.md` fragments: checked, or collected into `--collect <version>`'s section and deleted. */
+const fragments = (args: string[], io: DevIo) => {
+  const { values } = parseArgs({
+    args,
+    options: {
+      collect: { type: "string" },
+      ids: { type: "string" },
+      file: { type: "string", default: "CHANGELOG.md" },
+    },
+  })
+  const rules = {
+    headings: CHANGELOG_HEADINGS,
+    ids: [...JOURNAL_IDS, ...(values.ids?.split(",").filter(Boolean) ?? [])],
+  }
+  const found = readFragments(io.cwd)
+  const problems = found.flatMap((fragment) => fragmentProblems(fragment, rules))
+  if (problems.length > 0 || !values.collect || found.length === 0)
+    return report(io, problems, `changes/: ${found.length} fragments, all well formed`)
+  const file = isAbsolute(values.file) ? values.file : join(io.cwd, values.file)
+  writeFileSync(file, collectFragments(readFileSync(file, "utf8"), values.collect, found, rules))
+  for (const fragment of found) rmSync(join(io.cwd, "changes", fragment.name))
+  io.out(`collected ${found.length} changelog fragments into ${values.collect}`)
+  return 0
+}
+
+/** The top section's version level: with `--next <x.y.z>`, the version it needs; without, whether it has it. */
+const level = (args: string[], io: DevIo) => {
+  const { values } = parseArgs({
+    args,
+    options: { next: { type: "string" }, file: { type: "string", default: "CHANGELOG.md" } },
+  })
+  const text = readFileSync(isAbsolute(values.file) ? values.file : join(io.cwd, values.file), "utf8")
+  if (values.next) {
+    io.out(levelledVersion(text, values.next))
+    return 0
+  }
+  const problem = versionLevelProblem(text)
+  return report(io, problem ? [problem] : [], `${values.file}: the top section's version fits its headings`)
+}
+
 const changelog = (args: string[], io: DevIo) => {
   const [action, ...rest] = args
+  if (action === "fragments") return fragments(rest, io)
+  if (action === "level") return level(rest, io)
   if (action !== "fold" && action !== "restore") {
-    io.err(`cli-dev changelog: no action "${action ?? ""}" — the ones there are: fold, restore`)
+    io.err(`cli-dev changelog: no action "${action ?? ""}" — the ones there are: fold, restore, fragments, level`)
     return 2
   }
   const { values } = parseArgs({
@@ -338,15 +405,18 @@ const commandsJson = (
   cli: string | undefined,
   file: string | undefined,
   commandArgs = ["commands", "--json"],
+  isolated = false,
 ): unknown => {
   if (file) return readJson(isAbsolute(file) ? file : join(io.cwd, file))
   const bin = cli ?? ""
   const script = /\.[cm]?js$/.test(bin)
-  const run = spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), ...commandArgs], {
-    cwd: io.cwd,
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  })
+  const run = isolated
+    ? inEmptyHome(io.cwd, bin, process.env, (call) => call(commandArgs))
+    : spawn.sync(script ? process.execPath : bin, [...(script ? [bin] : []), ...commandArgs], {
+        cwd: io.cwd,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+      })
   if (run.error || run.status !== 0)
     throw new Error(`${bin} commands --json failed: ${run.error?.message ?? String(run.stderr).trim().split("\n")[0]}`)
   return JSON.parse(String(run.stdout))
@@ -393,6 +463,8 @@ export const inEmptyHome = <T>(
     APPDATA: join(home, "AppData", "Roaming"),
     LOCALAPPDATA: join(home, "AppData", "Local"),
     CI: "true",
+    // An empty HOME does not hide the keyring: D-Bus reaches it all the same.
+    DBUS_SESSION_BUS_ADDRESS: "disabled:",
     ...(environment.SystemRoot ? { SystemRoot: environment.SystemRoot } : {}),
   }
   const script = /\.[cm]?js$/.test(bin)
@@ -402,7 +474,7 @@ export const inEmptyHome = <T>(
       env,
       encoding: "utf8",
       timeout: 60_000,
-      maxBuffer: 16 * 1024 * 1024,
+      maxBuffer: 64 * 1024 * 1024,
     })
   try {
     return body(call)
@@ -548,6 +620,7 @@ const lintRun = (args: string[], io: DevIo) => {
   advised.push(...verdict.stale.filter((entry) => advice(entry.rule)).map(staleLine))
   advised.push(...overridesDueSoon(overrides, today(io)).map((line) => `${values.overrides}: ${line}`))
   if (!values["allow-stale"]) problems.push(...stale)
+  for (const line of misfiled(parsed.document, baseline, ruleOverrides)) problems.push(line)
 
   const warnings = wcatWarnings(io.cwd, values.cli)
   const warned = new Set(warnings.map((warning) => `${warning.rule} ${warning.target}`))
@@ -617,14 +690,56 @@ const byCli = (pairs: readonly string[] | undefined, flag: string): Map<string, 
 
 const audit = (args: string[], io: DevIo) => {
   try {
-    return auditRun(args, io)
+    return args.includes("--family") ? auditFamily(args, io) : auditRun(args, io)
   } catch (error) {
     io.err((error as Error).message)
     return 2
   }
 }
 
-const auditRun = (args: string[], io: DevIo) => {
+/** The built CLI against the latest published one of every other CLI in the parity groups, as `scripts/audit.sh` did. */
+const auditFamily = (args: string[], io: DevIo) => {
+  const { values } = parseArgs({
+    args,
+    strict: false,
+    options: {
+      cli: { type: "string", multiple: true },
+      commands: { type: "string", multiple: true },
+      groups: { type: "string" },
+      for: { type: "string" },
+      lint: { type: "string", multiple: true },
+    },
+  })
+  const [own, ...more] = (values.cli ?? []) as string[]
+  if (!own || more.length > 0 || values.commands) {
+    io.err("audit --family takes one --cli: this CLI's built bin")
+    return 2
+  }
+  const name = (commandsJson(io, own, undefined, undefined, true) as { cli?: unknown }).cli
+  if (typeof name !== "string") throw new Error(`${own} commands --json names no cli`)
+  const local = (path: string) => (existsSync(join(io.cwd, path)) ? path : undefined)
+  const groupsFile = (values.groups as string | undefined) ?? local("config/parity-groups.json")
+  const groups = groupsFile ? defineParityGroups(readJson(join(io.cwd, groupsFile))) : PARITY_GROUPS
+  const lintDir = values.lint ? undefined : local("lint")
+  const family = installFamily(familyPackages(groups, name))
+  try {
+    return auditRun(
+      [
+        ...args.filter((arg) => arg !== "--family"),
+        ...[...family.bins.values()].flatMap((bin) => ["--cli", bin]),
+        ...(values.for ? [] : ["--for", name]),
+        ...(values.groups || !groupsFile ? [] : ["--groups", groupsFile]),
+        ...(lintDir ? ["--lint", `${name}=${lintDir}`] : []),
+      ],
+      io,
+      true,
+    )
+  } finally {
+    family.close()
+  }
+}
+
+const auditRun = (args: string[], io: DevIo, family = false) => {
   const started = Date.now()
   const { values } = parseArgs({
     args,
@@ -645,7 +760,7 @@ const auditRun = (args: string[], io: DevIo) => {
     },
   })
   const raws = [
-    ...(values.cli ?? []).map((bin) => commandsJson(io, bin, undefined)),
+    ...(values.cli ?? []).map((bin) => commandsJson(io, bin, undefined, undefined, family)),
     ...(values.commands ?? []).map((file) => commandsJson(io, undefined, file)),
   ]
   if (raws.length < 2) {
@@ -666,10 +781,11 @@ const auditRun = (args: string[], io: DevIo) => {
       overrides?: ContractEdit[]
     }
   >()
-  if (values.complete) {
+  // The family audit reads every CLI's reasons and schemas, so same-error-reason and same-entity-schema are measured.
+  if (values.complete || family) {
     for (const [index, bin] of (values.cli ?? []).entries()) {
       const raw = raws[index] as { cli?: string }
-      const data = commandsJson(io, bin, undefined, ["commands", "info", "--json"]) as {
+      const data = commandsJson(io, bin, undefined, ["commands", "info", "--json"], family) as {
         schemas?: Record<string, unknown>
         reasons?: ErrorReason[]
         contracts?: Record<string, Record<string, unknown>>
@@ -687,6 +803,7 @@ const auditRun = (args: string[], io: DevIo) => {
       )
     const cli = parsed.document.cli
     const input: AuditInput = { document: parsed.document, raw, ...evidence.get(cli) }
+    if (family && input.reasons) input.reasons = defineReasons(input.reasons)
     const schemaFile = schemas.get(cli)
     if (schemaFile) input.schemas = readJson(at(schemaFile)) as Record<string, unknown>
     const reasonFile = reasons.get(cli)
@@ -773,6 +890,7 @@ const auditRun = (args: string[], io: DevIo) => {
         absent: v.optional(v.string()),
         only: v.optional(v.string()),
         reason: v.string(),
+        review_after: v.optional(v.string()),
       }),
     )
     const parsed = v.safeParse(schema, readJson(at(values.differences)))
@@ -790,6 +908,10 @@ const auditRun = (args: string[], io: DevIo) => {
       })),
     )
   }
+  const differences = groups.flatMap((group) => group.differences)
+  for (const line of overdue(differences, today(io))) problems.push(`parity difference: ${line}`)
+  for (const line of overridesDueSoon(differences, today(io), "the audit"))
+    io.err(`warning  parity difference: ${line}`)
   const result = auditClis(inputs, {
     ...(values.capabilities ? { capabilities: readCapabilities(readJson(at(values.capabilities))) } : {}),
     groups,
@@ -823,6 +945,10 @@ const auditRun = (args: string[], io: DevIo) => {
     )
   else io.out(scorecardTable(result.rows))
   for (const finding of result.blocking) problems.push(`new  ${finding.rule}  ${finding.target}: ${finding.message}`)
+  if (values.for === undefined && result.rows.some((row) => row.fixed > 0))
+    io.err(
+      `warning  ${values.baseline} holds rows no CLI has any more (the "fixed" column): remove them with --write-baseline`,
+    )
   io.err(
     `audit: ${inputs.length} CLIs, ${result.findings.length} findings, ${result.blocking.length} new that block${
       AUDIT_BLOCKS === "never" ? " (cross-CLI divergences do not block)" : ""
@@ -916,6 +1042,17 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       return audit(args, io)
     case "bundle":
       return bundleCommand(args, io)
+    case "adopt": {
+      const { values, positionals } = parseArgs({
+        args,
+        allowPositionals: true,
+        options: { package: { type: "string", default: "@wirecat/cli-core" } },
+      })
+      const [version = ""] = positionals
+      const run = (command: string, commandArgs: readonly string[]) =>
+        spawn.sync(command, [...commandArgs], { cwd: io.cwd, stdio: "inherit" }).status ?? 1
+      return adopt(io.cwd, values.package, version, run, io.err)
+    }
     case "help":
     case "--help":
     case "-h":

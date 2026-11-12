@@ -12,7 +12,7 @@ import { logAttributesJsonSchema } from "../standards/log.js"
 import { COMPACT_FLAG } from "../standards/output.js"
 import { jsonSchemaOf } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
-import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds } from "./lint.js"
+import { baseSchemas, exampleWords, judge, type LintContext, lintCommands, lintRuleIds, misfiled } from "./lint.js"
 import { type DevIo, main, probeRunLog } from "./main.js"
 
 const READS = { remote: "read", local: "none" } as const
@@ -811,6 +811,28 @@ describe("judge", () => {
       0,
     )
     expect(verdict).toMatchObject({ unknownRules: ["no-such-rule"], overBudget: true })
+  })
+})
+
+describe("misfiled", () => {
+  const document = (mark: boolean) => {
+    const root = clean()
+    const runs = root.commands.find((command) => command.name() === "runs") as Command
+    if (mark) for (const command of [runs, ...runs.commands]) annotate(command, { origin: "cli-core" })
+    return commandsDocument(root, { cli: "tool", version: "1.0.0", contract: 0 })
+  }
+  const overrides = [{ rule: "option-role", target: "runs list --since", reason: "kept on purpose for now", ...KEPT }]
+  const baseline = { "unknown-verb": ["chats grab", "runs list"], "missing-option-help": ["chats list --limit"] }
+
+  it("fails the CLI's own word in the baseline and cli-core's word in an override", () => {
+    expect(misfiled(document(true), baseline, overrides)).toEqual([
+      `the CLI's own word in the baseline — move it to the overrides: unknown-verb "chats grab"`,
+      `cli-core's word in an override — move it to the baseline: option-role "runs list --since"`,
+    ])
+  })
+
+  it("says nothing while no command is marked as cli-core's", () => {
+    expect(misfiled(document(false), baseline, overrides)).toEqual([])
   })
 })
 

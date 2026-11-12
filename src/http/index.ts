@@ -5,8 +5,9 @@
  * status-code semantics and `Retry-After` parsing. Import `@wirecat/cli-base/http` only when
  * the thing on the other end is actually HTTP.
  */
-import type { ErrorCode } from "../errors.js"
-import type { WallClock } from "../time.js"
+import { CliError, type ErrorCode, isCliError } from "../errors.js"
+import { backoffMs, DEFAULT_RETRY, type RetryConfig } from "../retry.js"
+import { realSleep, type SleepLike, type WallClock, wallClock } from "../time.js"
 
 /** The one function an HTTP client needs from its environment. A Worker, a browser, a test and Node all satisfy it. */
 export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
@@ -58,3 +59,85 @@ export const statusToCode = (status: number): ErrorCode => {
 export { type JsonResponseOptions, readJsonResponse } from "./body.js"
 export { HOST_FETCH_TIMEOUT_MS, type HostFetchOptions, hostFetch } from "./fetch.js"
 export { HOST_PATTERN, hostCovered, hostProblems } from "./hosts.js"
+
+/** cli-core's `Pacer` fits: one queue for every process of a profile, since a provider's limit is per account. */
+export interface PacerLike {
+  /** The epoch milliseconds at which this request may go. */
+  reserve(): Promise<number>
+  /** Everyone waits this long, because the provider said so. */
+  holdFor(ms: number): Promise<void>
+}
+
+export interface RetryingOptions {
+  retry?: RetryConfig
+  /** Which requests may be sent again after a failure. A write is sent again only when the provider refused it (429). */
+  reads?: (method: string, url: URL) => boolean
+  pacer?: PacerLike
+  /** The most the retries and pacing of one request may wait in all; more ends it with the last answer. */
+  budget?: number
+  sleep?: SleepLike
+  now?: WallClock
+  random?: () => number
+}
+
+const SAFE = new Set(["GET", "HEAD", "OPTIONS"])
+
+/** `fetch` that waits and sends again: reads on a retryable status or error, writes only on 429. */
+export const retrying = (send: FetchLike, options: RetryingOptions = {}): FetchLike => {
+  const {
+    retry = DEFAULT_RETRY,
+    reads = (method) => SAFE.has(method),
+    pacer,
+    budget = Number.POSITIVE_INFINITY,
+    sleep = realSleep,
+    now = wallClock,
+    random = Math.random,
+  } = options
+
+  return async (input, init = {}) => {
+    const request = input instanceof Request ? input : undefined
+    const method = (init.method ?? request?.method ?? "GET").toUpperCase()
+    const read = reads(method, new URL(request?.url ?? String(input)))
+    const signal = init.signal ?? request?.signal ?? undefined
+    const once = init.body instanceof ReadableStream
+    let waited = 0
+
+    const pause = async (ms: number) => {
+      waited += ms
+      await sleep(ms, signal, "retry")
+    }
+
+    for (let attempt = 1; ; attempt++) {
+      if (pacer) {
+        const wait = (await pacer.reserve()) - now().getTime()
+        if (wait > 0) {
+          if (waited + wait > budget)
+            throw new CliError(
+              "rate_limited",
+              `the provider's pace needs a ${wait} ms wait, more than this run allows`,
+              {
+                retry_after_ms: wait,
+                sent: false,
+              },
+            )
+          await pause(wait)
+        }
+      }
+      const last = once || attempt > retry.retries
+      try {
+        const response = await send(request && !last ? request.clone() : input, init)
+        if (last || !retryableStatus(response.status) || !(read || response.status === 429)) return response
+        const wait = providerWaitMs(response.headers, now) ?? backoffMs(attempt, retry, random)
+        if (wait > retry.maxRetryAfterMs || waited + wait > budget) return response
+        await response.body?.cancel().catch(() => {})
+        if (response.status === 429) await pacer?.holdFor(wait)
+        await pause(wait)
+      } catch (error) {
+        if (last || !read || signal?.aborted || !isCliError(error) || error.details.retryable !== true) throw error
+        const wait = backoffMs(attempt, retry, random)
+        if (waited + wait > budget) throw error
+        await pause(wait)
+      }
+    }
+  }
+}

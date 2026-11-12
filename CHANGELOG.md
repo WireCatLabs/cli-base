@@ -12,6 +12,33 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`cli-dev audit --family`: one command instead of each CLI's `scripts/audit.sh`.** Given the CLI's own built bin
+  (`--cli dist/bin/b24.js`), it installs the latest published CLIs of every parity group (mail and gcal included,
+  which the six copies left out), runs each in an empty home with the keyring out of reach, and reads every CLI's
+  `commands info --json`, so `same-error-reason` and `same-entity-schema` are measured at last. It defaults `--for`,
+  `--lint` and `--groups` as the script did. To watch for: the two newly measured rules may report findings the
+  script never showed; see [TOOLING.md](docs/TOOLING.md).
+- **`cli-dev changelog fragments` and `cli-dev changelog level`.** The `changes/<branch>.md` fragment check and
+  collection, and the version-level check (`Added` needs a minor, a break a major), which b24 and cli-core each kept
+  as a script of their own, are now shared; `--next <x.y.z>` prints the version a release needs. Also exported from
+  `@wirecat/cli-base/release` (`readFragments`, `fragmentProblems`, `collectFragments`, `levelledVersion`,
+  `versionLevelProblem`, `CHANGELOG_HEADINGS`).
+- **`cli-dev adopt <x.y.z>`: a shared-package bump done the same way in every CLI.** It pins the version
+  (`--package`, cli-core by default), runs `pnpm install`, then `generate` and `ci:quick` when the CLI has them, and
+  stops at the first failure. It opens no pull request yet.
+- **Commands cli-core mounts can say so: `origin: "cli-core"`.** The commands document accepts the new value, and lint
+  treats such a command like a handwritten one. Once cli-core marks its commands, `cli-dev lint` fails a word rule's
+  baseline entry on the CLI's own command (it belongs in the overrides) and an override on cli-core's (it belongs in
+  the baseline), as [WC-TOOL-16](docs/standards/toolchain.md#wc-tool-16--run-the-command-lint-on-the-built-cli-and-let-its-baseline-only-shrink)
+  says. Nothing changes until then.
+- **A parity group's difference can expire.** A `differences` entry takes `review_after`, with the lint overrides'
+  rule: a warning from 14 days before, a failure 14 days after. An audit without `--for` also warns when the
+  baseline holds rows no CLI has any more.
+- **`retrying()` in `@wirecat/cli-base/http`: one retry loop for provider CLIs.** It wraps a `FetchLike` (usually
+  `hostFetch`'s) and sends a read again after 408, 429, 5xx or a retryable error, a write only after a 429, waiting
+  the provider's `Retry-After` or a jittered backoff, within `budget`, and through a shared `pacer` when given.
+  b24, zoom, max, mail and beeline each wrote their own loop with different limits; see
+  [REFERENCE.md](docs/REFERENCE.md).
 - **Vocabulary roles for the words cli-core's shared commands use.** `account remove --keep-data` and `--delete-data`,
   `session start --answer-stdin`, `--client-id` and `--client-file`, `--hide-phone`, and the verb `call` (`api call`)
   now have a meaning in the vocabulary. Eight CLIs carried about 35 baseline and override lines for them. To watch for:
@@ -29,6 +56,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **The command lint's empty home keeps the keyring out of reach.** The run-log probe and the WCAT describe check
+  ran the built CLI with an empty `HOME`, which does not hide the keyring: it is reached over D-Bus. They now set
+  `DBUS_SESSION_BUS_ADDRESS=disabled:` as well.
+- **The audit baseline no longer lists `mcp --allow-send` and `--allow-dangerous`.** No published CLI has them on its
+  `mcp` commands any more (checked against tg 0.123.0, max 0.111.0, memo 0.131.87 and drive 0.65.0).
+- **Stale standards text.** WC-ACCT-12's known gaps (zm has `session end`; gcal and mail have all four; memo has no
+  sign-in of its own), WC-LIFE-15's list (drive, memo, zm and mail keep runs), WC-LIFE-13's enforcing test (memo's no
+  longer exists), WC-LAY-1 (memo has `contracts/`) and WC-TEST-14 (wa has an upgrade contract) now say what the CLIs
+  do. WC-OUT-11 and WC-OUT-15 name the audit that measures them.
 - **`raw-network` no longer skips a file that hands the global `fetch` on through an object key or an argument.** A
   file with `{ fetch: deps.fetch ?? fetch }` or `makeClient(fetch)` counted as one that binds its own `fetch`, so its
   global `fetch` went unreported (mail-cli and cli-memo had such files). Only a declaration binds it now: a typed or

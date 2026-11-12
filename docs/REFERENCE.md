@@ -61,6 +61,14 @@ or 302 after a POST, goes on as a GET without the body; a hop to another origin 
 `timeout` and a failed connection `network_error`. `hostCovered(hostname, hosts)` and `hostProblems(hosts)` are the
 matching and the check it uses: `*.acme.example` covers `api.acme.example`, never `acme.example`.
 
+`retrying(fetch, { retry?, reads?, pacer?, budget? })` wraps a `FetchLike`, such as `hostFetch`'s, with the one retry
+loop every provider CLI wrote for itself. A read (GET, HEAD, OPTIONS, or what `reads(method, url)` says) is sent again
+after a retryable status (408, 429, 5xx) or a `CliError` with `retryable: true`; a write only after a 429, since a
+refused request did nothing. It waits what the provider asked (`Retry-After`, `X-RateLimit-Reset`) or the jittered
+backoff of `retry` (`DEFAULT_RETRY`: one retry), and hands back the last answer when the wait is over
+`maxRetryAfterMs` or the total over `budget`. A `pacer` (cli-core's `Pacer` fits) is waited on before each attempt and
+held for every process on a 429. A streamed body and a cancelled request are never sent again.
+
 **Portable command control stays independent of provider and store lifetimes.**
 `fieldsOf("id,speaker.id")` parses up to 128 field paths; `projectFields(value, paths)` selects data
 from objects or list items while preserving the list envelope and `operation_id`.

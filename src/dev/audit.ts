@@ -97,7 +97,7 @@ const named = (clis: readonly string[]) => [...clis].sort(byText).join("+")
 const handwritten = (document: CommandsDocument): Map<string, CommandInfo> =>
   new Map(
     walk(document.commands)
-      .filter((command) => command.origin === "handwritten")
+      .filter((command) => command.origin !== "generated")
       .map((command) => [command.path.join(" "), command]),
   )
 
@@ -193,7 +193,7 @@ const sameFlagMeaning = (inputs: readonly AuditInput[], vocabulary: Vocabulary):
     const options = [
       ...document.global_options,
       ...walk(document.commands)
-        .filter((command) => command.origin === "handwritten")
+        .filter((command) => command.origin !== "generated")
         .flatMap((command) => command.options),
     ]
     for (const option of options) {

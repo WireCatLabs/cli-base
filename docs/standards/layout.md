@@ -26,7 +26,7 @@ Rule ids on this page are `WC-LAY-<n>`. How to read a rule, how ids work and whi
   - `skills/`: the agent skill the package ships;
   - `CHANGELOG.md`, `CLAUDE.md`, `SECURITY.md`, `README.md`, `LICENSE`;
   - git-ignored, on the working machine only: `CLEANUP.md`, `HANDOFF.md`, plans and journals.
-- **Exceptions:** a folder the CLI has no use for may be missing; memo has no `contracts/` yet. A product folder may
+- **Exceptions:** a folder the CLI has no use for may be missing. A product folder may
   be added, such as `spec/` for a protocol or API description.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
