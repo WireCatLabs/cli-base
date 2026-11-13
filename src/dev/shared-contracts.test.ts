@@ -40,6 +40,17 @@ describe("core contract evidence", () => {
     child.description = "an undeclared change"
     expect(sharedContractProblems(discovered, reference)[0]?.message).toContain("description")
   })
+  it("takes the cli-core origin discovery prints as the contract's own, and no other origin", () => {
+    const { commands, reference } = fixture()
+    const marked = (origin: "cli-core" | "generated") =>
+      commands.map((command) => ({
+        ...command,
+        origin,
+        commands: command.commands.map((child) => ({ ...child, origin })),
+      }))
+    expect(sharedContractProblems(marked("cli-core"), reference)).toEqual([])
+    expect(sharedContractProblems(marked("generated"), reference)[0]?.message).toContain("origin")
+  })
   it("requires an exact reasoned edit and rejects stale, vague and no-op edits", () => {
     const { root, group, reference } = fixture()
     group.commands[0]?.description("list imported notes")

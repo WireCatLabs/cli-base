@@ -12,7 +12,14 @@ import { type DevIo, main } from "../dev/main.js"
 import { parseLucene } from "../query/parser.js"
 import type { Effects } from "../standards/effects.js"
 import { describeAnswer, parseDescribe } from "./describe.js"
-import { buildManifest, type ManifestIdentity, manifestJsonSchema, manifestSchema, PLAIN_WORD } from "./manifest.js"
+import {
+  buildManifest,
+  type ManifestIdentity,
+  manifestJsonSchema,
+  manifestSchema,
+  PLAIN_WORD,
+  SHARED_HOSTS,
+} from "./manifest.js"
 import { DESCRIBE_MAX_BYTES } from "./names.js"
 import { wcatStart } from "./start.js"
 
@@ -217,13 +224,17 @@ describe("buildManifest", () => {
     expect(manifest.entities).toEqual({ person: { fields: ["name", "email"] } })
   })
 
-  it("writes the declared hosts, and leaves network out when the CLI did not say", () => {
+  it("writes the declared hosts and the shared packages' own, and leaves network out when the CLI did not say", () => {
     expect(build().network).toBeUndefined()
-    expect(build({ hosts: [] }).network).toEqual({ hosts: [] })
+    expect(build({ hosts: [] }).network).toEqual({ hosts: SHARED_HOSTS })
+    expect(build({ hosts: ["registry.npmjs.org"] }).network).toEqual({ hosts: SHARED_HOSTS })
     expect(
       build({ hosts: ["api.acme.example", "*.cdn.acme.example"], userHosts: "the mail server you sign in to" }),
     ).toMatchObject({
-      network: { hosts: ["api.acme.example", "*.cdn.acme.example"], user_hosts: "the mail server you sign in to" },
+      network: {
+        hosts: ["api.acme.example", "*.cdn.acme.example", ...SHARED_HOSTS],
+        user_hosts: "the mail server you sign in to",
+      },
     })
     expect(() => build({ hosts: ["https://api.acme.example"] })).toThrow(/network\.hosts\.0: .* is not a host/)
     expect(() => build({ hosts: ["*.com"] })).toThrow(/is not a host/)

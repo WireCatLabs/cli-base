@@ -98,9 +98,9 @@ or `dgram` (with or without `node:`), `undici`, `axios`, `got`, `node-fetch` or 
 type-only imports pass, and so do named imports of `createServer` alone or `isIP` alone, which reach no host), and the global
 `fetch` outside a comment or a string, called or handed on as a value (`options.fetch ?? fetch`), or any
 `globalThis.fetch`, with the target `<file> <module>` or `<file> fetch`; a key (`fetch:`), `options.fetch` and
-`typeof fetch` pass. A file that binds its own `fetch` (`const fetch = hostFetch(…)`, an injected one) uses that one. `undeclared-host` reports each `http(s)://` host outside a comment line that `network.hosts` of the
-shipped `contracts/wirecat.json` does not cover, the target the host alone and the files in the message; the `docs_url` host, a name with no dot, `example`, `test` and
-`invalid` names, `json-schema.org` and `www.w3.org` are skipped. Without `network.hosts` it is skipped: a shipped manifest that
+`typeof fetch` pass. A file that binds its own `fetch` (`const fetch = hostFetch(…)`, an injected one, an arrow's or a method's destructured parameter `({ env, fetch }) =>`) uses that one; `call({ fetch })` hands the global on. `undeclared-host` reports the host of each `http(s)://` URL that starts a string, outside a comment line, that `network.hosts` of the
+shipped `contracts/wirecat.json` does not cover, the target the host alone and the files in the message. A URL inside a sentence (help text, an API description, a markdown link) is printed, never fetched, and is skipped; so are the `docs_url` host, a name with no dot, `example`, `test` and
+`invalid` names, and the schema and XML namespace names `json-schema.org`, `www.w3.org` and `schemas.openxmlformats.org`. Without `network.hosts` it is skipped: a shipped manifest that
 lacks them gets the `wcat-hosts` warning, which does not fail the run, and a CLI with no manifest gets a note. Both are lints, not a sandbox: a dependency or a computed URL passes them.
 
 `cli-dev audit` reads two or more commands documents (`--cli <bin>` or `--commands <file>`, repeated) and prints a

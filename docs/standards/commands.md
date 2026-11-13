@@ -461,7 +461,9 @@ right one, never `not_found`.
 The CLI's `WCAT` identity lists every internet host it contacts in `hosts` (`["api.acme.example"]`, `[]` for none):
 lower-case hostnames with no scheme, port or path, and a leading `*.` only before two labels or more. A host the
 person chooses (a mail server, a page to read) is named in words in `userHosts`, and the CLI adds the configured host
-to the list at run time. `cli-dev manifest` writes them to `network` in `contracts/wirecat.json`. The CLI's own source
+to the list at run time. `cli-dev manifest` writes them to `network` in `contracts/wirecat.json`, with the hosts the
+shared packages reach for every CLI (`SHARED_HOSTS`: npm for the update check, Hugging Face and GitHub releases
+for local models). The CLI's own source
 sends HTTP only through `hostFetch` from `@wirecat/cli-base/http`, which refuses any other host before a byte leaves
 the machine and checks every redirect.
 
@@ -474,7 +476,8 @@ the machine and checks every redirect.
   `const fetch = hostFetch({ hosts: WCAT.hosts ?? [] })`. `raw-network` reports `src/api.ts node:https` for an
   import of `node:https`, and `src/api.ts fetch` for the global `fetch` called or handed on as a value
   (`options.fetch ?? fetch`); `undeclared-host` reports `collector.acme.dev`, naming the files, for a URL whose host
-  the shipped manifest does not list.
+  the shipped manifest does not list. A URL inside a sentence, such as a help link in printed text, is not reported;
+  one that starts a string is, because nothing tells it apart from a request's address.
 - **Exceptions:** network code that cannot use `hostFetch` (a socket protocol, a provider SDK) says why in
   `lint/overrides.json`, and still lists its hosts. The lint is not a sandbox: a dependency, a computed URL or `eval`
   passes it, which is why Desktop also scans the package and flags what it finds. A shipped manifest without
@@ -482,7 +485,8 @@ the machine and checks every redirect.
   no hosts yet; the warning becomes a failure once they do. With no manifest at all, the run only says the check is
   skipped.
 - **Applies to:** all CLIs, and third-party CLIs that join `wcat`. **Since:** the release after cli-base 0.84.0; the
-  global fetch as a value and the missing-hosts warning since the release after 0.93.0.
+  global fetch as a value and the missing-hosts warning since the release after 0.93.0; the shared hosts, and URLs
+  inside a sentence left out of `undeclared-host`, since the release after 0.98.0.
   **Rulings:** none.
 
 ## Sources

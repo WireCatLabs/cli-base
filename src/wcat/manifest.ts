@@ -14,6 +14,20 @@ import { PROGRAM_PREFIX, TOOL_NAME } from "./names.js"
 export const MANIFEST_FORMAT = 2
 export const MANIFEST_FILE = "contracts/wirecat.json"
 
+/**
+ * Hosts every CLI may reach through the shared packages rather than its own code: npm for the update check, Hugging
+ * Face for the models search, speech and pictures use, GitHub releases for the ONNX runtime and the speech detector,
+ * and the hosts both redirect their files to. `cli-dev manifest` adds them to the hosts a CLI declares.
+ */
+export const SHARED_HOSTS: readonly string[] = [
+  "registry.npmjs.org",
+  "huggingface.co",
+  "*.huggingface.co",
+  "*.hf.co",
+  "github.com",
+  "*.githubusercontent.com",
+]
+
 /** Desktop's `plain_word`: letters, digits and `._:=,/+@-`, at most two leading dashes, `--` alone, `{name}` slots. */
 export const PLAIN_WORD = /^(?:--|-{0,2}(?:[A-Za-z0-9]|\{[A-Za-z]+\})(?:[A-Za-z0-9._:=,/+@-]|\{[A-Za-z]+\})*)$/
 
@@ -288,7 +302,7 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     ...(identity.hosts
       ? {
           network: {
-            hosts: [...identity.hosts],
+            hosts: [...new Set([...identity.hosts, ...SHARED_HOSTS])],
             ...(identity.userHosts ? { user_hosts: identity.userHosts } : {}),
           },
         }

@@ -277,6 +277,15 @@ describe("lint rules", () => {
     expect(of("const reader = makeReader({ env, fetch: deps.fetch ?? fetch })")).toEqual(["src/a.ts fetch"])
     expect(of("const client = new Client({ fetch: options.fetch ?? fetch, timeoutMs })")).toEqual(["src/a.ts fetch"])
     expect(of("const client = makeClient(fetch)")).toEqual(["src/a.ts fetch"])
+    for (const handed of [
+      "call({ fetch })\nawait fetch(url)",
+      "const deps = () => ({ fetch })",
+      "useIt(() => ({ fetch }))",
+      "if (ok({ fetch })) {\n  await fetch(url)\n}",
+      "const c = ok ? makeClient({ fetch }) : undefined\nif (c) {\n  await fetch(url)\n}",
+      "const o = ok ? wrap({ fetch }) : {}",
+    ])
+      expect(of(handed)).toEqual(["src/a.ts fetch"])
     for (const bound of [
       "export const lookup = async (url: string, fetch: FetchLike) => fetch(url)",
       "export const lookup = async (url: string, fetch: typeof globalThis.fetch) => fetch(url)",
@@ -285,6 +294,10 @@ describe("lint rules", () => {
       "const { fetch } = deps\nawait fetch(url)",
       "const go = (fetch) => fetch(url)",
       "function lookup(fetch?: FetchLike) { return fetch(url) }",
+      "probe: async ({ env, fetch, signal }) => { await fetch(url) }",
+      "read: async ({ env, fetch, signal }, { system, prompt, model }) => fetch(url)",
+      "const lookup = ({ fetch }): Promise<Response> => fetch(url)",
+      "const reader = { probe({ fetch }) { return fetch(url) } }",
     ])
       expect(of(bound)).toEqual([])
   })
@@ -316,11 +329,15 @@ describe("lint rules", () => {
     ).toEqual(["src/a.ts node:http", "src/a.ts node:https", "src/a.ts node:net"])
   })
 
-  it("fails undeclared-host for a URL host the manifest does not declare, and skips without a declaration", () => {
+  it("fails undeclared-host for an undeclared URL host, skips one inside text, and skips without a declaration", () => {
     const text = [
       'const API = "https://api.acme.example/v1"',
       'const CDN = "https://img.cdn.acme.example/a.png"',
       'const LEAK = "https://collector.evil.dev/x"',
+      "const PAGE = await fetch(`https://pages.evil.dev/` + id)",
+      'const HELP = "Open https://help.acme.dev/passwords and create one"',
+      'const DESCRIPTION = "See [Files](https://guides.acme.dev/files) or (http://www.unicode.org/tr35/)."',
+      'const XML = `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`',
       "// see https://commented.evil.dev",
       'const DOCS = "https://docs.acme.dev/cli"',
       'const SCHEMA = "https://json-schema.org/draft/2020-12/schema"',
@@ -335,6 +352,12 @@ describe("lint rules", () => {
       {
         rule: "undeclared-host",
         target: "collector.evil.dev",
+        message:
+          "named in src/a.ts but not in network.hosts: add it to `hosts` in the WCAT identity and run cli-dev manifest",
+      },
+      {
+        rule: "undeclared-host",
+        target: "pages.evil.dev",
         message:
           "named in src/a.ts but not in network.hosts: add it to `hosts` in the WCAT identity and run cli-dev manifest",
       },

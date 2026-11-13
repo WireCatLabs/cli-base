@@ -8,6 +8,34 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`cli-dev manifest` adds the hosts the shared packages reach for every CLI.** `network.hosts` now also lists
+  `registry.npmjs.org` (the update check, `doctor` online, cli-core's runtime download), `huggingface.co`,
+  `*.huggingface.co` and `*.hf.co` (the local models for search, speech and pictures, and the hosts Hugging Face
+  redirects its files to), `github.com` and `*.githubusercontent.com` (the ONNX runtime and the speech detector from
+  GitHub releases), so Desktop shows them. Exported as `SHARED_HOSTS` from `@wirecat/cli-base/wcat/manifest`. Watch for: every CLI's
+  `generate:check` fails after the bump until `pnpm generate` rewrites `contracts/wirecat.json`; a CLI that listed
+  one of these hosts itself may drop it.
+
+### Fixed
+
+- **`cli-dev audit --family` passes a CLI on cli-core 0.648.0.** cli-core 0.648.0 marks the commands it mounts
+  `origin: "cli-core"` in `commands --json`, while the contract it compares them with keeps the origin they were
+  written with, so `shared-command-contract` failed on all of them (88 in b24). The `cli-core` mark now counts as the
+  contract's own origin; any other change of origin still fails. With its contracts clean again, a CLI's shared
+  commands that the published max, tg and wa still word as an older cli-core did (`doctor reports`) are accepted as
+  inherited, as before.
+- **`undeclared-host` skips a URL inside a sentence.** Help links in printed text, API descriptions and markdown
+  links are never fetched; only a URL that starts a string counts now, and `schemas.openxmlformats.org` joins the
+  XML namespace names that are skipped by name. drive's baseline drops 9 of its 11 hosts
+  and mail's overrides 6 of 17. Help links and OAuth scopes kept alone in a string still need an override: nothing
+  tells them apart from a request's address.
+- **`raw-network` accepts `fetch` destructured in an arrow's or a method's parameter** (`({ env, fetch }) =>`,
+  `probe({ fetch }) {`), which binds the injected one; `call({ fetch })` is still reported.
+
 ## 0.98.0 — 12.11.2026
 
 ### Added

@@ -67,14 +67,16 @@ const opensNothing = (module: string, clause: string | undefined): boolean => {
 }
 
 // A file that binds its own `fetch` (an injected FetchLike, `const fetch = hostFetch(…)`) calls that one. Only a
-// declaration binds it: a typed or defaulted parameter, a destructuring pattern, an arrow's own parameter. An object
-// key (`{ fetch: deps.fetch ?? fetch }`) or an argument (`call(fetch)`) hands the global on and binds nothing.
+// declaration binds it: a typed or defaulted parameter, a destructuring pattern, an arrow's or a method's own parameter
+// (`({ env, fetch }) =>`). An object key (`{ fetch: deps.fetch ?? fetch }`) or an argument (`call(fetch)`,
+// `call({ fetch })`) hands the global on and binds nothing.
 const BINDS_FETCH = new RegExp(
   [
     String.raw`\b(?:const|let|var|function)\s+fetch\b`,
     String.raw`[(,]\s*fetch\s*\??\s*:\s*(?:typeof\b|[A-Z(])`,
     String.raw`[(,]\s*fetch\s*=(?![=>])`,
     String.raw`\{[^{}]*(?<![\w$.:]\s*)\bfetch\b(?!\s*:)[^{}]*\}\s*(?::|=(?![=>]))`,
+    String.raw`\{[^{}]*(?<![\w$.:]\s*)\bfetch\b(?!\s*:)[^{}]*\}(?:[^(){};]|\{[^{}]*\})*\)\s*(?:(?::[^={;\n]*)?=>|\{)`,
     String.raw`(?:\(\s*fetch\s*\)|\bfetch)\s*=>`,
   ].join("|"),
 )
@@ -109,9 +111,16 @@ export const rawNetwork = ({ sources }: NetworkContext): { target: string; messa
     }))
   })
 
-const URL_HOST = /\bhttps?:\/\/([a-z0-9.-]+)/gi
+// Only a URL that starts a string can be a request's address; one inside a sentence (help text, an API's description,
+// a markdown link) is printed, never fetched.
+const URL_HOST = /(?<=["'`])https?:\/\/([a-z0-9.-]+)/gi
 /** Names, not addresses: placeholders and schema or namespace identifiers nobody fetches. */
-const NOT_CONTACTED = /(?:^|\.)(?:example(?:\.com|\.org|\.net)?|test|invalid)$|^(?:json-schema\.org|www\.w3\.org)$/
+const NOT_CONTACTED = new RegExp(
+  [
+    String.raw`(?:^|\.)(?:example(?:\.com|\.org|\.net)?|test|invalid)$`,
+    String.raw`^(?:json-schema\.org|www\.w3\.org|schemas\.openxmlformats\.org)$`,
+  ].join("|"),
+)
 
 /** One finding per host, so a host named in many files takes one override. */
 export const undeclaredHosts = ({
