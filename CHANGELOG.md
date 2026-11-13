@@ -10,6 +10,16 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Changed â€” may break callers
+
+- **`same-entity-schema` and `same-error-reason` fail `cli-dev audit --family`.** 0.98.0 printed them as
+  warnings. A parity-group difference of these two rules names no CLI list (`entity hit`,
+  `reason ai.address-refused=model.address-refused`), because which CLIs share an entity or a reason changes with
+  each release; its `review_after`, not a stale check, retires it. The 11 differences measured on 13.11.2026 are
+  declared until 27.11.2026 (in `messengers` and `gcal-shared`), so no published CLI fails today; a new one does.
+  Watch for: from 27.11.2026 the audit warns about them, and from 11.12.2026 it fails until each is aligned
+  (cli-core 0.650.0 aligns the address reason) or its date is moved with a reason.
+
 ### Added
 
 - **`cli-dev manifest` adds the hosts the shared packages reach for every CLI.** `network.hosts` now also lists

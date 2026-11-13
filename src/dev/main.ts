@@ -740,8 +740,6 @@ const auditFamily = (args: string[], io: DevIo) => {
   }
 }
 
-const FAMILY_REPORTS = new Set(["same-entity-schema", "same-error-reason"])
-
 const auditRun = (args: string[], io: DevIo, family = false) => {
   const started = Date.now()
   const { values } = parseArgs({
@@ -947,12 +945,7 @@ const auditRun = (args: string[], io: DevIo, family = false) => {
       }),
     )
   else io.out(scorecardTable(result.rows))
-  for (const finding of result.blocking) {
-    const line = `new  ${finding.rule}  ${finding.target}: ${finding.message}`
-    // Measured for the first time by the family audit, and strict, so no baseline can hold them: shown, not failed.
-    if (family && FAMILY_REPORTS.has(finding.rule)) io.err(`warning  ${line}`)
-    else problems.push(line)
-  }
+  for (const finding of result.blocking) problems.push(`new  ${finding.rule}  ${finding.target}: ${finding.message}`)
   if (values.for === undefined && result.rows.some((row) => row.fixed > 0))
     io.err(
       `warning  ${values.baseline} holds rows no CLI has any more (the "fixed" column): remove them with --write-baseline`,

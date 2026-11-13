@@ -65,6 +65,8 @@ export interface AuditResult {
   problems: string[]
 }
 
+const UNLISTED_RULES = new Set(["same-entity-schema", "same-error-reason"])
+
 const STRICT_CONTRACT_RULES = new Set([
   "shared-command-contract",
   "same-path-contract",
@@ -399,6 +401,12 @@ export const auditClis = (
   // flag, or only that CLI has it.
   const differences = options.groups.flatMap((group) =>
     group.differences.flatMap((entry) => {
+      // Which CLIs share an entity or a reason changes with each release, so the entry names only what differs, and
+      // its review_after, not a stale check, retires it.
+      if (UNLISTED_RULES.has(entry.rule))
+        return findings
+          .filter((finding) => finding.rule === entry.rule && finding.target.endsWith(` ${entry.target}`))
+          .map((finding) => ({ ...entry, group: group.name, target: finding.target, expected: finding.message }))
       const cli = entry.absent ?? entry.only
       if (!cli) return [{ group: group.name, ...entry }]
       const matching = findings.filter((finding) => {

@@ -253,6 +253,26 @@ describe("audit rules", () => {
     expect(row("a", "same-error-reason")).toMatchObject({ measured: false })
   })
 
+  it("accepts an entity difference named without its CLI list, and blocks every other one", () => {
+    const declared = (target: string) =>
+      options({
+        groups: groups.map((group, index) =>
+          index === 0
+            ? {
+                ...group,
+                differences: [
+                  { rule: "same-entity-schema", target, reason: "measured on the day the rule began to fail" },
+                ],
+              }
+            : group,
+        ),
+      })
+    const inputs = failing["same-entity-schema"]?.() ?? []
+    expect(auditClis(inputs, declared("entity note")).blocking).toEqual([])
+    expect(auditClis(inputs, declared("entity note")).problems).toEqual([])
+    expect(auditClis(inputs, declared("entity person")).blocking.map((one) => one.target)).toEqual(["a+c entity note"])
+  })
+
   it("finds a shared reason under another name, and one reason id with two codes", () => {
     const found = cross(
       [

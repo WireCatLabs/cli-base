@@ -63,7 +63,10 @@ const parityGroupSchema = v.strictObject({
   differences: v.array(
     v.strictObject({
       rule: word,
-      /** `<clis> <path> <flag>`; with `absent` or `only`, only `<path> <flag>`: the CLI list is whoever else was compared. */
+      /**
+       * `<clis> <path> <flag>`; with `absent` or `only`, only `<path> <flag>`: the CLI list is whoever else was compared.
+       * same-entity-schema and same-error-reason name no CLI list either: `entity hit`, `reason profile.unknown: code`.
+       */
       target: text,
       expected: v.optional(text),
       /** The CLI that lacks the path or flag by design; the rest must agree, so other CLIs joining do not stale it. */
@@ -122,8 +125,37 @@ const MEMO_DOCTOR_DEEP = {
     "each CLI, and no other CLI has one",
 }
 
+// The family audit measured these first in cli-base 0.98.0, as warnings; they fail since NEED-2578, and these were the
+// differences on that day. The target names no CLI list: whoever shares the entity or reason, the difference holds.
+const review = (rule: string, target: string, reason: string) => ({ rule, target, reason, review_after: "2026-11-27" })
+const ENTITY = "same-entity-schema"
+const REASON = "same-error-reason"
+const MESSENGERS_SINCE_0_98 = [
+  review(ENTITY, "entity contact_context", "max, tg and wa print it in different schemas (measured 2026-11-13)"),
+  review(ENTITY, "entity contact_preparation", "max, tg and wa print it in different schemas (measured 2026-11-13)"),
+  review(ENTITY, "entity linked_person", "max, tg and wa print it in different schemas (measured 2026-11-13)"),
+]
+const FAMILY_SINCE_0_98 = [
+  review(ENTITY, "entity api_method", "b24's schema differs from drive and gcal's (measured 2026-11-13)"),
+  review(ENTITY, "entity scheduled_job", "three schemas: b24, mail, memo / gcal / max, tg (measured 2026-11-13)"),
+  review(ENTITY, "entity hit", "three schemas: b24, memo, zm / gcal / max, tg, wa (measured 2026-11-13)"),
+  review(ENTITY, "entity deal", "b24's CRM deal and memo's differ (measured 2026-11-13)"),
+  review(ENTITY, "entity lead", "b24's CRM lead and memo's differ (measured 2026-11-13)"),
+  review(ENTITY, "entity product", "b24's CRM product and memo's differ (measured 2026-11-13)"),
+  review(
+    REASON,
+    "reason ai.address-refused=model.address-refused",
+    "one failure under two names; cli-core 0.650.0 keeps one",
+  ),
+  review(
+    REASON,
+    "reason profile.unknown: code",
+    "b24 gives it not_found, drive validation_error (measured 2026-11-13)",
+  ),
+]
+
 export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
-  { name: "messengers", members: ["tg", "max"], covers: "tree", differences: [] },
+  { name: "messengers", members: ["tg", "max"], covers: "tree", differences: MESSENGERS_SINCE_0_98 },
   {
     name: "all",
     members: ["tg", "max", "memo", "drive", "zm", "wa"],
@@ -145,7 +177,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     name: "gcal-shared",
     members: ["tg", "max", "memo", "drive", "zm", "wa", "gcal"],
     covers: ["commands", "upgrade", "notes", "meetings"],
-    differences: [],
+    differences: FAMILY_SINCE_0_98,
   },
   // bitrix24-cli's search is cli-core's CRM `search all`, and beeline-cli's meetings take call recordings, not
   // zoom-cli's: both are compared on the root commands every CLI shares, the way gcal and mail are on theirs.
