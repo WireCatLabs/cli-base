@@ -87,6 +87,8 @@ export const sharedContractProblems = (
           (field) =>
             field !== "aliases" &&
             field !== "availability" &&
+            // Discovery marks a shared command "cli-core" (cli-core 0.648.0); the contract keeps how it was written.
+            !(field === "origin" && fields.origin === "cli-core") &&
             !same((actual as Record<string, unknown>)[field], wanted[field]),
         )
         if (changed.length)
