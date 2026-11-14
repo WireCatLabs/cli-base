@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The flag vocabulary has `--conference <service>`** (role `value`, string): the video meeting service that gives a
+  calendar event a new meeting link, such as `google-meet`. cli-core's shared `events create|update` take it where the
+  calendar writer can make links; without the word, a CLI that mounts them fails its `option-role` lint.
+
 ## 0.101.0 — 14.11.2026
 
 ### Added
