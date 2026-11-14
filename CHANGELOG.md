@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.100.0 — 14.11.2026
 
 ### Added
 
@@ -19,6 +19,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 - **The flag vocabulary has `--setting <name=value>`** (role `value`, string): one of the service's own settings,
   repeated for more. cli-core's shared `meetings create` and `meetings update` take it, so a CLI that mounts them
   passes `option-role` without a baseline line.
+
+### Fixed
+
+- **A query's `time` field takes a time without seconds or without an offset**, as cli-core's `--since-time` does:
+  `created_at>"2026-10-01T09:00"` and `created_at>"2026-10-01 09:00"` worked as flags but failed as
+  `query.invalid-date`. A time with no offset is read in the zone the query is evaluated in (`dateRange`'s `zone`);
+  one that daylight saving skips or repeats there is refused and asks for an offset. Watch for: `validateQuery`
+  checks a time without an offset in its `zone` option, UTC when none is given.
 
 ## 0.99.0 — 13.11.2026
 

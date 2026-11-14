@@ -173,7 +173,10 @@ reads the fields from the entity's Valibot schema (string → `kw`, a list of ch
 command })` refuses a bare word (`query.bare-word`); `validateQuery` checks names, operators, values and
 placement and names every field when one is unknown; `fieldsHelp` prints the help's Fields section, and `queryDescription` the same in one sentence for an input that
 has no help beside it, such as an MCP tool's `query`;
-`QUERY_REASONS` registers the errors. A list filters where its data lives — its store or the provider — and
+`QUERY_REASONS` registers the errors. A `time` field takes the same values as cli-core's `--since-time`: an ISO date
+(that whole day in the query's zone), a date and time with or without seconds and offset, `T` or a space between them
+(`created_at>"2026-10-01 09:00"`; no offset is read in the query's zone), `today`, `yesterday`, or `30m`/`2h`/`7d`
+ago. A list filters where its data lives — its store or the provider — and
 never in memory: `evaluate` exists to test those compilers against. `annotate(list, { output: { entity },
 query })` puts both in `commands --json`, where `cli-dev lint` reads them.
 

@@ -37,11 +37,22 @@ describe("typed calendar boundaries", () => {
     "2026-01-32",
     "7w",
     "2026-01-01T25:00:00Z",
-    "2026-01-01T10:00:00",
+    "2026-01-01T10:60",
+    "2026-01-01T10",
+    "2026-01-01T10:00:00+2",
     "2026-02-30T10:00:00Z",
   ])("rejects invalid/unqualified date %s", (value) =>
     expect(() => dateEndpoint(value, "UTC", "lower", true, span)).toThrow(),
   )
+  it("reads a time with or without seconds, zone or T as the shared time grammar does", () => {
+    const at = (value: string, zone = "Europe/Madrid") => dateEndpoint(value, zone, "lower", false, span).time
+    expect(at("2026-10-01T09:00")).toBe(Date.parse("2026-10-01T07:00:00Z"))
+    expect(at("2026-10-01 09:00")).toBe(Date.parse("2026-10-01T07:00:00Z"))
+    expect(at("2026-10-01T09:00:30.5")).toBe(Date.parse("2026-10-01T07:00:30.500Z"))
+    expect(at("2026-10-01T09:00Z")).toBe(Date.parse("2026-10-01T09:00:00Z"))
+    expect(at("2026-10-01 09:00+02:00", "UTC")).toBe(Date.parse("2026-10-01T07:00:00Z"))
+    expect(() => at("2026-03-29T02:30")).toThrow("skipped or repeated")
+  })
   it("refuses nonexistent calendar days and timezone typos", () => {
     expect(() => dayBoundary("2011-12-30", "Pacific/Apia", false, span)).toThrow("does not exist")
     expect(() => timezoneOf("Europe/Imaginary")).toThrow("IANA timezone")
