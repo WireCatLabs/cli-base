@@ -1,6 +1,6 @@
 import type { VocabularyFlag } from "./vocabulary.js"
 
-/** Memories and facts that rest on cited sources, and sources the owner adds by hand. */
+/** Memories and facts that rest on cited sources, sources the owner adds by hand, and the owner's labels. */
 export const KNOWLEDGE_FLAGS: VocabularyFlag[] = [
   {
     name: "--accept-terms",
@@ -35,5 +35,19 @@ export const KNOWLEDGE_FLAGS: VocabularyFlag[] = [
     type: "count",
     meaning: "at most this many characters read",
     unit: "characters",
+  },
+  {
+    name: "--tag",
+    value: "<name>",
+    role: "target",
+    type: "string",
+    meaning: "a tag, by its name or an alias: only what carries it is read",
+  },
+  {
+    name: "--matching",
+    value: "<query>",
+    role: "target",
+    type: "string",
+    meaning: "every stored thing a search with this query finds, in its query language; the command acts on each",
   },
 ]

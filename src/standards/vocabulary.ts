@@ -311,6 +311,7 @@ const collections: [string, string][] = [
   ["files", "files in the source, such as Google Drive, read and changed there"],
   ["comments", "comments people left on a thing in the source: a channel post or a file"],
   ["meetings", "stored meetings, from Zoom or another provider"],
+  ["calls", "phone calls a phone system recorded, stored as meetings with their transcripts"],
   ["calendars", "calendars of an account, each synced or not"],
   ["events", "calendar entries: meetings, appointments and other things on a calendar"],
   ["people", "persons the owner deals with, such as the attendees of events"],

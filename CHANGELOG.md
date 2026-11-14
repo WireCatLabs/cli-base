@@ -8,6 +8,21 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`calls` is a collection noun**: phone calls a phone system recorded, stored as meetings with their transcripts,
+  as in cli-core's `stats calls show` that pbx and beeline mount. The `unknown-resource` lint no longer refuses
+  `stats calls`.
+- **The flag vocabulary has `--matching <query>`** (role `target`, string): every stored thing a search with this
+  query finds, and the command acts on each. cli-core's meeting `tags add` and `tags remove` take it, so
+  `pbx office tags add complaint --matching "refund OR complaint"` marks every call where those words are said.
+- **The flag vocabulary has `--tag <name>`** (role `target`, string): a tag by its name or an alias, so only what
+  carries it is read. cli-core's shared `search meetings` has taken it for a while, and `option-role` reported it.
+  Watch for: zoom-cli's `lint/baseline/option-role.json` line `search meetings --tag` turns stale after adopting this
+  version; remove it then.
+
 ## 0.100.0 — 14.11.2026
 
 ### Added
