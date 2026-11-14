@@ -25,6 +25,13 @@ export const CALENDAR_FLAGS: VocabularyFlag[] = [
     meaning: "a person invited to the event, by email address; repeat it for more",
   },
   {
+    name: "--setting",
+    value: "<name=value>",
+    role: "value",
+    type: "string",
+    meaning: "one of the service's own settings, such as a meeting's waiting room; repeat it for more",
+  },
+  {
     name: "--id",
     value: "<id>",
     role: "value",

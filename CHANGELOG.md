@@ -16,6 +16,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `skill`, `mcp` and `upgrade` until its documents commands ship, and WC-CI-9 reserves 02:20 UTC for its monthly run.
   `cli-dev repo-check` then passes for notion-cli without its own `config/parity-groups.json`.
 
+- **The flag vocabulary has `--setting <name=value>`** (role `value`, string): one of the service's own settings,
+  repeated for more. cli-core's shared `meetings create` and `meetings update` take it, so a CLI that mounts them
+  passes `option-role` without a baseline line.
+
 ## 0.99.0 — 13.11.2026
 
 ### Changed — may break callers

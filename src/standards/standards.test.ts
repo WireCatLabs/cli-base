@@ -152,6 +152,14 @@ describe("vocabulary registry", () => {
     expect(flag("--occurred-time")?.replaces).toEqual(["--occurred"])
     expect(flag("--source")?.replaces).toEqual(["--target-accounts"])
   })
+
+  it("takes a service's own setting as a repeatable --setting <name=value> that a write sets", () => {
+    expect(VOCABULARY.flags.find((entry) => entry.name === "--setting")).toMatchObject({
+      value: "<name=value>",
+      role: "value",
+      type: "string",
+    })
+  })
 })
 
 describe("output registry", () => {
