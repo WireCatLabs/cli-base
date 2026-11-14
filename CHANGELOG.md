@@ -8,18 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.100.0 — 14.11.2026
 
 ### Added
 
 - `PARITY_GROUPS`' `shared-roots` group takes asterisk-cli (its command is `pbx`), compared like beeline on
   `commands`, `doctor`, `skill`, `mcp` and `upgrade`, and WC-CI-9 reserves 02:48 UTC for its monthly run.
   `cli-dev repo-check` then passes for asterisk-cli without its own `config/parity-groups.json`.
-
-## 0.100.0 — 14.11.2026
-
-### Added
-
 - `PARITY_GROUPS`' `shared-roots` group takes notion-cli (its command is `notion`), compared on `commands`, `doctor`,
   `skill`, `mcp` and `upgrade` until its documents commands ship, and WC-CI-9 reserves 02:20 UTC for its monthly run.
   `cli-dev repo-check` then passes for notion-cli without its own `config/parity-groups.json`.
