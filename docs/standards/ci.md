@@ -168,6 +168,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
   | UTC | Repository |
   |---|---|
   | 02:17 | cli-base |
+  | 02:20 | notion-cli |
   | 02:24 | whatsapp-cli |
   | 02:27 | gcal-cli |
   | 02:31 | cli-memo |

@@ -181,9 +181,10 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   },
   // bitrix24-cli's search is cli-core's CRM `search all`, and beeline-cli's and asterisk-cli's meetings take call
   // recordings, not zoom-cli's: they are compared on the root commands every CLI shares, the way gcal and mail are.
+  // notion-cli joins here until its documents commands ship; then it moves next to drive.
   {
     name: "shared-roots",
-    members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline", "pbx"],
+    members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline", "pbx", "notion"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
     differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
   },
