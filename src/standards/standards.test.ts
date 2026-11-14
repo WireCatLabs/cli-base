@@ -153,6 +153,14 @@ describe("vocabulary registry", () => {
     expect(flag("--source")?.replaces).toEqual(["--target-accounts"])
   })
 
+  it("gives an event a new meeting link with --conference <service> that a write sets", () => {
+    expect(VOCABULARY.flags.find((entry) => entry.name === "--conference")).toMatchObject({
+      value: "<service>",
+      role: "value",
+      type: "string",
+    })
+  })
+
   it("takes a service's own setting as a repeatable --setting <name=value> that a write sets", () => {
     expect(VOCABULARY.flags.find((entry) => entry.name === "--setting")).toMatchObject({
       value: "<name=value>",

@@ -32,6 +32,13 @@ export const CALENDAR_FLAGS: VocabularyFlag[] = [
     meaning: "one of the service's own settings, such as a meeting's waiting room; repeat it for more",
   },
   {
+    name: "--conference",
+    value: "<service>",
+    role: "value",
+    type: "string",
+    meaning: "the video meeting service that gives the event a new meeting link, such as google-meet",
+  },
+  {
     name: "--id",
     value: "<id>",
     role: "value",
