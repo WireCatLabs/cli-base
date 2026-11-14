@@ -10,8 +10,7 @@ export const timezoneOf = (given?: string): string => {
   return zone
 }
 const calendar = (value: string, span: Span) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/u.test(value))
-    queryError("query.invalid-date", span, "use an ISO date or a quoted timestamp with offset")
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) queryError("query.invalid-date", span, "use an ISO date such as 2026-10-01")
   const year = Number(value.slice(0, 4)),
     month = Number(value.slice(5, 7)),
     day = Number(value.slice(8, 10))
@@ -112,6 +111,7 @@ export const zonedMoment = (value: string, zone: string, span: Span, { end = fal
   return time
 }
 const AGO = /^(\d+)(m|h|d)$/u
+const MOMENT = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})?$/u
 const AGO_MS: Record<string, number> = { m: 60_000, h: 3_600_000, d: 86_400_000 }
 const dayOf = (word: string, zone: string, now: number, span: Span): string => {
   const today = new Intl.DateTimeFormat("en-CA", {
@@ -150,20 +150,19 @@ export const dateEndpoint = (
       time: dayBoundary(value, zone, side === "lower" ? !inclusive : inclusive, span),
       inclusive: side === "lower",
     }
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/u.test(value))
+  const [, day, hour, minute, second = "0", offset] = MOMENT.exec(value) ?? []
+  if (day === undefined)
     queryError(
       "query.invalid-date",
       span,
-      "use an ISO date, today, yesterday, 30m/2h/7d ago, or a quoted timestamp with offset",
+      "use an ISO date, a date and time such as 2026-10-01T09:00 (optional seconds and offset), today, yesterday or " +
+        "30m/2h/7d ago",
     )
-  calendar(value.slice(0, 10), span)
-  const time = Date.parse(value)
-  if (
-    !Number.isFinite(time) ||
-    Number(value.slice(11, 13)) > 23 ||
-    Number(value.slice(14, 16)) > 59 ||
-    Number(value.slice(17, 19)) > 59
-  )
+  const moment = value.replace(" ", "T")
+  if (offset === undefined) return { time: wallTime(moment, zone, span), inclusive }
+  calendar(day, span)
+  const time = Date.parse(moment)
+  if (!Number.isFinite(time) || Number(hour) > 23 || Number(minute) > 59 || Number(second) > 59)
     queryError("query.invalid-date", span)
   return { time, inclusive }
 }

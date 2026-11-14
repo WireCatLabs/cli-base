@@ -212,6 +212,8 @@ describe("evaluate, the test oracle", () => {
     ["created_at:2026-10-10", true],
     ["created_at>=7d", true],
     ["created_at>=2d", false],
+    ['created_at>"2026-10-10T11:59"', true],
+    ['created_at>"2026-10-10 12:00"', false],
     ["urgent:true", true],
     ["state:done OR urgent:true", true],
     ["state:done OR urgent:false", false],
