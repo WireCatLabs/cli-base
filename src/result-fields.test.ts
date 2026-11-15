@@ -85,6 +85,22 @@ describe("portable result projection", () => {
     })
     expect(projectFields({ items: null, id: 1 }, ["id"])).toEqual({ id: 1 })
   })
+  it("keeps each object's untrusted list, so selected text from other people is still marked", () => {
+    expect(projectFields({ item: { id: 1, title: "Example", untrusted: ["title"] }, meta: {} }, ["title"])).toEqual({
+      item: { title: "Example", untrusted: ["title"] },
+      meta: {},
+    })
+    expect(projectFields({ items: [{ id: 1, text: "Example", untrusted: ["text"] }] }, ["items.text"])).toEqual({
+      items: [{ text: "Example", untrusted: ["text"] }],
+    })
+    const nested = { item: { meeting: { id: 1, title: "Example" }, untrusted: ["meeting.title"] } }
+    expect(projectFields(nested, ["meeting.title"])).toEqual({
+      item: { meeting: { title: "Example" }, untrusted: ["meeting.title"] },
+    })
+    expect(projectFields([{ id: 1, text: "Example", untrusted: ["text"] }], ["id"])).toEqual([
+      { id: 1, untrusted: ["text"] },
+    ])
+  })
   it("rejects unsafe, empty or excessive paths even when supplied directly", () => {
     for (const path of ["", "a..b", "items.__proto__.x", "constructor", "a.prototype.x", "id,", "a".repeat(257)]) {
       expect(() => fieldsOf(path)).toThrow(/field paths/)
