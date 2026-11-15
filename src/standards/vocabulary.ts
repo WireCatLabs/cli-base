@@ -299,6 +299,8 @@ const collections: [string, string][] = [
   ["splits", "parts of one transaction, each with its own amount and category"],
   ["users", "people who work in the owner's account at a service, such as a CRM's employees"],
   ["fields", "a record type's field definitions: code, label, type and options, such as a CRM's custom fields"],
+  ["activities", "a CRM's calls, e-mails, meetings, to-dos and comments on its records"],
+  ["changes", "what changed in a copied source over a time: records added, moved, closed or reassigned"],
   [
     "identities",
     "ways to reach a person or an organization: an account in one messenger or mailbox, an e-mail address, a phone",
