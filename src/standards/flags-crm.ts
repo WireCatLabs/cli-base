@@ -2,6 +2,20 @@ import type { VocabularyFlag } from "./vocabulary.js"
 
 export const CRM_FLAGS: VocabularyFlag[] = [
   {
+    name: "--email",
+    value: "<address>",
+    role: "value",
+    type: "string",
+    meaning: "an e-mail address to give it; repeat it for more",
+  },
+  {
+    name: "--phone",
+    value: "<phone>",
+    role: "value",
+    type: "string",
+    meaning: "a phone number to give it, in international form starting with +; repeat it for more",
+  },
+  {
     name: "--pipeline",
     value: "<pipeline>",
     role: "value",

@@ -161,6 +161,12 @@ describe("vocabulary registry", () => {
     })
   })
 
+  it("gives a person or an organization repeatable --email <address> and --phone <phone> that a write sets", () => {
+    const flag = (name: string) => VOCABULARY.flags.find((entry) => entry.name === name)
+    expect(flag("--email")).toMatchObject({ value: "<address>", role: "value", type: "string" })
+    expect(flag("--phone")).toMatchObject({ value: "<phone>", role: "value", type: "string" })
+  })
+
   it("takes a service's own setting as a repeatable --setting <name=value> that a write sets", () => {
     expect(VOCABULARY.flags.find((entry) => entry.name === "--setting")).toMatchObject({
       value: "<name=value>",
