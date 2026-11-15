@@ -12,6 +12,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **The command vocabulary has the nouns `activities` and `changes`** (collections): a CRM's calls, e-mails,
+  meetings, to-dos and comments on its records, and what changed in a copied source over a time: records added, moved,
+  closed or reassigned. cli-core's shared CRM commands `activities list` and `changes list` use them; without the
+  words, every CLI that mounts them (bitrix24-cli `b24`, amoCRM `amo`, memo) fails `cli-dev lint`.
 - **The flag vocabulary has `--email <address>` and `--phone <phone>`** (role `value`, string, each repeated for
   more): an e-mail address and a phone number, in international form starting with `+`, to give a person or an
   organization. CRM CLIs offer them on `people create|update` and `organizations create|update`; without the words,

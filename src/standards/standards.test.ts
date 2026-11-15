@@ -161,6 +161,12 @@ describe("vocabulary registry", () => {
     })
   })
 
+  it("names `activities` and `changes` as collections, so a CRM CLI can mount `activities list`", () => {
+    const noun = (word: string) => VOCABULARY.nouns.find((entry) => entry.word === word)
+    expect(noun("activities")).toMatchObject({ kind: "collection" })
+    expect(noun("changes")).toMatchObject({ kind: "collection" })
+  })
+
   it("gives a person or an organization repeatable --email <address> and --phone <phone> that a write sets", () => {
     const flag = (name: string) => VOCABULARY.flags.find((entry) => entry.name === name)
     expect(flag("--email")).toMatchObject({ value: "<address>", role: "value", type: "string" })
