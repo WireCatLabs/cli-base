@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The flag vocabulary has `--email <address>` and `--phone <phone>`** (role `value`, string, each repeated for
+  more): an e-mail address and a phone number, in international form starting with `+`, to give a person or an
+  organization. CRM CLIs offer them on `people create|update` and `organizations create|update`; without the words,
+  such a command fails its `option-role` lint. To watch for: a command that declares either with another placeholder,
+  such as `--phone <number>`, fails `flag-two-meanings`; rename it to the vocabulary's.
+
 ## 0.102.1 — 15.11.2026
 
 ### Fixed
