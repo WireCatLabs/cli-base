@@ -25,7 +25,8 @@ export const fieldsOf = (value: string): string[] => {
 }
 const object = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value)
-const retained = new Set(["operation_id", "page", "next", "missing", "meta", "coverage"])
+// `untrusted` stays so a selected field from other people is still marked when the answer is rendered (WC-SECR-11).
+const retained = new Set(["operation_id", "page", "next", "missing", "meta", "coverage", "untrusted"])
 const itemPaths = (paths: readonly string[]): string[] =>
   paths.map((path) => (path.startsWith("items.") ? path.slice(6) : path))
 const onePaths = (paths: readonly string[]): string[] =>

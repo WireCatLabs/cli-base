@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.102.1 — 15.11.2026
+
+### Fixed
+
+- **`projectFields` keeps each object's `untrusted` list.** `--json id,title` dropped it, so a CLI that projects an
+  answer before cli-core's `renderAnswer` (zoom-cli does) printed other people's text unmarked in a scheduled agent's
+  run, and a JSON caller lost the list of fields that came from outside. The list is kept whole, also when some of
+  the fields it names were not selected.
+
 ## 0.102.0 — 14.11.2026
 
 ### Added
