@@ -4,7 +4,8 @@
  * files with (`identifier`, `requestSchema`), and format-neutral: it parses no file format and
  * adds no runtime dependency. `adaptOpenApi` reads an OpenAPI document and `adaptDiscovery` Google Discovery
  * documents the consumer has parsed; `upgradeToOpenApi3` brings Swagger 1.2 and 2.0 to OpenAPI 3 through two optional
- * peer dependencies. `fakeApi` serves the generated manifest as a strict fake for a CLI's tests. An adapter from Postman or anything else lives in the consumer.
+ * peer dependencies. `fakeApi` serves the generated manifest as a strict fake for a CLI's tests. An adapter from
+ * Postman or anything else lives in the consumer.
  */
 export {
   adaptDiscovery,

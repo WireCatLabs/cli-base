@@ -201,4 +201,131 @@ describe("fakeApi", () => {
     }
     expect(sampleOf({ type: "ref", ref: "Folder" }, definitions)).toEqual({ name: "xxxxxx" })
   })
+  it("reads repeated query values as a list, prefers a literal path, and serves bytes and open calls", async () => {
+    const http = (method: "GET" | "PATCH", path: string) => ({ kind: "http" as const, method, path })
+    const operations: ManifestOperation[] = [
+      {
+        id: "byId",
+        command: "by-id",
+        binding: http("GET", "/a/{id}"),
+        effect: "read",
+        tags: [],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+      },
+      {
+        id: "literal",
+        command: "literal",
+        binding: http("GET", "/a/b"),
+        effect: "read",
+        tags: [],
+        security: [],
+        parameters: [
+          {
+            name: "properties",
+            in: "query",
+            required: false,
+            schema: { type: "array", items: { type: "string", pattern: "^[a-z\\_]+$" } },
+          },
+        ],
+      },
+      {
+        id: "patch",
+        command: "patch",
+        binding: http("PATCH", "/a/{id}"),
+        effect: "write",
+        tags: [],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        request: {
+          required: true,
+          confidence: "contract",
+          schema: "Patch",
+          contentType: "application/merge-patch+json",
+        },
+      },
+    ]
+    const definitions: Record<string, SchemaNode> = {
+      Patch: { type: "object", properties: { name: { type: "string" } }, required: [] },
+    }
+    const fake = fakeApi({
+      operations,
+      definitions,
+      baseUrl: "https://api.example",
+      auth: { header: "Authorization", value: "Bearer t" },
+      hosts: { "*.files.example": () => ({ body: "file bytes", headers: { "content-type": "text/plain" } }) },
+    })
+    const answer = await fake.fetch("https://api.example/a/b?properties=first_name&properties=email")
+    expect(answer.status).toBe(200)
+    expect(fake.calls[0]).toMatchObject({ operation: "literal", query: { properties: ["first_name", "email"] } })
+    const merge = (body: unknown) =>
+      fake.fetch("https://api.example/a/1", {
+        method: "PATCH",
+        headers: { Authorization: "Bearer t", "content-type": "application/merge-patch+json" },
+        body: JSON.stringify(body),
+      })
+    expect((await merge({ nmae: "x" })).status).toBe(400)
+    expect((await merge({ name: "x" })).status).toBe(200)
+    expect(await (await fake.fetch("https://u7.files.example/f")).text()).toBe("file bytes")
+    expect((await fake.fetch("http://u7.files.example/f")).status).toBe(400)
+    expect(fake.refusals).toEqual(["body.nmae: no such field", "u7.files.example was called over http:"])
+  })
+})
+
+describe("pagination detection does not guess", () => {
+  const read = (parameters: unknown[], answer: Record<string, unknown>) => ({
+    openapi: "3.0.1",
+    info: {},
+    paths: {
+      "/events": {
+        get: {
+          operationId: "events",
+          parameters,
+          responses: {
+            "200": { content: { "application/json": { schema: { type: "object", properties: answer } } } },
+          },
+        },
+      },
+    },
+  })
+  const pageOf = (document: unknown, overrides = {}) =>
+    (
+      exported(
+        generate(adaptOpenApi(document), [manifestGenerator({ path: "m.ts" })], {
+          banner: [],
+          pagination: true,
+          overrides,
+        })[0]?.content,
+        "operations",
+      ) as ManifestOperation[]
+    )[0]?.pagination
+
+  it("takes no date for an offset and no page count for a total", () => {
+    const attendees = { attendees: { type: "array", items: { type: "string" } } }
+    expect(
+      pageOf(read([{ name: "start", in: "query", schema: { type: "string", format: "date" } }], attendees)),
+    ).toBeUndefined()
+    const counted = read(
+      [
+        { name: "offset", in: "query", schema: { type: "integer" } },
+        { name: "count", in: "query", schema: { type: "integer" } },
+      ],
+      { items: { type: "array", items: { type: "string" } }, count: { type: "integer" } },
+    )
+    expect(pageOf(counted)).toEqual({
+      style: "offset",
+      offset: { in: "query", name: "offset" },
+      limit: { in: "query", name: "count" },
+      items: "items",
+    })
+  })
+
+  it("refuses an override whose answer path is not in the answer", () => {
+    const document = read([{ name: "after", in: "query", schema: { type: "string" } }], { next: { type: "string" } })
+    const override = (next: string) => ({
+      events: { reason: "x", pagination: { style: "cursor", cursor: { in: "query", name: "after" }, next } },
+    })
+    expect(pageOf(document, override("next"))).toMatchObject({ style: "cursor", next: "next" })
+    expect(() => pageOf(document, override("next_cursr"))).toThrow(
+      'reads next from "next_cursr", which the answer lacks',
+    )
+  })
 })

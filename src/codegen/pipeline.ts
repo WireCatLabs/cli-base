@@ -15,7 +15,7 @@ import type {
   SecurityScheme,
 } from "./model.js"
 import { identifier, kebab } from "./names.js"
-import { detectPagination, requestParameters } from "./pagination.js"
+import { answerPaths, detectPagination, requestParameters } from "./pagination.js"
 
 export class CodegenError extends Error {
   constructor(readonly problems: readonly string[]) {
@@ -132,14 +132,23 @@ export const applyPagination = (
     const override = overrides[operation.id]
     if (override?.pagination === null) return operation
     if (override?.pagination) {
+      const at = `override "${operation.id}": pagination`
+      if (operation.effect !== "read") problems.push(`${at} on an operation that is not a read`)
       const request = requestParameters(operation, schemas)
+      const answer = answerPaths(operation, schemas)
       const { style: _, ...fields } = override.pagination as Record<string, unknown>
-      for (const value of Object.values(fields)) {
-        const parameter = value as PageParameter
-        if (typeof value === "object" && !request.some((one) => one.in === parameter.in && one.name === parameter.name))
-          problems.push(
-            `override "${operation.id}": pagination names ${parameter.in} "${parameter.name}", which the operation does not take`,
-          )
+      for (const [field, value] of Object.entries(fields)) {
+        if (typeof value === "string") {
+          // An answer without a schema has nothing to check the path against.
+          if (answer.size > 0 && !answer.has(value))
+            problems.push(`${at} reads ${field} from "${value}", which the answer lacks`)
+          continue
+        }
+        const parameter = value as PageParameter | null
+        if (!parameter || typeof parameter !== "object" || typeof parameter.name !== "string")
+          problems.push(`${at}: ${field} must name a parameter`)
+        else if (!request.some((one) => one.in === parameter.in && one.name === parameter.name))
+          problems.push(`${at} names ${parameter.in} "${parameter.name}", which the operation does not take`)
       }
       return { ...operation, pagination: override.pagination, paginationSource: `override: ${override.reason}` }
     }
