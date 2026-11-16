@@ -117,11 +117,33 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      # The JSON report feeds the slow-test step. Naming a reporter drops Vitest's defaults, so they are named too.
       - if: inputs.test-shards <= 1
-        run: pnpm test:coverage
+        run: >-
+          pnpm test:coverage --reporter=default --reporter=github-actions --reporter=json
+          --outputFile.json=coverage/tests.json
         env:
           TZ: Asia/Vladivostok
       - run: pnpm build
+      # WC-TEST-20: a warning, never a failure. A caller whose cli-base has no `slow-tests`, or a run that wrote no
+      # report, gets a notice. After the build, which is where cli-base itself finds its own cli-dev.
+      - name: slow tests
+        if: inputs.test-shards <= 1
+        continue-on-error: true
+        run: |
+          [ -f coverage/tests.json ] || { echo "::notice::no coverage/tests.json, so no slow-test check"; exit 0; }
+          if [ -x node_modules/.bin/cli-dev ]; then dev=node_modules/.bin/cli-dev
+          elif [ -f dist/dev/bin.js ]; then dev="node dist/dev/bin.js"
+          else echo "::notice::no cli-dev, so no slow-test check"; exit 0; fi
+          if ! $dev slow-tests coverage/tests.json 2> "$RUNNER_TEMP/slow.txt"; then
+            cat "$RUNNER_TEMP/slow.txt"
+            echo "::notice::cli-dev slow-tests failed, so no slow-test check"
+            exit 0
+          fi
+          [ -s "$RUNNER_TEMP/slow.txt" ] || exit 0
+          cat "$RUNNER_TEMP/slow.txt"
+          text=$(awk '{ gsub(/%/, "%25"); printf "%s%s", (NR > 1 ? "%0A" : ""), $0 }' "$RUNNER_TEMP/slow.txt")
+          echo "::warning title=Tests over 3 s (WC-TEST-20)::$text"
       # One step per script, after test:coverage: test:matrix:check reads that run's argv log, so with shards it runs
       # in `coverage` instead.
       - name: cli steps to skip
@@ -294,9 +316,28 @@ jobs:
         run: |
           found=$(find .vitest/blob -type f | wc -l)
           [ "$found" -eq "$SHARDS" ] || { echo "::error::$found blob reports, expected $SHARDS"; exit 1; }
-      - run: pnpm test:coverage --merge-reports
+      - run: >-
+          pnpm test:coverage --merge-reports --reporter=default --reporter=github-actions --reporter=json
+          --outputFile.json=coverage/tests.json
         env:
           TZ: Asia/Vladivostok
+      # From the merged report, so every shard's tests count; the same step as in `check`.
+      - name: slow tests
+        continue-on-error: true
+        run: |
+          [ -f coverage/tests.json ] || { echo "::notice::no coverage/tests.json, so no slow-test check"; exit 0; }
+          if [ -x node_modules/.bin/cli-dev ]; then dev=node_modules/.bin/cli-dev
+          elif [ -f dist/dev/bin.js ]; then dev="node dist/dev/bin.js"
+          else echo "::notice::no cli-dev, so no slow-test check"; exit 0; fi
+          if ! $dev slow-tests coverage/tests.json 2> "$RUNNER_TEMP/slow.txt"; then
+            cat "$RUNNER_TEMP/slow.txt"
+            echo "::notice::cli-dev slow-tests failed, so no slow-test check"
+            exit 0
+          fi
+          [ -s "$RUNNER_TEMP/slow.txt" ] || exit 0
+          cat "$RUNNER_TEMP/slow.txt"
+          text=$(awk '{ gsub(/%/, "%25"); printf "%s%s", (NR > 1 ? "%0A" : ""), $0 }' "$RUNNER_TEMP/slow.txt")
+          echo "::warning title=Tests over 3 s (WC-TEST-20)::$text"
       # test-matrix reads the log as a set of commands and options, so the shards' logs joined equal one run's.
       - name: test:matrix:check
         if: inputs.cli && !contains(inputs.skip, 'test:matrix:check')

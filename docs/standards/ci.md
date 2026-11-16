@@ -117,12 +117,14 @@ plus community itself. cli-template follows every rule here as a CLI does
   catches that merge skew the same hour, not at the next release.
 - **Enforced by:** `main.yml:validation` · `node-ci.yml:check` · `node-ci.yml:bun` · `node-ci.yml:secrets`.
 - **Example:** `main.yml` calls the repository's own `ci.yml`, which calls cli-base `node-ci.yml`. That runs
-  `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage` and `pnpm build`. With `cli: true` it then runs one named step
-  per CLI script: `contracts:check`, `contracts:upgrade`, `security:no-leak`, `version:check`, `generate:check`,
-  `test:matrix:check`, `docs:check`, `package:check`, `lint:commands`, and `parity:check` with `parity: true`. Then
-  the project's `checks` lines, a Bun job, and a gitleaks scan of the whole history. The shared workflow owns the CLI
-  steps: the repository's `ci.yml` names a step it cannot run yet in `skip`, with the reason beside it, and puts only
-  its extra checks in `checks` (tg and max: `pnpm check:agent-docs`).
+  `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage` and `pnpm build`, then warns about each test over 3 s from that
+  run's JSON report ([WC-TEST-20](testing.md#wc-test-20--one-test-time-limit-of-15-s-and-each-test-runs-within-3-s)).
+  With `cli: true` it then runs one named step per CLI script: `contracts:check`, `contracts:upgrade`,
+  `security:no-leak`, `version:check`, `generate:check`, `test:matrix:check`, `docs:check`, `package:check`,
+  `lint:commands`, and `parity:check` with `parity: true`. Then the project's `checks` lines, a Bun job, and a
+  gitleaks scan of the whole history. The shared workflow owns the CLI steps: the repository's `ci.yml` names a step
+  it cannot run yet in `skip`, with the reason beside it, and puts only its extra checks in `checks` (tg and max:
+  `pnpm check:agent-docs`).
 - **Exceptions:** platform suites (Windows, macOS, install checks) are skipped here and run at release, monthly or on
   request. Nothing in this run publishes or tags. cli-docs runs its full validation before each deployment and monthly
   instead; community has no build to validate.
