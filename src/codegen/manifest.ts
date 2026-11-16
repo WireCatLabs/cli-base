@@ -1,4 +1,14 @@
-import type { ApiModel, ApiOperation, Binding, CodeGenerator, Confidence, Effect, SchemaNode } from "./model.js"
+import type {
+  ApiModel,
+  ApiOperation,
+  Binding,
+  CodeGenerator,
+  Confidence,
+  Effect,
+  OperationPermission,
+  SchemaNode,
+  SecurityRequirement,
+} from "./model.js"
 import { kebab } from "./names.js"
 import { SchemaTree } from "./tree.js"
 
@@ -22,6 +32,8 @@ export interface ManifestOperation {
   }[]
   request?: { required: boolean; confidence: Confidence; schema?: string; contentType?: string }
   response?: { confidence: Confidence; schema?: string; sensitive?: boolean }
+  security?: readonly SecurityRequirement[]
+  permissions?: readonly OperationPermission[]
 }
 
 const withoutUndefined = <T extends object>(value: T): T =>
@@ -37,6 +49,8 @@ const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperatio
     description: operation.description,
     tags: operation.tags,
     deprecated: operation.deprecated,
+    security: operation.security,
+    permissions: operation.permissions,
     parameters: operation.parameters.map((parameter) => withoutUndefined({ ...parameter })),
     request: operation.requestBody
       ? withoutUndefined({
@@ -60,10 +74,23 @@ export const manifestGenerator =
   (model: ApiModel) => {
     const tree = new SchemaTree(model)
     const operations = model.operations.map((operation) => toManifest(operation, tree))
+    // Only what the source has, so a manifest from a source without servers or schemes does not change.
+    const extras = (
+      [
+        ["servers", "ApiServer", "readonly ApiServer[]", model.servers],
+        ["securitySchemes", "SecurityScheme", "Readonly<Record<string, SecurityScheme>>", model.securitySchemes],
+        ["security", "SecurityRequirement", "readonly SecurityRequirement[]", model.security],
+      ] as const
+    ).filter(([, , , value]) => value !== undefined)
+    const types = ["ManifestOperation", ...extras.map(([, type]) => type)].sort()
     const content = [
-      `import type { ManifestOperation } from "${options.coreImport ?? "@wirecat/cli-base/codegen"}"`,
+      `import type { ${types.join(", ")} } from "${options.coreImport ?? "@wirecat/cli-base/codegen"}"`,
       "",
       `export const operations: readonly ManifestOperation[] = ${JSON.stringify(operations, null, 2)}`,
+      ...extras.flatMap(([name, , type, value]) => [
+        "",
+        `export const ${name}: ${type} = ${JSON.stringify(value, null, 2)}`,
+      ]),
       "",
     ].join("\n")
     return [{ path: options.path, content }]
@@ -106,6 +133,14 @@ export const coverageGenerator =
       } | ${status} | ${cell(entry.summary)} |`
     })
     const version = model.source.version ? ` ${model.source.version}` : ""
+    const reasoned = model.operations.filter((operation) => operation.effectReason)
+    const guarded = model.operations.flatMap((operation) =>
+      (operation.permissions ?? []).map((permission) => ({ id: operation.id, permission })),
+    )
+    const when = ({ body, query }: OperationPermission) =>
+      [...(body ?? []).map((flag) => `body \`${flag}\``), ...(query ?? []).map((flag) => `query \`${flag}\``)].join(
+        " or ",
+      )
     const content = [
       `# ${options.title}`,
       "",
@@ -114,6 +149,29 @@ export const coverageGenerator =
       "| Operation | Call | Command | Effect | Request source | Status | Summary |",
       "|---|---|---|---|---|---|---|",
       ...rows,
+      ...(reasoned.length > 0
+        ? [
+            "",
+            "## Effects not taken from the HTTP method",
+            "",
+            "| Operation | Effect | Why |",
+            "|---|---|---|",
+            ...reasoned.map((one) => `| \`${one.id}\` | ${one.effect} | ${cell(one.effectReason)} |`),
+          ]
+        : []),
+      ...(guarded.length > 0
+        ? [
+            "",
+            "## Calls guarded by a permission key",
+            "",
+            "| Operation | Key | When |",
+            "|---|---|---|",
+            ...guarded.map(({ id, permission }) => {
+              const flags = when(permission)
+              return `| \`${id}\` | \`${permission.key}\` | ${flags ? `${flags} is true` : "always"} |`
+            }),
+          ]
+        : []),
       "",
     ].join("\n")
     return [{ path: options.path, content }]

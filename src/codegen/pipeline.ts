@@ -1,6 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, extname, join } from "node:path"
-import type { ApiModel, ApiOperation, CodeGenerator, GeneratedArtifact, Override, SchemaNode } from "./model.js"
+import type {
+  ApiModel,
+  ApiOperation,
+  CodeGenerator,
+  GeneratedArtifact,
+  OperationPermission,
+  Override,
+  SchemaNode,
+  SecurityRequirement,
+  SecurityScheme,
+} from "./model.js"
 import { identifier, kebab } from "./names.js"
 
 export class CodegenError extends Error {
@@ -21,9 +31,95 @@ export const applyOverrides = (model: ApiModel, overrides: Readonly<Record<strin
     ...model,
     operations: model.operations.map((operation) => {
       const override = overrides[operation.id]
-      return override?.effect ? { ...operation, effect: override.effect } : operation
+      return override?.effect
+        ? { ...operation, effect: override.effect, effectReason: `override: ${override.reason}` }
+        : operation
     }),
   }
+}
+
+/**
+ * Which calls the CLI's own permission keys guard, so denying `files.delete` also holds over the raw `api` group:
+ * `<group>.delete` for every destructive operation and for every flag in `deletingFlags` an operation takes (cli-core
+ * checks the key when the flag is `true`); `<group>.share` for the operations in `shares`.
+ */
+export interface PermissionRule {
+  /** `files`, or one per operation (a tag, a spec's prefix). */
+  group: string | ((operation: ApiOperation) => string)
+  /**
+   * Top-level body fields and query parameters that delete or overwrite when `true`: `archived`, `in_trash` (Notion),
+   * `permanently`, `overwrite` (Yandex Disk).
+   */
+  deletingFlags?: readonly string[]
+  /** Operation ids that make something public, as a share link does: neither a plain write nor a delete. */
+  shares?: readonly string[]
+}
+
+/** The top-level property names a body may carry, through references, inheritance and unions. */
+const bodyFields = (node: SchemaNode, schemas: ReadonlyMap<string, SchemaNode>, seen = new Set<string>()): string[] => {
+  switch (node.type) {
+    case "ref": {
+      const target = schemas.get(node.ref)
+      if (!target || seen.has(node.ref)) return []
+      return bodyFields(target, schemas, new Set([...seen, node.ref]))
+    }
+    case "object":
+      return Object.keys(node.properties)
+    case "union":
+    case "allOf":
+      return node.of.flatMap((member) => bodyFields(member, schemas, seen))
+    default:
+      return []
+  }
+}
+
+export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiModel => {
+  const known = new Set(model.operations.map((operation) => operation.id))
+  const stale = (rule.shares ?? []).filter((id) => !known.has(id))
+  if (stale.length > 0) throw new CodegenError(stale.map((id) => `shares: "${id}" matches no operation`))
+  const schemas = new Map(model.schemas.map((schema) => [schema.id, schema.schema]))
+  const flags = rule.deletingFlags ?? []
+  return {
+    ...model,
+    operations: model.operations.map((operation) => {
+      const group = typeof rule.group === "string" ? rule.group : rule.group(operation)
+      const permissions: OperationPermission[] = []
+      if (rule.shares?.includes(operation.id)) permissions.push({ key: `${group}.share` })
+      if (operation.effect === "destructive") permissions.push({ key: `${group}.delete` })
+      else {
+        const fields = new Set(operation.requestBody?.schema ? bodyFields(operation.requestBody.schema, schemas) : [])
+        const body = flags.filter((flag) => fields.has(flag))
+        const query = flags.filter((flag) =>
+          operation.parameters.some((parameter) => parameter.in === "query" && parameter.name === flag),
+        )
+        if (body.length > 0 || query.length > 0)
+          permissions.push({
+            key: `${group}.delete`,
+            ...(body.length > 0 ? { body } : {}),
+            ...(query.length > 0 ? { query } : {}),
+          })
+      }
+      return permissions.length > 0 ? { ...operation, permissions } : operation
+    }),
+  }
+}
+
+/**
+ * Sign-in the source does not describe, or describes wrongly: Yandex Disk's Swagger 1.2 has no scheme, and its header
+ * is `Authorization: OAuth <token>`, which `{ type: "http", scheme: "OAuth" }` says. Replaces the source's own.
+ */
+export interface AuthOverride {
+  securitySchemes: Readonly<Record<string, SecurityScheme>>
+  security: readonly SecurityRequirement[]
+  reason: string
+}
+
+const applyAuth = (model: ApiModel, auth: AuthOverride): ApiModel => {
+  const names = new Set(Object.keys(auth.securitySchemes))
+  const unknown = [...new Set(auth.security.flatMap(Object.keys))].filter((name) => !names.has(name))
+  if (unknown.length > 0)
+    throw new CodegenError(unknown.map((name) => `auth: security names "${name}", which securitySchemes lacks`))
+  return { ...model, securitySchemes: auth.securitySchemes, security: auth.security }
 }
 
 const bindingKey = (operation: ApiOperation): string =>
@@ -145,6 +241,8 @@ export const validateModel = (model: ApiModel): void => {
 
 export interface GenerateOptions {
   overrides?: Readonly<Record<string, Override>>
+  permissions?: PermissionRule
+  auth?: AuthOverride
   /** Lines under "GENERATED. DO NOT EDIT." — the source and the command. Nothing that changes by itself. */
   banner: readonly string[]
 }
@@ -159,7 +257,10 @@ export const generate = (
   generators: readonly CodeGenerator[],
   options: GenerateOptions,
 ): GeneratedArtifact[] => {
-  const prepared = applyOverrides(model, options.overrides ?? {})
+  const overridden = applyOverrides(model, options.overrides ?? {})
+  const authed = options.auth ? applyAuth(overridden, options.auth) : overridden
+  // After the overrides: an operation an override calls destructive is a delete too.
+  const prepared = options.permissions ? applyPermissionRule(authed, options.permissions) : authed
   validateModel(prepared)
   const artifacts = generators.flatMap((generator) => generator(prepared))
   const clashing = duplicates(artifacts.map((artifact) => artifact.path))

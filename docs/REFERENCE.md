@@ -218,7 +218,9 @@ name), an `effect` (`read`, `write`, `destructive`) and how far the source can b
 (`contract`, `example`, `inferred`, `override`) — and writes committed files. It parses no file
 format and adds no dependency: `adaptOpenApi` reads a parsed OpenAPI document, `adaptDiscovery` parsed
 Google Discovery documents, and an adapter from Postman or anything else lives in the CLI that has that
-source. Generation stops, naming the problem, when two operations collide, an
+source. `upgradeToOpenApi3` converts Swagger 1.2 and 2.0 first, through two optional peer dependencies. What the
+generator reads, the corrections it takes (`overrides`, the search rule, `deletes`) and its limits are on the
+[kit surface](standards/kit-surface.md#the-api-generator) page. Generation stops, naming the problem, when two operations collide, an
 operation is not classified as a read or a write, an override matches nothing, a reference points
 nowhere or a construct cannot be expressed; it never drops an operation unasked or falls back to `any`.
 

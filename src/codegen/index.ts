@@ -3,7 +3,8 @@
  * manifest and a coverage page. Build-time, apart from the small helpers a CLI reads the generated
  * files with (`identifier`, `requestSchema`), and format-neutral: it parses no file format and
  * adds no dependency. `adaptOpenApi` reads an OpenAPI document and `adaptDiscovery` Google Discovery
- * documents the consumer has parsed; an adapter from Postman or anything else lives in the consumer.
+ * documents the consumer has parsed; `upgradeToOpenApi3` brings Swagger 1.2 and 2.0 to OpenAPI 3 through two optional
+ * peer dependencies. An adapter from Postman or anything else lives in the consumer.
  */
 export {
   adaptDiscovery,
@@ -30,6 +31,7 @@ export type {
   ApiOperation,
   ApiParameter,
   ApiSchema,
+  ApiServer,
   Binding,
   CodeGenerator,
   Confidence,
@@ -38,22 +40,30 @@ export type {
   GeneratedArtifact,
   HttpBinding,
   HttpMethod,
+  OAuthFlow,
+  OperationPermission,
   Override,
   RpcBinding,
   SchemaNode,
+  SecurityRequirement,
+  SecurityScheme,
   SourceInfo,
   SourceReference,
 } from "./model.js"
 export { identifier, kebab } from "./names.js"
-export { adaptOpenApi, OpenApiError } from "./openapi.js"
+export { adaptOpenApi, OpenApiError, READING_POST_REASON } from "./openapi.js"
 export {
+  type AuthOverride,
   applyOverrides,
+  applyPermissionRule,
   CodegenError,
   type GenerateOptions,
   generate,
+  type PermissionRule,
   validateModel,
   type WriteOptions,
   writeArtifacts,
 } from "./pipeline.js"
+export { upgradeToOpenApi3 } from "./swagger.js"
 export { typesGenerator } from "./typescript.js"
 export { type ValibotOptions, valibotGenerator } from "./valibot.js"
