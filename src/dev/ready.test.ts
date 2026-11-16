@@ -1,0 +1,199 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { describe, expect, it } from "vitest"
+import { liveTree } from "./conformance.js"
+import type { Shell } from "./land.js"
+import { designCategory, READY_TESTS, ready, readyReport } from "./ready.js"
+
+const SCRIPTS = [
+  "typecheck",
+  "lint",
+  "test",
+  "contracts:check",
+  "audit:commands",
+  "docs:check",
+  "generate:check",
+  "smoke",
+  "security:no-leak",
+  "deps:check",
+]
+const CRM_TEST = 'import { crmSourceContract } from "@wirecat/cli-core/crm/testing"\n\ncrmSourceContract(make)\n'
+
+const cli = (files: Record<string, string>, scripts: readonly string[] = SCRIPTS) => {
+  const cwd = mkdtempSync(join(tmpdir(), "cli-dev-ready-"))
+  const all: Record<string, string> = {
+    "package.json": JSON.stringify({
+      version: "0.3.0",
+      scripts: Object.fromEntries(scripts.map((name) => [name, "true"])),
+    }),
+    "docs/dev/DESIGN.md": "# Design\n\n- **Category:** CRM (sales: deals, contacts, companies)\n",
+    "src/crm.test.ts": CRM_TEST,
+    "docs/dev/live-checks.txt": "# version commit date script\n0.3.0 abc123 2026-11-16 bin/acme-live\n",
+    ...files,
+  }
+  for (const [path, text] of Object.entries(all)) {
+    mkdirSync(join(cwd, path, ".."), { recursive: true })
+    writeFileSync(join(cwd, path), text)
+  }
+  return cwd
+}
+
+/** The CLI's tests as vitest reports them: each file's test statuses. */
+type Ran = Record<string, string[]>
+
+const shell = (cwd: string, ran: Ran = { "src/crm.test.ts": ["passed"] }, failing: Record<string, string> = {}) => {
+  const calls: string[] = []
+  const run: Shell = {
+    run: (command, args) => {
+      const call = [command, ...args].join(" ")
+      calls.push(call)
+      const report = args.find((arg) => arg.startsWith("--outputFile.json="))?.split("=")[1]
+      if (report) {
+        const testResults = Object.entries(ran).map(([file, statuses]) => ({
+          name: join(cwd, file),
+          assertionResults: statuses.map((status) => ({ title: "t", status })),
+        }))
+        mkdirSync(join(report, ".."), { recursive: true })
+        writeFileSync(report, JSON.stringify({ testResults }))
+      }
+      const failed = Object.entries(failing).find(([match]) => call.includes(match))
+      return failed ? { ok: false, out: failed[1] } : { ok: true, out: "" }
+    },
+    sleep: () => {},
+  }
+  return { run, calls }
+}
+
+const ioOf = (cwd: string) => {
+  const out: string[] = []
+  const err: string[] = []
+  return { io: { cwd, out: (text: string) => out.push(text), err: (text: string) => err.push(text) }, out, err }
+}
+
+const rowsOf = (cwd: string, run: Shell) => readyReport(ioOf(cwd).io, run).rows
+const row = (cwd: string, run: Shell, id: string) => rowsOf(cwd, run).find((one) => one.id === id)
+
+describe("cli-dev ready", () => {
+  it("verifies each row by a passing script, a contract test that ran and this code's live record", () => {
+    const cwd = cli({})
+    const { run, calls } = shell(cwd)
+    const { io, err } = ioOf(cwd)
+    const report = readyReport(io, run)
+    expect(report.rows.map((one) => one.status)).toEqual(Array(9).fill("verified"))
+    expect(report.next).toBeUndefined()
+    expect(report.rows.find((one) => one.id === "contracts")?.evidence).toEqual([
+      "pnpm test: passed",
+      "pnpm contracts:check: passed",
+      "src/crm.test.ts:3 calls crmSourceContract",
+      "not run: crmSyncContract, crmWriteContract",
+    ])
+    expect(report.rows.find((one) => one.id === "live")?.evidence).toEqual(["docs/dev/live-checks.txt:2"])
+    const scripts = calls.filter((call) => call.startsWith("pnpm")).map((call) => call.split(" ")[3])
+    expect(scripts).toEqual(["test", "typecheck", "lint", "contracts:check", ...SCRIPTS.slice(4)])
+    expect(calls[0]).toBe(
+      `pnpm run --silent test --reporter=default --reporter=json --outputFile.json=${join(cwd, READY_TESTS)}`,
+    )
+    expect(err).toContain("ready: pnpm smoke")
+  })
+
+  it("takes a missing script as not verified, a row with one of two as partially", () => {
+    const cwd = cli(
+      {},
+      SCRIPTS.filter((name) => name !== "lint" && name !== "generate:check"),
+    )
+    const { run } = shell(cwd)
+    const report = readyReport(ioOf(cwd).io, run)
+    expect(Object.fromEntries(report.rows.map((one) => [one.id, one.status]))).toMatchObject({
+      types: "partially",
+      generated: "not verified",
+    })
+    expect(report.next).toBe('add the "lint" script from @wirecat/cli-template, then run cli-dev ready again')
+  })
+
+  it("names the failing script's last lines and makes it the next step", () => {
+    const cwd = cli({})
+    const { run } = shell(cwd, undefined, { "docs:check": "checking\nREADME.md:3 broken link\n" })
+    const report = readyReport(ioOf(cwd).io, run)
+    expect(report.rows.find((one) => one.id === "docs")).toMatchObject({
+      status: "not verified",
+      evidence: ["pnpm docs:check: failed — checking | README.md:3 broken link"],
+    })
+    expect(report.next).toBe("pnpm docs:check, and fix what it reports")
+  })
+
+  it("counts a contract call only when its test file ran with no test skipped, and not in a comment", () => {
+    const skipped = cli({})
+    expect(row(skipped, shell(skipped, { "src/crm.test.ts": ["passed", "skipped"] }).run, "contracts")).toMatchObject({
+      status: "partially",
+      fix: "run cli-core's crmSourceContract in a test (testing.md), then run cli-dev ready again",
+    })
+    const outside = cli({})
+    expect(row(outside, shell(outside, {}).run, "contracts")?.evidence).toContain(
+      "src/crm.test.ts:3 calls crmSourceContract — not counted: not in the test run's report",
+    )
+    const commented = cli({ "src/crm.test.ts": "// crmSourceContract(make)\n" })
+    expect(row(commented, shell(commented).run, "contracts")?.status).toBe("partially")
+  })
+
+  it("does not verify a category that is not named, or not one new writes", () => {
+    for (const design of ["# Design\n", "- **Category:** CRN\n"]) {
+      const cwd = cli({ "docs/dev/DESIGN.md": design })
+      expect(row(cwd, shell(cwd).run, "contracts")?.status).toBe("not verified")
+    }
+    const messenger = cli({ "docs/dev/DESIGN.md": "- **Category:** messenger\n" })
+    expect(row(messenger, shell(messenger).run, "contracts")).toMatchObject({
+      status: "verified",
+      evidence: [
+        "pnpm test: passed",
+        "pnpm contracts:check: passed",
+        'cli-core has no category contract for "messenger"',
+      ],
+    })
+  })
+
+  it("does not verify the live check from another version's record or from code changed since", () => {
+    const other = cli({ "docs/dev/live-checks.txt": "0.2.0 abc123 2026-11-10 bin/acme-live\n" })
+    expect(row(other, shell(other).run, "live")).toMatchObject({
+      status: "not verified",
+      evidence: ["no record for 0.3.0 in docs/dev/live-checks.txt", "docs/dev/live-checks.txt:1 is 0.2.0's"],
+    })
+    const changed = cli({})
+    const { run } = shell(changed, undefined, { "git diff --quiet": "" })
+    expect(row(changed, run, "live")).toMatchObject({
+      status: "partially",
+      fix: "run the live check on this code, then cli-dev live record --script <its script>",
+    })
+  })
+
+  it("compares a v2 record's tree with the shipped files", () => {
+    const listing = (out: string): Shell => ({ run: () => ({ ok: true, out }), sleep: () => {} })
+    const tree = liveTree(listing("100644 blob a\tsrc/a.ts"))
+    const cwd = cli({ "docs/dev/live-checks.txt": `0.3.0 abc123 2026-11-16 bin/acme-live ${tree}\n` })
+    const scripts = shell(cwd).run
+    const withListing = (out: string): Shell => ({
+      run: (command, args) => (command === "git" ? { ok: true, out } : scripts.run(command, args)),
+      sleep: () => {},
+    })
+    expect(row(cwd, withListing("100644 blob a\tsrc/a.ts"), "live")?.status).toBe("verified")
+    expect(row(cwd, withListing("100644 blob b\tsrc/a.ts"), "live")?.status).toBe("partially")
+  })
+
+  it("leaves the live check out in cli-template itself, which has no service", () => {
+    const cwd = cli({ "kit/README.md": "kit" })
+    expect(row(cwd, shell(cwd).run, "live")?.status).toBe("unsupported")
+  })
+
+  it("prints JSON for agents and exits 1 while a row is not verified", () => {
+    const cwd = cli({}, SCRIPTS.slice(1))
+    const { io, out } = ioOf(cwd)
+    expect(ready(["--json"], io, shell(cwd).run)).toBe(1)
+    const report = JSON.parse(out.join(""))
+    expect(report.category).toBe("CRM (sales: deals, contacts, companies)")
+    expect(report.next).toBe('add the "typecheck" script from @wirecat/cli-template, then run cli-dev ready again')
+  })
+
+  it("reads the category line the template writes", () => {
+    expect(designCategory("# x\n\n- **Category:** files and documents\n")).toBe("files and documents")
+  })
+})

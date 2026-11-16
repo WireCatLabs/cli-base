@@ -64,6 +64,7 @@ extends:
 | — | `cli-dev audit --cli <bin> --cli <bin> …`: several CLIs against the standard and against each other |
 | — | `cli-dev release-pr --base <commit> --body <file>`: a pull request that changes the version needs a `## Conformance` section, and one that raises it from `0.0.0` a `wcat-<name>` `"bin"` key ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
 | — | `cli-dev live record --script <path>` after a live check passed; `cli-dev live check` in `bin/release` ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
+| — | `cli-dev ready [--json]`: the CLI's checks in order with the evidence for each and the one next step ([New CLI](standards/new-cli.md#done-when)) |
 | — | `cli-dev repo-check --cli <name>`: main's ruleset and its required checks, the `npm` environment, the monthly cron minute and a parity group ([New CLI](standards/new-cli.md#four-steps-that-need-a-person)) |
 | `scripts/bundle.ts` (tg) | `cli-dev bundle --bin dist/bin/<cli>.js [--external <package>]…`: the published bin as an esbuild bundle and its loader ([WC-LAY-10](standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds)) |
 
