@@ -181,8 +181,9 @@ The listings beyond npm (ClawHub, the MCP Registry, the Claude plugin, the docs 
 
 All of these pass on `main`, before the first release. `cli-dev ready` runs the CLI's own scripts for most of them in
 order and prints what each one proves: verified (a script passed, a test runs the category's cli-core contract, the
-live-check record is of this code), partially, not verified, or unsupported (a check that cannot apply, such as spec
-coverage without a `spec/` folder). A missing script is not verified. `--json` gives the same rows and the one next
+live-check record is of this code), partially, not verified, or unsupported (a check that cannot apply: the live
+check in cli-template itself). A contract call counts only when vitest's report shows its test file ran with no test
+skipped. A missing script is not verified. `--json` gives the same rows and the one next
 step to an agent. It never runs the live check: that is the owner's run against their account.
 
 - `pnpm standards:check`

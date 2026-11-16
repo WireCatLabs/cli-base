@@ -4,7 +4,7 @@ export interface VitestReport {
     name: string
     startTime: number
     endTime: number
-    assertionResults: { title: string; duration?: number }[]
+    assertionResults: { title: string; duration?: number; status?: string }[]
   }[]
 }
 

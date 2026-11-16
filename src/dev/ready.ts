@@ -3,12 +3,13 @@
  * reports what each one proves. A row is verified only by a script that passed, or by a live-check record of exactly
  * this code; nothing is inferred, and a script that is missing proves nothing.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import { parseArgs } from "node:util"
 import { packageVersion } from "../release/index.js"
 import { LIVE_FILE, liveCheckProblems, parseLiveRecords } from "./conformance.js"
 import type { Shell } from "./land.js"
+import type { VitestReport } from "./slow-tests.js"
 
 interface DevIo {
   cwd: string
@@ -35,17 +36,29 @@ export interface ReadyReport {
   next?: string
 }
 
-/** cli-core's contracts for each category of `docs/dev/DESIGN.md`; a category without one has none to run. */
-const CATEGORY_CONTRACTS: { match: RegExp; contracts: string[] }[] = [
-  { match: /\bcrm\b/i, contracts: ["crmSourceContract", "crmSyncContract", "crmWriteContract"] },
-  { match: /\b(files|documents?)\b/i, contracts: ["documentCommandsContract", "documentSourceContract"] },
-  { match: /\bcalendar\b/i, contracts: ["calendarSourceContract", "calendarSyncContract", "calendarWriterContract"] },
-  { match: /\bmail\b/i, contracts: ["mailSourceContract", "mailSyncContract"] },
+/**
+ * cli-core's contracts for each category `new` writes into `docs/dev/DESIGN.md`, by its value or its label. A
+ * category without contracts has none to run; one not listed here is unknown, never "none".
+ */
+const CATEGORY_CONTRACTS: { names: string[]; contracts: string[] }[] = [
   {
-    match: /\bmeetings?\b/i,
-    contracts: ["meetingStoreContract", "meetingManagementContract", "meetingTranscriptStoreContract"],
+    names: ["crm", "crm (sales: deals, contacts, companies)"],
+    contracts: ["crmSourceContract", "crmSyncContract", "crmWriteContract"],
   },
-  { match: /\b(messenger|messages|notes)\b/i, contracts: [] },
+  { names: ["files", "files and documents"], contracts: ["documentCommandsContract", "documentSourceContract"] },
+  { names: ["calendar"], contracts: ["calendarSourceContract", "calendarSyncContract", "calendarWriterContract"] },
+  { names: ["mail"], contracts: ["mailSourceContract", "mailSyncContract"] },
+  {
+    names: ["meetings"],
+    contracts: [
+      "recordingTransferStorageContract",
+      "recordingSyncCheckpointStoreContract",
+      "eventStoreContract",
+      "meetingManagementContract",
+      "meetingTranscriptStoreContract",
+    ],
+  },
+  { names: ["messenger", "notes"], contracts: [] },
 ]
 
 const DESIGN = "docs/dev/DESIGN.md"
@@ -69,18 +82,37 @@ const testFiles = (cwd: string, folder: string): string[] => {
   return found.sort()
 }
 
-/** `src/library.test.ts:12 documentCommandsContract` for each test that calls one of the contracts. */
-const contractCalls = (cwd: string, contracts: readonly string[]): string[] =>
+interface ContractCall {
+  file: string
+  line: number
+  contract: string
+}
+
+const contractCalls = (cwd: string, contracts: readonly string[]): ContractCall[] =>
   ["src", "test"].flatMap((folder) =>
     testFiles(cwd, folder).flatMap((file) =>
       readFileSync(file, "utf8")
         .split("\n")
-        .flatMap((line, index) => {
-          const name = contracts.find((contract) => new RegExp(`\\b${contract}\\s*[(<]`).test(line))
-          return name ? [`${relative(cwd, file)}:${index + 1} calls ${name}`] : []
+        .flatMap((text, index) => {
+          if (/^\s*(\/\/|\*|\/\*)/.test(text)) return []
+          const contract = contracts.find((name) => new RegExp(`\\b${name}\\s*[(<]`).test(text))
+          return contract ? [{ file, line: index + 1, contract }] : []
         }),
     ),
   )
+
+/**
+ * A call in the source proves nothing until the test run shows it ran: the file's tests in vitest's report, at least
+ * one passed and none skipped, so a call under `describe.skip` or outside the vitest config does not count.
+ */
+const ranInReport = (report: VitestReport | undefined, file: string): string | undefined => {
+  const result = report?.testResults.find((entry) => entry.name === file)
+  if (!result) return "not in the test run's report"
+  const statuses = result.assertionResults.map((test) => test.status)
+  const skipped = statuses.filter((status) => status === "skipped" || status === "pending" || status === "todo")
+  if (skipped.length > 0) return `${skipped.length} of its tests skipped`
+  return statuses.includes("passed") ? undefined : "no test of it passed"
+}
 
 const lastLines = (out: string, count = 3) =>
   out
@@ -93,18 +125,27 @@ const lastLines = (out: string, count = 3) =>
 interface ScriptRun {
   script: string
   passed: boolean
+  missing?: boolean
   evidence: string
 }
 
-const runScripts = (shell: Shell, scripts: Record<string, string>, names: readonly string[]): ScriptRun[] =>
-  names.map((script) => {
-    if (scripts[script] === undefined)
-      return { script, passed: false, evidence: `no "${script}" script in package.json` }
-    const result = shell.run("pnpm", ["run", "--silent", script])
+const runScript = (
+  io: DevIo,
+  shell: Shell,
+  scripts: Record<string, string>,
+  script: string,
+  extra: readonly string[] = [],
+): ScriptRun => {
+  if (scripts[script] === undefined)
+    return { script, passed: false, missing: true, evidence: `no "${script}" script in package.json` }
+  io.err(`ready: pnpm ${script}`)
+  {
+    const result = shell.run("pnpm", ["run", "--silent", script, ...extra])
     return result.ok
       ? { script, passed: true, evidence: `pnpm ${script}: passed` }
       : { script, passed: false, evidence: `pnpm ${script}: failed — ${lastLines(result.out) || "no output"}` }
-  })
+  }
+}
 
 const scriptRow = (id: string, title: string, runs: readonly ScriptRun[], extra: string[] = []): ReadyRow => {
   const passed = runs.filter((run) => run.passed).length
@@ -117,7 +158,7 @@ const scriptRow = (id: string, title: string, runs: readonly ScriptRun[], extra:
     evidence: [...runs.map((run) => run.evidence), ...extra],
     ...(failed
       ? {
-          fix: failed.evidence.startsWith("no ")
+          fix: failed.missing
             ? `add the "${failed.script}" script from @wirecat/cli-template, then run cli-dev ready again`
             : `pnpm ${failed.script}, and fix what it reports`,
         }
@@ -125,28 +166,47 @@ const scriptRow = (id: string, title: string, runs: readonly ScriptRun[], extra:
   }
 }
 
-const contractsRow = (cwd: string, category: string | undefined, runs: readonly ScriptRun[]): ReadyRow => {
+const CATEGORY_NAMES = CATEGORY_CONTRACTS.flatMap((entry) => entry.names)
+
+const contractsRow = (
+  cwd: string,
+  category: string | undefined,
+  runs: readonly ScriptRun[],
+  report: VitestReport | undefined,
+): ReadyRow => {
   const title = "Tests and category contracts"
-  if (category === undefined)
+  const contracts = category
+    ? CATEGORY_CONTRACTS.find((entry) => entry.names.includes(category.toLowerCase()))?.contracts
+    : undefined
+  if (contracts === undefined)
     return {
       id: "contracts",
       title,
       status: "not verified",
-      evidence: [`no "- **Category:**" line in ${DESIGN}`, ...runs.map((run) => run.evidence)],
-      fix: `name the category in ${DESIGN} ("- **Category:** crm"), then run cli-dev ready again`,
+      evidence: [
+        category ? `"${category}" in ${DESIGN} is no category new writes` : `no "- **Category:**" line in ${DESIGN}`,
+        ...runs.map((run) => run.evidence),
+      ],
+      fix: `name the category in ${DESIGN} as one of ${CATEGORY_NAMES.join(", ")}, then run cli-dev ready again`,
     }
-  const contracts = CATEGORY_CONTRACTS.find((entry) => entry.match.test(category))?.contracts
-  if (contracts === undefined || contracts.length === 0) {
-    const row = scriptRow("contracts", title, runs, [`cli-core has no category contract for "${category}"`])
-    return row
-  }
+  if (contracts.length === 0)
+    return scriptRow("contracts", title, runs, [`cli-core has no category contract for "${category}"`])
   const calls = contractCalls(cwd, contracts)
-  const row = scriptRow("contracts", title, runs, calls)
-  if (calls.length > 0) return row
+  const evidence = calls.map(({ file, line, contract }) => {
+    const notRun = ranInReport(report, file)
+    return `${relative(cwd, file)}:${line} calls ${contract}${notRun ? ` — not counted: ${notRun}` : ""}`
+  })
+  const ran = new Set(calls.filter(({ file }) => ranInReport(report, file) === undefined).map((call) => call.contract))
+  const notRun = contracts.filter((contract) => !ran.has(contract))
+  const row = scriptRow("contracts", title, runs, [
+    ...evidence,
+    ...(notRun.length > 0 && ran.size > 0 ? [`not run: ${notRun.join(", ")}`] : []),
+  ])
+  if (ran.size > 0) return row
   return {
     ...row,
     status: row.status === "verified" ? "partially" : row.status,
-    evidence: [...row.evidence, `no test calls ${contracts.join(" or ")}`],
+    evidence: [...row.evidence, `no test that ran calls ${contracts.join(" or ")}`],
     fix: row.fix ?? `run cli-core's ${contracts[0]} in a test (testing.md), then run cli-dev ready again`,
   }
 }
@@ -154,6 +214,9 @@ const contractsRow = (cwd: string, category: string | undefined, runs: readonly 
 const liveRow = (cwd: string, shell: Shell, version: string): ReadyRow => {
   const title = "Live check against the service"
   const record = `cli-dev live record --script <its script>`
+  // cli-template's own repository has no service to check (WC-REL-17's exception); `new` never copies kit/.
+  if (existsSync(join(cwd, "kit")))
+    return { id: "live", title, status: "unsupported", evidence: ["kit/ exists: cli-template has no service to check"] }
   const text = existsSync(join(cwd, LIVE_FILE)) ? readFileSync(join(cwd, LIVE_FILE), "utf8") : ""
   const lines = text.split("\n")
   const lineOf = (wanted: string) => {
@@ -169,7 +232,7 @@ const liveRow = (cwd: string, shell: Shell, version: string): ReadyRow => {
       id: "live",
       title,
       status: "partially",
-      evidence: [`${own} checked other code`, ...problems],
+      evidence: [own, ...problems],
       fix: `run the live check on this code, then ${record}`,
     }
   const earlier = records.at(-1)
@@ -185,27 +248,31 @@ const liveRow = (cwd: string, shell: Shell, version: string): ReadyRow => {
   }
 }
 
-export const readyReport = (cwd: string, shell: Shell): ReadyReport => {
+/** Where `ready` asks vitest for its JSON report; `coverage/` is git-ignored in every CLI. */
+export const READY_TESTS = "coverage/ready-tests.json"
+
+export const readyReport = (io: DevIo, shell: Shell): ReadyReport => {
+  const { cwd } = io
   const pkg = JSON.parse(readFileSync(join(cwd, "package.json"), "utf8")) as { scripts?: Record<string, string> }
   const scripts = pkg.scripts ?? {}
   const design = existsSync(join(cwd, DESIGN)) ? readFileSync(join(cwd, DESIGN), "utf8") : ""
   const category = designCategory(design)
-  const run = (...names: string[]) => runScripts(shell, scripts, names)
+  const run = (...names: string[]) => names.map((name) => runScript(io, shell, scripts, name))
+  const reportFile = join(cwd, READY_TESTS)
+  rmSync(reportFile, { force: true })
+  const tests = runScript(io, shell, scripts, "test", [
+    "--reporter=default",
+    "--reporter=json",
+    `--outputFile.json=${reportFile}`,
+  ])
+  const report = existsSync(reportFile) ? (JSON.parse(readFileSync(reportFile, "utf8")) as VitestReport) : undefined
 
   const rows: ReadyRow[] = [
     scriptRow("types", "Typecheck and lint", run("typecheck", "lint")),
-    contractsRow(cwd, category, run("test", "contracts:check")),
+    contractsRow(cwd, category, [tests, ...run("contracts:check")], report),
     scriptRow("audit", "Family audit of the commands", run("audit:commands")),
     scriptRow("docs", "Documents", run("docs:check")),
-    // A CLI without a spec/ folder has no generated API to cover; one with it proves coverage or is not verified.
-    existsSync(join(cwd, "spec"))
-      ? scriptRow("spec", "Spec coverage of the generated API", run("generate:check"))
-      : {
-          id: "spec",
-          title: "Spec coverage of the generated API",
-          status: "unsupported",
-          evidence: ["no spec/ folder: the CLI generates nothing from an API spec"],
-        },
+    scriptRow("generated", "Generated files: commands page, manifest, API spec", run("generate:check")),
     scriptRow("smoke", "Smoke run of the built CLI", run("smoke")),
     scriptRow("no-leak", "No secret in output", run("security:no-leak")),
     scriptRow("deps", "Dependencies", run("deps:check")),
@@ -235,14 +302,14 @@ export const readyText = (report: ReadyReport): string => {
 
 export const ready = (args: string[], io: DevIo, shell: Shell): number => {
   const { values } = parseArgs({ args, options: { json: { type: "boolean", default: false } } })
-  const report = readyReport(io.cwd, shell)
+  const report = readyReport(io, shell)
   io.out(values.json ? JSON.stringify(report, null, 2) : readyText(report))
   return report.next ? 1 : 0
 }
 
 export const READY_USAGE = `  ready [--json]                       runs the CLI's checks in order (typecheck and lint, tests and its
                                        category's cli-core contracts, the family audit, docs:check,
-                                       generate:check when spec/ exists, smoke, security:no-leak,
+                                       generate:check, smoke, security:no-leak,
                                        deps:check) and reads the live-check record; prints each row as
                                        verified, partially, not verified or unsupported with its evidence,
                                        and the one next step; exits 1 until every row is verified or
