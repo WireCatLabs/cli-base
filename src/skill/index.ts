@@ -5,9 +5,10 @@
  * Nothing here prints by itself. The command writes through the renderer and streams the host hands
  * it, and the hint is a string the host puts on stderr — never stdout, which an agent parses.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { dirname, join, resolve } from "node:path"
+import { basename, dirname, join, relative, resolve, sep } from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import { Command, Option } from "commander"
 import crossSpawn from "cross-spawn"
 import { annotate } from "../commands/index.js"
@@ -98,12 +99,31 @@ export const withVersion = (content: string, version: string): string => {
   return `---${eol}${lines.join("")}---${close}${content.slice(whole.length)}`
 }
 
-/** Writes the stamped SKILL.md to each target, creating directories; the same run twice gives the same files. */
-export const installSkill = (
-  app: SkillApp,
-  skill: URL,
-  { targets = SKILL_TARGETS, env = process.env }: { targets?: readonly SkillTarget[]; env?: Env } = {},
-): string[] => {
+/**
+ * The files beside SKILL.md that it links to or names (`references/tasks.md`), as `/`-separated paths relative to its
+ * folder. A long skill keeps its core in SKILL.md and the rest in these, so an agent loads only what its task needs.
+ * Dotfiles and symbolic links are left out: a link could point anywhere on the machine.
+ */
+export const skillFiles = (skill: URL): string[] => {
+  const root = dirname(fileURLToPath(skill))
+  const found: string[] = []
+  const walk = (folder: string) => {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      if (entry.name.startsWith(".")) continue
+      const path = join(folder, entry.name)
+      if (entry.isDirectory()) walk(path)
+      else if (entry.isFile() && path !== join(root, "SKILL.md")) found.push(relative(root, path).split(sep).join("/"))
+    }
+  }
+  walk(root)
+  return found.sort()
+}
+
+/**
+ * Writes the stamped SKILL.md and every file of `skillFiles` into `folder`, and answers the SKILL.md written. A file
+ * an older version shipped and this one does not stays: the folder may hold the owner's own files too.
+ */
+export const writeSkillFolder = (app: SkillApp, skill: URL, folder: string): string => {
   const source = readFileSync(skill, "utf8")
   // The specification requires it, and an agent that checks skips a skill whose name and directory differ.
   const name = skillName(source)
@@ -113,14 +133,24 @@ export const installSkill = (
       `SKILL.md is named ${name === undefined ? "nothing" : `"${name}"`}, but installs into a directory "${app.appName}"; the two must match`,
     )
   }
-  const content = withVersion(source, app.version)
-  return targets.map((target) => {
-    const path = skillPath(target, app.appName, env)
-    mkdirSync(dirname(path), { recursive: true })
-    writeFileSync(path, content)
-    return path
-  })
+  const root = dirname(fileURLToPath(skill))
+  for (const file of skillFiles(skill)) {
+    const target = join(folder, file)
+    mkdirSync(dirname(target), { recursive: true })
+    writeFileSync(target, readFileSync(join(root, file)))
+  }
+  const path = join(folder, "SKILL.md")
+  mkdirSync(folder, { recursive: true })
+  writeFileSync(path, withVersion(source, app.version))
+  return path
 }
+
+/** Writes the skill's folder to each target, creating directories; the same run twice gives the same files. */
+export const installSkill = (
+  app: SkillApp,
+  skill: URL,
+  { targets = SKILL_TARGETS, env = process.env }: { targets?: readonly SkillTarget[]; env?: Env } = {},
+): string[] => targets.map((target) => writeSkillFolder(app, skill, dirname(skillPath(target, app.appName, env))))
 
 export type SkillState = "current" | "stale" | "missing" | "unversioned"
 
@@ -226,14 +256,16 @@ export interface HermesInstall {
   removed?: string
 }
 
-/** Our own earlier copy, alone in its folder: anything else there was put by someone else and stays. */
-const removeOwnCopy = (appName: string, env: Env): string | undefined => {
-  const path = hermesCopyPath(appName, env)
+/** Our own earlier copy: its folder holds only SKILL.md and what the skill ships; anything else was put by someone else. */
+const removeOwnCopy = (app: SkillApp, skill: URL, env: Env): string | undefined => {
+  const path = hermesCopyPath(app.appName, env)
+  const shipped = new Set(skillFiles(skill))
+  const top = new Set(["SKILL.md", ...[...shipped].map((file) => file.split("/")[0])])
   try {
-    if (readdirSync(dirname(path)).join() !== "SKILL.md") return undefined
-    if (skillName(readFileSync(path, "utf8")) !== appName) return undefined
-    rmSync(path)
-    rmdirSync(dirname(path))
+    if (!readdirSync(dirname(path)).every((entry) => top.has(entry))) return undefined
+    if (!skillFiles(pathToFileURL(path)).every((file) => shipped.has(file))) return undefined
+    if (skillName(readFileSync(path, "utf8")) !== app.appName) return undefined
+    rmSync(dirname(path), { recursive: true })
     return path
   } catch {
     return undefined
@@ -267,12 +299,10 @@ export const installHermesSkill = (
   const [shared] = installSkill(app, skill, { targets: ["agents"], env }) as [string]
   const reason = readFolder(dirname(dirname(shared)), env, run)
   if (reason === undefined) {
-    const removed = removeOwnCopy(app.appName, env)
+    const removed = removeOwnCopy(app, skill, env)
     return { written: [shared], hermes: { via: "external_dirs", path: shared, ...(removed ? { removed } : {}) } }
   }
-  const copy = hermesCopyPath(app.appName, env)
-  mkdirSync(dirname(copy), { recursive: true })
-  writeFileSync(copy, readFileSync(shared))
+  const copy = writeSkillFolder(app, skill, dirname(hermesCopyPath(app.appName, env)))
   return { written: [shared, copy], hermes: { via: "copy", path: copy, reason } }
 }
 
@@ -300,6 +330,23 @@ export const hermesSkillStatus = (
   return { path: shared, installed: null, state: "missing", via: null }
 }
 
+/**
+ * The skill's own Markdown files beside SKILL.md by name (`references/tasks.md` is `tasks`), for `skill show <name>`:
+ * an agent that read SKILL.md from `skill show` or over MCP has no folder to follow a relative link into.
+ */
+const skillParts = (skill: URL): Record<string, URL> => {
+  try {
+    return Object.fromEntries(
+      skillFiles(skill)
+        .filter((file) => file.endsWith(".md"))
+        .reverse()
+        .map((file) => [basename(file, ".md"), new URL(file, skill)]),
+    )
+  } catch {
+    return {}
+  }
+}
+
 /** What the command writes to and where home is, for this invocation — the host's own output resolution. */
 export type SkillEnvironment = (command: Command) => { renderer: Renderer; streams: Streams; env?: Env }
 
@@ -320,13 +367,16 @@ export const skillCommand = (
     return json === true || jsonl === true
   }
 
-  const named = Object.keys(more)
+  // The skill's own parts first, so a library's skill of the same name still wins.
+  const shown = { ...skillParts(skill), ...more }
+  const named = Object.keys(shown)
   const show = annotate(command.command("show"), { effects: { remote: "none", local: "read" } })
     .summary("print the tool's instructions for AI agents")
     .description(
       `print SKILL.md — \`${app.command} skill install\` puts it where Claude Code, Codex, Gemini CLI and OpenClaw look for it, and where Hermes does on request; --for prints the copy already there`,
     )
-  if (named.length > 0) show.argument("[name]", `one of the skills shipped for a task: ${named.join(", ")}`)
+  if (named.length > 0)
+    show.argument("[name]", `a part of this skill, or a skill shipped for a task: ${named.join(", ")}`)
   show.addOption(
     new Option("--for <agents>", "print the copy installed for these agents instead of this version's").choices(
       SKILL_TARGETS,
@@ -355,7 +405,7 @@ export const skillCommand = (
       else streams.data(content)
       return
     }
-    const source = name === undefined ? skill : more[name]
+    const source = name === undefined ? skill : shown[name]
     if (!source) {
       throw new CliError("validation_error", `no skill "${name}" — there are: ${named.join(", ")}`)
     }
@@ -485,4 +535,40 @@ export const skillResource = (app: SkillApp, skill: URL): SkillResource => {
     read: () => ({ contents: [{ uri, mimeType: "text/markdown", text: readFileSync(skill, "utf8") }] }),
     instruction: `- The full guide is the resource ${uri}; \`${app.command} skill install\` installs it as an agent skill.`,
   }
+}
+
+/**
+ * `skillResource` and one resource per Markdown file beside SKILL.md, at the address its relative link resolves to
+ * from `<command>://skill` (`references/tasks.md` is `tg://skill/references/tasks.md`), so an MCP client follows a
+ * link the guide gives. Register them all; the first one's `instruction` is the line for the server.
+ */
+export const skillResources = (app: SkillApp, skill: URL): SkillResource[] => {
+  const main = skillResource(app, skill)
+  let parts: string[] = []
+  try {
+    parts = skillFiles(skill).filter((file) => file.endsWith(".md"))
+  } catch {
+    // A skill read from somewhere without a folder still has its SKILL.md.
+  }
+  if (parts.length === 0) return [main]
+  return [
+    {
+      ...main,
+      instruction: `- The guide is the resource ${main.uri}; the parts it links are ${main.uri}/<path>, read only the one a task needs. \`${app.command} skill install\` installs it as an agent skill.`,
+    },
+    ...parts.map((file): SkillResource => {
+      const uri = `${main.uri}/${file}`
+      return {
+        uri,
+        name: `skill/${file}`,
+        title: `${app.appName} ${file}`,
+        description: `A part of the ${app.command} guide that ${main.uri} links to.`,
+        mimeType: "text/markdown",
+        read: () => ({
+          contents: [{ uri, mimeType: "text/markdown", text: readFileSync(new URL(file, skill), "utf8") }],
+        }),
+        instruction: "",
+      }
+    }),
+  ]
 }
