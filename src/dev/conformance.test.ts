@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
+import { takenMinutes } from "../standards/index.js"
 import {
   conformanceCommand,
   conformanceSection,
@@ -14,7 +15,6 @@ import {
   REQUIRED_CHECKS,
   releasePrProblems,
   rulesetProblems,
-  takenMinutes,
 } from "./conformance.js"
 import type { Shell } from "./land.js"
 
@@ -315,8 +315,8 @@ describe("repository setup", () => {
   })
 
   it("reads the taken minutes from the shipped WC-CI-9 page", () => {
-    const page = readFileSync(join(import.meta.dirname, "../../docs/standards/ci.md"), "utf8")
-    expect(takenMinutes(page).get("03:02")).toBe("cli-template")
+    expect(takenMinutes().get("03:02")).toBe("cli-template")
+    expect(takenMinutes().get("02:20")).toBe("notion-cli")
   })
 
   it("finds a CLI in cli-base's parity groups or the repository's own", () => {

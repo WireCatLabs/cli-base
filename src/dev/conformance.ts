@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto"
 import { appendFileSync, existsSync, readFileSync } from "node:fs"
-import { dirname, join, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { join, resolve } from "node:path"
 import { parseArgs } from "node:util"
 import { packageVersion } from "../release/index.js"
 import { defineParityGroups, PARITY_GROUPS } from "../standards/audit.js"
+import { takenMinutes } from "../standards/monthly.js"
 import { PROGRAM_PREFIX } from "../wcat/names.js"
 import { processShell, type Shell } from "./land.js"
 import { binNames } from "./wcat-lint.js"
@@ -293,15 +293,6 @@ export const environmentProblems = (shell: Shell, slug: string): { problems: str
     : { problems: [`the npm environment deploys from ${names.join(", ") || "no branch"}, not only main: ${limit}`] }
 }
 
-/** The WC-CI-9 table of taken monthly minutes, as `HH:MM → repository`. */
-export const takenMinutes = (ciPage: string): Map<string, string> =>
-  new Map(
-    [...ciPage.matchAll(/^\s*\|\s*(\d\d:\d\d)\s*\|\s*([\w.-]+)\s*\|\s*$/gm)].map(([, time, repo]) => [
-      time as string,
-      repo as string,
-    ]),
-  )
-
 export const cronProblems = (workflow: string | undefined, repo: string, taken: Map<string, string>): string[] => {
   if (workflow === undefined) return [".github/workflows/monthly.yml is missing (WC-CI-9)"]
   const cron = workflow.match(/cron:\s*["']([^"']+)["']/)?.[1]
@@ -322,8 +313,6 @@ export const parityProblems = (cli: string, ownGroups: unknown): string[] => {
     ? []
     : [`${cli} is in no parity group: add it to cli-base's PARITY_GROUPS (new-cli.md, step 4)`]
 }
-
-const ciPagePath = () => join(dirname(fileURLToPath(import.meta.url)), "../../docs/standards/ci.md")
 
 const repoCheck = (args: string[], io: DevIo, shell: Shell) => {
   const { values } = parseArgs({
@@ -354,11 +343,7 @@ const repoCheck = (args: string[], io: DevIo, shell: Shell) => {
   const problems = [
     ...ruleset.problems,
     ...environment.problems,
-    ...cronProblems(
-      read(".github/workflows/monthly.yml"),
-      slug.split("/")[1] ?? "",
-      takenMinutes(readFileSync(ciPagePath(), "utf8")),
-    ),
+    ...cronProblems(read(".github/workflows/monthly.yml"), slug.split("/")[1] ?? "", takenMinutes()),
     ...parityProblems(values.cli, groups === undefined ? undefined : JSON.parse(groups)),
   ]
   for (const problem of problems) io.err(problem)

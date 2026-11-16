@@ -156,12 +156,14 @@ installing that command; nothing else is registered anywhere.
    Environments → npm → Deployment branches → Selected branches): npm trusts `release.yml` by its name, and a
    dispatch runs that file from the branch it was started on. See
    [WC-REL-11](releases.md#wc-rel-11--publish-from-github-actions-with-npm-trusted-publishing).
-3. **Pick a monthly cron minute** between 02:17 and 03:20 UTC that is not in the list of taken minutes under
-   [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing).
-   The copy of `.github/workflows/monthly.yml` keeps the template's own minute, 03:02; change it by hand, and add the
-   new minute to the list in the step 4 pull request.
-4. **WireCat CLIs only: join the shared lists.** A pull request to cli-base's `PARITY_GROUPS` (at least the `all`
-   group, which compares the shared root commands), a line in cli-core's `WIRECAT_TOOLS` and a line in cli-docs'
+3. **Check the monthly cron minute.** `new` sets it in `.github/workflows/monthly.yml`. A WireCat CLI gets a free
+   minute between 02:17 and 03:20 UTC, picked by its name, at least two minutes from the taken minutes under
+   [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing)
+   and off the hour; a CLI outside WireCatLabs gets one between 04:01 and 05:59 UTC, after that window. Nothing to
+   change by hand.
+4. **WireCat CLIs only: join the shared lists.** `new` prints the entries ready to paste. A pull request to cli-base
+   with the new minute in WC-CI-9's table and the CLI in `PARITY_GROUPS` (at least the `all` group, which compares the
+   shared root commands), a line in cli-core's `WIRECAT_TOOLS` and, after the first release, a line in cli-docs'
    `tools.json`. A messenger also joins cli-core's `parity.json`. A CLI outside WireCatLabs keeps its parity groups
    in its own repository and runs `cli-dev audit --groups <file>`. See [Testing](testing.md).
 

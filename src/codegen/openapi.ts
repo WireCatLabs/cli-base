@@ -1,5 +1,6 @@
 /**
- * An OpenAPI 3.0 or 3.1 document, already parsed from YAML or JSON → the format-neutral `ApiModel`.
+ * An OpenAPI 3.0 or 3.1 document, already parsed from YAML or JSON → the format-neutral `ApiModel`. Swagger 1.2 and
+ * 2.0 come here through `upgradeToOpenApi3`.
  *
  * Strict on purpose: a keyword this does not understand stops generation and names the place,
  * because a constraint dropped here is a request the server refuses at run time.
@@ -10,9 +11,12 @@ import type {
   ApiOperation,
   ApiParameter,
   ApiSchema,
+  ApiServer,
   Effect,
   HttpMethod,
   SchemaNode,
+  SecurityRequirement,
+  SecurityScheme,
 } from "./model.js"
 
 type Json = Record<string, unknown>
@@ -89,7 +93,8 @@ export class OpenApiError extends Error {
   }
 }
 
-const isObject = (value: unknown): value is Json => typeof value === "object" && value !== null && !Array.isArray(value)
+export const isObject = (value: unknown): value is Json =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
 
 const EFFECT_BY_METHOD: Record<HttpMethod, Effect> = {
   GET: "read",
@@ -99,6 +104,18 @@ const EFFECT_BY_METHOD: Record<HttpMethod, Effect> = {
   PATCH: "write",
   DELETE: "destructive",
 }
+
+const JSON_VARIANT = /^application\/([\w.-]+\+)?json\s*(;|$)/i
+
+/** `application/json`, else a JSON variant: `application/hal+json`, `application/json; charset=utf-8`. */
+const jsonContent = (content: Json): unknown =>
+  content[JSON_TYPE] ?? Object.entries(content).find(([type]) => JSON_VARIANT.test(type))?.[1]
+
+const SCHEME_TYPES = new Set<SecurityScheme["type"]>(["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"])
+const FLOWS = ["implicit", "password", "clientCredentials", "authorizationCode"] as const
+
+const strings = (source: Json, keys: readonly string[]): Record<string, string> =>
+  Object.fromEntries(keys.flatMap((key) => (typeof source[key] === "string" ? [[key, source[key]]] : [])))
 
 /** `{type: "null"}` or `type: ["null"]`: JSON Schema 2020-12's own way to say "only null". */
 const isNullOnly = (source: unknown): boolean =>
@@ -432,14 +449,17 @@ class Adapter {
     const schemaOf = (type: string): unknown => (isObject(content[type]) ? content[type].schema : undefined)
     const carriesFile = JSON.stringify(schemaOf(MULTIPART) ?? {}).includes('"format":"binary"')
     const offered = Object.keys(content)
-    const type = carriesFile ? MULTIPART : [JSON_TYPE, MULTIPART, FORM].find((candidate) => offered.includes(candidate))
+    const json =
+      offered.find((candidate) => candidate === JSON_TYPE) ?? offered.find((candidate) => JSON_VARIANT.test(candidate))
+    const type = carriesFile ? MULTIPART : (json ?? [MULTIPART, FORM].find((candidate) => offered.includes(candidate)))
     const body: ApiBody = { confidence: "contract", required: source.required === true }
     if (offered.length === 0) return body
     if (!type) {
       this.problems.push(`${where}: a body must be JSON, multipart or a form, found ${offered.join(", ")}`)
       return body
     }
-    if (type !== JSON_TYPE) body.contentType = type
+    // Only a charset may be dropped: `application/merge-patch+json` must travel as itself.
+    if (type.split(";")[0]?.trim().toLowerCase() !== JSON_TYPE) body.contentType = type
     const schema = schemaOf(type)
     if (schema === undefined) return body
     if (typedFromExample(schema)) body.confidence = "example"
@@ -448,15 +468,98 @@ class Adapter {
   }
 
   /**
-   * Only an inline JSON answer has a shape to check; a file, plain text or a `$ref` to a shared response
-   * is passed through as it is. Nothing at run time validates an answer yet.
+   * The first 2xx answer with JSON (HubSpot creates with 201, Yandex Disk with 201 or 202). Only an inline answer has a
+   * shape to check; a file, plain text or a `$ref` to a shared response is passed through as it is. Nothing at run time
+   * validates an answer yet.
    */
   #response(source: Json, where: string): SchemaNode | undefined {
-    const ok = isObject(source.responses) ? source.responses["200"] : undefined
-    if (!isObject(ok) || !isObject(ok.content)) return undefined
-    const json = ok.content[JSON_TYPE]
-    if (!isObject(json) || json.schema === undefined) return undefined
-    return this.schema(json.schema, `${where}.responses.200`)
+    const responses = isObject(source.responses) ? source.responses : {}
+    for (const code of Object.keys(responses)
+      .filter((code) => /^2(\d\d|XX)$/i.test(code))
+      .sort()) {
+      const answer = responses[code]
+      const json = isObject(answer) && isObject(answer.content) ? jsonContent(answer.content) : undefined
+      if (isObject(json) && json.schema !== undefined) return this.schema(json.schema, `${where}.responses.${code}`)
+    }
+    return undefined
+  }
+
+  security(source: unknown, where: string): SecurityRequirement[] | undefined {
+    if (source === undefined) return undefined
+    if (!Array.isArray(source) || !source.every(isObject)) {
+      this.problems.push(`${where}: security must be a list of requirements`)
+      return undefined
+    }
+    return source.map((requirement) =>
+      Object.fromEntries(
+        Object.entries(requirement).map(([name, scopes]) => [name, Array.isArray(scopes) ? scopes.map(String) : []]),
+      ),
+    )
+  }
+
+  securitySchemes(): Record<string, SecurityScheme> | undefined {
+    const components = isObject(this.document.components) ? this.document.components : {}
+    if (!isObject(components.securitySchemes)) return undefined
+    const schemes: Record<string, SecurityScheme> = {}
+    for (const [name, source] of Object.entries(components.securitySchemes)) {
+      const where = `#/components/securitySchemes/${name}`
+      if (isObject(source) && source.$ref !== undefined) {
+        this.problems.push(`${where}: a $ref security scheme is not supported; write the scheme in place`)
+        continue
+      }
+      if (!isObject(source) || !SCHEME_TYPES.has(source.type as SecurityScheme["type"])) {
+        this.problems.push(
+          `${where}: unsupported security scheme ${JSON.stringify(isObject(source) ? source.type : source)}`,
+        )
+        continue
+      }
+      const scheme = {
+        ...strings(source, ["description", "name", "in", "scheme", "bearerFormat", "openIdConnectUrl"]),
+        type: source.type,
+      } as SecurityScheme
+      if (isObject(source.flows)) {
+        const flows = source.flows
+        scheme.flows = Object.fromEntries(
+          FLOWS.flatMap((flow) => {
+            const one = flows[flow]
+            if (!isObject(one)) return []
+            const scopes = isObject(one.scopes)
+              ? Object.fromEntries(Object.entries(one.scopes).map(([k, v]) => [k, String(v)]))
+              : {}
+            return [[flow, { ...strings(one, ["authorizationUrl", "tokenUrl", "refreshUrl"]), scopes }]]
+          }),
+        )
+      }
+      schemes[name] = scheme
+    }
+    return schemes
+  }
+
+  servers(): ApiServer[] | undefined {
+    if (!Array.isArray(this.document.servers)) return undefined
+    return this.document.servers.flatMap((source) => {
+      if (!isObject(source) || typeof source.url !== "string") return []
+      const server: ApiServer = { url: source.url, ...strings(source, ["description"]) }
+      if (isObject(source.variables)) {
+        server.variables = Object.fromEntries(
+          Object.entries(source.variables).flatMap(([name, variable]) =>
+            isObject(variable) && variable.default !== undefined
+              ? [
+                  [
+                    name,
+                    {
+                      default: String(variable.default),
+                      ...(Array.isArray(variable.enum) ? { enum: variable.enum.map(String) } : {}),
+                      ...strings(variable, ["description"]),
+                    },
+                  ],
+                ]
+              : [],
+          ),
+        )
+      }
+      return [server]
+    })
   }
 
   operations(): ApiOperation[] {
@@ -496,6 +599,8 @@ class Adapter {
           effect: EFFECT_BY_METHOD[verb],
           source: { location: pointer },
         }
+        const security = this.security(source.security, `${pointer}.security`)
+        if (security) operation.security = security
         if (typeof source.summary === "string") operation.summary = source.summary
         if (typeof source.description === "string") operation.description = source.description
         if (source.deprecated === true) operation.deprecated = true
@@ -520,6 +625,12 @@ export const adaptOpenApi = (
   const adapter = new Adapter(document)
   const schemas = adapter.components()
   const operations = adapter.operations()
+  // Meta's spec repeats one server on every path group.
+  const servers = adapter
+    .servers()
+    ?.filter((one, index, all) => all.findIndex((other) => other.url === one.url) === index)
+  const securitySchemes = adapter.securitySchemes()
+  const security = adapter.security(document.security, "#/security")
   if (operations.length === 0) adapter.problems.push("the document has no operations")
   if (adapter.problems.length > 0) throw new OpenApiError(adapter.problems)
   const info = isObject(document.info) ? document.info : {}
@@ -527,5 +638,8 @@ export const adaptOpenApi = (
     source: { kind: "openapi", ...(typeof info.version === "string" ? { version: info.version } : {}), ...source },
     schemas,
     operations,
+    ...(servers?.length ? { servers } : {}),
+    ...(securitySchemes ? { securitySchemes } : {}),
+    ...(security ? { security } : {}),
   }
 }

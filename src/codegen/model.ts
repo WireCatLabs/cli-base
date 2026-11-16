@@ -110,6 +110,8 @@ export interface SourceReference {
 export interface ApiOperation {
   /** The source's own id where it has one. Never re-derived when it does. */
   id: string
+  /** Set by `generate`'s `names`; otherwise the command is the kebab-case id. */
+  command?: string
   binding: Binding
   summary?: string
   description?: string
@@ -118,8 +120,51 @@ export interface ApiOperation {
   requestBody?: ApiBody
   response?: ApiBody
   effect?: Effect
+  /** Why `effect` is not what the HTTP method says: a default rule or an override. Listed on the coverage page. */
+  effectReason?: string
+  /** Which security requirements the operation has, when it differs from the document's; `[]` is "none". */
+  security?: readonly SecurityRequirement[]
+  /** Set by `generate`'s `permissions` rule: the CLI's own keys a call must pass, beside `api.<operation>`. */
+  permissions?: readonly OperationPermission[]
   deprecated?: boolean
   source: SourceReference
+}
+
+/** A key a call must pass: always, or, when `body` or `query` is given, only when one of those flags is `true`. */
+export interface OperationPermission {
+  key: string
+  /** Top-level request body fields. */
+  body?: readonly string[]
+  /** Query parameters. */
+  query?: readonly string[]
+}
+
+/** The scheme names an operation needs, each with its OAuth scopes; one requirement of the list is enough. */
+export type SecurityRequirement = Readonly<Record<string, readonly string[]>>
+
+export interface OAuthFlow {
+  authorizationUrl?: string
+  tokenUrl?: string
+  refreshUrl?: string
+  scopes: Readonly<Record<string, string>>
+}
+
+/** OpenAPI's Security Scheme Object, with only the fields of its type. */
+export interface SecurityScheme {
+  type: "apiKey" | "http" | "oauth2" | "openIdConnect" | "mutualTLS"
+  description?: string
+  name?: string
+  in?: "query" | "header" | "cookie"
+  scheme?: string
+  bearerFormat?: string
+  flows?: Readonly<Partial<Record<"implicit" | "password" | "clientCredentials" | "authorizationCode", OAuthFlow>>>
+  openIdConnectUrl?: string
+}
+
+export interface ApiServer {
+  url: string
+  description?: string
+  variables?: Readonly<Record<string, { default: string; enum?: readonly string[]; description?: string }>>
 }
 
 export interface SourceInfo {
@@ -133,6 +178,12 @@ export interface ApiModel {
   source: SourceInfo
   operations: readonly ApiOperation[]
   schemas: readonly ApiSchema[]
+  servers?: readonly ApiServer[]
+  securitySchemes?: Readonly<Record<string, SecurityScheme>>
+  /** The document's default requirements, which an operation's own `security` replaces. */
+  security?: readonly SecurityRequirement[]
+  /** Set when `generate`'s `auth` replaced the source's sign-in: its reason, for the coverage page. */
+  securityReason?: string
 }
 
 export interface Override {

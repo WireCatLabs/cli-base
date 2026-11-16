@@ -2,7 +2,16 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { parse } from "yaml"
-import { adaptOpenApi, generate, manifestGenerator, OpenApiError, typesGenerator, valibotGenerator } from "./index.js"
+import {
+  adaptOpenApi,
+  coverageGenerator,
+  generate,
+  manifestGenerator,
+  OpenApiError,
+  READING_POST_REASON,
+  typesGenerator,
+  valibotGenerator,
+} from "./index.js"
 
 // facebook/openapi at e96a1c9dbf240c2937b6a95920685230458e346b (2026-08-11), MIT; the LICENSE is beside it. Its sample
 // phone numbers are replaced with fictional 1555-01NN ones, as whatsapp-cli's snapshot is: no real number in a fixture.
@@ -541,5 +550,213 @@ describe("Meta's WhatsApp Business Messaging file", () => {
     expect(byId("uploadImage")?.requestBody?.contentType).toBe("multipart/form-data")
     expect(byId("createAuthenticationTemplateWOtpCopyCodeButton")?.requestBody?.confidence).toBe("example")
     expect(byId("sendMessage")?.requestBody?.confidence).toBe("contract")
+  })
+})
+
+describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
+  const json = (schema: unknown, type = "application/json") => ({ content: { [type]: { schema } } })
+
+  it("takes the first 2xx answer with JSON, a JSON variant included", () => {
+    const paths = {
+      "/contacts": {
+        post: {
+          operationId: "create",
+          responses: { "201": json({ type: "string" }), "400": json({ type: "integer" }) },
+        },
+      },
+      "/links": {
+        get: {
+          operationId: "link",
+          responses: { "200": { content: {} }, "202": json({ type: "boolean" }, "application/hal+json") },
+        },
+      },
+    }
+    expect(operation(document({}, paths), "create")?.response?.schema).toEqual({ type: "string" })
+    expect(operation(document({}, paths), "link")?.response?.schema).toEqual({ type: "boolean" })
+  })
+
+  it("reads servers, security schemes and each operation's own security", () => {
+    const input = {
+      ...document(
+        {},
+        { "/public": { get: { operationId: "open", security: [] } } },
+        {
+          securitySchemes: {
+            oauth: {
+              type: "oauth2",
+              flows: {
+                authorizationCode: {
+                  authorizationUrl: "https://example.com/authorize",
+                  tokenUrl: "https://example.com/token",
+                  scopes: { read: "Read your data" },
+                },
+              },
+            },
+            token: { type: "http", scheme: "bearer" },
+          },
+        },
+      ),
+      servers: [{ url: "https://{region}.example.com", variables: { region: { default: "eu", enum: ["eu", "us"] } } }],
+      security: [{ oauth: ["read"] }, { token: [] }],
+    }
+    const model = adaptOpenApi(input)
+    expect(model.servers).toEqual([
+      { url: "https://{region}.example.com", variables: { region: { default: "eu", enum: ["eu", "us"] } } },
+    ])
+    expect(model.securitySchemes?.oauth?.flows?.authorizationCode?.tokenUrl).toBe("https://example.com/token")
+    expect(model.securitySchemes?.token).toEqual({ type: "http", scheme: "bearer" })
+    expect(model.security).toEqual([{ oauth: ["read"] }, { token: [] }])
+    expect(model.operations.find((candidate) => candidate.id === "open")?.security).toEqual([])
+    const [manifest] = generate(model, [manifestGenerator({ path: "manifest.ts" })], { banner: [] })
+    expect(manifest?.content).toContain(
+      'import type { ApiServer, ManifestOperation, SecurityRequirement, SecurityScheme } from "@wirecat/cli-base/codegen"',
+    )
+    expect(manifest?.content).toContain('"security": []')
+  })
+
+  it("refuses a security scheme of a type it does not know", () => {
+    expect(problemsOf(document({}, {}, { securitySchemes: { odd: { type: "magic" } } }))).toEqual([
+      '#/components/securitySchemes/odd: unsupported security scheme "magic"',
+    ])
+  })
+
+  it("marks a POST to a search or query path as a read only when asked, an override still winning, and lists both", () => {
+    const paths = {
+      "/v1/search": { post: { operationId: "search" } },
+      "/v1/databases/{id}/query": {
+        post: { operationId: "query", parameters: [{ name: "id", in: "path", schema: { type: "string" } }] },
+      },
+      "/v1/pages": { post: { operationId: "create" } },
+    }
+    const model = adaptOpenApi(document({}, paths))
+    expect(model.operations.find((one) => one.id === "search")?.effect).toBe("write")
+    const coverageOf = (options: Parameters<typeof generate>[2]) =>
+      generate(model, [coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command })], options)[0]
+        ?.content
+    expect(coverageOf({ banner: [] })).not.toContain("Effects not taken")
+    const coverage = coverageOf({
+      banner: [],
+      readingPosts: true,
+      overrides: { query: { effect: "write", reason: "runs a saved query that may change rows" } },
+    })
+    expect(coverage).toContain(`| \`search\` | read | ${READING_POST_REASON} |`)
+    expect(coverage).toContain("| `query` | write | override: runs a saved query that may change rows |")
+  })
+
+  it("reads a JSON body sent with a charset, keeps one copy of a repeated server, and names a $ref scheme", () => {
+    const paths = {
+      "/notes": {
+        post: { operationId: "note", requestBody: json({ type: "object" }, "application/json; charset=utf-8") },
+      },
+    }
+    const input = { ...document({}, paths), servers: [{ url: "https://a.example" }, { url: "https://a.example" }] }
+    const model = adaptOpenApi(input)
+    const body = model.operations.find((one) => one.id === "note")?.requestBody
+    expect(body?.contentType).toBeUndefined()
+    expect(body?.schema).toEqual({ type: "object", properties: {}, required: [] })
+    expect(model.servers).toEqual([{ url: "https://a.example" }])
+    const patch = {
+      "/notes": {
+        patch: { operationId: "edit", requestBody: json({ type: "object" }, "application/merge-patch+json") },
+      },
+    }
+    expect(operation(document({}, patch), "edit")?.requestBody?.contentType).toBe("application/merge-patch+json")
+    expect(problemsOf(document({}, {}, { securitySchemes: { shared: { $ref: "#/x" } } }))).toEqual([
+      "#/components/securitySchemes/shared: a $ref security scheme is not supported; write the scheme in place",
+    ])
+  })
+
+  it("replaces the source's sign-in everywhere with auth, and refuses a requirement naming no scheme", () => {
+    const paths = {
+      "/me": { get: { operationId: "getMe", security: [{ bearer: [] }] } },
+      "/health": { get: { operationId: "health", security: [] } },
+    }
+    const input = {
+      ...document({}, paths, { securitySchemes: { bearer: { type: "http", scheme: "bearer" } } }),
+      security: [{ bearer: [] }],
+    }
+    const auth = {
+      securitySchemes: { token: { type: "http" as const, scheme: "Bearer" } },
+      security: [{ token: [] }],
+      reason: "private app tokens are not in the spec",
+    }
+    const [manifest, coverage] = generate(
+      adaptOpenApi(input),
+      [
+        manifestGenerator({ path: "manifest.ts" }),
+        coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command }),
+      ],
+      { banner: [], auth },
+    )
+    expect(manifest?.content).not.toContain('"bearer"')
+    expect(manifest?.content).toContain('"security": []')
+    expect(coverage?.content).toContain("Not from the source: private app tokens are not in the spec")
+    const dangling = { ...document({}, paths), security: [{ missing: [] }] }
+    expect(() => generate(adaptOpenApi(dangling), [], { banner: [] })).toThrow('security names "missing"')
+  })
+
+  it("guards a body flag that trashes with the group's delete key, through a reference", () => {
+    const paths = {
+      "/pages/{id}": {
+        parameters: [{ name: "id", in: "path", schema: { type: "string" } }],
+        patch: { operationId: "patchPage", requestBody: json({ $ref: "#/components/schemas/PageUpdate" }) },
+        delete: { operationId: "deletePage" },
+      },
+      "/pages": {
+        post: { operationId: "createPage", requestBody: json({ type: "object", properties: { title: {} } }) },
+      },
+    }
+    const schemas = {
+      PageUpdate: { type: "object", properties: { in_trash: { type: "boolean" }, title: { type: "string" } } },
+    }
+    const [manifest, coverage] = generate(
+      adaptOpenApi(document(schemas, paths)),
+      [
+        manifestGenerator({ path: "manifest.ts" }),
+        coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command }),
+      ],
+      {
+        banner: [],
+        permissions: { group: (one) => one.tags[0] ?? "documents", deletingFlags: ["in_trash"] },
+      },
+    )
+    expect(manifest?.content).toContain(
+      '"key": "documents.delete",\n        "body": [\n          "in_trash"\n        ]',
+    )
+    expect(coverage?.content).toContain("| `patchPage` | `documents.delete` | body `in_trash` is true |")
+    expect(coverage?.content).toContain("| `deletePage` | `documents.delete` | always |")
+    expect(coverage?.content).not.toContain("`createPage` | `documents.delete`")
+  })
+  it("guards a POST that deletes once an override says so, a flag only a subtype has, and refuses an unused flag", () => {
+    const paths = {
+      "/contacts/batch/archive": { post: { operationId: "archiveBatch" } },
+      "/blocks/{id}": {
+        parameters: [{ name: "id", in: "path", schema: { type: "string" } }],
+        patch: { operationId: "updateBlock", requestBody: json({ $ref: "#/components/schemas/Block" }) },
+      },
+    }
+    const schemas = {
+      Block: {
+        type: "object",
+        properties: { type: { type: "string" } },
+        discriminator: { propertyName: "type", mapping: { page: "#/components/schemas/PageBlock" } },
+      },
+      PageBlock: {
+        allOf: [
+          { $ref: "#/components/schemas/Block" },
+          { type: "object", properties: { in_trash: { type: "boolean" } } },
+        ],
+      },
+    }
+    const model = adaptOpenApi(document(schemas, paths))
+    const coverageOf = (deletingFlags: string[]) =>
+      generate(model, [coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command })], {
+        banner: [],
+        overrides: { archiveBatch: { effect: "destructive", reason: "archives up to 100 contacts" } },
+        permissions: { group: "people", deletingFlags },
+      })[0]?.content
+    expect(coverageOf(["in_trash"])).toContain("| `archiveBatch` | `people.delete` | always |")
+    expect(coverageOf(["in_trash"])).toContain("| `updateBlock` | `people.delete` | body `in_trash` is true |")
+    expect(() => coverageOf(["erased"])).toThrow('deletingFlags: "erased" is in no request body or query')
   })
 })

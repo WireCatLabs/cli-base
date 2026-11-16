@@ -159,7 +159,7 @@ describe("generate", () => {
     expect(problemsOf(() => generate(broken, generators, { banner, overrides }))).toEqual([
       'two operations share the id "getMyInfo"',
       "two operations are both GET /me",
-      'two operations both become the command "get-my-info"',
+      'two operations both become the command "get-my-info": getMyInfo, getMyInfo',
       'schema "Broken" refers to unknown schema "Missing"',
     ])
   })
@@ -185,7 +185,7 @@ describe("generate", () => {
       schemas: [...base.schemas, { ...user, id: "user" }],
     })
     expect(problemsOf(() => generate(clashing, generators, { banner, overrides }))).toEqual([
-      'two operations both become the command "get-my-info"',
+      'two operations both become the command "get-my-info": getMyInfo, get-my-info',
       'two schemas both become the name "User"',
       'operation "get-my-info" has two parameters named "chat_id"',
     ])

@@ -23,6 +23,7 @@ export {
   logRecordSchema,
   traceIdOf,
 } from "./log.js"
+export { takenMinutes } from "./monthly.js"
 export {
   COMPACT_FLAG,
   clockMeta,
