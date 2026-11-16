@@ -124,4 +124,34 @@ describe("hostFetch", () => {
       hostFetch({ hosts: ["api.acme.example"], fetch: send })("https://api.acme.example/"),
     ).rejects.toMatchObject({ code: "network_error" })
   })
+
+  it("marks a failed name lookup or a refused connection as never sent, and a reset as maybe sent", async () => {
+    const failing = (code: string) => async () => {
+      throw new TypeError("fetch failed", { cause: Object.assign(new Error(code), { code }) })
+    }
+    for (const code of ["EAI_AGAIN", "ENOTFOUND", "ECONNREFUSED"])
+      await expect(
+        hostFetch({ hosts: ["api.acme.example"], fetch: failing(code) })("https://api.acme.example/"),
+      ).rejects.toMatchObject({ code: "network_error", details: { sent: false } })
+    const reset = await hostFetch({ hosts: ["api.acme.example"], fetch: failing("ECONNRESET") })(
+      "https://api.acme.example/",
+    ).catch((error: unknown) => error)
+    expect(reset).toMatchObject({ code: "network_error" })
+    expect((reset as { details: Record<string, unknown> }).details.sent).toBeUndefined()
+  })
+
+  it("keeps no mark when a redirect's next hop fails, since the first request arrived", async () => {
+    let calls = 0
+    const send = async () => {
+      if (calls++ === 0)
+        return new Response(null, { status: 307, headers: { location: "https://api.acme.example/next" } })
+      throw new TypeError("fetch failed", { cause: Object.assign(new Error("EAI_AGAIN"), { code: "EAI_AGAIN" }) })
+    }
+    const failed = await hostFetch({ hosts: ["api.acme.example"], fetch: send })("https://api.acme.example/", {
+      method: "POST",
+      body: "{}",
+    }).catch((error: unknown) => error)
+    expect(failed).toMatchObject({ code: "network_error" })
+    expect((failed as { details: Record<string, unknown> }).details.sent).toBeUndefined()
+  })
 })
