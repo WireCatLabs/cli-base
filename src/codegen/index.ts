@@ -2,7 +2,7 @@
  * Turns an official API description into committed code: types, Valibot schemas, an operation
  * manifest and a coverage page. Build-time, apart from the small helpers a CLI reads the generated
  * files with (`identifier`, `requestSchema`), and format-neutral: it parses no file format and
- * adds no dependency. `adaptOpenApi` reads an OpenAPI document and `adaptDiscovery` Google Discovery
+ * adds no runtime dependency. `adaptOpenApi` reads an OpenAPI document and `adaptDiscovery` Google Discovery
  * documents the consumer has parsed; `upgradeToOpenApi3` brings Swagger 1.2 and 2.0 to OpenAPI 3 through two optional
  * peer dependencies. An adapter from Postman or anything else lives in the consumer.
  */
@@ -51,15 +51,19 @@ export type {
   SourceReference,
 } from "./model.js"
 export { identifier, kebab } from "./names.js"
-export { adaptOpenApi, OpenApiError, READING_POST_REASON } from "./openapi.js"
+export { adaptOpenApi, OpenApiError } from "./openapi.js"
+export { type PatchedSpec, type PatchSpecOptions, patchSpec, type SpecPatch } from "./patch.js"
 export {
   type AuthOverride,
+  applyNames,
   applyOverrides,
   applyPermissionRule,
   CodegenError,
+  type CommandNames,
   type GenerateOptions,
   generate,
   type PermissionRule,
+  READING_POST_REASON,
   validateModel,
   type WriteOptions,
   writeArtifacts,

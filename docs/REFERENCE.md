@@ -216,7 +216,7 @@ timeout test finish instantly and a keyring test incapable of reaching a real ke
 format-neutral `ApiModel` — operations with a transport binding (`http` method and path, or `rpc`
 name), an `effect` (`read`, `write`, `destructive`) and how far the source can be trusted
 (`contract`, `example`, `inferred`, `override`) — and writes committed files. It parses no file
-format and adds no dependency: `adaptOpenApi` reads a parsed OpenAPI document, `adaptDiscovery` parsed
+format and adds no runtime dependency: `adaptOpenApi` reads a parsed OpenAPI document, `adaptDiscovery` parsed
 Google Discovery documents, and an adapter from Postman or anything else lives in the CLI that has that
 source. `upgradeToOpenApi3` converts Swagger 1.2 and 2.0 first, through two optional peer dependencies. What the
 generator reads, the corrections it takes (`overrides`, the search rule, `deletes`) and its limits are on the

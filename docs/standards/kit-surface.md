@@ -53,53 +53,72 @@ what it cannot do yet.
 optional peer dependencies of cli-base: a CLI that converts adds them to its `devDependencies`. Commit the source as the
 service serves it, with its URL and hash in `spec/<service>/provenance.json`, and convert in `scripts/generate.ts`.
 
+**`patchSpec(document, { patches, stubMissingSchemas })`** corrects the source before `adaptOpenApi`, in place of a
+CLI's own `scripts/<service>-spec.ts`. Each patch sets a value at a JSON pointer, with a reason. `stubMissingSchemas`
+gives every schema the document references but does not define an "anything" stub (HubSpot's associations v4 refers
+to a `Void` it lacks). It returns a copy and the list of what it changed, for the CLI's provenance.
+
 From the source the generator reads:
 
 - **Operations**: method and path, parameters, the request body (JSON, multipart or a form), and the first 2xx answer
-  with a JSON body (`200`, `201` as HubSpot creates, `202`, or `2XX`), `application/hal+json` and other JSON types
-  included.
+  with a JSON body (`200`, `201` as HubSpot creates, `202`, `207`, or `2XX`). `application/hal+json`,
+  `application/json; charset=utf-8` and other JSON types count as JSON.
 - **Effect**: GET and HEAD read, POST, PUT and PATCH write, DELETE is destructive.
-- **Servers and sign-in**: `servers`, `components/securitySchemes` and `security` go into the manifest as `servers`,
-  `securitySchemes` and `security`, and an operation's own `security` (`[]` for one that needs no sign-in) onto that
-  operation, so a CLI does not copy its base URL or OAuth endpoints by hand. They appear only when the source has them.
+- **Servers and sign-in**: `servers` (each URL once, as written), `components/securitySchemes` and `security` go into
+  the manifest as `servers`, `securitySchemes` and `security`, and an operation's own `security` (`[]` for one that
+  needs no sign-in) onto that operation. A CLI then does not copy its base URL or OAuth endpoints by hand. They appear
+  only when the source has them. A requirement naming a scheme the document lacks stops generation.
 
 ### Corrections a CLI passes to `generate`
 
 - **`overrides`**: operation id → `{ effect, reason }`. The reason is required. An override that matches no operation
-  stops generation.
-- **The search rule**: a POST whose path ends in `/search` or `/query` (`:search`, `:query` too) is a read, as
-  HubSpot's and Notion's are. An override with `effect: "write"` takes one back.
-- **`permissions`**: `{ group, deletingFlags, shares }`. The CLI's own keys then hold over the raw `api` group too,
-  not only `api.<operation>`. `group` is a name (`files`) or a function of the operation (one group per tag).
+  stops generation. HubSpot's `batch/archive`, `gdpr-delete` and `merge` are POSTs that delete: an override with
+  `effect: "destructive"` makes them deletes, and `permissions` then guards them.
+- **`readingPosts: true`**: a POST whose path ends in `/search` or `/query` (`:search`, `:query` too) is a read, as
+  HubSpot's and Notion's are. It is off by default, because a wrong guess turns a write into a read (a `…/query` that
+  runs any SQL). An override still wins.
+- **`names`**: `{ commands, fromPath, segments }`. `commands` maps an operation id to its command. With `fromPath`,
+  the rest are named from the path and the method (`deals-list`, `deals-get`, `deals-create`, `deals-delete`,
+  `deals-batch-archive`), leaving out path parameters and versions (`v3`, `2026-03`). `segments` renames a path segment
+  or, with `""`, leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. Without `names` the command is the operation
+  id in kebab case, as before.
+- **`permissions`**: `{ group, deletingFlags, shares }`. `group` is a name (`files`) or a function of the operation, for
+  example the first word of its command. Each key lands in the manifest as the operation's `permissions`.
   - `<group>.delete` for every destructive operation (Yandex Disk's `DELETE /trash/resources` empties the whole
     trash), and for every operation that takes a flag in `deletingFlags`, as a top-level body field (Notion's
-    `archived`, `in_trash`) or a query parameter (Yandex Disk's `permanently`, `overwrite`). cli-core checks the key
-    when the flag is `true`.
+    `archived`, `in_trash`, a subtype's included) or a query parameter (Yandex Disk's `permanently`, `overwrite`). The
+    key applies when the flag is `true`. A flag no operation takes stops generation.
   - `<group>.share` for the operation ids in `shares`: a public link opens a file to anyone, which is neither a
     plain write nor a delete.
 
   Which flags delete is the CLI's call: read the service's documentation, and count an undocumented flag as a delete.
-  Each key lands in the manifest as the operation's `permissions`.
-- **`auth`**: `{ securitySchemes, security, reason }` replaces the source's sign-in. Yandex Disk's Swagger 1.2 has no
-  scheme, and its header is `Authorization: OAuth <token>`: `{ oauth: { type: "http", scheme: "OAuth" } }`.
+  A flag counts on every method, a GET included: Yandex Disk's upload link is a GET whose `overwrite` replaces a file.
+  Leave out a flag that only filters, as HubSpot's `archived` on a list does.
+- **`auth`**: `{ securitySchemes, security, reason }` replaces the source's sign-in, the operations' own requirements
+  included. Yandex Disk's Swagger 1.2 has no scheme, and its header is `Authorization: OAuth <token>`:
+  `{ oauth: { type: "http", scheme: "OAuth" } }`. HubSpot's spec has no private app token.
 
 ### Provenance
 
 The coverage page lists every operation, with its call, command, effect and how far its request body can be trusted
-(`contract` or `example`). Under it, **Effects not taken from the HTTP method** lists each operation the search rule or
-an override changed, with the reason, and **Calls guarded by a permission key** lists each key from `permissions` and
-when it applies. A reviewer diffs this page after a spec sync.
+(`contract` or `example`). Under it, **Effects not taken from the HTTP method** lists each operation `readingPosts` or
+an override changed, with the reason; **Sign-in** gives the `auth` reason; and **Permission keys** lists each key from
+`permissions` and when it applies. `patchSpec`'s list of changes goes into the CLI's own provenance. A reviewer diffs
+the coverage page after a spec sync.
 
 ### Limits
 
+- **Nothing checks the permission keys yet.** cli-core does not read an operation's `permissions`, `servers` or
+  `securitySchemes` today. Until it does, a CLI adds the keys to its own `commandPermissions`, as notion-cli's
+  `src/config.ts` does.
 - One spec per run. Merging several specs (HubSpot publishes 127) is the CLI's job until the generator does it.
-- No pagination description, no generated fake server: a CLI writes both by hand.
-- A `$ref` to a shared response in `components/responses` is passed through without a shape.
+- No pagination description and no generated fake server yet: a CLI writes both by hand.
+- A `$ref` to a shared response in `components/responses`, or to a security scheme, is not followed.
 - A Swagger 1.2 listing that embeds its operations, and Postman, RAML or GraphQL sources, are not read.
-- cli-core checks an operation's `permissions`: until the CLI's cli-core does, the CLI adds the keys to its own
-  `commandPermissions`, as notion-cli's `src/config.ts` does.
 - Swagger 1.2 lists a status code more than once in one operation (Yandex Disk's 400 and 403); a JSON object holds
   one, so the conversion keeps one of them. Only 2xx answers reach the model.
+- swagger-converter has had no release since 2021, and no maintained converter from Swagger 1.2 exists; Swagger 1.2
+  itself was replaced by 2.0 in 2014. It is a dev dependency only, used by the few services still on 1.2.
 
 ## When one of them changes
 

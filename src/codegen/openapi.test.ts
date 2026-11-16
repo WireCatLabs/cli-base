@@ -620,7 +620,7 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
     ])
   })
 
-  it("marks a POST to a search or query path as a read, which an override takes back, and lists both", () => {
+  it("marks a POST to a search or query path as a read only when asked, an override still winning, and lists both", () => {
     const paths = {
       "/v1/search": { post: { operationId: "search" } },
       "/v1/databases/{id}/query": {
@@ -629,19 +629,60 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
       "/v1/pages": { post: { operationId: "create" } },
     }
     const model = adaptOpenApi(document({}, paths))
-    const effects = Object.fromEntries(model.operations.map((one) => [one.id, [one.effect, one.effectReason]]))
-    expect(effects).toMatchObject({
-      search: ["read", READING_POST_REASON],
-      query: ["read", READING_POST_REASON],
-      create: ["write", undefined],
+    expect(model.operations.find((one) => one.id === "search")?.effect).toBe("write")
+    const coverageOf = (options: Parameters<typeof generate>[2]) =>
+      generate(model, [coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command })], options)[0]
+        ?.content
+    expect(coverageOf({ banner: [] })).not.toContain("Effects not taken")
+    const coverage = coverageOf({
+      banner: [],
+      readingPosts: true,
+      overrides: { query: { effect: "write", reason: "runs a saved query that may change rows" } },
     })
-    const [coverage] = generate(
-      model,
-      [coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command })],
-      { banner: [], overrides: { query: { effect: "write", reason: "runs a saved query that may change rows" } } },
+    expect(coverage).toContain(`| \`search\` | read | ${READING_POST_REASON} |`)
+    expect(coverage).toContain("| `query` | write | override: runs a saved query that may change rows |")
+  })
+
+  it("reads a JSON body sent with a charset, keeps one copy of a repeated server, and names a $ref scheme", () => {
+    const paths = {
+      "/notes": {
+        post: { operationId: "note", requestBody: json({ type: "object" }, "application/json; charset=utf-8") },
+      },
+    }
+    const input = { ...document({}, paths), servers: [{ url: "https://a.example" }, { url: "https://a.example" }] }
+    const model = adaptOpenApi(input)
+    const body = model.operations.find((one) => one.id === "note")?.requestBody
+    expect(body?.contentType).toBeUndefined()
+    expect(body?.schema).toEqual({ type: "object", properties: {}, required: [] })
+    expect(model.servers).toEqual([{ url: "https://a.example" }])
+    expect(problemsOf(document({}, {}, { securitySchemes: { shared: { $ref: "#/x" } } }))).toEqual([
+      "#/components/securitySchemes/shared: a $ref security scheme is not supported; write the scheme in place",
+    ])
+  })
+
+  it("replaces the source's sign-in everywhere with auth, and refuses a requirement naming no scheme", () => {
+    const paths = { "/me": { get: { operationId: "getMe", security: [{ bearer: [] }] } } }
+    const input = {
+      ...document({}, paths, { securitySchemes: { bearer: { type: "http", scheme: "bearer" } } }),
+      security: [{ bearer: [] }],
+    }
+    const auth = {
+      securitySchemes: { token: { type: "http" as const, scheme: "Bearer" } },
+      security: [{ token: [] }],
+      reason: "private app tokens are not in the spec",
+    }
+    const [manifest, coverage] = generate(
+      adaptOpenApi(input),
+      [
+        manifestGenerator({ path: "manifest.ts" }),
+        coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command }),
+      ],
+      { banner: [], auth },
     )
-    expect(coverage?.content).toContain(`| \`search\` | read | ${READING_POST_REASON} |`)
-    expect(coverage?.content).toContain("| `query` | write | override: runs a saved query that may change rows |")
+    expect(manifest?.content).not.toContain('"bearer"')
+    expect(coverage?.content).toContain("Not from the source: private app tokens are not in the spec")
+    const dangling = { ...document({}, paths), security: [{ missing: [] }] }
+    expect(() => generate(adaptOpenApi(dangling), [], { banner: [] })).toThrow('security names "missing"')
   })
 
   it("guards a body flag that trashes with the group's delete key, through a reference", () => {
@@ -666,7 +707,7 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
       ],
       {
         banner: [],
-        permissions: { group: (one) => one.tags[0] ?? "documents", deletingFlags: ["in_trash", "archived"] },
+        permissions: { group: (one) => one.tags[0] ?? "documents", deletingFlags: ["in_trash"] },
       },
     )
     expect(manifest?.content).toContain(
@@ -675,5 +716,37 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
     expect(coverage?.content).toContain("| `patchPage` | `documents.delete` | body `in_trash` is true |")
     expect(coverage?.content).toContain("| `deletePage` | `documents.delete` | always |")
     expect(coverage?.content).not.toContain("`createPage` | `documents.delete`")
+  })
+  it("guards a POST that deletes once an override says so, a flag only a subtype has, and refuses an unused flag", () => {
+    const paths = {
+      "/contacts/batch/archive": { post: { operationId: "archiveBatch" } },
+      "/blocks/{id}": {
+        parameters: [{ name: "id", in: "path", schema: { type: "string" } }],
+        patch: { operationId: "updateBlock", requestBody: json({ $ref: "#/components/schemas/Block" }) },
+      },
+    }
+    const schemas = {
+      Block: {
+        type: "object",
+        properties: { type: { type: "string" } },
+        discriminator: { propertyName: "type", mapping: { page: "#/components/schemas/PageBlock" } },
+      },
+      PageBlock: {
+        allOf: [
+          { $ref: "#/components/schemas/Block" },
+          { type: "object", properties: { in_trash: { type: "boolean" } } },
+        ],
+      },
+    }
+    const model = adaptOpenApi(document(schemas, paths))
+    const coverageOf = (deletingFlags: string[]) =>
+      generate(model, [coverageGenerator({ path: "API.md", title: "API", command: (one) => one.command })], {
+        banner: [],
+        overrides: { archiveBatch: { effect: "destructive", reason: "archives up to 100 contacts" } },
+        permissions: { group: "people", deletingFlags },
+      })[0]?.content
+    expect(coverageOf(["in_trash"])).toContain("| `archiveBatch` | `people.delete` | always |")
+    expect(coverageOf(["in_trash"])).toContain("| `updateBlock` | `people.delete` | body `in_trash` is true |")
+    expect(() => coverageOf(["erased"])).toThrow('deletingFlags: "erased" is in no request body or query')
   })
 })

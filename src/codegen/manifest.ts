@@ -42,7 +42,7 @@ const withoutUndefined = <T extends object>(value: T): T =>
 const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperation =>
   withoutUndefined({
     id: operation.id,
-    command: kebab(operation.id),
+    command: operation.command ?? kebab(operation.id),
     binding: operation.binding,
     effect: operation.effect as Effect,
     summary: operation.summary,
@@ -159,10 +159,11 @@ export const coverageGenerator =
             ...reasoned.map((one) => `| \`${one.id}\` | ${one.effect} | ${cell(one.effectReason)} |`),
           ]
         : []),
+      ...(model.securityReason ? ["", "## Sign-in", "", `Not from the source: ${cell(model.securityReason)}`] : []),
       ...(guarded.length > 0
         ? [
             "",
-            "## Calls guarded by a permission key",
+            "## Permission keys",
             "",
             "| Operation | Key | When |",
             "|---|---|---|",

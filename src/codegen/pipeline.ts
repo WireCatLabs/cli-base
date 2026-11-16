@@ -3,6 +3,7 @@ import { dirname, extname, join } from "node:path"
 import type {
   ApiModel,
   ApiOperation,
+  ApiSchema,
   CodeGenerator,
   GeneratedArtifact,
   OperationPermission,
@@ -17,6 +18,86 @@ export class CodegenError extends Error {
   constructor(readonly problems: readonly string[]) {
     super(`generation stopped:\n${problems.map((problem) => `  - ${problem}`).join("\n")}`)
     this.name = "CodegenError"
+  }
+}
+
+/**
+ * A POST to these paths only reads, as HubSpot's and Notion's search and query do. Opt-in through `readingPosts`: a
+ * wrong guess turns a write into a read (a `/database/query` that runs any SQL).
+ */
+const READING_POST = /[/:](search|query)$/i
+export const READING_POST_REASON = "a POST to a …/search or …/query path only reads (readingPosts rule)"
+
+const applyReadingPosts = (model: ApiModel): ApiModel => ({
+  ...model,
+  operations: model.operations.map((operation) =>
+    operation.binding.kind === "http" &&
+    operation.binding.method === "POST" &&
+    READING_POST.test(operation.binding.path)
+      ? { ...operation, effect: "read", effectReason: READING_POST_REASON }
+      : operation,
+  ),
+})
+
+/**
+ * Command names for a source whose operation ids make poor ones: HubSpot's `get-/crm/v3/objects/contacts_getPage`.
+ * `commands` wins; with `fromPath` the rest are named from the path and the method; otherwise from the id.
+ */
+export interface CommandNames {
+  /** Operation id → command, kebab case: `{ "get-/crm/v3/objects/contacts_getPage": "contacts-list" }`. */
+  commands?: Readonly<Record<string, string>>
+  fromPath?: boolean
+  /** A path segment → its word in a command; `""` leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. */
+  segments?: Readonly<Record<string, string>>
+}
+
+const COMMAND = /^[a-z0-9]+(-[a-z0-9]+)*$/
+const VERSION = /^(v\d+(\.\d+)*|\d{4}-\d{2}(-[a-z]+)?)$/i
+const isParameter = (segment: string) => segment.startsWith("{")
+
+/** `contacts-list`, `contacts-get`, `contacts-create`, `contacts-batch-archive`: segments, then what the method does. */
+const commandFromPath = (operation: ApiOperation, all: readonly ApiOperation[], names: CommandNames): string => {
+  if (operation.binding.kind !== "http") return kebab(operation.id)
+  const { method, path } = operation.binding
+  const parts = path.split("/").filter(Boolean)
+  const words = parts
+    .filter((segment) => !isParameter(segment) && !VERSION.test(segment))
+    .map((segment) => names.segments?.[segment] ?? kebab(segment))
+    .filter(Boolean)
+  const onItem = isParameter(parts.at(-1) ?? "")
+  // A POST to a path that also lists or holds items creates one; to any other path it is the action the path names.
+  const collection = all.some(
+    (other) =>
+      other.binding.kind === "http" &&
+      ((other.binding.method === "GET" && other.binding.path === path) ||
+        (other.binding.path.startsWith(`${path}/{`) && !other.binding.path.slice(path.length + 1).includes("/"))),
+  )
+  const verb = {
+    GET: onItem ? "get" : "list",
+    HEAD: "head",
+    DELETE: "delete",
+    PATCH: "update",
+    PUT: onItem || collection ? "replace" : "",
+    POST: onItem || collection ? "create" : "",
+  }[method]
+  return [...words, verb].filter(Boolean).join("-")
+}
+
+export const applyNames = (model: ApiModel, names: CommandNames): ApiModel => {
+  const known = new Set(model.operations.map((operation) => operation.id))
+  const problems = Object.entries(names.commands ?? {}).flatMap(([id, command]) => [
+    ...(known.has(id) ? [] : [`names: "${id}" matches no operation`]),
+    ...(COMMAND.test(command) ? [] : [`names: "${command}" is not a kebab-case command`]),
+  ])
+  if (problems.length > 0) throw new CodegenError(problems)
+  return {
+    ...model,
+    operations: model.operations.map((operation) => {
+      const command =
+        names.commands?.[operation.id] ??
+        (names.fromPath ? commandFromPath(operation, model.operations, names) : undefined)
+      return command ? { ...operation, command } : operation
+    }),
   }
 }
 
@@ -55,13 +136,17 @@ export interface PermissionRule {
   shares?: readonly string[]
 }
 
-/** The top-level property names a body may carry, through references, inheritance and unions. */
-const bodyFields = (node: SchemaNode, schemas: ReadonlyMap<string, SchemaNode>, seen = new Set<string>()): string[] => {
+/** The top-level property names a body may carry, through references, inheritance, unions and subtypes. */
+const bodyFields = (node: SchemaNode, schemas: ReadonlyMap<string, ApiSchema>, seen = new Set<string>()): string[] => {
   switch (node.type) {
     case "ref": {
       const target = schemas.get(node.ref)
       if (!target || seen.has(node.ref)) return []
-      return bodyFields(target, schemas, new Set([...seen, node.ref]))
+      const inner = new Set([...seen, node.ref])
+      const subtypes = Object.values(target.discriminator?.mapping ?? {}).flatMap((id) =>
+        bodyFields({ type: "ref", ref: id }, schemas, inner),
+      )
+      return [...bodyFields(target.schema, schemas, inner), ...subtypes]
     }
     case "object":
       return Object.keys(node.properties)
@@ -77,8 +162,20 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
   const known = new Set(model.operations.map((operation) => operation.id))
   const stale = (rule.shares ?? []).filter((id) => !known.has(id))
   if (stale.length > 0) throw new CodegenError(stale.map((id) => `shares: "${id}" matches no operation`))
-  const schemas = new Map(model.schemas.map((schema) => [schema.id, schema.schema]))
   const flags = rule.deletingFlags ?? []
+  const schemas = new Map(model.schemas.map((schema) => [schema.id, schema]))
+  const fieldsOf = (operation: ApiOperation) =>
+    new Set(operation.requestBody?.schema ? bodyFields(operation.requestBody.schema, schemas) : [])
+  const unused = flags.filter(
+    (flag) =>
+      !model.operations.some(
+        (operation) =>
+          fieldsOf(operation).has(flag) ||
+          operation.parameters.some((parameter) => parameter.in === "query" && parameter.name === flag),
+      ),
+  )
+  if (unused.length > 0)
+    throw new CodegenError(unused.map((flag) => `deletingFlags: "${flag}" is in no request body or query`))
   return {
     ...model,
     operations: model.operations.map((operation) => {
@@ -87,7 +184,7 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
       if (rule.shares?.includes(operation.id)) permissions.push({ key: `${group}.share` })
       if (operation.effect === "destructive") permissions.push({ key: `${group}.delete` })
       else {
-        const fields = new Set(operation.requestBody?.schema ? bodyFields(operation.requestBody.schema, schemas) : [])
+        const fields = fieldsOf(operation)
         const body = flags.filter((flag) => fields.has(flag))
         const query = flags.filter((flag) =>
           operation.parameters.some((parameter) => parameter.in === "query" && parameter.name === flag),
@@ -119,7 +216,14 @@ const applyAuth = (model: ApiModel, auth: AuthOverride): ApiModel => {
   const unknown = [...new Set(auth.security.flatMap(Object.keys))].filter((name) => !names.has(name))
   if (unknown.length > 0)
     throw new CodegenError(unknown.map((name) => `auth: security names "${name}", which securitySchemes lacks`))
-  return { ...model, securitySchemes: auth.securitySchemes, security: auth.security }
+  return {
+    ...model,
+    securitySchemes: auth.securitySchemes,
+    security: auth.security,
+    securityReason: auth.reason,
+    // The source's per-operation requirements name its own schemes, which this replaces.
+    operations: model.operations.map(({ security: _, ...operation }) => operation),
+  }
 }
 
 const bindingKey = (operation: ApiOperation): string =>
@@ -186,7 +290,7 @@ export const validateModel = (model: ApiModel): void => {
   for (const id of duplicates(model.schemas.map((schema) => schema.id))) {
     problems.push(`two schemas share the id "${id}"`)
   }
-  for (const command of duplicates(model.operations.map((operation) => kebab(operation.id)))) {
+  for (const command of duplicates(model.operations.map((operation) => operation.command ?? kebab(operation.id)))) {
     problems.push(`two operations both become the command "${command}"`)
   }
   for (const name of duplicates(model.schemas.map((schema) => identifier(schema.id)))) {
@@ -235,12 +339,19 @@ export const validateModel = (model: ApiModel): void => {
     unresolved(`operation "${operation.id}" request`, operation.requestBody?.schema)
     unresolved(`operation "${operation.id}" response`, operation.response?.schema)
   }
+  const schemes = new Set(Object.keys(model.securitySchemes ?? {}))
+  const named = [model.security ?? [], ...model.operations.map((operation) => operation.security ?? [])]
+  for (const name of new Set(named.flat().flatMap(Object.keys)))
+    if (!schemes.has(name)) problems.push(`security names "${name}", which securitySchemes lacks`)
   problems.push(...mergeCycles(model))
   if (problems.length > 0) throw new CodegenError(problems)
 }
 
 export interface GenerateOptions {
   overrides?: Readonly<Record<string, Override>>
+  /** Treat a POST to a `…/search` or `…/query` path as a read; an override still wins. */
+  readingPosts?: boolean
+  names?: CommandNames
   permissions?: PermissionRule
   auth?: AuthOverride
   /** Lines under "GENERATED. DO NOT EDIT." — the source and the command. Nothing that changes by itself. */
@@ -257,8 +368,9 @@ export const generate = (
   generators: readonly CodeGenerator[],
   options: GenerateOptions,
 ): GeneratedArtifact[] => {
-  const overridden = applyOverrides(model, options.overrides ?? {})
-  const authed = options.auth ? applyAuth(overridden, options.auth) : overridden
+  const overridden = applyOverrides(options.readingPosts ? applyReadingPosts(model) : model, options.overrides ?? {})
+  const named = options.names ? applyNames(overridden, options.names) : overridden
+  const authed = options.auth ? applyAuth(named, options.auth) : named
   // After the overrides: an operation an override calls destructive is a delete too.
   const prepared = options.permissions ? applyPermissionRule(authed, options.permissions) : authed
   validateModel(prepared)

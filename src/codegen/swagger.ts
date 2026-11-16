@@ -2,16 +2,15 @@
  * Swagger 1.2 and 2.0 → OpenAPI 3, so `adaptOpenApi` reads one format. Build-time only: the two converters are
  * optional peer dependencies, loaded on first use, and a CLI that converts installs them as dev dependencies.
  */
-import { OpenApiError } from "./openapi.js"
+import { isObject, OpenApiError } from "./openapi.js"
 
 type Json = Record<string, unknown>
-
-const isObject = (value: unknown): value is Json => typeof value === "object" && value !== null && !Array.isArray(value)
 
 const load = async <T>(name: string, use: string): Promise<T> => {
   try {
     return (await import(name)) as T
-  } catch {
+  } catch (error) {
+    if ((error as { code?: string }).code !== "ERR_MODULE_NOT_FOUND") throw error
     throw new OpenApiError([`${use} needs ${name}: add it to the CLI's devDependencies`])
   }
 }

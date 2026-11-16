@@ -7,7 +7,7 @@ import {
   generate,
   manifestGenerator,
   OpenApiError,
-  READING_POST_REASON,
+  patchSpec,
   upgradeToOpenApi3,
 } from "./index.js"
 
@@ -64,6 +64,9 @@ describe("upgradeToOpenApi3", () => {
     expect(coverage?.content).toContain("| `PublishResource` | `files.share` | always |")
     expect(manifest?.content).toContain("export const securitySchemes: Readonly<Record<string, SecurityScheme>> = {")
     expect(manifest?.content).toContain('"scheme": "OAuth"')
+    expect(coverage?.content).toContain(
+      "Not from the source: the spec has no scheme; the header is Authorization: OAuth <token>",
+    )
     expect(manifest?.content).toContain("export const servers: readonly ApiServer[] = [")
   })
 
@@ -101,7 +104,7 @@ describe("upgradeToOpenApi3", () => {
     expect(model.servers).toEqual([{ url: "https://api.example.com/v2" }])
     expect(model.securitySchemes).toEqual({ key: { type: "apiKey", name: "X-Key", in: "header" } })
     expect(model.security).toEqual([{ key: [] }])
-    expect(model.operations[0]).toMatchObject({ effect: "read", effectReason: READING_POST_REASON })
+    expect(model.operations[0]?.effect).toBe("write")
   })
 
   it("returns an OpenAPI 3 document as it is, and refuses what it cannot convert", async () => {
@@ -109,5 +112,71 @@ describe("upgradeToOpenApi3", () => {
     expect(await upgradeToOpenApi3(openapi)).toBe(openapi)
     await expect(upgradeToOpenApi3({ swaggerVersion: "1.2", apis: [] })).rejects.toThrow(OpenApiError)
     await expect(upgradeToOpenApi3({ info: {} })).rejects.toThrow(/not an OpenAPI 3, Swagger 2.0 or Swagger 1.x/)
+  })
+})
+
+describe("command names and spec patches", () => {
+  const hubspot = {
+    openapi: "3.0.1",
+    info: { version: "v3" },
+    paths: {
+      "/crm/v3/objects/0-3": {
+        get: { operationId: "get-/crm/v3/objects/0-3_getPage" },
+        post: { operationId: "post-/crm/v3/objects/0-3_create" },
+      },
+      "/crm/v3/objects/0-3/{dealId}": {
+        parameters: [{ name: "dealId", in: "path", schema: { type: "string" } }],
+        get: { operationId: "get-/crm/v3/objects/0-3/{dealId}_getById" },
+        delete: { operationId: "delete-/crm/v3/objects/0-3/{dealId}_archive" },
+      },
+      "/crm/v3/objects/0-3/batch/archive": {
+        post: {
+          operationId: "post-/crm/v3/objects/0-3/batch/archive_archive",
+          requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Void" } } } },
+        },
+      },
+    },
+    components: { schemas: {} },
+  }
+
+  it("names commands from the path with segment aliases, an explicit name winning", () => {
+    const { document } = patchSpec(hubspot, { stubMissingSchemas: "missing from HubSpot's associations spec" })
+    const [manifest] = generate(adaptOpenApi(document), [manifestGenerator({ path: "manifest.ts" })], {
+      banner: [],
+      names: {
+        fromPath: true,
+        segments: { "0-3": "deals", crm: "", objects: "" },
+        commands: { "post-/crm/v3/objects/0-3/batch/archive_archive": "deals-archive-batch" },
+      },
+    })
+    const commands = [...(manifest?.content.matchAll(/"command": "([^"]+)"/g) ?? [])].map(([, command]) => command)
+    expect(commands).toEqual(["deals-list", "deals-create", "deals-get", "deals-delete", "deals-archive-batch"])
+  })
+
+  it("refuses a name for an unknown operation or one that is not kebab case", () => {
+    const { document } = patchSpec(hubspot, { stubMissingSchemas: "missing" })
+    const run = (commands: Record<string, string>) =>
+      generate(adaptOpenApi(document), [], { banner: [], names: { commands } })
+    expect(() => run({ nope: "deals-list" })).toThrow('names: "nope" matches no operation')
+    expect(() => run({ "get-/crm/v3/objects/0-3_getPage": "Deals List" })).toThrow("is not a kebab-case command")
+  })
+
+  it("stubs a missing schema and sets a value by pointer, leaving the caller's document alone and listing both", () => {
+    const before = structuredClone(hubspot)
+    const { document, applied } = patchSpec(hubspot, {
+      stubMissingSchemas: "missing from HubSpot's associations spec",
+      patches: [{ pointer: "/info/title", value: "HubSpot CRM", reason: "the spec has no title" }],
+    })
+    expect(hubspot).toEqual(before)
+    expect(applied).toEqual([
+      { pointer: "/info/title", reason: "the spec has no title" },
+      { pointer: "/components/schemas/Void", reason: "missing from HubSpot's associations spec" },
+    ])
+    expect(adaptOpenApi(document).schemas).toEqual([
+      { id: "Void", schema: { type: "unknown", description: expect.any(String) } },
+    ])
+    expect(() => patchSpec(hubspot, { patches: [{ pointer: "/nowhere/x", value: 1, reason: "r" }] })).toThrow(
+      "patch /nowhere/x: its parent is not in the document",
+    )
   })
 })

@@ -110,6 +110,8 @@ export interface SourceReference {
 export interface ApiOperation {
   /** The source's own id where it has one. Never re-derived when it does. */
   id: string
+  /** Set by `generate`'s `names`; otherwise the command is the kebab-case id. */
+  command?: string
   binding: Binding
   summary?: string
   description?: string
@@ -180,6 +182,8 @@ export interface ApiModel {
   securitySchemes?: Readonly<Record<string, SecurityScheme>>
   /** The document's default requirements, which an operation's own `security` replaces. */
   security?: readonly SecurityRequirement[]
+  /** Set when `generate`'s `auth` replaced the source's sign-in: its reason, for the coverage page. */
+  securityReason?: string
 }
 
 export interface Override {

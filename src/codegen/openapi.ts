@@ -93,7 +93,8 @@ export class OpenApiError extends Error {
   }
 }
 
-const isObject = (value: unknown): value is Json => typeof value === "object" && value !== null && !Array.isArray(value)
+export const isObject = (value: unknown): value is Json =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
 
 const EFFECT_BY_METHOD: Record<HttpMethod, Effect> = {
   GET: "read",
@@ -104,17 +105,11 @@ const EFFECT_BY_METHOD: Record<HttpMethod, Effect> = {
   DELETE: "destructive",
 }
 
-/**
- * A POST to these paths only reads, as HubSpot's and Notion's search and query do. The coverage page lists each
- * operation the rule marked; an override with `effect: "write"` takes one back.
- */
-const READING_POST = /[/:](search|query)$/i
-export const READING_POST_REASON = "a POST to a …/search or …/query path only reads (default rule)"
+const JSON_VARIANT = /^application\/([\w.-]+\+)?json\s*(;|$)/i
 
 /** `application/json`, else a JSON variant: `application/hal+json`, `application/json; charset=utf-8`. */
 const jsonContent = (content: Json): unknown =>
-  content[JSON_TYPE] ??
-  Object.entries(content).find(([type]) => /^application\/([\w.-]+\+)?json\s*(;|$)/i.test(type))?.[1]
+  content[JSON_TYPE] ?? Object.entries(content).find(([type]) => JSON_VARIANT.test(type))?.[1]
 
 const SCHEME_TYPES = new Set<SecurityScheme["type"]>(["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"])
 const FLOWS = ["implicit", "password", "clientCredentials", "authorizationCode"] as const
@@ -454,14 +449,16 @@ class Adapter {
     const schemaOf = (type: string): unknown => (isObject(content[type]) ? content[type].schema : undefined)
     const carriesFile = JSON.stringify(schemaOf(MULTIPART) ?? {}).includes('"format":"binary"')
     const offered = Object.keys(content)
-    const type = carriesFile ? MULTIPART : [JSON_TYPE, MULTIPART, FORM].find((candidate) => offered.includes(candidate))
+    const json =
+      offered.find((candidate) => candidate === JSON_TYPE) ?? offered.find((candidate) => JSON_VARIANT.test(candidate))
+    const type = carriesFile ? MULTIPART : (json ?? [MULTIPART, FORM].find((candidate) => offered.includes(candidate)))
     const body: ApiBody = { confidence: "contract", required: source.required === true }
     if (offered.length === 0) return body
     if (!type) {
       this.problems.push(`${where}: a body must be JSON, multipart or a form, found ${offered.join(", ")}`)
       return body
     }
-    if (type !== JSON_TYPE) body.contentType = type
+    if (type !== json) body.contentType = type
     const schema = schemaOf(type)
     if (schema === undefined) return body
     if (typedFromExample(schema)) body.confidence = "example"
@@ -505,6 +502,10 @@ class Adapter {
     const schemes: Record<string, SecurityScheme> = {}
     for (const [name, source] of Object.entries(components.securitySchemes)) {
       const where = `#/components/securitySchemes/${name}`
+      if (isObject(source) && source.$ref !== undefined) {
+        this.problems.push(`${where}: a $ref security scheme is not supported; write the scheme in place`)
+        continue
+      }
       if (!isObject(source) || !SCHEME_TYPES.has(source.type as SecurityScheme["type"])) {
         this.problems.push(
           `${where}: unsupported security scheme ${JSON.stringify(isObject(source) ? source.type : source)}`,
@@ -597,10 +598,6 @@ class Adapter {
           effect: EFFECT_BY_METHOD[verb],
           source: { location: pointer },
         }
-        if (verb === "POST" && READING_POST.test(path)) {
-          operation.effect = "read"
-          operation.effectReason = READING_POST_REASON
-        }
         const security = this.security(source.security, `${pointer}.security`)
         if (security) operation.security = security
         if (typeof source.summary === "string") operation.summary = source.summary
@@ -627,7 +624,10 @@ export const adaptOpenApi = (
   const adapter = new Adapter(document)
   const schemas = adapter.components()
   const operations = adapter.operations()
-  const servers = adapter.servers()
+  // Meta's spec repeats one server on every path group.
+  const servers = adapter
+    .servers()
+    ?.filter((one, index, all) => all.findIndex((other) => other.url === one.url) === index)
   const securitySchemes = adapter.securitySchemes()
   const security = adapter.security(document.security, "#/security")
   if (operations.length === 0) adapter.problems.push("the document has no operations")
