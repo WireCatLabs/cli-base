@@ -6,6 +6,7 @@ import type {
   Confidence,
   Effect,
   OperationPermission,
+  Pagination,
   SchemaNode,
   SecurityRequirement,
 } from "./model.js"
@@ -34,6 +35,7 @@ export interface ManifestOperation {
   response?: { confidence: Confidence; schema?: string; sensitive?: boolean }
   security?: readonly SecurityRequirement[]
   permissions?: readonly OperationPermission[]
+  pagination?: Pagination
 }
 
 const withoutUndefined = <T extends object>(value: T): T =>
@@ -51,6 +53,7 @@ const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperatio
     deprecated: operation.deprecated,
     security: operation.security,
     permissions: operation.permissions,
+    pagination: operation.pagination,
     parameters: operation.parameters.map((parameter) => withoutUndefined({ ...parameter })),
     request: operation.requestBody
       ? withoutUndefined({
@@ -134,6 +137,7 @@ export const coverageGenerator =
     })
     const version = model.source.version ? ` ${model.source.version}` : ""
     const reasoned = model.operations.filter((operation) => operation.effectReason)
+    const paged = model.operations.filter((operation) => operation.pagination)
     const guarded = model.operations.flatMap((operation) =>
       (operation.permissions ?? []).map((permission) => ({ id: operation.id, permission })),
     )
@@ -157,6 +161,31 @@ export const coverageGenerator =
             "| Operation | Effect | Why |",
             "|---|---|---|",
             ...reasoned.map((one) => `| \`${one.id}\` | ${one.effect} | ${cell(one.effectReason)} |`),
+          ]
+        : []),
+      ...(paged.length > 0
+        ? [
+            "",
+            "## Pagination",
+            "",
+            "| Operation | Style | Request | Answer | Source |",
+            "|---|---|---|---|---|",
+            ...paged.map(({ id, pagination, paginationSource }) => {
+              const page = pagination as Pagination
+              const request = [
+                "cursor" in page ? page.cursor : undefined,
+                "offset" in page ? page.offset : undefined,
+                "page" in page ? page.page : undefined,
+                "limit" in page ? page.limit : undefined,
+              ].flatMap((one) => (one ? [`${one.in} \`${one.name}\``] : []))
+              const answer = [
+                "next" in page ? `next \`${page.next}\`` : undefined,
+                page.items ? `items \`${page.items}\`` : undefined,
+                "hasMore" in page && page.hasMore ? `more \`${page.hasMore}\`` : undefined,
+                "total" in page && page.total ? `total \`${page.total}\`` : undefined,
+              ].filter(Boolean)
+              return `| \`${id}\` | ${page.style} | ${request.join(", ") || "—"} | ${answer.join(", ")} | ${cell(paginationSource)} |`
+            }),
           ]
         : []),
       ...(model.securityReason ? ["", "## Sign-in", "", `Not from the source: ${cell(model.securityReason)}`] : []),
