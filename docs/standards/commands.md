@@ -381,7 +381,8 @@ The references, each for its own part:
 ### WC-CMD-29 · Answer `--wcat-describe`, and take no name WireCat reserves
 
 A CLI ships `contracts/wirecat.json` (`wcat_manifest: 2`), written by `cli-dev manifest` from its command tree and
-its identity, never by hand. The developer types only `tagline`, `signIn` and, with a sync command, `syncs`; the
+its identity, never by hand. The developer types only `tagline`, `signIn`, with a sync
+command `syncs`, and for saved calls or meetings `meetingsProvider`; the
 commands, their `summary`, `effects` and `entity`, the fields of each entity a query covers, and every command word in
 `desktop` are derived, and every word passes Desktop's plain-word rule. The hosts it contacts are typed too
 ([WC-CMD-32](#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch)). The file holds nothing that changes per release (no version), and no MCP port: Desktop assigns one. With the

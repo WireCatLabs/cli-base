@@ -161,6 +161,22 @@ describe("buildManifest", () => {
     })
   })
 
+  it("names how a saved call opens only when the identity names its provider, so older Desktops still read it", () => {
+    const tree = program().addCommand(
+      new Command("meetings")
+        .addCommand(new Command("show").argument("<id>").action(() => {}))
+        .addCommand(new Command("transcript").argument("<id>").action(() => {})),
+    )
+    expect(build({}, describeProgram(tree)).desktop).not.toHaveProperty("meetings")
+    expect(build({ meetingsProvider: "acme" }, describeProgram(tree)).desktop.meetings).toEqual({
+      provider: "acme",
+      show: ["{profile}", "meetings", "show", "{id}", "--no-record", "--json"],
+      transcript: ["{profile}", "meetings", "transcript", "{id}", "--no-record", "--json"],
+    })
+    expect(() => build({ meetingsProvider: "acme" })).toThrow("meetingsProvider needs `meetings show`")
+    expect(() => build({ meetingsProvider: "Acme PBX" }, describeProgram(tree))).toThrow("a provider name")
+  })
+
   it("matches runs list's query: command:sync status:success are two exact terms", () => {
     const ast = parseLucene(["command:sync", "status:success"].join(" "), { defaultField: "none" })
     expect(JSON.stringify(ast)).toMatch(/"field":"command","operator":"term","value":"sync"/)

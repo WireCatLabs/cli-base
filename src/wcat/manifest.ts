@@ -95,6 +95,17 @@ const desktopSchema = v.strictObject({
     env: v.pipe(v.string(), v.regex(/^[A-Z][A-Z0-9_]*$/, "an upper-case environment prefix")),
   }),
   settings: v.null(),
+  /**
+   * How a client's call or a meeting this tool saved opens: Desktop finds the tool by `provider`. Left out, not `null`,
+   * when the tool records none, because Desktop 0.6.8 and older refuse a manifest with a key they do not read.
+   */
+  meetings: v.optional(
+    v.strictObject({
+      provider: v.pipe(v.string(), v.regex(TOOL_NAME, "a provider name")),
+      show: words,
+      transcript: words,
+    }),
+  ),
 })
 
 export type ManifestDesktop = v.InferOutput<typeof desktopSchema>
@@ -162,6 +173,11 @@ export interface ManifestIdentity extends WcatTool {
   signIn?: SignIn
   /** What `sync` copies, at most 40 characters: "contacts and deals". Required when the CLI has a sync command. */
   syncs?: string
+  /**
+   * cli-core's provider name on the meetings or calls this CLI saves (`MeetingSource.provider`): "beeline". Needs
+   * `meetings show` and `meetings transcript`; Desktop opens a client's call with them.
+   */
+  meetingsProvider?: string
   /**
    * Every host the CLI contacts, as `hostFetch` checks them: `["api.acme.example", "*.cdn.acme.example"]`; `[]` for
    * none. Written to the manifest as `network.hosts`.
@@ -264,6 +280,20 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       }
     : null
 
+  if (identity.meetingsProvider && !has("meetings show", "meetings transcript"))
+    throw new ManifestError([
+      "meetingsProvider needs `meetings show` and `meetings transcript`: Desktop opens a call with them",
+    ])
+  const meetings = identity.meetingsProvider
+    ? {
+        meetings: {
+          provider: identity.meetingsProvider,
+          show: [...profile, "meetings", "show", "{id}", "--no-record", "--json"],
+          transcript: [...profile, "meetings", "transcript", "{id}", "--no-record", "--json"],
+        },
+      }
+    : {}
+
   const twice = identity.hosts?.filter((host, index) => identity.hosts?.indexOf(host) !== index) ?? []
   if (twice.length > 0) throw new ManifestError(twice.map((host) => `hosts: ${host} is listed twice`))
   if (identity.userHosts && !identity.hosts)
@@ -341,6 +371,7 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       storeReset: null,
       storage: { app: identity.appName, env: identity.envPrefix },
       settings: null,
+      ...meetings,
     },
   }
   const parsed = v.safeParse(manifestSchema, manifest)

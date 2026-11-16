@@ -12,6 +12,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **A manifest can say how Desktop opens a call or meeting the CLI saved.** `ManifestIdentity.meetingsProvider`,
+  cli-core's provider name on what the CLI saves (`"beeline"`), makes `cli-dev manifest` write `desktop.meetings`:
+  the provider and `[{profile}] meetings show {id}` and `meetings transcript {id}`, the same shape as Desktop's
+  catalog entries for Zoom and Asterisk. Without it a client's call from a tool added as an own tool cannot open. The
+  key is left out, not `null`, when the identity names no provider, so every other manifest stays as it is. WireCat
+  Desktop 0.6.8 and older refuse a manifest that has it, so release such a CLI after the Desktop that reads it. A
+  provider without both commands is refused.
+
 - `PARITY_GROUPS` has a `crm` group: b24 and amo (amo-cli, for amoCRM and Kommo), compared on `deals`, `sync`,
   `search`, `store`, `schedule` and `account`. amo is not on npm yet, so `cli-dev audit --family` skips it until it
   is. `people`, `organizations`, `users`, `api` and `session` join once b24's release is on cli-core's shared people
