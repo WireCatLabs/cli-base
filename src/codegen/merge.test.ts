@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { describe, expect, it } from "vitest"
 import { adaptOpenApi, mergeOpenApi, OpenApiError } from "./index.js"
 
@@ -133,6 +134,59 @@ describe("mergeOpenApi", () => {
     expect(operations.find((one) => one.id === "contacts-list")?.security).toBeUndefined()
   })
 
+  it("hashes the text it was given, and takes a shared path whose answer schema only has another name", () => {
+    const named = (item: string) => ({
+      openapi: "3.0.1",
+      info: { title: "x", version: "v3" },
+      paths: { "/crm/v4/associations": { get: { operationId: "associations", responses: answer(ref("Batch")) } } },
+      components: {
+        schemas: {
+          Batch: { type: "object", properties: { results: { type: "array", items: ref(item) } } },
+          [item]: { type: "object", properties: { id: { type: "string" } } },
+        },
+      },
+    })
+    const text = JSON.stringify(named("Item_1"), null, 2)
+    const { report } = mergeOpenApi(
+      [
+        { name: "contacts", document: named("Item") },
+        { name: "associations", document: text },
+      ],
+      { title: "CRM", version: "v3" },
+    )
+    expect(report.sources[1]?.sha256).toBe(createHash("sha256").update(text).digest("hex"))
+    expect(report.renamed).toEqual(["schemas/Batch → AssociationsBatch (associations)"])
+    expect(report.sharedPaths).toEqual(["/crm/v4/associations (associations)"])
+  })
+
+  it("refuses a rename onto a taken name, a shared path with another parameter type, and another token URL", () => {
+    const parameter = (type: string) => ({
+      "/crm/v3/x/{id}": {
+        get: { operationId: "x", parameters: [{ name: "id", in: "path", required: true, schema: { type } }] },
+      },
+    })
+    const taken = spec("deals", { type: "object", properties: { after: { type: "integer" } } })
+    Object.assign(taken.components.schemas, { DealsPaging: { type: "boolean" } })
+    const otherToken = spec("notes", paging, { paths: parameter("integer") })
+    otherToken.components.securitySchemes.oauth2.flows.authorizationCode.tokenUrl = "https://elsewhere"
+    expect(
+      problemsOf(() =>
+        mergeOpenApi(
+          [
+            { name: "contacts", document: spec("contacts", paging, { paths: parameter("string") }) },
+            { name: "deals", document: taken },
+            { name: "notes", document: otherToken },
+          ],
+          { title: "CRM", version: "v3" },
+        ),
+      ),
+    ).toEqual([
+      "deals: schemas/Paging would be renamed DealsPaging, a name already taken; give the source another name",
+      `notes: security scheme "oauth2" differs from an earlier source's`,
+      "notes: /crm/v3/x/{id} differs from an earlier source's",
+    ])
+  })
+
   it("refuses a shared path with other operations, a repeated operation id, mixed versions and a non-OpenAPI source", () => {
     const other = {
       "/crm/v4/associations/{from}/{to}": {
@@ -154,7 +208,7 @@ describe("mergeOpenApi", () => {
         ),
       ),
     ).toEqual([
-      "deals: /crm/v4/associations/{from}/{to} has other operations than an earlier source's",
+      "deals: /crm/v4/associations/{from}/{to} differs from an earlier source's",
       'deals: operation id "contacts-list" is also contacts\'s',
       "swagger: not an OpenAPI 3 document",
       "the sources mix OpenAPI versions 3.0.1, 3.1.0; convert them to one first",

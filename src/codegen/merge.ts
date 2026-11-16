@@ -13,6 +13,7 @@ type Json = Record<string, unknown>
 export interface SpecSource {
   /** Short and stable: `contacts`, `associations-4`. Its PascalCase form prefixes what this source renames. */
   name: string
+  /** The spec as downloaded, JSON text, so the provenance hash is the file's; or the parsed document. */
   document: unknown
   /** Where it was downloaded from, for the provenance. */
   url?: string
@@ -21,7 +22,7 @@ export interface SpecSource {
 export interface MergedSource {
   name: string
   url?: string
-  /** Of the document as given, serialized as JSON. */
+  /** Of the text when `document` was text, as `sha256sum` gives for the file; else of the document as JSON. */
   sha256: string
   title?: string
   version?: string
@@ -48,7 +49,7 @@ const METHODS = ["get", "put", "post", "delete", "options", "head", "patch", "tr
 const TEXT = new Set(["description", "summary", "example", "examples", "title", "externalDocs"])
 
 /** Under these keys a `description` or `title` is a field's name, not text. */
-const NAMED = new Set(["properties", "patternProperties"])
+const NAMED = new Set(["properties", "patternProperties", "$defs", "definitions"])
 
 const shape = (node: unknown, named = false): unknown =>
   Array.isArray(node)
@@ -56,12 +57,51 @@ const shape = (node: unknown, named = false): unknown =>
     : isObject(node)
       ? Object.fromEntries(
           Object.entries(node).flatMap(([key, value]) =>
-            !named && TEXT.has(key) ? [] : [[key, shape(value, !named && NAMED.has(key))]],
+            !named && (TEXT.has(key) || key.startsWith("x-")) ? [] : [[key, shape(value, !named && NAMED.has(key))]],
           ),
         )
       : node
 
 const sameShape = (one: unknown, other: unknown) => isDeepStrictEqual(shape(one), shape(other))
+
+/**
+ * Two path items, each `$ref` followed into the merged components: a source whose answer schema was renamed
+ * (`PublicDefaultAssociation_1` for `PublicDefaultAssociation`) still describes the same path.
+ */
+const sameThrough = (
+  components: Record<string, Json>,
+  one: unknown,
+  other: unknown,
+  seen = new Set<string>(),
+  named = false,
+): boolean => {
+  const target = (ref: string) => {
+    const found = COMPONENT_REF.exec(ref)
+    return found && !found[3] ? components[found[1] ?? ""]?.[decode(found[2] ?? "")] : undefined
+  }
+  if (Array.isArray(one) && Array.isArray(other))
+    return one.length === other.length && one.every((item, index) => sameThrough(components, item, other[index], seen))
+  if (!isObject(one) || !isObject(other)) return isDeepStrictEqual(one, other)
+  if (!named && typeof one.$ref === "string" && typeof other.$ref === "string") {
+    if (one.$ref === other.$ref) return true
+    const pair = `${one.$ref} ${other.$ref}`
+    if (seen.has(pair)) return true
+    seen.add(pair)
+    const [left, right] = [target(one.$ref), target(other.$ref)]
+    return left !== undefined && right !== undefined && sameThrough(components, left, right, seen)
+  }
+  const keys = (node: Json) => Object.keys(node).filter((key) => named || !(TEXT.has(key) || key.startsWith("x-")))
+  const [left, right] = [keys(one), keys(other)]
+  return (
+    left.length === right.length &&
+    left.every(
+      (key) =>
+        Object.hasOwn(other, key) &&
+        right.includes(key) &&
+        sameThrough(components, one[key], other[key], seen, !named && NAMED.has(key)),
+    )
+  )
+}
 
 /** A source's document-wide sign-in would be lost in the merged document, so its operations carry it. */
 const withOwnSecurity = (document: Json): Json => {
@@ -94,7 +134,7 @@ const pascal = (name: string) =>
 
 const decode = (segment: string) => segment.replaceAll("~1", "/").replaceAll("~0", "~")
 const encode = (segment: string) => segment.replaceAll("~", "~0").replaceAll("/", "~1")
-const COMPONENT_REF = /^#\/components\/([^/]+)\/(.+)$/
+const COMPONENT_REF = /^#\/components\/([^/]+)\/([^/]+)(\/.*)?$/
 
 const rewriteRefs = (node: unknown, renames: ReadonlyMap<string, string>): unknown => {
   if (Array.isArray(node)) return node.map((item) => rewriteRefs(item, renames))
@@ -104,17 +144,24 @@ const rewriteRefs = (node: unknown, renames: ReadonlyMap<string, string>): unkno
       if (key !== "$ref" || typeof value !== "string") return [key, rewriteRefs(value, renames)]
       const found = COMPONENT_REF.exec(value)
       const renamed = found && renames.get(`${found[1]}/${decode(found[2] ?? "")}`)
-      return [key, renamed ? `#/components/${found[1]}/${encode(renamed)}` : value]
+      return [key, renamed ? `#/components/${found[1]}/${encode(renamed)}${found[3] ?? ""}` : value]
     }),
   )
 }
 
-const operationsOf = (item: unknown): string =>
-  isObject(item)
-    ? METHODS.filter((method) => isObject(item[method]))
-        .map((method) => `${method}:${String((item[method] as Json).operationId)}`)
-        .join(",")
-    : ""
+/** One sign-in scheme as two specs may both describe it: each lists only its own object's scopes. */
+const withoutScopes = (scheme: Json): unknown =>
+  isObject(scheme.flows)
+    ? {
+        ...scheme,
+        flows: Object.fromEntries(
+          Object.entries(scheme.flows).map(([flow, body]) => [flow, isObject(body) ? { ...body, scopes: {} } : body]),
+        ),
+      }
+    : scheme
+
+const versionOrder = (one: string, other: string) =>
+  one.localeCompare(other, undefined, { numeric: true, sensitivity: "base" })
 
 /** Throws `OpenApiError` with every conflict at once: a path, an operation id or a sign-in two sources disagree on. */
 export const mergeOpenApi = (
@@ -131,7 +178,15 @@ export const mergeOpenApi = (
   const versions = new Set<string>()
   const names = new Set<string>()
 
-  for (const { name, document, url } of sources) {
+  for (const { name, document: given, url } of sources) {
+    const text = typeof given === "string" ? given : JSON.stringify(given)
+    let document: unknown
+    try {
+      document = typeof given === "string" ? JSON.parse(given) : given
+    } catch {
+      problems.push(`${name}: not JSON`)
+      continue
+    }
     if (!isObject(document) || typeof document.openapi !== "string" || !document.openapi.startsWith("3.")) {
       problems.push(`${name}: not an OpenAPI 3 document`)
       continue
@@ -157,6 +212,16 @@ export const mergeOpenApi = (
         }
       }
     }
+    const targets = new Set<string>()
+    const before = problems.length
+    for (const [from, to] of renames) {
+      const section = from.split("/")[0] ?? ""
+      const ownEntries = isObject(own[section]) ? own[section] : {}
+      if (components[section]?.[to] !== undefined || Object.hasOwn(ownEntries, to) || targets.has(`${section}/${to}`))
+        problems.push(`${name}: ${from} would be renamed ${to}, a name already taken; give the source another name`)
+      targets.add(`${section}/${to}`)
+    }
+    if (problems.length > before) continue
     const rewritten = rewriteRefs(withOwnSecurity(document), renames) as Json
     const rewrittenComponents = isObject(rewritten.components) ? rewritten.components : {}
 
@@ -168,7 +233,12 @@ export const mergeOpenApi = (
         if (section === "securitySchemes") {
           const have = into[key]
           if (have === undefined) into[key] = structuredClone(value)
-          else if (isObject(have) && isObject(value) && have.type === "oauth2" && value.type === "oauth2") {
+          else if (
+            isObject(have) &&
+            isObject(value) &&
+            have.type === "oauth2" &&
+            sameShape(withoutScopes(have), withoutScopes(value))
+          ) {
             // Each spec lists only its own object's scopes; the service's sign-in is one.
             have.flows ??= {}
             const flows = have.flows as Json
@@ -187,10 +257,10 @@ export const mergeOpenApi = (
         }
         const target = renames.get(`${section}/${key}`) ?? key
         if (target !== key) {
-          if (into[target] !== undefined) problems.push(`${name}: ${section}/${target}, its renamed ${key}, is taken`)
           report.renamed.push(`${section}/${key} → ${target} (${name})`)
           into[target] = value
         } else if (into[key] === undefined) into[key] = value
+        else if (!sameShape(into[key], value)) problems.push(`${name}: ${section}/${key} differs from the one merged`)
         else if (!report.merged.includes(`${section}/${key}`)) report.merged.push(`${section}/${key}`)
       }
     }
@@ -198,8 +268,8 @@ export const mergeOpenApi = (
     let operations = 0
     for (const [path, item] of Object.entries(isObject(rewritten.paths) ? rewritten.paths : {})) {
       if (paths[path] !== undefined) {
-        if (operationsOf(paths[path]) === operationsOf(item)) report.sharedPaths.push(`${path} (${name})`)
-        else problems.push(`${name}: ${path} has other operations than an earlier source's`)
+        if (sameThrough(components, paths[path], item)) report.sharedPaths.push(`${path} (${name})`)
+        else problems.push(`${name}: ${path} differs from an earlier source's`)
         continue
       }
       paths[path] = item
@@ -222,7 +292,7 @@ export const mergeOpenApi = (
     report.sources.push({
       name,
       ...(url ? { url } : {}),
-      sha256: createHash("sha256").update(JSON.stringify(document)).digest("hex"),
+      sha256: createHash("sha256").update(text).digest("hex"),
       ...(typeof info.title === "string" ? { title: info.title } : {}),
       ...(typeof info.version === "string" ? { version: info.version } : {}),
       operations,
@@ -230,11 +300,13 @@ export const mergeOpenApi = (
   }
   // 3.0 reads `nullable` and 3.1 `type: [T, "null"]`; one merged document would misstate one of them.
   if (new Set([...versions].map((version) => version.slice(0, 3))).size > 1)
-    problems.push(`the sources mix OpenAPI versions ${[...versions].sort().join(", ")}; convert them to one first`)
+    problems.push(
+      `the sources mix OpenAPI versions ${[...versions].sort(versionOrder).join(", ")}; convert them to one first`,
+    )
   if (problems.length > 0) throw new OpenApiError(problems)
 
   const document: Json = {
-    openapi: [...versions].sort().at(-1) ?? "3.0.3",
+    openapi: [...versions].sort(versionOrder).at(-1) ?? "3.0.3",
     info: { title: options.title, version: options.version },
     ...(servers.size > 0 ? { servers: [...servers.values()] } : {}),
     ...(tags.size > 0 ? { tags: [...tags.values()] } : {}),
