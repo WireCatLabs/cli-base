@@ -62,7 +62,10 @@ export type SchemaNode = SchemaCommon &
     | { type: "union"; of: readonly SchemaNode[] }
     /** Inheritance: every member must resolve to an object, and the fields are merged. */
     | { type: "allOf"; of: readonly SchemaNode[] }
-    /** Only where the source itself says "anything". An adapter never falls back to this. */
+    /**
+     * Only where the source itself says "anything", or a field that is only ever `null`, which this has no type for.
+     * An adapter never falls back to this.
+     */
     | { type: "unknown" }
   )
 

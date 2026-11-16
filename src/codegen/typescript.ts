@@ -48,8 +48,9 @@ class TypeWriter {
   #object(node: Extract<SchemaNode, { type: "object" }>, where: string, literal?: Literal): string {
     const names = Object.keys(node.properties)
     if (literal && !names.includes(literal.property)) names.unshift(literal.property)
+    // An index signature, not Record: a type alias may name itself inside one, as a JSON value does.
     const rest = node.additionalProperties
-      ? `Record<string, ${this.node(node.additionalProperties, where)}>`
+      ? `{ [key: string]: ${this.node(node.additionalProperties, where)} }`
       : undefined
     if (names.length === 0) return rest ?? "Record<string, unknown>"
     const fields = names.map((name) => {
