@@ -166,6 +166,19 @@ const scriptRow = (id: string, title: string, runs: readonly ScriptRun[], extra:
   }
 }
 
+/** `[{ "contract": "crmSyncContract", "reason": "…" }]`: a category contract this CLI does not run, and why. */
+const EXCEPTIONS = "lint/contract-exceptions.json"
+
+const contractExceptions = (cwd: string): { contract: string; reason: string }[] => {
+  const path = join(cwd, EXCEPTIONS)
+  if (!existsSync(path)) return []
+  const parsed: unknown = JSON.parse(readFileSync(path, "utf8"))
+  return (Array.isArray(parsed) ? parsed : []).map((entry) => ({
+    contract: String(entry?.contract ?? ""),
+    reason: typeof entry?.reason === "string" ? entry.reason.trim() : "",
+  }))
+}
+
 const CATEGORY_NAMES = CATEGORY_CONTRACTS.flatMap((entry) => entry.names)
 
 const contractsRow = (
@@ -198,17 +211,36 @@ const contractsRow = (
   })
   const ran = new Set(calls.filter(({ file }) => ranInReport(report, file) === undefined).map((call) => call.contract))
   const notRun = contracts.filter((contract) => !ran.has(contract))
+  const exceptions = contractExceptions(cwd)
+  const reasonOf = (contract: string) => exceptions.find((entry) => entry.contract === contract)?.reason
+  const wrong = [
+    ...exceptions.filter((entry) => !entry.reason).map((entry) => `${entry.contract} has no reason`),
+    ...exceptions
+      .filter((entry) => !contracts.includes(entry.contract))
+      .map((entry) => `${entry.contract} is no contract of "${category}"`),
+    ...exceptions.filter((entry) => ran.has(entry.contract)).map((entry) => `${entry.contract} runs now`),
+  ]
+  const excepted = notRun.filter((contract) => reasonOf(contract))
+  const missing = notRun.filter((contract) => !reasonOf(contract))
   const row = scriptRow("contracts", title, runs, [
     ...evidence,
-    ...(notRun.length > 0 && ran.size > 0 ? [`not run: ${notRun.join(", ")}`] : []),
+    ...excepted.map((contract) => `not run, excepted in ${EXCEPTIONS}: ${contract} — ${reasonOf(contract)}`),
+    ...(missing.length > 0 ? [`not run: ${missing.join(", ")}`] : []),
+    ...wrong.map((problem) => `${EXCEPTIONS}: ${problem}`),
   ])
-  if (ran.size > 0) return row
-  return {
-    ...row,
-    status: row.status === "verified" ? "partially" : row.status,
-    evidence: [...row.evidence, `no test that ran calls ${contracts.join(" or ")}`],
-    fix: row.fix ?? `run cli-core's ${contracts[0]} in a test (testing.md), then run cli-dev ready again`,
-  }
+  if (row.fix) return { ...row, status: missing.length > 0 && row.status === "verified" ? "partially" : row.status }
+  if (wrong.length > 0)
+    return { ...row, status: "not verified", fix: `correct ${EXCEPTIONS}: ${wrong[0]}, then run cli-dev ready again` }
+  if (missing.length > 0)
+    return {
+      ...row,
+      status: ran.size > 0 ? "partially" : "not verified",
+      fix:
+        `run cli-core's ${missing[0]} in a test (testing.md), or except it in ${EXCEPTIONS} with its reason, ` +
+        "then run cli-dev ready again",
+    }
+  // An exception is a known gap, not a check that passed; it needs no fix, so it does not hold back `next`.
+  return excepted.length > 0 ? { ...row, status: "partially" } : row
 }
 
 const liveRow = (cwd: string, shell: Shell, version: string): ReadyRow => {
@@ -278,7 +310,7 @@ export const readyReport = (io: DevIo, shell: Shell): ReadyReport => {
     scriptRow("deps", "Dependencies", run("deps:check")),
     liveRow(cwd, shell, packageVersion(cwd)),
   ]
-  const next = rows.find((row) => row.status === "not verified" || row.status === "partially")?.fix
+  const next = rows.find((row) => row.fix)?.fix
   return { ...(category ? { category } : {}), rows, ...(next ? { next } : {}) }
 }
 
