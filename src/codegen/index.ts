@@ -35,6 +35,7 @@ export {
   type ManifestOperation,
   manifestGenerator,
 } from "./manifest.js"
+export { type MergedSource, type MergeOptions, type MergeReport, mergeOpenApi, type SpecSource } from "./merge.js"
 export type {
   ApiBody,
   ApiModel,

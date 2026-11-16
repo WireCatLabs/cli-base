@@ -53,6 +53,21 @@ what it cannot do yet.
 optional peer dependencies of cli-base: a CLI that converts adds them to its `devDependencies`. Commit the source as the
 service serves it, with its URL and hash in `spec/<service>/provenance.json`, and convert in `scripts/generate.ts`.
 
+**`mergeOpenApi(sources, { title, version })`** joins a service's specs into one, for a service that publishes one per
+object (HubSpot: 127, of which a CRM CLI needs 15). Each source is `{ name, document, url }`.
+
+- Components that share a name and differ only in their text (`description`, `example`, `title`) are kept once.
+- A real difference keeps both: the later source's copy, and every component that refers to it, get the source's
+  name as a prefix (`schemas/Paging → LineItemsPaging`), and that source's references follow.
+- A path two sources share is taken once when it holds the same operations; other operations there stop the merge,
+  as does an operation id two sources use, or a mix of OpenAPI 3.0 and 3.1.
+- Servers and tags are joined, and OAuth scopes of one scheme are joined, since each spec lists only its object's.
+- It returns the document and a report: each source with its URL, SHA-256 and operation count, and what was merged,
+  renamed or shared, for `spec/<service>/provenance.json`.
+
+Run on HubSpot's 15 CRM specs (2026-11-16): version `3` gives 156 operations and 97 schemas with no rename; `2026-09`
+gives 203 operations and 115 schemas, one renamed, and 20 association paths shared by every object spec.
+
 **`patchSpec(document, { patches, stubMissingSchemas })`** corrects the source before `adaptOpenApi`, in place of a
 CLI's own `scripts/<service>-spec.ts`. Each patch sets a value at a JSON pointer, with a reason. `stubMissingSchemas`
 gives every schema the document references but does not define an "anything" stub (HubSpot's associations v4 refers
@@ -134,7 +149,7 @@ the coverage page after a spec sync.
 - **Nothing checks the permission keys yet.** cli-core does not read an operation's `permissions`, `servers` or
   `securitySchemes` today. Until it does, a CLI adds the keys to its own `commandPermissions`, as notion-cli's
   `src/config.ts` does.
-- One spec per run. Merging several specs (HubSpot publishes 127) is the CLI's job until the generator does it.
+- A merge keeps the first copy of a shared path; a later source's differing schemas behind it are not compared.
 - Pagination is found only from the names above; a service with its own names needs an override per operation.
   cli-core reads every page by the manifest once its executor does.
 - Pagination is not found in an answer that is a union.
