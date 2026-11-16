@@ -50,7 +50,7 @@ extends:
 
 | Instead of | Run |
 |---|---|
-| `scripts/slow-tests.ts` | `cli-dev slow-tests [report] [count]` |
+| `scripts/slow-tests.ts` | `cli-dev slow-tests [report] [count]`, which warns about each test over 3 s |
 | `scripts/next-version.mjs` | `cli-dev next-version <wanted> <latest> <versions-json>` |
 | `scripts/version.ts` | `cli-dev version [--sync] [--file src/version.ts]` |
 | `scripts/docs-check.ts` | `cli-dev docs-check --rules scripts/release/checks.ts`, or `--ids CLI,MAX` with the English defaults |

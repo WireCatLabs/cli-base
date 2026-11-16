@@ -77,6 +77,28 @@ describe("slow-tests", () => {
         "   300 ms  src/a.test.ts",
       ].join("\n"),
     )
+    expect(err).toEqual([])
+  })
+
+  it("warns on stderr about each test over 3 s and still exits 0, so CI shows it without failing", async () => {
+    const result = (title: string, duration: number) => ({
+      name: join(root, "src/big.test.ts"),
+      startTime: 0,
+      endTime: duration,
+      assertionResults: [{ title, duration }],
+    })
+    write(
+      "coverage/tests.json",
+      JSON.stringify({ testResults: [result("at the line", 3000), result("1200 meetings", 6900)] }),
+    )
+    expect(await main(["slow-tests"], io)).toBe(0)
+    expect(err).toEqual([
+      [
+        "warning: 1 test takes over 3 s, a fifth of the 15 s test limit; a slow CI runner fails them. Shrink their " +
+          "data (WC-TEST-20):",
+        "  6900 ms  src/big.test.ts  1200 meetings",
+      ].join("\n"),
+    ])
   })
 })
 

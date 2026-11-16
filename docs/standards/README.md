@@ -38,7 +38,7 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Lifecycle](lifecycle.md) | `LIFE` | 16 | Opening late, who closes, deadlines, long-running commands, the `serve` relay, resumable syncs and their request budget, the run log, provider requests inside the run |
 | [Store](store.md) | `STORE` | 14 | Store areas, account scope, migrations, test isolation |
 | [Data model](data-model.md) | `DATA` | 9 | Core entities, entities and source records, `external_id`, field names, links and duplicates, files, calendar entries |
-| [Testing](testing.md) | `TEST` | 18 | Sandbox, no network, no real waits, leak tests, coverage, contracts, test matrix, parity, fakes as strict as the service |
+| [Testing](testing.md) | `TEST` | 19 | Sandbox, no network, no real waits, one test time limit, leak tests, coverage, contracts, test matrix, parity, fakes as strict as the service |
 | [Security](security.md) | `SECR` | 24 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting, OAuth sign-in and which app it uses, meeting secrets, keyring in moved-folder runs |
 | [Documents](docs.md) | `DOC` | 22 | User pages and developer pages, generated pages, current facts, changelog, repository page |
 | [Comparisons](comparisons.md) | `CMP` | 11 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
