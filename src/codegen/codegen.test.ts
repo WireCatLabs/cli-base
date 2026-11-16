@@ -260,6 +260,15 @@ describe("writeArtifacts", () => {
     expect(writeArtifacts(artifacts, { root })).toEqual(["nested/a.ts"])
     expect(writeArtifacts(artifacts, { root, check: true })).toEqual([])
   })
+
+  it("reports a file in a folder it owns that was not generated, and removes it when writing", () => {
+    const artifacts = [{ path: "owned/kept.md", content: "kept\n" }]
+    writeArtifacts([...artifacts, { path: "owned/gone.md", content: "gone\n" }], { root })
+    expect(writeArtifacts(artifacts, { root, owns: ["./owned/"], check: true })).toEqual(["owned/gone.md"])
+    expect(readFileSync(join(root, "owned/gone.md"), "utf8")).toBe("gone\n")
+    expect(writeArtifacts(artifacts, { root, owns: ["owned"] })).toEqual(["owned/gone.md"])
+    expect(writeArtifacts(artifacts, { root, owns: ["owned"], check: true })).toEqual([])
+  })
 })
 
 describe("generated schemas", () => {

@@ -83,6 +83,7 @@ export {
   type WriteOptions,
   writeArtifacts,
 } from "./pipeline.js"
+export { API_SKILL_GROUPS, API_SKILL_INDEX, type ApiSkillOptions, apiSkillFiles } from "./skill.js"
 export { upgradeToOpenApi3 } from "./swagger.js"
 export { typesGenerator } from "./typescript.js"
 export { type ValibotOptions, valibotGenerator } from "./valibot.js"
