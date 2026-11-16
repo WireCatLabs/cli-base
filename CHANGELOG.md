@@ -8,6 +8,44 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.107.0 — 16.11.2026
+
+### Added
+
+- **`adaptOpenApi` reads the OpenAPI 3.1 unions Notion's API file uses**, which it refused before, so a CLI no longer
+  rewrites its spec around them. OpenAPI 3.1 takes these keywords from JSON Schema 2020-12
+  ([Schema Object](https://spec.openapis.org/oas/v3.1.0.html#schema-object)):
+  - a `{"type": "null"}` member of `oneOf` or `anyOf` makes the union `nullable`; with one member left, the result is
+    that member, nullable, under the outer description. `type: [..., "null"]` beside `oneOf` or `anyOf` makes the
+    union nullable too, which it silently did not before;
+  - `anyOf` is a union, as `oneOf` is: a generated union passes when any member matches, and `oneOf`'s "exactly one" was
+    never checked. A schema with both stops generation;
+  - an `allOf` with one union member, inline or behind a `$ref`, becomes a union of `allOf`s: A and (B or C) is
+    (A and B) or (A and C). A null member of that union is left out, not made nullable: null would also have to pass
+    A, which is an object. A reference to a base with a `discriminator` keeps its meaning and is not looked through;
+    two union members, or a union that reaches itself this way, stop generation;
+  - a field that is only ever `null` (`{"type": "null"}`, `type: ["null"]`) is `unknown`: the model has no null type,
+    and accepting more is the same trade as ignoring `not`.
+
+  `exclusiveMinimum`, `exclusiveMaximum` and `maxProperties` are still refused.
+- **`cli-dev slow-tests` (`pnpm test:slow`) warns on stderr about each test over 3 s**, and still exits 0. A slow CI
+  runner takes up to five times as long, so such a test fails the 15 s limit there while it passes on your machine;
+  twice it failed a release. Shrink the test's data; a longer timeout on that one test is not the fix.
+- **A new rule in the handbook's [Testing](docs/standards/testing.md) page**: every repository sets
+  `testTimeout: 15_000` in `vitest.config.ts`, and a test that builds big data runs within 3 s on a developer
+  machine. A CLI on vitest's default 5 s adds the line to its `vitest.config.ts`; the template seeds it only into new
+  CLIs.
+- **`invitation` is a shared view word**: the text that invites people to a meeting. cli-core's shared
+  `meetings invitation` passed the command lint only through a CLI's own baseline (zoom-cli's
+  `lint/baseline/unknown-verb.json`); that baseline line can go once a CLI builds on this version.
+
+### Changed — may break callers
+
+- **Generated types write a map as `{ [key: string]: T }`, not `Record<string, T>`.** A type alias may name itself
+  inside an index signature, not inside `Record`, so a JSON value type (string, number, boolean, null, arrays and maps
+  of itself) compiles. Every `types.ts` with a map changes, so `generate --check` reports it stale until the CLI
+  regenerates once after this bump. The types mean the same.
+
 ## 0.106.0 — 16.11.2026
 
 ### Added
