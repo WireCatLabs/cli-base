@@ -655,13 +655,22 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
     expect(body?.contentType).toBeUndefined()
     expect(body?.schema).toEqual({ type: "object", properties: {}, required: [] })
     expect(model.servers).toEqual([{ url: "https://a.example" }])
+    const patch = {
+      "/notes": {
+        patch: { operationId: "edit", requestBody: json({ type: "object" }, "application/merge-patch+json") },
+      },
+    }
+    expect(operation(document({}, patch), "edit")?.requestBody?.contentType).toBe("application/merge-patch+json")
     expect(problemsOf(document({}, {}, { securitySchemes: { shared: { $ref: "#/x" } } }))).toEqual([
       "#/components/securitySchemes/shared: a $ref security scheme is not supported; write the scheme in place",
     ])
   })
 
   it("replaces the source's sign-in everywhere with auth, and refuses a requirement naming no scheme", () => {
-    const paths = { "/me": { get: { operationId: "getMe", security: [{ bearer: [] }] } } }
+    const paths = {
+      "/me": { get: { operationId: "getMe", security: [{ bearer: [] }] } },
+      "/health": { get: { operationId: "health", security: [] } },
+    }
     const input = {
       ...document({}, paths, { securitySchemes: { bearer: { type: "http", scheme: "bearer" } } }),
       security: [{ bearer: [] }],
@@ -680,6 +689,7 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
       { banner: [], auth },
     )
     expect(manifest?.content).not.toContain('"bearer"')
+    expect(manifest?.content).toContain('"security": []')
     expect(coverage?.content).toContain("Not from the source: private app tokens are not in the spec")
     const dangling = { ...document({}, paths), security: [{ missing: [] }] }
     expect(() => generate(adaptOpenApi(dangling), [], { banner: [] })).toThrow('security names "missing"')

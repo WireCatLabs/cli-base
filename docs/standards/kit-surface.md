@@ -56,7 +56,8 @@ service serves it, with its URL and hash in `spec/<service>/provenance.json`, an
 **`patchSpec(document, { patches, stubMissingSchemas })`** corrects the source before `adaptOpenApi`, in place of a
 CLI's own `scripts/<service>-spec.ts`. Each patch sets a value at a JSON pointer, with a reason. `stubMissingSchemas`
 gives every schema the document references but does not define an "anything" stub (HubSpot's associations v4 refers
-to a `Void` it lacks). It returns a copy and the list of what it changed, for the CLI's provenance.
+to a `Void` it lacks). It reads OpenAPI 3, so it runs after `upgradeToOpenApi3`. It returns a copy and the list of what
+it changed, for the CLI's provenance.
 
 From the source the generator reads:
 
@@ -79,11 +80,12 @@ From the source the generator reads:
   runs any SQL). An override still wins.
 - **`names`**: `{ commands, fromPath, segments }`. `commands` maps an operation id to its command. With `fromPath`,
   the rest are named from the path and the method (`deals-list`, `deals-get`, `deals-create`, `deals-delete`,
-  `deals-batch-archive`), leaving out path parameters and versions (`v3`, `2026-03`). `segments` renames a path segment
+  `deals-batch-archive`), leaving out path parameters and versions (`v3`, `2026-03`), which `segments` cannot rename. A name that comes out
+  empty or not in kebab case stops generation; map that operation in `commands`. `segments` renames a path segment
   or, with `""`, leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. Without `names` the command is the operation
   id in kebab case, as before.
 - **`permissions`**: `{ group, deletingFlags, shares }`. `group` is a name (`files`) or a function of the operation, for
-  example the first word of its command. Each key lands in the manifest as the operation's `permissions`.
+  example the first word of its `command` (set only with `names`). Each key lands in the manifest as the operation's `permissions`.
   - `<group>.delete` for every destructive operation (Yandex Disk's `DELETE /trash/resources` empties the whole
     trash), and for every operation that takes a flag in `deletingFlags`, as a top-level body field (Notion's
     `archived`, `in_trash`, a subtype's included) or a query parameter (Yandex Disk's `permanently`, `overwrite`). The
@@ -113,7 +115,8 @@ the coverage page after a spec sync.
   `src/config.ts` does.
 - One spec per run. Merging several specs (HubSpot publishes 127) is the CLI's job until the generator does it.
 - No pagination description and no generated fake server yet: a CLI writes both by hand.
-- A `$ref` to a shared response in `components/responses`, or to a security scheme, is not followed.
+- A `$ref` to a shared response in `components/responses` is passed through without a shape; a `$ref` security
+  scheme stops generation.
 - A Swagger 1.2 listing that embeds its operations, and Postman, RAML or GraphQL sources, are not read.
 - Swagger 1.2 lists a status code more than once in one operation (Yandex Disk's 400 and 403); a JSON object holds
   one, so the conversion keeps one of them. Only 2xx answers reach the model.

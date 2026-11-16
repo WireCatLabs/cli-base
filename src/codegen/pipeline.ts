@@ -62,7 +62,9 @@ const commandFromPath = (operation: ApiOperation, all: readonly ApiOperation[], 
   const parts = path.split("/").filter(Boolean)
   const words = parts
     .filter((segment) => !isParameter(segment) && !VERSION.test(segment))
-    .map((segment) => names.segments?.[segment] ?? kebab(segment))
+    .map((segment) =>
+      names.segments && Object.hasOwn(names.segments, segment) ? names.segments[segment] : kebab(segment),
+    )
     .filter(Boolean)
   const onItem = isParameter(parts.at(-1) ?? "")
   // A POST to a path that also lists or holds items creates one; to any other path it is the action the path names.
@@ -78,27 +80,41 @@ const commandFromPath = (operation: ApiOperation, all: readonly ApiOperation[], 
     DELETE: "delete",
     PATCH: "update",
     PUT: onItem || collection ? "replace" : "",
-    POST: onItem || collection ? "create" : "",
+    POST: onItem ? "update" : collection ? "create" : "",
   }[method]
   return [...words, verb].filter(Boolean).join("-")
 }
 
 export const applyNames = (model: ApiModel, names: CommandNames): ApiModel => {
   const known = new Set(model.operations.map((operation) => operation.id))
-  const problems = Object.entries(names.commands ?? {}).flatMap(([id, command]) => [
-    ...(known.has(id) ? [] : [`names: "${id}" matches no operation`]),
-    ...(COMMAND.test(command) ? [] : [`names: "${command}" is not a kebab-case command`]),
-  ])
+  const segments = new Set(
+    model.operations.flatMap((operation) =>
+      operation.binding.kind === "http" ? operation.binding.path.split("/") : [],
+    ),
+  )
+  const problems = [
+    ...Object.keys(names.commands ?? {}).flatMap((id) =>
+      known.has(id) ? [] : [`names: "${id}" matches no operation`],
+    ),
+    ...Object.keys(names.segments ?? {}).flatMap((segment) =>
+      segments.has(segment) ? [] : [`names: segment "${segment}" is in no path`],
+    ),
+  ]
+  const operations = model.operations.map((operation) => {
+    const own = names.commands && Object.hasOwn(names.commands, operation.id) ? names.commands[operation.id] : undefined
+    const command = own ?? (names.fromPath ? commandFromPath(operation, model.operations, names) : undefined)
+    if (command === undefined) return operation
+    // An empty or malformed name would otherwise fall back to the id, the name `names` exists to avoid.
+    if (!COMMAND.test(command)) {
+      const where = operation.binding.kind === "http" ? ` (${operation.binding.method} ${operation.binding.path})` : ""
+      problems.push(
+        `names: operation "${operation.id}"${where} gets "${command}", not a kebab-case command; map it in commands`,
+      )
+    }
+    return { ...operation, command }
+  })
   if (problems.length > 0) throw new CodegenError(problems)
-  return {
-    ...model,
-    operations: model.operations.map((operation) => {
-      const command =
-        names.commands?.[operation.id] ??
-        (names.fromPath ? commandFromPath(operation, model.operations, names) : undefined)
-      return command ? { ...operation, command } : operation
-    }),
-  }
+  return { ...model, operations }
 }
 
 export const applyOverrides = (model: ApiModel, overrides: Readonly<Record<string, Override>>): ApiModel => {
@@ -164,8 +180,13 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
   if (stale.length > 0) throw new CodegenError(stale.map((id) => `shares: "${id}" matches no operation`))
   const flags = rule.deletingFlags ?? []
   const schemas = new Map(model.schemas.map((schema) => [schema.id, schema]))
-  const fieldsOf = (operation: ApiOperation) =>
-    new Set(operation.requestBody?.schema ? bodyFields(operation.requestBody.schema, schemas) : [])
+  const fields = new Map(
+    model.operations.map((operation) => [
+      operation.id,
+      new Set(operation.requestBody?.schema ? bodyFields(operation.requestBody.schema, schemas) : []),
+    ]),
+  )
+  const fieldsOf = (operation: ApiOperation) => fields.get(operation.id) ?? new Set<string>()
   const unused = flags.filter(
     (flag) =>
       !model.operations.some(
@@ -184,8 +205,7 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
       if (rule.shares?.includes(operation.id)) permissions.push({ key: `${group}.share` })
       if (operation.effect === "destructive") permissions.push({ key: `${group}.delete` })
       else {
-        const fields = fieldsOf(operation)
-        const body = flags.filter((flag) => fields.has(flag))
+        const body = flags.filter((flag) => fieldsOf(operation).has(flag))
         const query = flags.filter((flag) =>
           operation.parameters.some((parameter) => parameter.in === "query" && parameter.name === flag),
         )
@@ -221,8 +241,12 @@ const applyAuth = (model: ApiModel, auth: AuthOverride): ApiModel => {
     securitySchemes: auth.securitySchemes,
     security: auth.security,
     securityReason: auth.reason,
-    // The source's per-operation requirements name its own schemes, which this replaces.
-    operations: model.operations.map(({ security: _, ...operation }) => operation),
+    // A requirement naming the source's own schemes is replaced; `[]`, "no sign-in", stays.
+    operations: model.operations.map(({ security, ...operation }) =>
+      security?.every((requirement) => Object.keys(requirement).every((name) => names.has(name)))
+        ? { ...operation, security }
+        : operation,
+    ),
   }
 }
 
@@ -290,8 +314,12 @@ export const validateModel = (model: ApiModel): void => {
   for (const id of duplicates(model.schemas.map((schema) => schema.id))) {
     problems.push(`two schemas share the id "${id}"`)
   }
-  for (const command of duplicates(model.operations.map((operation) => operation.command ?? kebab(operation.id)))) {
-    problems.push(`two operations both become the command "${command}"`)
+  const commandOf = (operation: ApiOperation) => operation.command ?? kebab(operation.id)
+  for (const command of duplicates(model.operations.map(commandOf))) {
+    const ids = model.operations
+      .filter((operation) => commandOf(operation) === command)
+      .map((operation) => operation.id)
+    problems.push(`two operations both become the command "${command}": ${ids.join(", ")}`)
   }
   for (const name of duplicates(model.schemas.map((schema) => identifier(schema.id)))) {
     problems.push(`two schemas both become the name "${name}"`)

@@ -158,7 +158,9 @@ describe("command names and spec patches", () => {
     const run = (commands: Record<string, string>) =>
       generate(adaptOpenApi(document), [], { banner: [], names: { commands } })
     expect(() => run({ nope: "deals-list" })).toThrow('names: "nope" matches no operation')
-    expect(() => run({ "get-/crm/v3/objects/0-3_getPage": "Deals List" })).toThrow("is not a kebab-case command")
+    expect(() => run({ "get-/crm/v3/objects/0-3_getPage": "Deals List" })).toThrow(
+      'gets "Deals List", not a kebab-case command',
+    )
   })
 
   it("stubs a missing schema and sets a value by pointer, leaving the caller's document alone and listing both", () => {
@@ -178,5 +180,25 @@ describe("command names and spec patches", () => {
     expect(() => patchSpec(hubspot, { patches: [{ pointer: "/nowhere/x", value: 1, reason: "r" }] })).toThrow(
       "patch /nowhere/x: its parent is not in the document",
     )
+  })
+  it("refuses a path that names no command, and patches into an array but never the prototype", () => {
+    const root = { openapi: "3.0.1", info: {}, paths: { "/v3": { post: { operationId: "root" } } } }
+    expect(() => generate(adaptOpenApi(root), [], { banner: [], names: { fromPath: true } })).toThrow(
+      'names: operation "root" (POST /v3) gets "", not a kebab-case command; map it in commands',
+    )
+    const withParameter = {
+      ...root,
+      paths: {
+        "/x": { get: { operationId: "x", parameters: [{ name: "a", in: "query", schema: { type: "string" } }] } },
+      },
+    }
+    const { document } = patchSpec(withParameter, {
+      patches: [{ pointer: "/paths/~1x/get/parameters/0/name", value: "b", reason: "the docs call it b" }],
+    })
+    expect(adaptOpenApi(document).operations[0]?.parameters[0]?.name).toBe("b")
+    expect(() => patchSpec(root, { patches: [{ pointer: "/__proto__/polluted", value: 1, reason: "r" }] })).toThrow(
+      "are not document keys",
+    )
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined()
   })
 })

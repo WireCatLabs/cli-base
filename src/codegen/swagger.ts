@@ -10,7 +10,8 @@ const load = async <T>(name: string, use: string): Promise<T> => {
   try {
     return (await import(name)) as T
   } catch (error) {
-    if ((error as { code?: string }).code !== "ERR_MODULE_NOT_FOUND") throw error
+    const { code, message } = error as { code?: string; message?: string }
+    if (code !== "ERR_MODULE_NOT_FOUND" || !message?.includes(`'${name}'`)) throw error
     throw new OpenApiError([`${use} needs ${name}: add it to the CLI's devDependencies`])
   }
 }

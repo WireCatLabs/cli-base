@@ -458,7 +458,8 @@ class Adapter {
       this.problems.push(`${where}: a body must be JSON, multipart or a form, found ${offered.join(", ")}`)
       return body
     }
-    if (type !== json) body.contentType = type
+    // Only a charset may be dropped: `application/merge-patch+json` must travel as itself.
+    if (type.split(";")[0]?.trim().toLowerCase() !== JSON_TYPE) body.contentType = type
     const schema = schemaOf(type)
     if (schema === undefined) return body
     if (typedFromExample(schema)) body.confidence = "example"
