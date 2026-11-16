@@ -6,6 +6,18 @@ import { Credentials, keyringService, movedRunService } from "./credentials.js"
 import { CliError } from "./errors.js"
 import { brokenKeyring, memoryKeyring, systemKeyring } from "./keyring.js"
 
+const STALE_BUS = "Platform failure: DBus error: Did not receive a reply"
+const UNREACHABLE = { reason: "keyring.unreachable" }
+
+const caught = (run: () => unknown): Error => {
+  try {
+    run()
+  } catch (error) {
+    return error as Error
+  }
+  throw new Error("expected a throw")
+}
+
 const dir = () => mkdtempSync(join(tmpdir(), "cli-base-creds-"))
 const make = (options: Partial<ConstructorParameters<typeof Credentials>[0]> = {}) =>
   new Credentials({
@@ -125,6 +137,34 @@ describe("Credentials", () => {
 
     expect(credentials.write("default", "new", { signIn: true })).toBe("file")
     expect(credentials.read("default")).toEqual({ secret: "new", source: "file" })
+  })
+
+  it("says the keyring did not answer, not that nobody signed in, when the file has no entry", () => {
+    const configDir = dir()
+    const warnings: string[] = []
+    const credentials = make({ configDir, keyring: brokenKeyring(STALE_BUS), warn: (m) => warnings.push(m) })
+
+    const error = caught(() => credentials.read("default"))
+    expect(error).toBeInstanceOf(CliError)
+    expect(error).toMatchObject({ code: "configuration_error", details: UNREACHABLE })
+    expect(error.message).toContain(STALE_BUS)
+    expect(error.message).toContain(join(configDir, "credentials.json"))
+    expect(error.message).toContain("DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus")
+    expect(warnings).toEqual([])
+  })
+
+  it("names the unreachable keyring when the caller demanded it", () => {
+    const credentials = make({ keyring: brokenKeyring(STALE_BUS), storage: "keyring" })
+    expect(caught(() => credentials.read("default"))).toMatchObject({ details: UNREACHABLE })
+  })
+
+  it("never reaches the keyring with file storage", () => {
+    expect(make({ keyring: brokenKeyring(STALE_BUS), storage: "file" }).read("default")).toBeUndefined()
+  })
+
+  it("says the keyring did not answer in a moved run too", () => {
+    const credentials = make({ keyring: brokenKeyring(STALE_BUS), isolated: true })
+    expect(caught(() => credentials.read("default"))).toMatchObject({ details: UNREACHABLE })
   })
 
   it("warns once per run, however many profiles it opens", () => {
@@ -315,7 +355,7 @@ describe("a credentials file that cannot be parsed", () => {
       expect((error as CliError).message).toContain(path)
       expect((error as CliError).message).not.toContain("keep-me")
       expect(readFileSync(path, "utf8")).toBe(content)
-      expect(credentials.read("default")).toBeUndefined()
+      expect(() => credentials.read("default")).toThrow(expect.objectContaining({ details: UNREACHABLE }))
     })
   }
 
