@@ -162,7 +162,11 @@ describe("cli-dev ready", () => {
       ]),
     })
     expect(report.next).toBeUndefined()
-    expect(ready([], io, shell(excepted).run)).toBe(0)
+    const out: string[] = []
+    expect(ready([], { ...io, out: (text) => out.push(text) }, shell(excepted).run)).toBe(0)
+    expect(out.join("")).toContain(
+      "next: nothing to do; partially, by declared exceptions: Tests and category contracts",
+    )
   })
 
   it("refuses an exception without a reason, for another category's contract, or for one that runs", () => {
@@ -180,6 +184,35 @@ describe("cli-dev ready", () => {
         "lint/contract-exceptions.json: crmSourceContract runs now",
       ]),
       fix: "correct lint/contract-exceptions.json: crmSyncContract has no reason, then run cli-dev ready again",
+    })
+  })
+
+  it("reports a broken exceptions file instead of failing, and refuses excepting every contract", () => {
+    const cases: [string, string][] = [
+      ["{", "lint/contract-exceptions.json: is not valid JSON"],
+      ['{ "crmSyncContract": "x" }', 'lint/contract-exceptions.json: is not a list of { "contract", "reason" }'],
+      ['["crmSyncContract"]', 'lint/contract-exceptions.json: entry 1 is not { "contract", "reason" }'],
+      [
+        JSON.stringify([
+          { contract: "crmSyncContract", reason: "a" },
+          { contract: "crmSyncContract", reason: "b" },
+        ]),
+        "lint/contract-exceptions.json: crmSyncContract is listed twice",
+      ],
+    ]
+    for (const [text, problem] of cases) {
+      const cwd = cli({ "lint/contract-exceptions.json": text })
+      const found = row(cwd, shell(cwd).run, "contracts")
+      expect(found?.status).toBe("not verified")
+      expect(found?.evidence.some((line) => line.startsWith(problem))).toBe(true)
+    }
+    const all = JSON.stringify(
+      ["crmSourceContract", "crmSyncContract", "crmWriteContract"].map((contract) => ({ contract, reason: "x" })),
+    )
+    const cwd = cli({ "src/crm.test.ts": "it('works', () => {})\n", "lint/contract-exceptions.json": all })
+    expect(row(cwd, shell(cwd).run, "contracts")).toMatchObject({
+      status: "not verified",
+      fix: "run at least one of crmSourceContract, crmSyncContract, crmWriteContract in a test (testing.md), then run cli-dev ready again",
     })
   })
 
