@@ -50,6 +50,7 @@ const KNOWN = new Set([
   "additionalProperties",
   "allOf",
   "oneOf",
+  "anyOf",
   "$ref",
   "discriminator",
 ])
@@ -75,6 +76,7 @@ const CONTRACT_MARKS = [
   "maxLength",
   "allOf",
   "oneOf",
+  "anyOf",
 ]
 
 export class OpenApiError extends Error {
@@ -97,6 +99,12 @@ const EFFECT_BY_METHOD: Record<HttpMethod, Effect> = {
   PATCH: "write",
   DELETE: "destructive",
 }
+
+/** `{type: "null"}` or `type: ["null"]`: JSON Schema 2020-12's own way to say "only null". */
+const isNullOnly = (source: unknown): boolean =>
+  isObject(source) &&
+  (source.type === "null" ||
+    (Array.isArray(source.type) && source.type.length > 0 && source.type.every((t) => t === "null")))
 
 const pick = (source: Json, keys: readonly string[]): Json => Object.fromEntries(keys.map((key) => [key, source[key]]))
 
@@ -130,6 +138,7 @@ class Adapter {
   readonly document: Json
   readonly #components: Json
   readonly #parameters: Json
+  readonly #distributing = new Set<string>()
 
   constructor(document: Json) {
     this.document = document
@@ -200,11 +209,20 @@ class Adapter {
 
     if (source.$ref !== undefined) return { ...common, type: "ref", ref: this.refId(source.$ref, where) }
 
+    // The model has no null type; "anything" accepts the one value this allows, as losing `not` does.
+    if (isNullOnly(source)) return { ...common, type: "unknown" }
+
     if (Array.isArray(source.allOf)) return this.#allOf(source, source.allOf, common, where)
 
-    if (Array.isArray(source.oneOf)) {
-      const of = source.oneOf.map((member, index) => this.schema(member, `${where}.oneOf[${index}]`))
-      return { ...common, type: "union", of }
+    if (Array.isArray(source.oneOf) && Array.isArray(source.anyOf)) {
+      this.problems.push(`${where}: both oneOf and anyOf on one schema`)
+      return { type: "unknown" }
+    }
+    // A union passes when any member matches, which is anyOf; oneOf's "exactly one" is never checked.
+    const keyword = Array.isArray(source.oneOf) ? "oneOf" : Array.isArray(source.anyOf) ? "anyOf" : undefined
+    if (keyword) {
+      if (Array.isArray(source.type) && source.type.includes("null")) common.nullable = true
+      return this.#union(source[keyword] as unknown[], keyword, common, where)
     }
 
     const type = this.#type(source, common, where)
@@ -284,7 +302,64 @@ class Adapter {
     return node
   }
 
+  /** OpenAPI 3.1 writes a nullable reference as `oneOf: [{$ref}, {type: "null"}]`. */
+  #union(members: unknown[], keyword: string, common: Common, where: string): SchemaNode {
+    const kept = members.flatMap((member, index) => (isNullOnly(member) ? [] : [{ member, index }]))
+    const of = kept.map(({ member, index }) => this.schema(member, `${where}.${keyword}[${index}]`))
+    if (kept.length === members.length) return { ...common, type: "union", of }
+    const [only] = of
+    if (!only) return { ...common, type: "unknown" }
+    if (of.length === 1) return { ...only, ...common, nullable: true }
+    return { ...common, nullable: true, type: "union", of }
+  }
+
+  /** The members of a union an allOf member stands for, inline or behind references; never a discriminated base. */
+  #unionMembers(member: unknown, seen = new Set<string>()): { ref?: string; members: unknown[] } | undefined {
+    if (!isObject(member) || Array.isArray(member.allOf)) return undefined
+    const members = Array.isArray(member.oneOf) ? member.oneOf : Array.isArray(member.anyOf) ? member.anyOf : undefined
+    if (members) return isObject(member.discriminator) ? undefined : { members }
+    const prefix = "#/components/schemas/"
+    if (typeof member.$ref !== "string" || !member.$ref.startsWith(prefix) || seen.has(member.$ref)) return undefined
+    seen.add(member.$ref)
+    const found = this.#unionMembers(this.#components[member.$ref.slice(prefix.length)], seen)
+    return found && { ref: found.ref ?? member.$ref.slice(prefix.length), members: found.members }
+  }
+
+  /**
+   * A and (B or C) is (A and B) or (A and C): the model merges only objects, so the one union member is
+   * distributed over the rest, as Notion's property configs extend a common base.
+   */
+  #distribute(members: unknown[], common: Common, where: string): SchemaNode | undefined {
+    const unions = members.flatMap((member) => {
+      const found = this.#unionMembers(member)
+      return found ? [{ member, ...found }] : []
+    })
+    if (unions.length === 0) return undefined
+    const [union] = unions
+    if (unions.length > 1 || !union) {
+      this.problems.push(`${where}: an allOf of several unions`)
+      return { type: "unknown" }
+    }
+    if (union.ref && this.#distributing.has(union.ref)) {
+      this.problems.push(`${where}: an allOf distributes the union "${union.ref}" inside itself`)
+      return { type: "unknown" }
+    }
+    const rest = members.filter((member) => member !== union.member)
+    // Alone, the allOf only describes a reference, which keeps its name.
+    if (rest.length === 0) return undefined
+    // Null would also have to pass the rest, which the model only merges as objects: that alternative is empty.
+    const alternatives = union.members.filter((one) => !isNullOnly(one)).map((one) => ({ allOf: [...rest, one] }))
+    if (union.ref) this.#distributing.add(union.ref)
+    try {
+      return this.#union(alternatives, "union", common, where)
+    } finally {
+      if (union.ref) this.#distributing.delete(union.ref)
+    }
+  }
+
   #allOf(source: Json, members: unknown[], common: Common, where: string): SchemaNode {
+    const distributed = this.#distribute(members, common, where)
+    if (distributed) return distributed
     const of = members.map((member, index) => this.schema(member, `${where}.allOf[${index}]`))
     const [only] = of
     // `type: object` beside a one-member allOf is inheritance with no fields of its own; without it,

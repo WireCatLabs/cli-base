@@ -55,13 +55,269 @@ describe("adaptOpenApi refuses what it would otherwise get wrong", () => {
   })
 
   it("names an unknown keyword and a type list it cannot hold as one", () => {
-    expect(problemsOf(document({ Pet: { anyOf: [{ type: "string" }] }, Id: { type: ["string", "integer"] } }))).toEqual(
-      [
-        '#/components/schemas/Pet: unsupported keyword "anyOf"',
-        "#/components/schemas/Pet: a schema with no type",
-        '#/components/schemas/Id: a schema of several types ["string","integer"]',
-      ],
+    expect(
+      problemsOf(document({ Pet: { prefixItems: [{ type: "string" }] }, Id: { type: ["string", "integer"] } })),
+    ).toEqual([
+      '#/components/schemas/Pet: unsupported keyword "prefixItems"',
+      "#/components/schemas/Pet: a schema with no type",
+      '#/components/schemas/Id: a schema of several types ["string","integer"]',
+    ])
+  })
+
+  it("refuses oneOf beside anyOf, and an allOf of two unions", () => {
+    const either = { oneOf: [{ type: "string" }, { type: "integer" }] }
+    expect(
+      problemsOf(document({ Both: { ...either, anyOf: [{ type: "string" }] }, Two: { allOf: [either, either] } })),
+    ).toEqual([
+      "#/components/schemas/Both: both oneOf and anyOf on one schema",
+      "#/components/schemas/Two: an allOf of several unions",
+    ])
+  })
+
+  it("refuses an allOf that distributes a union inside itself, instead of recursing forever", () => {
+    const base = { type: "object", properties: { id: { type: "string" } } }
+    const Loop = { oneOf: [{ type: "string" }, { allOf: [base, { $ref: "#/components/schemas/Loop" }] }] }
+    expect(problemsOf(document({ Loop }))).toContain(
+      '#/components/schemas/Loop.oneOf[1].union[1].allOf[1]: an allOf distributes the union "Loop" inside itself',
     )
+  })
+})
+
+// Excerpts of Notion's OpenAPI 3.1 file (developers.notion.com/openapi.json, Notion-Version 2026-03-11), cut to the
+// fields that carry the shape.
+describe("adaptOpenApi reads the OpenAPI 3.1 shapes Notion's file uses", () => {
+  it("reads a null member of anyOf or oneOf as nullable, and collapses the one left", () => {
+    const input = document({
+      pageIconResponse: {
+        oneOf: [
+          { $ref: "#/components/schemas/emojiPageIconResponse" },
+          { $ref: "#/components/schemas/filePageIconResponse" },
+        ],
+      },
+      emojiPageIconResponse: { type: "object", properties: { emoji: { type: "string" } } },
+      filePageIconResponse: { type: "object", properties: { file: { type: "object" } } },
+      calloutBlockObjectResponse: {
+        type: "object",
+        properties: {
+          callout: {
+            type: "object",
+            properties: { icon: { anyOf: [{ $ref: "#/components/schemas/pageIconResponse" }, { type: "null" }] } },
+          },
+        },
+      },
+      databasePropertyConfigResponseCommon: {
+        type: "object",
+        properties: {
+          description: {
+            oneOf: [{ $ref: "#/components/schemas/propertyDescriptionRequest" }, { type: "null" }],
+            description: "The description of the property.",
+          },
+        },
+      },
+      propertyDescriptionRequest: { type: "array", items: { type: "object" }, maxItems: 100 },
+    })
+    expect(schema(input, "calloutBlockObjectResponse")?.schema).toMatchObject({
+      properties: { callout: { properties: { icon: { type: "ref", ref: "pageIconResponse", nullable: true } } } },
+    })
+    expect(schema(input, "databasePropertyConfigResponseCommon")?.schema).toMatchObject({
+      properties: {
+        description: {
+          type: "ref",
+          ref: "propertyDescriptionRequest",
+          nullable: true,
+          description: "The description of the property.",
+        },
+      },
+    })
+  })
+
+  it("keeps a nullable union of several members a union", () => {
+    const input = document({
+      status: {
+        anyOf: [
+          { type: "null" },
+          { type: "object", properties: { checks: { type: "object" } } },
+          { type: "object", properties: { error: { type: "object" } } },
+        ],
+      },
+    })
+    expect(schema(input, "status")?.schema).toMatchObject({
+      type: "union",
+      nullable: true,
+      of: [{ type: "object" }, { type: "object" }],
+    })
+  })
+
+  it("reads anyOf as a union", () => {
+    const input = document({
+      formulaPropertyResponse: {
+        anyOf: [
+          { $ref: "#/components/schemas/stringFormulaPropertyResponse" },
+          { $ref: "#/components/schemas/numberFormulaPropertyResponse" },
+        ],
+      },
+      stringFormulaPropertyResponse: { type: "object", properties: { string: { type: ["string", "null"] } } },
+      numberFormulaPropertyResponse: { type: "object", properties: { number: { type: ["number", "null"] } } },
+    })
+    expect(schema(input, "formulaPropertyResponse")?.schema).toEqual({
+      type: "union",
+      of: [
+        { type: "ref", ref: "stringFormulaPropertyResponse" },
+        { type: "ref", ref: "numberFormulaPropertyResponse" },
+      ],
+    })
+  })
+
+  it("takes a field that is only ever null, and a nullable object type list", () => {
+    const input = document({
+      verificationPropertyUnverifiedResponse: {
+        type: "object",
+        properties: {
+          state: { type: "string", const: "unverified", description: "Always `unverified`" },
+          date: { type: "null" },
+          verified_by: { type: "null" },
+        },
+        additionalProperties: false,
+        required: ["state", "date", "verified_by"],
+        title: "Unverified",
+      },
+      syncedFrom: {
+        title: "Block Id",
+        type: ["object", "null"],
+        properties: { block_id: { type: "string" }, type: { type: "string", const: "block_id" } },
+        additionalProperties: false,
+        required: ["block_id"],
+      },
+    })
+    expect(schema(input, "verificationPropertyUnverifiedResponse")?.schema).toMatchObject({
+      properties: { date: { type: "unknown" }, verified_by: { type: "unknown" } },
+      required: ["state", "date", "verified_by"],
+    })
+    expect(schema(input, "syncedFrom")?.schema).toMatchObject({
+      type: "object",
+      nullable: true,
+      required: ["block_id"],
+    })
+  })
+
+  it("distributes an allOf over its union member, inline or behind a reference", () => {
+    const common = {
+      type: "object",
+      properties: { id: { type: "string" }, name: { type: "string" } },
+      required: ["id", "name"],
+    }
+    const number = { type: "object", properties: { type: { const: "number" }, number: { type: "object" } } }
+    const formula = { type: "object", properties: { type: { const: "formula" }, formula: { type: "object" } } }
+    const kinds = [
+      { $ref: "#/components/schemas/numberDatabasePropertyConfigResponse" },
+      { $ref: "#/components/schemas/formulaDatabasePropertyConfigResponse" },
+    ]
+    const input = document({
+      databasePropertyConfigResponseCommon: common,
+      numberDatabasePropertyConfigResponse: number,
+      formulaDatabasePropertyConfigResponse: formula,
+      databasePropertyConfigResponse: {
+        allOf: [{ $ref: "#/components/schemas/databasePropertyConfigResponseCommon" }, { oneOf: kinds }],
+      },
+      kinds: { oneOf: [...kinds, { type: "null" }] },
+      viaReference: {
+        allOf: [
+          { $ref: "#/components/schemas/databasePropertyConfigResponseCommon" },
+          { $ref: "#/components/schemas/kinds" },
+        ],
+        description: "One property.",
+      },
+    })
+    const distributed = {
+      type: "union",
+      of: [
+        {
+          type: "allOf",
+          of: [
+            { type: "ref", ref: "databasePropertyConfigResponseCommon" },
+            { type: "ref", ref: "numberDatabasePropertyConfigResponse" },
+          ],
+        },
+        {
+          type: "allOf",
+          of: [
+            { type: "ref", ref: "databasePropertyConfigResponseCommon" },
+            { type: "ref", ref: "formulaDatabasePropertyConfigResponse" },
+          ],
+        },
+      ],
+    }
+    expect(schema(input, "databasePropertyConfigResponse")?.schema).toEqual(distributed)
+    expect(schema(input, "viaReference")?.schema).toEqual({ ...distributed, description: "One property." })
+  })
+
+  it("leaves null out of an allOf over a nullable union, since null cannot pass the object base", () => {
+    const input = document({
+      Base: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+      A: { type: "object", properties: { a: { type: "string" } } },
+      B: { type: "object", properties: { b: { type: "string" } } },
+      U: { anyOf: [{ $ref: "#/components/schemas/A" }, { type: "null" }] },
+      C: { allOf: [{ $ref: "#/components/schemas/Base" }, { $ref: "#/components/schemas/U" }] },
+      Nested: {
+        allOf: [
+          { $ref: "#/components/schemas/Base" },
+          {
+            anyOf: [
+              { anyOf: [{ $ref: "#/components/schemas/A" }, { type: "null" }] },
+              { $ref: "#/components/schemas/B" },
+            ],
+          },
+        ],
+      },
+    })
+    const base = { type: "ref", ref: "Base" }
+    const withA = { type: "allOf", of: [base, { type: "ref", ref: "A" }] }
+    expect(schema(input, "C")?.schema).toEqual({ type: "union", of: [withA] })
+    expect(schema(input, "Nested")?.schema).toEqual({
+      type: "union",
+      of: [
+        { type: "union", of: [withA] },
+        { type: "allOf", of: [base, { type: "ref", ref: "B" }] },
+      ],
+    })
+  })
+
+  it("keeps a union nullable when its type list includes null", () => {
+    const input = document({
+      parent: {
+        type: ["object", "null"],
+        anyOf: [
+          { type: "object", properties: { page_id: { type: "string" } }, required: ["page_id"] },
+          { type: "object", properties: { block_id: { type: "string" } }, required: ["block_id"] },
+        ],
+      },
+    })
+    expect(schema(input, "parent")?.schema).toMatchObject({ type: "union", nullable: true })
+  })
+
+  it("keeps a lone allOf over a union a described reference", () => {
+    const input = document({
+      pageIconResponse: { oneOf: [{ type: "string" }, { type: "object" }] },
+      icon: { allOf: [{ $ref: "#/components/schemas/pageIconResponse" }], description: "The icon." },
+    })
+    expect(schema(input, "icon")?.schema).toEqual({ type: "ref", ref: "pageIconResponse", description: "The icon." })
+  })
+
+  it("never looks through a reference to a discriminated base", () => {
+    const input = document({
+      Base: {
+        oneOf: [{ $ref: "#/components/schemas/Text" }],
+        discriminator: { propertyName: "type", mapping: { text: "#/components/schemas/Text" } },
+      },
+      Text: { type: "object", properties: { type: { type: "string" } } },
+      Extended: {
+        allOf: [{ $ref: "#/components/schemas/Base" }, { type: "object", properties: { at: { type: "string" } } }],
+      },
+    })
+    expect(schema(input, "Extended")?.schema).toMatchObject({
+      type: "allOf",
+      of: [{ type: "ref", ref: "Base" }, { type: "object" }],
+    })
   })
 })
 

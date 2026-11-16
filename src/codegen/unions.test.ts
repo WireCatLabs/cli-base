@@ -33,6 +33,21 @@ const model: ApiModel = {
         ],
       },
     },
+    // Notion's publicApiAsyncTaskStatusResultJsonValue, as adaptOpenApi reads it: any JSON value, by naming itself.
+    {
+      id: "JsonValue",
+      schema: {
+        type: "union",
+        nullable: true,
+        of: [
+          { type: "string" },
+          { type: "number" },
+          { type: "boolean" },
+          { type: "array", items: { type: "ref", ref: "JsonValue" } },
+          { type: "object", properties: {}, required: [], additionalProperties: { type: "ref", ref: "JsonValue" } },
+        ],
+      },
+    },
   ],
   operations: [
     {
@@ -69,7 +84,7 @@ describe("generated unions", () => {
 
   afterAll(() => rmSync(root, { recursive: true, force: true }))
 
-  it("compiles recursive alternatives, Boolean literals and RPC body parameters together", () => {
+  it("compiles recursive alternatives, a type that names itself in a map, Boolean literals and RPC body parameters together", () => {
     writeFileSync(
       join(root, "tsconfig.json"),
       JSON.stringify({
@@ -96,6 +111,9 @@ describe("generated unions", () => {
     const node = schemas.Node as v.GenericSchema
     expect(v.safeParse(node, { ready: true, next: { ready: true, next: "end" } }).success).toBe(true)
     expect(v.safeParse(node, { ready: false }).success).toBe(false)
+    const json = schemas.JsonValue as v.GenericSchema
+    expect(v.safeParse(json, { a: [1, "two", { b: null, c: true }] }).success).toBe(true)
+    expect(v.safeParse(json, { a: [undefined] }).success).toBe(false)
     const file = schemas.File as v.GenericSchema
     expect(v.safeParse(file, "attach://photo").success).toBe(true)
     expect(v.safeParse(file, "local-path").success).toBe(false)
