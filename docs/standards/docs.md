@@ -244,6 +244,25 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
   `cli-docs`, `cli-testing`).
 - **Applies to:** every public WireCat repository. **Since:** cli-base 0.75.3. **Rulings:** none.
 
+### WC-DOC-22 · The agent skill keeps a short core and puts the rest in files it links
+
+An agent that opens the skill carries SKILL.md in every later turn of its session, so its size is paid many times.
+
+- **Why:** tg's 50 KB SKILL.md (about 12,000 tokens) raised the median input of every turn of an agent from about 31,000
+  to 47,000 tokens, and half the sessions of a timed test ran out of time.
+- **Enforced by:** `<app>: pnpm docs:check`. It runs cli-core's skill validation with a byte limit, which also checks
+  the links and command paths in each linked file.
+- **Example:** `skills/tg-cli/SKILL.md` is at most about 8 KB (about 2,000 tokens). It holds the frontmatter, what the
+  tool is, the profile rule, the main user job first (for a messenger: answer a question from the chats, then read and
+  send), the hard boundaries, the output and exit-code basics, and an index. Everything else, verbatim or tightened
+  but with no rule dropped, is in `skills/tg-cli/references/<topic>.md`. Each index line names one file and says when
+  to read it, with both routes, for example a link to `references/tasks.md`, then `tg skill show tasks`, then "when
+  the owner asks about tasks or promises". An installed copy follows the link; an agent that read the skill from
+  `skill show` or over MCP runs the command or reads `tg://skill/references/tasks.md`. Text that `--help`,
+  `commands --json` or `guide` already gives stays out of both; a trap that prevents a real mistake stays.
+- **Exceptions:** a SKILL.md under the limit needs no references.
+- **Applies to:** every CLI that ships an agent skill. **Since:** cli-base 0.106.0. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

@@ -8,6 +8,26 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.106.0 — 16.11.2026
+
+### Added
+
+- **`skill install` copies the whole skill folder, not only SKILL.md.** A long skill can keep a short core in SKILL.md
+  and the rest in files beside it (`references/tasks.md`), so an agent that opens it carries about 2,000 tokens into
+  every turn instead of 12,000. `installSkill`, the Hermes copy and the new `writeSkillFolder(app, skillUrl, folder)`
+  write every file of the folder except dotfiles and symbolic links; only SKILL.md is stamped with the version. A file
+  an older version shipped and this one does not stays in the installed folder. Hermes's own copy is still taken out
+  once Hermes reads `~/.agents/skills`, now with its other files, and still only when the folder holds nothing else.
+  memo's `topics/` are installed too from its next bump.
+- **`skill show <name>` prints a part of the skill by its file name** (`tg skill show tasks` prints
+  `references/tasks.md`), for an agent that read SKILL.md from `skill show` or over MCP and has no folder to follow a
+  link into. A skill a library ships under the same name still wins. `skillFiles(skillUrl)` lists the parts.
+- **`skillResources(app, skillUrl)` serves each part over MCP** at the address its relative link resolves to from
+  `<command>://skill` (`tg://skill/references/tasks.md`), after the `skillResource` it starts with. A server that
+  registers them all lets an MCP-only client follow the guide's links; the first one's `instruction` says so.
+- **A new rule in the handbook's [Documents](docs/standards/docs.md) page**: a skill's SKILL.md stays at about 8 KB or less, with the
+  main user job first and one index line per linked file saying when to read it.
+
 ## 0.105.0 — 16.11.2026
 
 ### Fixed

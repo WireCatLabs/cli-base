@@ -1,6 +1,16 @@
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Command } from "commander"
 import { beforeEach, describe, expect, it } from "vitest"
@@ -17,6 +27,7 @@ import {
   skillHint,
   skillPath,
   skillResource,
+  skillResources,
   skillVersion,
   withVersion,
 } from "./index.js"
@@ -32,9 +43,15 @@ beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "skill-"))
   mkdirSync(join(dir, "bin"))
   env = { HOME: join(dir, "home"), HERMES_HOME: join(dir, "hermes"), PATH: join(dir, "bin") }
-  writeFileSync(join(dir, "SKILL.md"), SKILL)
-  skill = pathToFileURL(join(dir, "SKILL.md"))
+  mkdirSync(join(dir, "skill"))
+  writeFileSync(join(dir, "skill", "SKILL.md"), SKILL)
+  skill = pathToFileURL(join(dir, "skill", "SKILL.md"))
 })
+
+const addPart = (file: string, content: string) => {
+  mkdirSync(dirname(join(dir, "skill", file)), { recursive: true })
+  writeFileSync(join(dir, "skill", file), content)
+}
 
 const run = async (args: string[], more: Record<string, URL> = {}) => {
   const streams = captureStreams()
@@ -166,6 +183,15 @@ describe("skill show", () => {
     )
     await expect(run(["skill", "show", "nope"])).rejects.toThrow()
   })
+
+  it("prints a part of the skill by its file name, for an agent that has no folder to follow a link into", async () => {
+    addPart("references/tasks.md", "# Tasks\n")
+    expect((await run(["skill", "show", "tasks"])).stdout).toEqual(["# Tasks"])
+    expect(JSON.parse((await run(["--json", "skill", "show", "tasks"])).stdout.join(""))).toEqual({
+      name: "tasks",
+      content: "# Tasks",
+    })
+  })
 })
 
 describe("skill show --for", () => {
@@ -197,7 +223,7 @@ describe("skill show --for", () => {
   })
 
   it("refuses a shipped skill by name, which is never installed", async () => {
-    const more = { "link-conversations": pathToFileURL(join(dir, "SKILL.md")) }
+    const more = { "link-conversations": pathToFileURL(join(dir, "skill", "SKILL.md")) }
     await expect(run(["skill", "show", "link-conversations", "--for", "claude"], more)).rejects.toThrow(
       "only tg-cli is installed",
     )
@@ -225,9 +251,21 @@ describe("skill install", () => {
   })
 
   it("refuses a SKILL.md whose name is not the directory it installs into", async () => {
-    writeFileSync(join(dir, "SKILL.md"), SKILL.replace("name: tg-cli", "name: tgcli"))
+    writeFileSync(join(dir, "skill", "SKILL.md"), SKILL.replace("name: tg-cli", "name: tgcli"))
     await expect(run(["skill", "install"])).rejects.toThrow(/"tgcli".*"tg-cli"/)
     expect(() => readFileSync(claude())).toThrow()
+  })
+
+  it("copies the files the skill links beside SKILL.md, leaving out dotfiles and symbolic links", async () => {
+    addPart("references/tasks.md", "# Tasks\n")
+    addPart(".secret", "x")
+    symlinkSync(join(dir, "bin"), join(dir, "skill", "elsewhere"))
+    await run(["skill", "install"])
+
+    for (const path of [claude(), agents()]) {
+      expect(readFileSync(join(dirname(path), "references", "tasks.md"), "utf8")).toBe("# Tasks\n")
+      expect(readdirSync(dirname(path)).sort()).toEqual(["SKILL.md", "references"])
+    }
   })
 
   it("installs for one agent when told which", async () => {
@@ -340,6 +378,25 @@ describe.skipIf(process.platform === "win32")("skill install --for hermes", () =
 
     expect(result.hermes.removed).toBe(hermesCopyPath("tg-cli", env))
     expect(existsSync(join(hermesDir(), "skills", "tg-cli"))).toBe(false)
+  })
+
+  it("copies the skill's other files for Hermes too, and takes them out with its own copy", async () => {
+    addPart("references/tasks.md", "# Tasks\n")
+    mkdirSync(hermesDir())
+    await install()
+    expect(readFileSync(join(hermesDir(), "skills", "tg-cli", "references", "tasks.md"), "utf8")).toBe("# Tasks\n")
+    stubHermes({ dirs: "[]" })
+    expect((await install()).result.hermes.removed).toBe(hermesCopyPath("tg-cli", env))
+    expect(existsSync(join(hermesDir(), "skills", "tg-cli"))).toBe(false)
+  })
+
+  it("leaves a copy alone when a folder the skill ships holds a file of someone else's", async () => {
+    addPart("references/tasks.md", "# Tasks\n")
+    mkdirSync(hermesDir())
+    await install()
+    writeFileSync(join(hermesDir(), "skills", "tg-cli", "references", "mine.md"), "mine")
+    stubHermes({ dirs: "[]" })
+    expect((await install()).result.hermes.removed).toBeUndefined()
   })
 
   it("leaves a copy alone when its folder holds anything else", async () => {
@@ -497,5 +554,14 @@ describe("skillResource", () => {
     expect(resource).toMatchObject({ uri: "tg://skill", mimeType: "text/markdown" })
     expect(resource.read()).toEqual({ contents: [{ uri: "tg://skill", mimeType: "text/markdown", text: SKILL }] })
     expect(resource.instruction).toContain("`tg skill install`")
+  })
+
+  it("serves each file the guide links at the address the link resolves to from <command>://skill", () => {
+    expect(skillResources(app, skill).map(({ uri }) => uri)).toEqual(["tg://skill"])
+    addPart("references/tasks.md", "# Tasks\n")
+    const [main, part] = skillResources(app, skill)
+    expect(main?.instruction).toContain("tg://skill/<path>")
+    expect(part?.uri).toBe(new URL("references/tasks.md", "tg://skill").href)
+    expect(part?.read().contents[0]?.text).toBe("# Tasks\n")
   })
 })
