@@ -274,13 +274,14 @@ a captured answer, beside it or in the table it comes from.
 Every repository sets `testTimeout: 15_000` in `vitest.config.ts`. A test that builds big data, such as a thousand
 meetings or a long conversation, sizes it so the test runs within 3 s on a developer machine: a fifth of the limit,
 because a slow CI runner takes up to five times as long. `pnpm test:slow` warns about each test over 3 s, so it is
-shrunk before a release runner fails it.
+shrunk before a release runner fails it. cli-base's `node-ci.yml` shows the same warning on every run, from the
+merged report when the tests run in shards, and never fails the job.
 
 - **Why:** twice a release failed on a slow GitHub runner with no real wait involved, only CPU work: cli-core's test
   of 1200 meetings, and zoom-cli's `src/answer-entities.test.ts` at 6.9 s against vitest's default 5 s. Each
   repository had its own limit (15 s in cli-core and tg-cli, 5 s in zoom-cli, gcal-cli and max-cli), so the same
   test passed in one and failed in another.
-- **Enforced by:** `pnpm test:slow`.
+- **Enforced by:** `pnpm test:slow` · `node-ci.yml:check` · `node-ci.yml:coverage`.
 - **Example:** `vitest.config.ts` has `test: { testTimeout: 15_000 }`. A test that checks paging over many meetings
   builds as many as it needs to cross two pages, not 1200. `pnpm test:slow` ends with
   `warning: 1 test takes over 3 s, …` and the test's line on stderr; it still exits 0.

@@ -100,6 +100,14 @@ describe("slow-tests", () => {
       ].join("\n"),
     ])
   })
+
+  it("names the missing report and how to write it, instead of a stack trace", async () => {
+    expect(await main(["slow-tests"], io)).toBe(1)
+    expect(out).toEqual([])
+    expect(err).toEqual([
+      "no test report at coverage/tests.json: run vitest with --reporter=json --outputFile.json=coverage/tests.json first",
+    ])
+  })
 })
 
 describe("version", () => {

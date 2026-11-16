@@ -77,7 +77,8 @@ export interface DevIo {
 const USAGE = `usage: cli-dev <command> [options]
 
   slow-tests [report] [count]          the slowest tests and files (report: coverage/tests.json, count: 20);
-                                       warns on stderr about each test over 3 s, and still exits 0
+                                       warns on stderr about each test over 3 s, and still exits 0;
+                                       exits 1 when the report is missing
   next-version <wanted> <latest> <versions-json>
                                        the version bin/release publishes, given npm's answers
   version [--sync] [--file <path>]     package.json's version against src/version.ts
@@ -1008,6 +1009,10 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
   switch (command) {
     case "slow-tests": {
       const [file = "coverage/tests.json", count = "20"] = args
+      if (!existsSync(join(io.cwd, file))) {
+        io.err(`no test report at ${file}: run vitest with --reporter=json --outputFile.json=${file} first`)
+        return 1
+      }
       const parsed = JSON.parse(readFileSync(join(io.cwd, file), "utf8")) as VitestReport
       const { out, warning } = slowTests(parsed, io.cwd, Number(count))
       io.out(out)
