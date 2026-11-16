@@ -20,7 +20,7 @@ Rule ids on this page are `WC-LAY-<n>`. How to read a rule, how ids work and whi
   - `bin/`: the repository's own scripts, such as `bin/release` and a wrapper that runs the local build;
   - `scripts/`: development scripts in TypeScript or JavaScript;
   - `docs/`: user pages; `docs/dev/`: developer pages;
-  - `lint/`: `baseline/` and `overrides.json` for the command lint;
+  - `lint/`: `baseline/` and `overrides.json` for the command lint, `contract-exceptions.json` for `cli-dev ready`;
   - `contracts/`: the offline contract plan and its snapshots;
   - `config/wirecat/`: the shared presets;
   - `skills/`: the agent skill the package ships;

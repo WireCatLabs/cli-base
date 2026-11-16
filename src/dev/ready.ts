@@ -32,7 +32,7 @@ export interface ReadyRow {
 export interface ReadyReport {
   category?: string
   rows: ReadyRow[]
-  /** The fix of the first row that is not verified, or nothing when every row is verified or unsupported. */
+  /** The fix of the first row that has one; a row partially verified only by excepted contracts has none. */
   next?: string
 }
 
@@ -166,6 +166,35 @@ const scriptRow = (id: string, title: string, runs: readonly ScriptRun[], extra:
   }
 }
 
+/** `[{ "contract": "crmSyncContract", "reason": "…" }]`: a category contract this CLI does not run, and why. */
+const EXCEPTIONS = "lint/contract-exceptions.json"
+
+const contractExceptions = (cwd: string): { entries: { contract: string; reason: string }[]; problems: string[] } => {
+  const path = join(cwd, EXCEPTIONS)
+  if (!existsSync(path)) return { entries: [], problems: [] }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"))
+  } catch (error) {
+    return { entries: [], problems: [`is not valid JSON: ${error instanceof Error ? error.message : error}`] }
+  }
+  if (!Array.isArray(parsed)) return { entries: [], problems: ['is not a list of { "contract", "reason" }'] }
+  const entries: { contract: string; reason: string }[] = []
+  const problems: string[] = []
+  parsed.forEach((entry: unknown, index) => {
+    if (!isRecord(entry) || typeof entry.contract !== "string" || !entry.contract) {
+      problems.push(`entry ${index + 1} is not { "contract", "reason" }`)
+      return
+    }
+    if (entries.some((seen) => seen.contract === entry.contract)) problems.push(`${entry.contract} is listed twice`)
+    entries.push({ contract: entry.contract, reason: typeof entry.reason === "string" ? entry.reason.trim() : "" })
+  })
+  return { entries, problems }
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
 const CATEGORY_NAMES = CATEGORY_CONTRACTS.flatMap((entry) => entry.names)
 
 const contractsRow = (
@@ -198,17 +227,44 @@ const contractsRow = (
   })
   const ran = new Set(calls.filter(({ file }) => ranInReport(report, file) === undefined).map((call) => call.contract))
   const notRun = contracts.filter((contract) => !ran.has(contract))
+  const { entries: exceptions, problems } = contractExceptions(cwd)
+  const reasonOf = (contract: string) => exceptions.find((entry) => entry.contract === contract)?.reason
+  const wrong = [
+    ...problems,
+    ...exceptions.filter((entry) => !entry.reason).map((entry) => `${entry.contract} has no reason`),
+    ...exceptions
+      .filter((entry) => !contracts.includes(entry.contract))
+      .map((entry) => `${entry.contract} is no contract of "${category}"`),
+    ...exceptions.filter((entry) => ran.has(entry.contract)).map((entry) => `${entry.contract} runs now`),
+  ]
+  const excepted = notRun.filter((contract) => reasonOf(contract))
+  const missing = notRun.filter((contract) => !reasonOf(contract))
   const row = scriptRow("contracts", title, runs, [
     ...evidence,
-    ...(notRun.length > 0 && ran.size > 0 ? [`not run: ${notRun.join(", ")}`] : []),
+    ...excepted.map((contract) => `not run, excepted in ${EXCEPTIONS}: ${contract} — ${reasonOf(contract)}`),
+    ...(missing.length > 0 ? [`not run: ${missing.join(", ")}`] : []),
+    ...wrong.map((problem) => `${EXCEPTIONS}: ${problem}`),
   ])
-  if (ran.size > 0) return row
-  return {
-    ...row,
-    status: row.status === "verified" ? "partially" : row.status,
-    evidence: [...row.evidence, `no test that ran calls ${contracts.join(" or ")}`],
-    fix: row.fix ?? `run cli-core's ${contracts[0]} in a test (testing.md), then run cli-dev ready again`,
-  }
+  if (row.fix) return row
+  if (wrong.length > 0)
+    return { ...row, status: "not verified", fix: `correct ${EXCEPTIONS}: ${wrong[0]}, then run cli-dev ready again` }
+  if (missing.length > 0)
+    return {
+      ...row,
+      status: ran.size > 0 ? "partially" : "not verified",
+      fix:
+        `run cli-core's ${missing[0]} in a test (testing.md), or except it in ${EXCEPTIONS} with its reason, ` +
+        "then run cli-dev ready again",
+    }
+  // Every contract excepted leaves the row checking nothing.
+  if (ran.size === 0)
+    return {
+      ...row,
+      status: "not verified",
+      fix: `run at least one of ${contracts.join(", ")} in a test (testing.md), then run cli-dev ready again`,
+    }
+  // An exception is a known gap, not a check that passed; it needs no fix, so it does not hold back `next`.
+  return excepted.length > 0 ? { ...row, status: "partially" } : row
 }
 
 const liveRow = (cwd: string, shell: Shell, version: string): ReadyRow => {
@@ -278,7 +334,7 @@ export const readyReport = (io: DevIo, shell: Shell): ReadyReport => {
     scriptRow("deps", "Dependencies", run("deps:check")),
     liveRow(cwd, shell, packageVersion(cwd)),
   ]
-  const next = rows.find((row) => row.status === "not verified" || row.status === "partially")?.fix
+  const next = rows.find((row) => row.fix)?.fix
   return { ...(category ? { category } : {}), rows, ...(next ? { next } : {}) }
 }
 
@@ -296,7 +352,15 @@ export const readyText = (report: ReadyReport): string => {
     lines.push(`${row.title.padEnd(width)}  ${MARK[row.status]}`)
     for (const evidence of row.evidence) lines.push(`${" ".repeat(width + 2)}${evidence}`)
   }
-  lines.push("", report.next ? `next: ${report.next}` : "next: nothing; every check is verified or does not apply")
+  const excepted = report.rows.filter((row) => row.status === "partially").map((row) => row.title)
+  lines.push(
+    "",
+    report.next
+      ? `next: ${report.next}`
+      : excepted.length > 0
+        ? `next: nothing to do; partially, by declared exceptions: ${excepted.join(", ")}`
+        : "next: nothing; every check is verified or does not apply",
+  )
   return lines.join("\n")
 }
 
@@ -312,5 +376,6 @@ export const READY_USAGE = `  ready [--json]                       runs the CLI'
                                        generate:check, smoke, security:no-leak,
                                        deps:check) and reads the live-check record; prints each row as
                                        verified, partially, not verified or unsupported with its evidence,
-                                       and the one next step; exits 1 until every row is verified or
-                                       unsupported`
+                                       and the one next step; exits 1 while a row has a fix (a category
+                                       contract excepted with its reason in lint/contract-exceptions.json
+                                       shows partially and needs none)`

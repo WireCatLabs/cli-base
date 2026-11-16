@@ -18,7 +18,9 @@ const SCRIPTS = [
   "security:no-leak",
   "deps:check",
 ]
-const CRM_TEST = 'import { crmSourceContract } from "@wirecat/cli-core/crm/testing"\n\ncrmSourceContract(make)\n'
+const CRM_TEST =
+  'import { crmSourceContract } from "@wirecat/cli-core/crm/testing"\n\ncrmSourceContract(make)\n' +
+  "crmSyncContract(make)\ncrmWriteContract(make)\n"
 
 const cli = (files: Record<string, string>, scripts: readonly string[] = SCRIPTS) => {
   const cwd = mkdtempSync(join(tmpdir(), "cli-dev-ready-"))
@@ -86,7 +88,8 @@ describe("cli-dev ready", () => {
       "pnpm test: passed",
       "pnpm contracts:check: passed",
       "src/crm.test.ts:3 calls crmSourceContract",
-      "not run: crmSyncContract, crmWriteContract",
+      "src/crm.test.ts:4 calls crmSyncContract",
+      "src/crm.test.ts:5 calls crmWriteContract",
     ])
     expect(report.rows.find((one) => one.id === "live")?.evidence).toEqual(["docs/dev/live-checks.txt:2"])
     const scripts = calls.filter((call) => call.startsWith("pnpm")).map((call) => call.split(" ")[3])
@@ -125,15 +128,92 @@ describe("cli-dev ready", () => {
   it("counts a contract call only when its test file ran with no test skipped, and not in a comment", () => {
     const skipped = cli({})
     expect(row(skipped, shell(skipped, { "src/crm.test.ts": ["passed", "skipped"] }).run, "contracts")).toMatchObject({
-      status: "partially",
-      fix: "run cli-core's crmSourceContract in a test (testing.md), then run cli-dev ready again",
+      status: "not verified",
+      fix:
+        "run cli-core's crmSourceContract in a test (testing.md), or except it in lint/contract-exceptions.json " +
+        "with its reason, then run cli-dev ready again",
     })
     const outside = cli({})
     expect(row(outside, shell(outside, {}).run, "contracts")?.evidence).toContain(
       "src/crm.test.ts:3 calls crmSourceContract — not counted: not in the test run's report",
     )
     const commented = cli({ "src/crm.test.ts": "// crmSourceContract(make)\n" })
-    expect(row(commented, shell(commented).run, "contracts")?.status).toBe("partially")
+    expect(row(commented, shell(commented).run, "contracts")?.status).toBe("not verified")
+  })
+
+  it("needs every contract of the category, and shows an excepted one as partially without holding back the exit", () => {
+    const sourceOnly = "crmSourceContract(make)\n"
+    const missing = cli({ "src/crm.test.ts": sourceOnly })
+    expect(readyReport(ioOf(missing).io, shell(missing).run).next).toBe(
+      "run cli-core's crmSyncContract in a test (testing.md), or except it in lint/contract-exceptions.json with its " +
+        "reason, then run cli-dev ready again",
+    )
+    const exceptions = JSON.stringify([
+      { contract: "crmSyncContract", reason: "the CLI keeps no local copy" },
+      { contract: "crmWriteContract", reason: "read-only" },
+    ])
+    const excepted = cli({ "src/crm.test.ts": sourceOnly, "lint/contract-exceptions.json": exceptions })
+    const { io } = ioOf(excepted)
+    const report = readyReport(io, shell(excepted).run)
+    expect(report.rows.find((one) => one.id === "contracts")).toMatchObject({
+      status: "partially",
+      evidence: expect.arrayContaining([
+        "not run, excepted in lint/contract-exceptions.json: crmSyncContract — the CLI keeps no local copy",
+      ]),
+    })
+    expect(report.next).toBeUndefined()
+    const out: string[] = []
+    expect(ready([], { ...io, out: (text) => out.push(text) }, shell(excepted).run)).toBe(0)
+    expect(out.join("")).toContain(
+      "next: nothing to do; partially, by declared exceptions: Tests and category contracts",
+    )
+  })
+
+  it("refuses an exception without a reason, for another category's contract, or for one that runs", () => {
+    const exceptions = JSON.stringify([
+      { contract: "crmSyncContract", reason: " " },
+      { contract: "mailSourceContract", reason: "x" },
+      { contract: "crmSourceContract", reason: "x" },
+    ])
+    const cwd = cli({ "lint/contract-exceptions.json": exceptions })
+    expect(row(cwd, shell(cwd).run, "contracts")).toMatchObject({
+      status: "not verified",
+      evidence: expect.arrayContaining([
+        "lint/contract-exceptions.json: crmSyncContract has no reason",
+        'lint/contract-exceptions.json: mailSourceContract is no contract of "CRM (sales: deals, contacts, companies)"',
+        "lint/contract-exceptions.json: crmSourceContract runs now",
+      ]),
+      fix: "correct lint/contract-exceptions.json: crmSyncContract has no reason, then run cli-dev ready again",
+    })
+  })
+
+  it("reports a broken exceptions file instead of failing, and refuses excepting every contract", () => {
+    const cases: [string, string][] = [
+      ["{", "lint/contract-exceptions.json: is not valid JSON"],
+      ['{ "crmSyncContract": "x" }', 'lint/contract-exceptions.json: is not a list of { "contract", "reason" }'],
+      ['["crmSyncContract"]', 'lint/contract-exceptions.json: entry 1 is not { "contract", "reason" }'],
+      [
+        JSON.stringify([
+          { contract: "crmSyncContract", reason: "a" },
+          { contract: "crmSyncContract", reason: "b" },
+        ]),
+        "lint/contract-exceptions.json: crmSyncContract is listed twice",
+      ],
+    ]
+    for (const [text, problem] of cases) {
+      const cwd = cli({ "lint/contract-exceptions.json": text })
+      const found = row(cwd, shell(cwd).run, "contracts")
+      expect(found?.status).toBe("not verified")
+      expect(found?.evidence.some((line) => line.startsWith(problem))).toBe(true)
+    }
+    const all = JSON.stringify(
+      ["crmSourceContract", "crmSyncContract", "crmWriteContract"].map((contract) => ({ contract, reason: "x" })),
+    )
+    const cwd = cli({ "src/crm.test.ts": "it('works', () => {})\n", "lint/contract-exceptions.json": all })
+    expect(row(cwd, shell(cwd).run, "contracts")).toMatchObject({
+      status: "not verified",
+      fix: "run at least one of crmSourceContract, crmSyncContract, crmWriteContract in a test (testing.md), then run cli-dev ready again",
+    })
   })
 
   it("does not verify a category that is not named, or not one new writes", () => {

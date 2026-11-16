@@ -183,7 +183,11 @@ All of these pass on `main`, before the first release. `cli-dev ready` runs the 
 order and prints what each one proves: verified (a script passed, a test runs the category's cli-core contract, the
 live-check record is of this code), partially, not verified, or unsupported (a check that cannot apply: the live
 check in cli-template itself). A contract call counts only when vitest's report shows its test file ran with no test
-skipped. A missing script is not verified. `--json` gives the same rows and the one next
+skipped, and every contract of the category must run. A CLI that cannot run one lists it in
+`lint/contract-exceptions.json` as `[{ "contract": "crmSyncContract", "reason": "…" }]`; the row then shows
+partially with the reason, and the exception does not hold back the exit code. An exception without a reason, for
+another category's contract, for a contract that runs, or for every contract is not verified. A missing script is
+not verified. `--json` gives the same rows and the one next
 step to an agent. It never runs the live check: that is the owner's run against their account.
 
 - `pnpm standards:check`
