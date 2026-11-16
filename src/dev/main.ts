@@ -59,6 +59,7 @@ import { changelogChange, landChange, landFold, newestTag, processShell, restore
 import { baselineOf, judge, lintCommands, misfiled, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
 import { type NetworkContext, readSources } from "./network.js"
 import { nextVersion } from "./next-version.js"
+import { READY_USAGE, ready } from "./ready.js"
 import { readDeclarations } from "./result-shape.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
@@ -145,7 +146,8 @@ const USAGE = `usage: cli-dev <command> [options]
                                        --harmless names a third-party file whose import.meta or
                                        __dirname was read and found harmless. Fails when a bundled
                                        module would look for a file or package in the wrong place
-${CONFORMANCE_USAGE}`
+${CONFORMANCE_USAGE}
+${READY_USAGE}`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -1046,6 +1048,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       return audit(args, io)
     case "bundle":
       return bundleCommand(args, io)
+    case "ready":
+      return ready(args, io, processShell(io.cwd))
     case "adopt": {
       const { values, positionals } = parseArgs({
         args,
