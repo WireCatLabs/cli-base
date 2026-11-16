@@ -71,6 +71,12 @@ export const BASE_REASONS: ErrorReason[] = defineReasons([
   },
   { reason: "batch.output-budget", code: "validation_error", message: "batch output budget exhausted", details: [] },
   { reason: "config.invalid", code: "configuration_error", message: "the configuration is not valid", details: [] },
+  {
+    reason: "keyring.unreachable",
+    code: "configuration_error",
+    message: "the OS keyring did not answer, and no file holds the sign-in",
+    details: [],
+  },
   { reason: "auth.failed", code: "authentication_error", message: "the sign-in did not work", details: [] },
   { reason: "access.denied", code: "permission_error", message: "this account may not do that", details: [] },
   { reason: "item.not-found", code: "not_found", message: "nothing found by that name", details: [] },

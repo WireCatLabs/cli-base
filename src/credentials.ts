@@ -67,8 +67,8 @@ const warnedRuns = new WeakSet<NodeJS.ProcessEnv>()
  * Environment first, then the OS keyring, then a file. In `auto`, a file that holds the account is read before the
  * keyring and keeps its refreshes, so a locked keyring is not tried again for it; a sign-in moves it back.
  *
- * `auto` does not probe whether a keyring exists: it attempts the operation, and on failure warns
- * once per run and falls through. A probe would touch the user's keychain for nothing and could still
+ * `auto` does not probe whether a keyring exists: it attempts the operation, and on a failed write or removal warns
+ * once per run and falls through. A failed read with no file entry throws `keyring.unreachable`. A probe would touch the user's keychain for nothing and could still
  * succeed where the real operation fails.
  */
 export class Credentials {
@@ -105,9 +105,13 @@ export class Credentials {
 
     if (this.#storage !== "file") {
       const temporary = this.#temporaryService
-      const fromKeyring = this.#tryKeyring(
-        () => (temporary && this.#keyring.get(temporary, account)) || this.#keyring.get(this.#service, account),
-      )
+      let fromKeyring: string | null
+      try {
+        fromKeyring = (temporary && this.#keyring.get(temporary, account)) || this.#keyring.get(this.#service, account)
+      } catch (error) {
+        // Answering "not signed in" here sends the owner to sign in again while the entry sits in the keyring.
+        throw this.#unreachable(account, error)
+      }
       if (fromKeyring) return { secret: fromKeyring, source: "keyring" }
     }
 
@@ -204,6 +208,18 @@ export class Credentials {
 
   #writeFile(store: FileStore): void {
     writeSecurely(this.#path(), `${JSON.stringify(store, null, 2)}\n`, 0o600)
+  }
+
+  #unreachable(account: string, error: unknown): CliError {
+    const where = this.#storage === "keyring" ? "" : `, and ${this.#path()} holds no sign-in for ${account}`
+    return new CliError(
+      "configuration_error",
+      `the OS keyring did not answer (${error instanceof Error ? error.message : String(error)})${where}. ` +
+        "On Linux a restarted session bus is a known cause: log out and back in, or set " +
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus. On a machine with no keyring, sign in with file " +
+        "storage.",
+      { reason: "keyring.unreachable" },
+    )
   }
 
   #tryKeyring<T>(operation: () => T): T | undefined {

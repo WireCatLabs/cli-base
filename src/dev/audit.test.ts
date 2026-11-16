@@ -629,7 +629,7 @@ describe("cli-dev audit", () => {
           { reason: "fixture.invalid", code: "validation_error", message: "invalid fixture request", details: [] },
         ],
       }
-      const file = join(root, cli + ".mjs")
+      const file = join(root, `${cli}.mjs`)
       writeFileSync(
         file,
         `process.stdout.write(JSON.stringify(process.argv.includes("info") ? ${JSON.stringify(evidence)} : ${JSON.stringify(document)}))`,
