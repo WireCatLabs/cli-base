@@ -8,6 +8,93 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.108.0 — 16.11.2026
+
+### Added
+
+- **amo-cli takes the monthly minute 02:55 UTC** in the [CI](docs/standards/ci.md) list, and joins the
+  `shared-roots` parity group next to b24 (it is skipped by `audit --family` until it is on npm).
+- **`mergeOpenApi(sources, { title, version })` joins a service's OpenAPI specs into one** before `adaptOpenApi`, for a
+  service that publishes one spec per object (HubSpot: 127). Components that differ only in their text are kept once;
+  a real difference keeps both, the later one and what refers to it under the source's prefix, with that source's
+  references rewritten. A path several sources share is taken once when it is the same; a difference there, a repeated operation id
+  or mixed OpenAPI versions stop the merge. OAuth scopes and servers are joined. The report lists each source with its
+  URL and the SHA-256 of its downloaded text, and what was merged or renamed, for the CLI's provenance. On HubSpot's 15 CRM specs it gives 156
+  operations (version 3) or 203 (2026-09), with one schema renamed.
+- **`generate`'s `pagination: true` writes how each read pages into the manifest**, for an executor that reads every
+  page (`--all`): a cursor (HubSpot's `after` → `paging.next.after`, Notion's `start_cursor` → `next_cursor`), an
+  offset (Yandex Disk's `offset`, `limit` and `_embedded.items`), a page number, or a link to the next page. An
+  override's `pagination` sets it where detection misses, `null` turns it off for one read, and the coverage page lists
+  each read that pages. Off by default, so a CLI's generated files do not change until it asks.
+- **`fakeApi({ operations, definitions, baseUrl, auth, answers, hosts })` is a strict fake built from the generated
+  files**: a `fetch` that refuses an unknown path, method, query parameter or body field, a mistyped value and a
+  missing sign-in, answers by the response schema, and throws on a scenario answer that breaks it. `hosts` serves
+  the hosts an answer links to and refuses the sign-in header sent there. A CLI writes only its scenarios, not a fake
+  of its service (notion-cli's is about 970 lines). `schemaProblems` and `sampleOf` are exported for a CLI's own
+  checks.
+- **`upgradeToOpenApi3(document, declarations?)` converts Swagger 1.2 and 2.0 to OpenAPI 3** before `adaptOpenApi`,
+  so a CLI for Yandex Disk (Swagger 1.2, 25 operations in six files) needs no converter of its own. It uses
+  `swagger-converter` and `@scalar/openapi-upgrader`, new optional peer dependencies: a CLI that converts adds them to
+  its `devDependencies`. An OpenAPI 3 document comes back as it is.
+- **`patchSpec(document, { patches, stubMissingSchemas })` corrects a source before generation**, each change with its
+  reason, in place of a CLI's own `scripts/<service>-spec.ts`: a value set at a JSON pointer, or a stub for every
+  schema the document references but lacks (HubSpot's `Void`).
+- **`adaptOpenApi` keeps the first 2xx answer with JSON**, not only `200`: HubSpot creates with 201 and answers a batch
+  with 207, Yandex Disk answers 201 or 202. `application/hal+json` and `application/json; charset=utf-8` count as
+  JSON, in answers and in request bodies.
+- **`servers`, `securitySchemes` and `security` reach the manifest**, and an operation's own `security` (`[]` for no
+  sign-in) the operation, so a CLI stops copying its base URL and OAuth endpoints by hand. `generate`'s new `auth`
+  option replaces them where the source has none or a wrong one (Yandex Disk's `Authorization: OAuth <token>`).
+- **`generate`'s `readingPosts: true` makes a POST to a `…/search` or `…/query` path a read**, as HubSpot's and
+  Notion's are. It is off by default: a wrong guess would turn a write into a read.
+- **`generate`'s `names` option names commands** where the operation ids make poor ones (HubSpot's
+  `get-/crm/v3/objects/contacts_getPage`): an id → command map, and with `fromPath` names from the path and the method
+  (`deals-list`, `deals-create`), with path segments renamed or left out (`{ "0-3": "deals", crm: "" }`).
+- **`generate`'s `permissions` option gives the CLI's own keys to raw API calls**: `<group>.delete` for every
+  destructive operation and every one that takes a deleting flag (body `in_trash`, query `permanently`, `overwrite`),
+  `<group>.share` for the operations that make a public link. Each lands in the manifest as the operation's
+  `permissions` and on the coverage page. cli-core does not check them yet; until it does, a CLI adds them to its
+  `commandPermissions`, as notion-cli does.
+- **`takenMinutes(ciPage?)` from `@wirecat/cli-base/standards` reads WC-CI-9's table of monthly minutes**, from the
+  copy of `docs/standards/ci.md` this package ships when given no text, so cli-template's `new` stops keeping its own
+  parser. [New CLI](docs/standards/new-cli.md) steps 3 and 4 now say that `new` sets the minute itself.
+- **The [kit surface](docs/standards/kit-surface.md#the-api-generator) page describes the generator**: its inputs,
+  the corrections a CLI passes, what the coverage page records, and its limits.
+- **`cli-dev ready [--json]` says whether a CLI is ready to release, row by row, with evidence.** It runs the CLI's
+  own scripts in order: typecheck and lint, tests with `contracts:check`, the family audit, `docs:check`,
+  `generate:check`, `smoke`, `security:no-leak` and `deps:check`. It reads the live-check record
+  for the version. Each row is verified, partially, not verified or unsupported, and names its evidence: the script
+  that passed or the last lines of its failure, the test files that call the category's cli-core contracts and ran
+  with no test skipped in vitest's report (the category comes from `docs/dev/DESIGN.md`), the record's line in `docs/dev/live-checks.txt`. A missing script is not
+  verified; nothing is verified on inference. It prints the one next step and exits 1 until every row is verified or
+  unsupported. [New CLI](docs/standards/new-cli.md#done-when)
+
+### Changed — may break callers
+
+- **A CLI's generated files change at its next `pnpm generate`**, so `generate:check` fails until it is run. A source
+  with `servers` or `securitySchemes` adds those exports to the manifest, and an operation with its own `security`
+  gains that field. Overrides that change an effect add an "Effects not taken from the HTTP method" section to the
+  coverage page. Operations whose only success answer is a 201, 202 or 207 now have a response schema.
+- **A `security` requirement naming a scheme the document does not define stops generation**, as a dangling schema
+  reference already does. So does a `$ref` security scheme: write the scheme in place, or replace the sign-in with
+  `auth`.
+- **`Credentials#read` throws `keyring.unreachable` when the keyring fails and the file has no entry**, instead of
+  answering "not signed in". A stale session bus (D-Bus restarted, the shell still holding the old `guid=`) made
+  `@napi-rs/keyring` throw while the sign-in sat in the keyring, and every command said `session.missing`. The
+  `configuration_error` names the keyring error and the file, and the fix on Linux: log out and back in, or set
+  `DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus`. A file entry is still read first, `storage: "file"`
+  never reaches the keyring, and `write` and `remove` still fall back to the file. With `storage: "keyring"` a failed
+  read is the same `CliError`, not the raw native error. Watch for: a caller that reads before it writes now sees
+  the throw on a machine with no keyring at all; cli-core's `credentialStorage` reads `previous` before a sign-in
+  and wraps every read failure as `oauth.not-saved`, and its bot token `read` has no catch — let
+  `keyring.unreachable` through there, and treat it as "no previous entry" on a sign-in.
+
+### Fixed
+
+- **`hostFetch` marks a failed name lookup or a refused connection `sent: false`** (`EAI_AGAIN`, `ENOTFOUND`,
+  `ECONNREFUSED` on the cause), so a caller may send a write again that never left. A reset or a timeout keeps no
+  mark: the request may have arrived.
+
 ## 0.107.0 — 16.11.2026
 
 ### Added
