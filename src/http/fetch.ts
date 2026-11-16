@@ -58,6 +58,20 @@ const checked = (url: URL, hosts: readonly string[]): URL => {
   return url
 }
 
+/**
+ * A name lookup or a connection the host refused fails before a byte of the request leaves, so even a write may be sent
+ * again. Node's fetch puts the system's code on the cause, an AggregateError when it tried several addresses; a
+ * reset or a timeout may come after the request arrived.
+ */
+const NOT_SENT = new Set(["EAI_AGAIN", "ENOTFOUND", "ECONNREFUSED"])
+const neverSent = (error: unknown): boolean => {
+  for (let at: unknown = error, depth = 0; at instanceof Error && depth < 4; at = at.cause, depth++) {
+    const code = (at as { code?: unknown }).code
+    if (typeof code === "string" && NOT_SENT.has(code)) return true
+  }
+  return false
+}
+
 /** `fetch` that reaches only the declared hosts, checks every redirect hop, and gives up after `timeoutMs`. */
 export const hostFetch = (options: HostFetchOptions): FetchLike => {
   const problems = hostProblems(options.hosts)
@@ -74,9 +88,12 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
     let method = (init.method ?? request?.method ?? "GET").toUpperCase()
     let body = init.body ?? request?.body ?? undefined
     const headers = new Headers(init.headers ?? request?.headers)
+    // A redirect means the first request arrived: a later hop's failure no longer proves nothing was sent.
+    let answered = false
 
     try {
       let response = await send(input, { ...init, signal, ...(follow ? { redirect: "manual" } : {}) })
+      answered = true
       for (let hop = 0; follow && REDIRECT_STATUSES.has(response.status); hop += 1) {
         const location = response.headers.get("location")
         if (!location) return released(response, timeout.clear)
@@ -106,7 +123,10 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
         throw isCliError(caller.reason) ? caller.reason : new CliError("cancelled", "request cancelled")
       if (timeout.signal.aborted)
         throw new CliError("timeout", `${url.hostname} did not answer within ${timeoutMs} ms`, { retryable: true })
-      throw new CliError("network_error", `${url.hostname} could not be reached`, { retryable: true })
+      throw new CliError("network_error", `${url.hostname} could not be reached`, {
+        retryable: true,
+        ...(!answered && neverSent(error) ? { sent: false } : {}),
+      })
     }
   }
 }
