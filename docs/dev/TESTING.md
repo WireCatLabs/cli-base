@@ -8,7 +8,7 @@ pnpm test:coverage   # the same, with the floor below; CI runs this one
 pnpm docs:check      # every relative link and anchor in every .md, and the changelog's shape
 pnpm build
 pnpm smoke:bun       # the real exports, executed under Bun
-pnpm test:slow       # the 20 slowest tests and the 10 slowest files
+pnpm test:slow       # the 20 slowest tests and the 10 slowest files; warns about each test over 3 s
 ```
 
 CI runs all but the last, plus a secret scan over the whole history —

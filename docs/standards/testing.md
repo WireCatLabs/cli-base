@@ -97,7 +97,8 @@ and which run after merge is in [CI](ci.md).
 - **Enforced by:** review only.
 - **Example:** waits go through an injected `SleepLike`, and `fakeClock()` from `@wirecat/cli-base/testing` records
   them without waiting. A test harness passes `sleep: async () => {}`. `pnpm test:slow` lists the 20 slowest tests
-  and the 10 slowest files. A test may wait for a local process or server it started, for example polling its
+  and the 10 slowest files, and warns about each test over 3 s
+  ([WC-TEST-20](#wc-test-20--one-test-time-limit-of-15-s-and-each-test-runs-within-3-s)). A test may wait for a local process or server it started, for example polling its
   status with `vi.waitFor` and a timeout shorter than the test's own; that waits for an event, not for time. A
   fixed sleep or `setTimeout` is still a wait for real time.
 - **Exceptions:** none. A new wait in the code gets a seam, never a longer test timeout.
@@ -267,6 +268,26 @@ a captured answer, beside it or in the table it comes from.
 - **Exceptions:** a fake for an unofficial protocol with no schema keeps the names seen in captured frames as its
   vocabulary.
 - **Applies to:** all CLIs that talk to a provider. **Since:** cli-base 0.80.1. **Rulings:** none.
+
+### WC-TEST-20 · One test time limit of 15 s, and each test runs within 3 s
+
+Every repository sets `testTimeout: 15_000` in `vitest.config.ts`. A test that builds big data, such as a thousand
+meetings or a long conversation, sizes it so the test runs within 3 s on a developer machine: a fifth of the limit,
+because a slow CI runner takes up to five times as long. `pnpm test:slow` warns about each test over 3 s, so it is
+shrunk before a release runner fails it.
+
+- **Why:** twice a release failed on a slow GitHub runner with no real wait involved, only CPU work: cli-core's test
+  of 1200 meetings, and zoom-cli's `src/answer-entities.test.ts` at 6.9 s against vitest's default 5 s. Each
+  repository had its own limit (15 s in cli-core and tg-cli, 5 s in zoom-cli, gcal-cli and max-cli), so the same
+  test passed in one and failed in another.
+- **Enforced by:** `pnpm test:slow`.
+- **Example:** `vitest.config.ts` has `test: { testTimeout: 15_000 }`. A test that checks paging over many meetings
+  builds as many as it needs to cross two pages, not 1200. `pnpm test:slow` ends with
+  `warning: 1 test takes over 3 s, …` and the test's line on stderr; it still exits 0.
+- **Exceptions:** none. A longer timeout on one test is not the fix: cli-core #2980 gave the 1200-meeting test 60 s,
+  and the next slower runner fails it again. The macOS and Windows jobs of cli-base's `node-ci.yml` pass
+  `--testTimeout=20000` because those runners are slower for every test, not for one.
+- **Applies to:** all CLIs and the shared packages. **Since:** cli-base 0.107.0. **Rulings:** owner, 2026-11-16.
 
 ## Sources
 
