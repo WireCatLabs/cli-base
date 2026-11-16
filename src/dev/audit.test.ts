@@ -219,6 +219,21 @@ describe("audit rules", () => {
     expect(cross([inputOf(tool("a")), inputOf(tool("b")), inputOf(tool("c", chats))], "same-path-contract")).toEqual([])
   })
 
+  it("compares a path within the groups that share a member, never across two groups with none in common", () => {
+    const apart: ParityGroup[] = [...groups, { name: "other", members: ["x", "y"], covers: ["notes"], differences: [] }]
+    const inputs = [
+      inputOf(tool("a", notes("list notes", [["--limit <n>", "how many"]]))),
+      inputOf(tool("b", notes("list notes", [["--limit <n>", "how many"]]))),
+      inputOf(tool("x", notes("list notes", [["--all", "every note"]]))),
+      inputOf(tool("y", notes("list notes", [["--all", "every note"]]))),
+    ]
+    expect(cross(inputs, "same-path-contract", { groups: apart })).toEqual([])
+    const y = inputOf(tool("y", notes("list notes")))
+    expect(cross([...inputs.slice(0, 3), y], "same-path-contract", { groups: apart })).toEqual([
+      "x+y notes list --all: x: switch, y: absent",
+    ])
+  })
+
   it("compares a flag's kind of value across CLIs, globals included", () => {
     expect(cross(failing["same-flag-meaning"]?.() ?? [], "same-flag-meaning")).toEqual([
       "a+c --limit: a: <n>, c: switch",

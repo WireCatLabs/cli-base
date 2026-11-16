@@ -142,50 +142,69 @@ const samePathContract = (inputs: readonly AuditInput[], groups: readonly Parity
           message: `only in ${having.join(", ")}`,
         })
     }
-    const having = [...new Set(covering.flatMap((group) => group.members))]
-      .filter((cli) => trees.get(cli)?.has(path))
-      .sort(byText)
-    if (having.length < 2) continue
-    const commands = new Map(having.map((cli) => [cli, trees.get(cli)?.get(path) as CommandInfo]))
-    const push = (what: string, values: Map<string, string>) => {
-      if (new Set(values.values()).size > 1)
-        found.push({
-          rule: "same-path-contract",
-          clis: having,
-          target: `${named(having)} ${path}${what}`,
-          message: describe(values),
-          values: Object.fromEntries(values),
-        })
+    for (const members of linkedMembers(covering)) {
+      const having = members.filter((cli) => trees.get(cli)?.has(path)).sort(byText)
+      if (having.length >= 2) pathDifferences(found, inputs, trees, path, having)
     }
-    const kinds = new Map(
-      [...commands].map(([cli, command]) => [
-        cli,
-        optionKinds([
-          ...(inputs.find((input) => input.document.cli === cli)?.document.global_options ?? []),
-          ...command.options,
-        ]),
-      ]),
-    )
-    const flags = [
-      ...new Set([...commands.values()].flatMap((command) => [...optionKinds(command.options).keys()])),
-    ].sort(byText)
-    for (const flag of flags) push(` ${flag}`, new Map([...kinds].map(([cli, one]) => [cli, shownKind(one.get(flag))])))
-    push(
-      ": output",
-      new Map(
-        [...commands].map(([cli, command]) => [
-          cli,
-          command.output ? [command.output.entity, command.output.view].filter(Boolean).join("/") : "none",
-        ]),
-      ),
-    )
-    const own = (cli: string, text: string) => text.replace(new RegExp(`\\b${cli}\\b`, "g"), "<cli>")
-    push(
-      ": summary",
-      new Map([...commands].map(([cli, command]) => [cli, JSON.stringify(own(cli, summaryOf(command)))])),
-    )
   }
   return found
+}
+
+/** The members of groups that share one, joined: two groups with no CLI in common are never compared. */
+const linkedMembers = (groups: readonly ParityGroup[]): string[][] => {
+  const joined: Set<string>[] = []
+  for (const group of groups) {
+    const touching = joined.filter((members) => group.members.some((cli) => members.has(cli)))
+    const merged = new Set([...group.members, ...touching.flatMap((members) => [...members])])
+    for (const one of touching) joined.splice(joined.indexOf(one), 1)
+    joined.push(merged)
+  }
+  return joined.map((members) => [...members])
+}
+
+/** Each way the CLIs `having` a shared path differ on it, added to `found`. */
+const pathDifferences = (
+  found: Finding[],
+  inputs: readonly AuditInput[],
+  trees: Map<string, Map<string, CommandInfo>>,
+  path: string,
+  having: string[],
+): void => {
+  const commands = new Map(having.map((cli) => [cli, trees.get(cli)?.get(path) as CommandInfo]))
+  const push = (what: string, values: Map<string, string>) => {
+    if (new Set(values.values()).size > 1)
+      found.push({
+        rule: "same-path-contract",
+        clis: having,
+        target: `${named(having)} ${path}${what}`,
+        message: describe(values),
+        values: Object.fromEntries(values),
+      })
+  }
+  const kinds = new Map(
+    [...commands].map(([cli, command]) => [
+      cli,
+      optionKinds([
+        ...(inputs.find((input) => input.document.cli === cli)?.document.global_options ?? []),
+        ...command.options,
+      ]),
+    ]),
+  )
+  const flags = [
+    ...new Set([...commands.values()].flatMap((command) => [...optionKinds(command.options).keys()])),
+  ].sort(byText)
+  for (const flag of flags) push(` ${flag}`, new Map([...kinds].map(([cli, one]) => [cli, shownKind(one.get(flag))])))
+  push(
+    ": output",
+    new Map(
+      [...commands].map(([cli, command]) => [
+        cli,
+        command.output ? [command.output.entity, command.output.view].filter(Boolean).join("/") : "none",
+      ]),
+    ),
+  )
+  const own = (cli: string, text: string) => text.replace(new RegExp(`\\b${cli}\\b`, "g"), "<cli>")
+  push(": summary", new Map([...commands].map(([cli, command]) => [cli, JSON.stringify(own(cli, summaryOf(command)))])))
 }
 
 const sameFlagMeaning = (inputs: readonly AuditInput[], vocabulary: Vocabulary): Finding[] => {
