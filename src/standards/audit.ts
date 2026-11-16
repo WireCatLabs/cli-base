@@ -188,6 +188,19 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
     differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
   },
+  // The CRM CLIs on cli-core's shared CRM commands. amo-cli (amoCRM and Kommo) is not on npm yet, so `audit --family`
+  // skips it, as beeline. Only b24 has `leads` (amoCRM has no lead apart from a deal), `products` (amo leaves them for
+  // later) and `deals delete` (amoCRM's API v4 cannot delete a lead,
+  // https://www.amocrm.ru/developers/content/crm_platform/leads-api); a list of roots does not compare presence, so
+  // these need no difference. `people`, `organizations`, `users`, `api` and `session` join once b24's released tree
+  // is on cli-core's shared people and organizations commands: measured against b24 0.23.0 on 2026-11-16 they differ
+  // in options, outputs and summaries.
+  {
+    name: "crm",
+    members: ["b24", "amo"],
+    covers: ["deals", "sync", "search", "store", "schedule", "account"],
+    differences: [],
+  },
 ])
 
 const requiredRootSchema = v.strictObject({ path: v.pipe(v.array(segment), v.minLength(1)), meaning: text })

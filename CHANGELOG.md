@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- `PARITY_GROUPS` has a `crm` group: b24 and amo (amo-cli, for amoCRM and Kommo), compared on `deals`, `sync`,
+  `search`, `store`, `schedule` and `account`. amo is not on npm yet, so `cli-dev audit --family` skips it until it
+  is. `people`, `organizations`, `users`, `api` and `session` join once b24's release is on cli-core's shared people
+  and organizations commands.
+
 ## 0.103.0 — 15.11.2026
 
 ### Added
