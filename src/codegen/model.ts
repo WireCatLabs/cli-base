@@ -124,11 +124,42 @@ export interface ApiOperation {
   effectReason?: string
   /** Which security requirements the operation has, when it differs from the document's; `[]` is "none". */
   security?: readonly SecurityRequirement[]
+  /** How to ask for the next page, set by `generate`'s `pagination` detection or an override. */
+  pagination?: Pagination
+  /** `detected`, or `override: <reason>`, for the coverage page. */
+  paginationSource?: string
   /** Set by `generate`'s `permissions` rule: the CLI's own keys a call must pass, beside `api.<operation>`. */
   permissions?: readonly OperationPermission[]
   deprecated?: boolean
   source: SourceReference
 }
+
+/** A request parameter or a top-level body field. */
+export interface PageParameter {
+  in: "query" | "body"
+  name: string
+}
+
+/**
+ * How an operation pages, for an executor that reads every page (`--all`). Answer fields are dotted paths into the
+ * answer: `next_cursor`, `paging.next.after`, `_embedded.items`.
+ */
+export type Pagination =
+  | {
+      style: "cursor"
+      /** Where the next request carries the cursor. */
+      cursor: PageParameter
+      /** Where the answer holds the next cursor; absent or empty on the last page. */
+      next: string
+      items?: string
+      /** A boolean the answer sets to false on the last page, where the service has one. */
+      hasMore?: string
+      limit?: PageParameter
+    }
+  | { style: "offset"; offset: PageParameter; limit?: PageParameter; items: string; total?: string }
+  | { style: "page"; page: PageParameter; limit?: PageParameter; items: string; total?: string }
+  /** The answer holds the next page's whole URL. */
+  | { style: "link"; next: string; items?: string }
 
 /** A key a call must pass: always, or, when `body` or `query` is given, only when one of those flags is `true`. */
 export interface OperationPermission {
@@ -188,6 +219,8 @@ export interface ApiModel {
 
 export interface Override {
   effect?: Effect
+  /** How the operation pages, where detection misses or misreads it; `null` says it does not page. */
+  pagination?: Pagination | null
   /** Required: an override nobody can explain is one nobody dares remove. */
   reason: string
 }

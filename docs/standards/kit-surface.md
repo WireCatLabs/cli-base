@@ -96,16 +96,37 @@ From the source the generator reads:
   Which flags delete is the CLI's call: read the service's documentation, and count an undocumented flag as a delete.
   A flag counts on every method, a GET included: Yandex Disk's upload link is a GET whose `overwrite` replaces a file.
   Leave out a flag that only filters, as HubSpot's `archived` on a list does.
+- **`pagination: true`**: each read's `pagination` in the manifest, for an executor that reads every page. It is
+  found from the names the request and the answer use: a cursor (`after` and `paging.next.after` as HubSpot's,
+  `start_cursor` and `next_cursor` as Notion's), an offset (`offset` and `limit` with `_embedded.items` as Yandex
+  Disk's), a page number, or a link to the next page. An offset, a page and a limit must be numbers and a cursor a
+  string, so a `start` date is not taken for an offset. Answer fields are dotted paths. Only reads page: a POST
+  search pages once `readingPosts` or an override makes it a read. An override's
+  `pagination` sets it where detection misses or misreads, and `pagination: null` says the read does not page; a
+  parameter the operation does not take stops generation.
 - **`auth`**: `{ securitySchemes, security, reason }` replaces the source's sign-in, the operations' own requirements
   included. Yandex Disk's Swagger 1.2 has no scheme, and its header is `Authorization: OAuth <token>`:
   `{ oauth: { type: "http", scheme: "OAuth" } }`. HubSpot's spec has no private app token.
+
+### A strict fake for tests
+
+`fakeApi({ operations, definitions, baseUrl, auth, answers, hosts })` serves the generated manifest and definitions as
+a `fetch` for a CLI's tests. It refuses, with a 4xx and a line in `refusals`, an unknown path or method, an unknown or
+mistyped query parameter (a repeated one is a list), a missing required one, a body field the schema lacks (JSON, a
+form or multipart), and a call without the `auth` header, unless the operation's `security` is `[]`. An operation
+answers a sample built from its response schema, or what `answers` gives for it, checked against that schema: an
+answer off the schema throws. A string, bytes or a stream is sent as it is, for a file. `hosts` answers the other
+hosts a link points at (`downloader.disk.yandex.ru`, `*.disk.yandex.net`), and refuses a call there over another
+scheme or with the `auth` header. A CLI writes only its scenarios. `looseObjects` lets unknown fields through, for a
+source whose subtypes the definitions cannot tell apart.
 
 ### Provenance
 
 The coverage page lists every operation, with its call, command, effect and how far its request body can be trusted
 (`contract` or `example`). Under it, **Effects not taken from the HTTP method** lists each operation `readingPosts` or
-an override changed, with the reason; **Sign-in** gives the `auth` reason; and **Permission keys** lists each key from
-`permissions` and when it applies. `patchSpec`'s list of changes goes into the CLI's own provenance. A reviewer diffs
+an override changed, with the reason; **Pagination** lists each read that pages, and whether it was detected or set by
+an override; **Sign-in** gives the `auth` reason; and **Permission keys** lists each key from `permissions` and when
+it applies. `patchSpec`'s list of changes goes into the CLI's own provenance. A reviewer diffs
 the coverage page after a spec sync.
 
 ### Limits
@@ -114,7 +135,12 @@ the coverage page after a spec sync.
   `securitySchemes` today. Until it does, a CLI adds the keys to its own `commandPermissions`, as notion-cli's
   `src/config.ts` does.
 - One spec per run. Merging several specs (HubSpot publishes 127) is the CLI's job until the generator does it.
-- No pagination description and no generated fake server yet: a CLI writes both by hand.
+- Pagination is found only from the names above; a service with its own names needs an override per operation.
+  cli-core reads every page by the manifest once its executor does.
+- Pagination is not found in an answer that is a union.
+- The fake checks shapes, not behaviour: it does not page, filter or keep state. A scenario that needs that writes
+  it in `answers`. It checks neither header parameters nor RPC operations. A sample follows enums and limits but not
+  patterns, so a link the CLI follows (Yandex Disk's `href`) comes from a scenario's answer.
 - A `$ref` to a shared response in `components/responses` is passed through without a shape; a `$ref` security
   scheme stops generation.
 - A Swagger 1.2 listing that embeds its operations, and Postman, RAML or GraphQL sources, are not read.

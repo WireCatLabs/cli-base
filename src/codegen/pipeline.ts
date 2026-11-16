@@ -8,11 +8,14 @@ import type {
   GeneratedArtifact,
   OperationPermission,
   Override,
+  PageParameter,
+  Pagination,
   SchemaNode,
   SecurityRequirement,
   SecurityScheme,
 } from "./model.js"
 import { identifier, kebab } from "./names.js"
+import { answerPaths, detectPagination, requestParameters } from "./pagination.js"
 
 export class CodegenError extends Error {
   constructor(readonly problems: readonly string[]) {
@@ -112,6 +115,45 @@ export const applyNames = (model: ApiModel, names: CommandNames): ApiModel => {
       )
     }
     return { ...operation, command }
+  })
+  if (problems.length > 0) throw new CodegenError(problems)
+  return { ...model, operations }
+}
+
+/** Each read's pagination, detected unless an override set it, or said with `null` that the read does not page. */
+export const applyPagination = (
+  model: ApiModel,
+  overrides: Readonly<Record<string, { pagination?: Pagination | null; reason: string }>>,
+  detect: boolean,
+): ApiModel => {
+  const schemas = new Map(model.schemas.map((schema) => [schema.id, schema]))
+  const problems: string[] = []
+  const operations = model.operations.map((operation) => {
+    const override = overrides[operation.id]
+    if (override?.pagination === null) return operation
+    if (override?.pagination) {
+      const at = `override "${operation.id}": pagination`
+      if (operation.effect !== "read") problems.push(`${at} on an operation that is not a read`)
+      const request = requestParameters(operation, schemas)
+      const answer = answerPaths(operation, schemas)
+      const { style: _, ...fields } = override.pagination as Record<string, unknown>
+      for (const [field, value] of Object.entries(fields)) {
+        if (typeof value === "string") {
+          // An answer without a schema has nothing to check the path against.
+          if (answer.size > 0 && !answer.has(value))
+            problems.push(`${at} reads ${field} from "${value}", which the answer lacks`)
+          continue
+        }
+        const parameter = value as PageParameter | null
+        if (!parameter || typeof parameter !== "object" || typeof parameter.name !== "string")
+          problems.push(`${at}: ${field} must name a parameter`)
+        else if (!request.some((one) => one.in === parameter.in && one.name === parameter.name))
+          problems.push(`${at} names ${parameter.in} "${parameter.name}", which the operation does not take`)
+      }
+      return { ...operation, pagination: override.pagination, paginationSource: `override: ${override.reason}` }
+    }
+    const found = detect ? detectPagination(operation, schemas) : undefined
+    return found ? { ...operation, pagination: found, paginationSource: "detected" } : operation
   })
   if (problems.length > 0) throw new CodegenError(problems)
   return { ...model, operations }
@@ -379,6 +421,8 @@ export interface GenerateOptions {
   overrides?: Readonly<Record<string, Override>>
   /** Treat a POST to a `…/search` or `…/query` path as a read; an override still wins. */
   readingPosts?: boolean
+  /** Detect how each read pages; an override's `pagination` wins either way. */
+  pagination?: boolean
   names?: CommandNames
   permissions?: PermissionRule
   auth?: AuthOverride
@@ -397,7 +441,8 @@ export const generate = (
   options: GenerateOptions,
 ): GeneratedArtifact[] => {
   const overridden = applyOverrides(options.readingPosts ? applyReadingPosts(model) : model, options.overrides ?? {})
-  const named = options.names ? applyNames(overridden, options.names) : overridden
+  const paged = applyPagination(overridden, options.overrides ?? {}, options.pagination === true)
+  const named = options.names ? applyNames(paged, options.names) : paged
   const authed = options.auth ? applyAuth(named, options.auth) : named
   // After the overrides: an operation an override calls destructive is a delete too.
   const prepared = options.permissions ? applyPermissionRule(authed, options.permissions) : authed
