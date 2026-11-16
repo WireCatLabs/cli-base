@@ -220,7 +220,10 @@ class Adapter {
     }
     // A union passes when any member matches, which is anyOf; oneOf's "exactly one" is never checked.
     const keyword = Array.isArray(source.oneOf) ? "oneOf" : Array.isArray(source.anyOf) ? "anyOf" : undefined
-    if (keyword) return this.#union(source[keyword] as unknown[], keyword, common, where)
+    if (keyword) {
+      if (Array.isArray(source.type) && source.type.includes("null")) common.nullable = true
+      return this.#union(source[keyword] as unknown[], keyword, common, where)
+    }
 
     const type = this.#type(source, common, where)
     const values = source.const !== undefined ? [source.const] : Array.isArray(source.enum) ? source.enum : undefined
@@ -344,7 +347,8 @@ class Adapter {
     const rest = members.filter((member) => member !== union.member)
     // Alone, the allOf only describes a reference, which keeps its name.
     if (rest.length === 0) return undefined
-    const alternatives = union.members.map((one) => (isNullOnly(one) ? one : { allOf: [...rest, one] }))
+    // Null would also have to pass the rest, which the model only merges as objects: that alternative is empty.
+    const alternatives = union.members.filter((one) => !isNullOnly(one)).map((one) => ({ allOf: [...rest, one] }))
     if (union.ref) this.#distributing.add(union.ref)
     try {
       return this.#union(alternatives, "union", common, where)

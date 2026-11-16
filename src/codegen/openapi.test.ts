@@ -248,11 +248,51 @@ describe("adaptOpenApi reads the OpenAPI 3.1 shapes Notion's file uses", () => {
       ],
     }
     expect(schema(input, "databasePropertyConfigResponse")?.schema).toEqual(distributed)
-    expect(schema(input, "viaReference")?.schema).toEqual({
-      ...distributed,
-      nullable: true,
-      description: "One property.",
+    expect(schema(input, "viaReference")?.schema).toEqual({ ...distributed, description: "One property." })
+  })
+
+  it("leaves null out of an allOf over a nullable union, since null cannot pass the object base", () => {
+    const input = document({
+      Base: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+      A: { type: "object", properties: { a: { type: "string" } } },
+      B: { type: "object", properties: { b: { type: "string" } } },
+      U: { anyOf: [{ $ref: "#/components/schemas/A" }, { type: "null" }] },
+      C: { allOf: [{ $ref: "#/components/schemas/Base" }, { $ref: "#/components/schemas/U" }] },
+      Nested: {
+        allOf: [
+          { $ref: "#/components/schemas/Base" },
+          {
+            anyOf: [
+              { anyOf: [{ $ref: "#/components/schemas/A" }, { type: "null" }] },
+              { $ref: "#/components/schemas/B" },
+            ],
+          },
+        ],
+      },
     })
+    const base = { type: "ref", ref: "Base" }
+    const withA = { type: "allOf", of: [base, { type: "ref", ref: "A" }] }
+    expect(schema(input, "C")?.schema).toEqual({ type: "union", of: [withA] })
+    expect(schema(input, "Nested")?.schema).toEqual({
+      type: "union",
+      of: [
+        { type: "union", of: [withA] },
+        { type: "allOf", of: [base, { type: "ref", ref: "B" }] },
+      ],
+    })
+  })
+
+  it("keeps a union nullable when its type list includes null", () => {
+    const input = document({
+      parent: {
+        type: ["object", "null"],
+        anyOf: [
+          { type: "object", properties: { page_id: { type: "string" } }, required: ["page_id"] },
+          { type: "object", properties: { block_id: { type: "string" } }, required: ["block_id"] },
+        ],
+      },
+    })
+    expect(schema(input, "parent")?.schema).toMatchObject({ type: "union", nullable: true })
   })
 
   it("keeps a lone allOf over a union a described reference", () => {
