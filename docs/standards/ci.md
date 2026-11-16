@@ -179,6 +179,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
   | 02:45 | drive-cli |
   | 02:48 | asterisk-cli |
   | 02:52 | cli-testing |
+  | 02:55 | amo-cli |
   | 02:59 | max-cli |
   | 03:02 | cli-template |
   | 03:06 | tg-cli |
