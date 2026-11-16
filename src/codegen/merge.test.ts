@@ -116,6 +116,23 @@ describe("mergeOpenApi", () => {
     expect(document.servers).toEqual([{ url: "https://api.example.com" }])
   })
 
+  it("tells a field named description from a description, and keeps a source's document-wide sign-in", () => {
+    const withField = { type: "object", properties: { next: { type: "string" }, description: { type: "string" } } }
+    const own = { ...spec("deals", withField), security: [{ oauth2: ["deals.read"] }] }
+    const { document, report } = mergeOpenApi(
+      [
+        { name: "contacts", document: spec("contacts", paging) },
+        { name: "deals", document: own },
+      ],
+      { title: "CRM", version: "v3" },
+    )
+    expect(report.renamed).toContain("schemas/Paging → DealsPaging (deals)")
+    expect(document.security).toBeUndefined()
+    const operations = adaptOpenApi(document).operations
+    expect(operations.find((one) => one.id === "deals-list")?.security).toEqual([{ oauth2: ["deals.read"] }])
+    expect(operations.find((one) => one.id === "contacts-list")?.security).toBeUndefined()
+  })
+
   it("refuses a shared path with other operations, a repeated operation id, mixed versions and a non-OpenAPI source", () => {
     const other = {
       "/crm/v4/associations/{from}/{to}": {

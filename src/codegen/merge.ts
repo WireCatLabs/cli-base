@@ -47,14 +47,43 @@ const METHODS = ["get", "put", "post", "delete", "options", "head", "patch", "tr
 /** What two copies of one component may differ in and still be one. */
 const TEXT = new Set(["description", "summary", "example", "examples", "title", "externalDocs"])
 
-const shape = (node: unknown): unknown =>
+/** Under these keys a `description` or `title` is a field's name, not text. */
+const NAMED = new Set(["properties", "patternProperties"])
+
+const shape = (node: unknown, named = false): unknown =>
   Array.isArray(node)
-    ? node.map(shape)
+    ? node.map((item) => shape(item))
     : isObject(node)
-      ? Object.fromEntries(Object.entries(node).flatMap(([key, value]) => (TEXT.has(key) ? [] : [[key, shape(value)]])))
+      ? Object.fromEntries(
+          Object.entries(node).flatMap(([key, value]) =>
+            !named && TEXT.has(key) ? [] : [[key, shape(value, !named && NAMED.has(key))]],
+          ),
+        )
       : node
 
 const sameShape = (one: unknown, other: unknown) => isDeepStrictEqual(shape(one), shape(other))
+
+/** A source's document-wide sign-in would be lost in the merged document, so its operations carry it. */
+const withOwnSecurity = (document: Json): Json => {
+  if (!Array.isArray(document.security) || !isObject(document.paths)) return document
+  const { security, ...rest } = document
+  const paths = Object.fromEntries(
+    Object.entries(document.paths).map(([path, item]) => [
+      path,
+      isObject(item)
+        ? Object.fromEntries(
+            Object.entries(item).map(([method, operation]) => [
+              method,
+              METHODS.includes(method) && isObject(operation) && operation.security === undefined
+                ? { ...operation, security }
+                : operation,
+            ]),
+          )
+        : item,
+    ]),
+  )
+  return { ...rest, paths }
+}
 
 const pascal = (name: string) =>
   name
@@ -128,7 +157,7 @@ export const mergeOpenApi = (
         }
       }
     }
-    const rewritten = rewriteRefs(document, renames) as Json
+    const rewritten = rewriteRefs(withOwnSecurity(document), renames) as Json
     const rewrittenComponents = isObject(rewritten.components) ? rewritten.components : {}
 
     for (const [section, entries] of Object.entries(rewrittenComponents)) {
