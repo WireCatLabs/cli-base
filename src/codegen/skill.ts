@@ -1,6 +1,6 @@
 /**
  * The API part of a CLI's agent skill: `references/api.md`, a short index, and `references/api/api-<group>.md`, one
- * file per tag of the spec, so an agent loads only the group it needs (`<cli> skill show api-<group>`). Each command,
+ * file per first tag of the operations, so an agent loads only the group it needs (`<cli> skill show api-<group>`). Each command,
  * its usage, arguments and flags come from the built program's command tree, as `--help` prints them; the manifest
  * adds only what the API says: the HTTP call, the effect, sign-in scopes, permission keys and paging.
  */
@@ -12,8 +12,15 @@ import { kebab } from "./names.js"
 import { CodegenError } from "./pipeline.js"
 
 export interface ApiSkillOptions {
+  /** The command word `skill show` runs under: `notion`. */
+  cli: string
   /** The skill's folder, beside its SKILL.md: `skills/notion-cli`. */
   folder: string
+  /**
+   * The files already in that folder, relative to it, as `skillFiles` lists them: `skill show` finds a part by its
+   * base name, so a hand-written `api-pages.md` elsewhere would hide the generated one.
+   */
+  files: readonly string[]
   /** The service, for the headings: `Notion`. */
   service: string
   operations: readonly ManifestOperation[]
@@ -27,37 +34,46 @@ export interface ApiSkillOptions {
 export const API_SKILL_INDEX = "references/api.md"
 export const API_SKILL_GROUPS = "references/api"
 
-/** Vendor text becomes instructions an agent follows: its first line only, with nothing that changes the Markdown. */
+const firstLine = (value: string | undefined) => (value ?? "").split(/\r\n|[\r\n\u2028\u2029]/)[0]?.trim() ?? ""
+
+/**
+ * Vendor text becomes instructions an agent follows: its first line only, HTML and every Markdown mark escaped, and
+ * always after a label, so no heading, list, fence or link can start it.
+ */
 const text = (value: string | undefined): string =>
-  (value ?? "")
-    .split("\n")[0]
-    ?.trim()
+  firstLine(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll("|", "\\|")
-    .replaceAll("`", "'") ?? ""
+    .replace(/[\\`*_[\]~|]/g, "\\$&")
 
-const code = (value: string) => `\`${value.replaceAll("`", "'").replaceAll("|", "\\|")}\``
+/** A code span; in a table cell `|` still ends the cell, so it is escaped there. */
+const code = (value: string, cell = false) => {
+  const plain = value.replace(/[\r\n\u2028\u2029]+/g, " ").replaceAll("`", "'")
+  return `\`${cell ? plain.replaceAll("|", "\\|") : plain}\``
+}
 
 const pages = (pagination: Pagination): string => {
   const sent = (parameter: { in: string; name: string }) => `${code(parameter.name)} (${parameter.in})`
   const limit = "limit" in pagination && pagination.limit ? `; page size in ${sent(pagination.limit)}` : ""
   const items = pagination.items ? `; items in ${code(pagination.items)}` : ""
+  const total = "total" in pagination && pagination.total ? `; the count of all in ${code(pagination.total)}` : ""
   switch (pagination.style) {
-    case "cursor":
-      return `cursor: send ${sent(pagination.cursor)}, read the next one from ${code(pagination.next)}${items}${limit}`
+    case "cursor": {
+      const more = pagination.hasMore ? `; ${code(pagination.hasMore)} is false on the last page` : ""
+      return `cursor: send ${sent(pagination.cursor)}, read the next one from ${code(pagination.next)}${items}${more}${limit}`
+    }
     case "offset":
-      return `offset: send ${sent(pagination.offset)}${items}${limit}`
+      return `offset: send ${sent(pagination.offset)}, raised by the items read so far${items}${total}${limit}`
     case "page":
-      return `page number: send ${sent(pagination.page)}${items}${limit}`
+      return `page number: send ${sent(pagination.page)}, one more for each page${items}${total}${limit}`
     case "link":
       return `the answer's ${code(pagination.next)} is the next page's address${items}`
   }
 }
 
 const flagRow = (option: OptionInfo) =>
-  `| ${code(option.flags)} | ${option.mandatory ? "yes" : "no"} | ${text(option.description)} |`
+  `| ${code(option.flags, true)} | ${option.mandatory ? "yes" : "no"} | ${text(option.description)} |`
 
 const section = (operation: ManifestOperation, command: CommandInfo): string[] => {
   const call =
@@ -70,8 +86,7 @@ const section = (operation: ManifestOperation, command: CommandInfo): string[] =
   const lines = [
     `## ${code(command.usage)}`,
     "",
-    text(operation.summary ?? command.summary ?? command.description) || operation.id,
-    "",
+    `- What: ${text(operation.summary ?? command.summary ?? command.description) || operation.id}`,
     `- Call: ${code(call)}, effect: ${operation.effect}${operation.deprecated ? ", deprecated" : ""}`,
   ]
   if (scopes.length > 0) lines.push(`- Sign-in: ${scopes.map(text).join("; or ")}`)
@@ -83,7 +98,9 @@ const section = (operation: ManifestOperation, command: CommandInfo): string[] =
   if (command.arguments.length > 0) {
     lines.push("", "| Argument | Required | What |", "|---|---|---|")
     for (const argument of command.arguments)
-      lines.push(`| ${code(argument.name)} | ${argument.required ? "yes" : "no"} | ${text(argument.description)} |`)
+      lines.push(
+        `| ${code(argument.name, true)} | ${argument.required ? "yes" : "no"} | ${text(argument.description)} |`,
+      )
   }
   if (command.options.length > 0) {
     lines.push("", "| Flag | Required | What |", "|---|---|---|")
@@ -97,25 +114,40 @@ const section = (operation: ManifestOperation, command: CommandInfo): string[] =
  * never taken from anywhere but the command tree. Sorted, and with no version or date, so `generate:check` holds.
  */
 export const apiSkillFiles = (options: ApiSkillOptions): GeneratedArtifact[] => {
-  const generated = flatten(options.commands).filter((command) => command.api_operation)
-  const byOperation = new Map(generated.map((command) => [command.api_operation, command]))
+  const generated = flatten(options.commands).filter(
+    (command) => command.origin === "generated" && command.api_operation,
+  )
+  const byOperation = new Map<string, CommandInfo>()
+  const problems: string[] = []
+  for (const command of generated) {
+    const id = command.api_operation ?? ""
+    const earlier = byOperation.get(id)
+    if (earlier) problems.push(`${earlier.path.join(" ")} and ${command.path.join(" ")} both name operation ${id}`)
+    byOperation.set(id, command)
+  }
   const ids = new Set(options.operations.map((operation) => operation.id))
-  const problems = [
-    ...(options.skill.includes(API_SKILL_INDEX) ? [] : [`SKILL.md does not link ${API_SKILL_INDEX}`]),
-    ...options.operations
-      .filter((operation) => !byOperation.has(operation.id))
-      .map((operation) => `operation ${operation.id} has no command in the program`),
-    ...generated
-      .filter((command) => !ids.has(command.api_operation ?? ""))
-      .map((command) => `${command.path.join(" ")} names operation ${command.api_operation}, not in the manifest`),
-  ]
+  const linked = /\]\(\s*(\.\/)?references\/api\.md(#[^)]*)?\s*\)/.test(options.skill.replace(/<!--[\s\S]*?-->/g, ""))
+  const hidden = options.files.filter((file) => {
+    const base = file.split("/").at(-1)?.replace(/\.md$/, "") ?? ""
+    const ours = file === API_SKILL_INDEX || file.startsWith(`${API_SKILL_GROUPS}/`)
+    return !ours && file.endsWith(".md") && (base === "api" || base.startsWith("api-"))
+  })
+  if (!linked) problems.push(`SKILL.md does not link ${API_SKILL_INDEX}`)
+  for (const file of hidden) problems.push(`${file} would hide a generated part of the same name in skill show`)
+  for (const operation of options.operations)
+    if (!byOperation.has(operation.id)) problems.push(`operation ${operation.id} has no command in the program`)
+  for (const command of generated)
+    if (!ids.has(command.api_operation ?? ""))
+      problems.push(`${command.path.join(" ")} names operation ${command.api_operation}, not in the manifest`)
 
   const groups = new Map<string, { tag: string; operations: ManifestOperation[] }>()
   for (const operation of options.operations) {
-    const tag = operation.tags[0] ?? "Other"
-    const name = kebab(tag) || "other"
+    const tag = operation.tags[0] ?? "untagged"
+    const name = kebab(tag)
     const group = groups.get(name)
-    if (group && group.tag !== tag) problems.push(`tags "${group.tag}" and "${tag}" both make the file api-${name}.md`)
+    if (!name) problems.push(`tag "${tag}" of ${operation.id} has no Latin letter or digit for a file name`)
+    else if (group && group.tag !== tag)
+      problems.push(`tags "${group.tag}" and "${tag}" both make the file api-${name}.md`)
     else if (group) group.operations.push(operation)
     else groups.set(name, { tag, operations: [operation] })
   }
@@ -125,7 +157,7 @@ export const apiSkillFiles = (options: ApiSkillOptions): GeneratedArtifact[] => 
   const parents = flatten(options.commands).filter((command) => parentPaths.has(command.path.join(" ")))
   const names = [...groups.keys()].sort()
   const commandOf = (operation: ManifestOperation) => byOperation.get(operation.id) as CommandInfo
-  const program = generated[0]?.usage.split(" ")[0] ?? ""
+  const program = options.cli
 
   const index = [
     `<!-- ${options.banner} -->`,
@@ -151,14 +183,18 @@ export const apiSkillFiles = (options: ApiSkillOptions): GeneratedArtifact[] => 
     const { tag, operations } = groups.get(name) as { tag: string; operations: ManifestOperation[] }
     const count = (effect: string) => operations.filter((operation) => operation.effect === effect).length
     index.push(
-      `| ${text(tag)} | ${code(`${program} skill show api-${name}`)} | ${operations.length} | ${count("read")} | ` +
+      `| ${text(tag)} | ${code(`${program} skill show api-${name}`, true)} | ${operations.length} | ${count("read")} | ` +
         `${count("write")} | ${count("destructive")} |`,
     )
   }
 
   const files = names.map((name) => {
     const { tag, operations } = groups.get(name) as { tag: string; operations: ManifestOperation[] }
-    const sorted = [...operations].sort((one, other) => commandOf(one).usage.localeCompare(commandOf(other).usage))
+    const usage = (operation: ManifestOperation) => commandOf(operation).usage
+    // Code-unit order: a locale's collation would differ between machines and fail generate:check.
+    const sorted = [...operations].sort((one, other) =>
+      usage(one) < usage(other) ? -1 : usage(one) > usage(other) ? 1 : 0,
+    )
     return {
       path: `${options.folder}/${API_SKILL_GROUPS}/api-${name}.md`,
       content: [

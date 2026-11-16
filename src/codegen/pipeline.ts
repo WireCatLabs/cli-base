@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { dirname, extname, join } from "node:path"
+import { dirname, extname, join, posix } from "node:path"
 import type {
   ApiModel,
   ApiOperation,
@@ -480,11 +480,12 @@ export const writeArtifacts = (artifacts: readonly GeneratedArtifact[], options:
     mkdirSync(dirname(target), { recursive: true })
     writeFileSync(target, content)
   }
-  const generated = new Set(artifacts.map((artifact) => artifact.path))
-  for (const folder of options.owns ?? []) {
+  const generated = new Set(artifacts.map((artifact) => posix.normalize(artifact.path)))
+  for (const owned of options.owns ?? []) {
+    const folder = posix.normalize(owned).replace(/\/+$/, "")
     if (!existsSync(join(options.root, folder))) continue
     for (const entry of readdirSync(join(options.root, folder), { withFileTypes: true })) {
-      const path = `${folder}/${entry.name}`
+      const path = posix.join(folder, entry.name)
       if (!entry.isFile() || generated.has(path)) continue
       stale.push(path)
       if (!options.check) rmSync(join(options.root, path))

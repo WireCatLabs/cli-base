@@ -142,21 +142,27 @@ source whose subtypes the definitions cannot tell apart.
 
 ### The API part of the agent skill
 
-`apiSkillFiles({ folder, service, skill, operations, commands, banner })` writes the API part of the CLI's skill, in
-the shape of [openapi-to-skills](https://github.com/neutree-ai/openapi-to-skills): `references/api.md`, a short index
-of the groups with their effects, and `references/api/api-<group>.md`, one file per tag of the spec. An agent reads
+`apiSkillFiles({ cli, folder, files, service, skill, operations, commands, banner })` writes the API part of the
+CLI's skill, in the shape of [openapi-to-skills](https://github.com/neutree-ai/openapi-to-skills): `references/api.md`,
+a short index of the groups with their effects, and `references/api/api-<group>.md`, one file per group. An
+operation's group is its first tag; one without a tag is in `api-untagged.md`. A tag with no Latin letter or digit
+cannot name a file and stops the generation. An agent reads
 the index, then only the group it needs, with `<cli> skill show api-<group>`. The `skill` command already ships and
 shows every file beside `SKILL.md`; nothing else is needed.
 
 - `commands` is `describeProgram(createProgram())` from the built program, made with the CLI's own copy of cli-base.
   Each command's usage, arguments and flags come from there, as `--help` prints them; a flag is never made up from
   the spec. An operation and its command are matched by the command's `api_operation`. An operation without a
-  command, or a generated command whose operation is not in the manifest, stops the generation.
+  command, a generated command whose operation is not in the manifest, and two commands for one operation stop the
+  generation.
 - The manifest adds what only the API knows: the HTTP call, the effect, sign-in scopes, permission keys, paging
   (named by the API's parameters and answer fields) and the request body's schema. Vendor text is cut to its first
-  line and escaped, since an installed skill is instructions an agent follows.
+  line, its HTML and Markdown marks are escaped, and it always follows a label, since an installed skill is
+  instructions an agent follows.
 - There are no examples: the manifest has none, and the generated commands carry none.
 - `skill` is the text of `SKILL.md`, which must link `references/api.md`, or the agent never finds the files.
+  `files` is `skillFiles(<SKILL.md URL>)`: `skill show` finds a part by its base name, so a hand-written `api.md` or
+  `api-<name>.md` elsewhere in the folder, which would hide a generated one, stops the generation.
 - Run it after the build, beside the commands page, and write it with
   `writeArtifacts(files, { root, check, owns: ["skills/<cli>/references/api"] })`: `owns` makes a file of a group
   that left the spec stale, so `generate:check` catches it, and `pnpm generate` removes it. The output holds no

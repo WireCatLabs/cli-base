@@ -16,7 +16,7 @@ const operation = (id: string, tag: string, extra: Partial<ManifestOperation> = 
 
 const OPERATIONS = [
   operation("list-pages", "Pages", {
-    summary: "List pages | with a <b>pipe</b>\nand a second line",
+    summary: "List pages | with a <b>pipe</b>, a [link](http://x) and a \\| backslash\r# a heading",
     security: [{ oauth2: ["pages.read"] }],
     pagination: {
       style: "cursor",
@@ -36,8 +36,9 @@ const OPERATIONS = [
 const program = (ids: readonly string[]) => {
   const root = new Command("acme")
   const api = new Command("api").option("--store-token <profile>", "keep a returned token in the keyring")
-  for (const id of ids) {
-    const command = annotate(new Command(id), { api_operation: id, origin: "generated" }).description(`${id} — read`)
+  for (const entry of ids) {
+    const [name = entry, id = entry] = entry.split("=")
+    const command = annotate(new Command(name), { api_operation: id, origin: "generated" }).description(`${id} — read`)
     if (id === "delete-page") command.addOption(new Option("--page-id <value>", "page_id").makeOptionMandatory())
     if (id === "list-pages") command.option("--start-cursor <value>", "start_cursor")
     api.addCommand(command)
@@ -47,9 +48,16 @@ const program = (ids: readonly string[]) => {
 
 const SKILL = "# acme\n\nThe raw API: [references/api.md](references/api.md).\n"
 
-const files = (operations = OPERATIONS, ids = OPERATIONS.map((one) => one.id), skill = SKILL) =>
+const generate = (
+  operations = OPERATIONS,
+  ids = OPERATIONS.map((one) => one.id),
+  skill = SKILL,
+  files: readonly string[] = ["SKILL.md", "references/tasks.md"],
+) =>
   apiSkillFiles({
+    cli: "acme",
     folder: "skills/acme-cli",
+    files,
     service: "Acme",
     skill,
     operations,
@@ -59,7 +67,7 @@ const files = (operations = OPERATIONS, ids = OPERATIONS.map((one) => one.id), s
 
 describe("apiSkillFiles", () => {
   it("writes an index and one file per tag, flags from the command tree, the call and paging from the manifest", () => {
-    const written = files()
+    const written = generate()
     expect(written.map((file) => file.path)).toEqual([
       "skills/acme-cli/references/api.md",
       "skills/acme-cli/references/api/api-pages.md",
@@ -76,48 +84,50 @@ describe("apiSkillFiles", () => {
         "",
         "## `acme api delete-page [options]`",
         "",
-        "delete-page summary",
-        "",
+        "- What: delete-page summary",
         "- Call: `DELETE /v1/pages/{page_id}`, effect: destructive",
         "- Permission keys: `pages.delete`",
         "",
         "| Flag | Required | What |",
         "|---|---|---|",
-        "| `--page-id <value>` | yes | page_id |",
+        "| `--page-id <value>` | yes | page\\_id |",
         "",
         "## `acme api list-pages [options]`",
         "",
-        "List pages \\| with a &lt;b&gt;pipe&lt;/b&gt;",
-        "",
+        "- What: List pages \\| with a &lt;b&gt;pipe&lt;/b&gt;, a \\[link\\](http://x) and a \\\\\\| backslash",
         "- Call: `GET /v1/list-pages`, effect: read",
         "- Sign-in: oauth2 (pages.read)",
         "- Pages: cursor: send `start_cursor` (query), read the next one from `next_cursor`; items in `results`",
         "",
         "| Flag | Required | What |",
         "|---|---|---|",
-        "| `--start-cursor <value>` | no | start_cursor |",
+        "| `--start-cursor <value>` | no | start\\_cursor |",
         "",
       ].join("\n"),
     )
-    expect(files()).toEqual(written)
+    expect(generate()).toEqual(written)
   })
 
   it("stops on a SKILL.md without the link, an operation without a command, a command naming no operation, and two tags with one file name", () => {
     const run = () =>
-      files(
-        [...OPERATIONS, operation("get-team", "users")],
-        ["list-pages", "delete-page", "get-team", "get-ghost"],
-        "# acme\n",
+      generate(
+        [...OPERATIONS, operation("get-team", "users"), operation("get-ru", "Сделки")],
+        ["list-pages", "delete-page", "get-team", "get-ghost", "get-ru", "ru-again=get-ru"],
+        "# acme\n\n<!-- [api](references/api.md) -->\n",
+        ["SKILL.md", "references/api-pages.md"],
       )
     expect(run).toThrow(CodegenError)
     try {
       run()
     } catch (error) {
       expect((error as CodegenError).problems).toEqual([
+        "api get-ru and api ru-again both name operation get-ru",
         "SKILL.md does not link references/api.md",
+        "references/api-pages.md would hide a generated part of the same name in skill show",
         "operation get-self has no command in the program",
         "api get-ghost names operation get-ghost, not in the manifest",
         'tags "Users" and "users" both make the file api-users.md',
+        'tag "Сделки" of get-ru has no Latin letter or digit for a file name',
       ])
     }
   })
