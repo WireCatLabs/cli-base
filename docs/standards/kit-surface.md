@@ -140,6 +140,28 @@ hosts a link points at (`downloader.disk.yandex.ru`, `*.disk.yandex.net`), and r
 scheme or with the `auth` header. A CLI writes only its scenarios. `looseObjects` lets unknown fields through, for a
 source whose subtypes the definitions cannot tell apart.
 
+### The API part of the agent skill
+
+`apiSkillFiles({ folder, service, skill, operations, commands, banner })` writes the API part of the CLI's skill, in
+the shape of [openapi-to-skills](https://github.com/neutree-ai/openapi-to-skills): `references/api.md`, a short index
+of the groups with their effects, and `references/api/api-<group>.md`, one file per tag of the spec. An agent reads
+the index, then only the group it needs, with `<cli> skill show api-<group>`. The `skill` command already ships and
+shows every file beside `SKILL.md`; nothing else is needed.
+
+- `commands` is `describeProgram(createProgram())` from the built program, made with the CLI's own copy of cli-base.
+  Each command's usage, arguments and flags come from there, as `--help` prints them; a flag is never made up from
+  the spec. An operation and its command are matched by the command's `api_operation`. An operation without a
+  command, or a generated command whose operation is not in the manifest, stops the generation.
+- The manifest adds what only the API knows: the HTTP call, the effect, sign-in scopes, permission keys, paging
+  (named by the API's parameters and answer fields) and the request body's schema. Vendor text is cut to its first
+  line and escaped, since an installed skill is instructions an agent follows.
+- There are no examples: the manifest has none, and the generated commands carry none.
+- `skill` is the text of `SKILL.md`, which must link `references/api.md`, or the agent never finds the files.
+- Run it after the build, beside the commands page, and write it with
+  `writeArtifacts(files, { root, check, owns: ["skills/<cli>/references/api"] })`: `owns` makes a file of a group
+  that left the spec stale, so `generate:check` catches it, and `pnpm generate` removes it. The output holds no
+  version or date, so a version bump leaves it current.
+
 ### Provenance
 
 The coverage page lists every operation, with its call, command, effect and how far its request body can be trusted

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, extname, join } from "node:path"
 import type {
   ApiModel,
@@ -460,6 +460,11 @@ export interface WriteOptions {
   check?: boolean
   /** The consumer's formatter, so a check compares what would actually be committed. */
   format?: (path: string, content: string) => string
+  /**
+   * Folders, relative to `root`, that hold only generated files: a file there that was not generated this time (a
+   * group that left the spec) is stale too, and removed when writing.
+   */
+  owns?: readonly string[]
 }
 
 /** Paths whose committed content differs from what was generated — written, or with `check`, only reported. */
@@ -474,6 +479,16 @@ export const writeArtifacts = (artifacts: readonly GeneratedArtifact[], options:
     if (options.check) continue
     mkdirSync(dirname(target), { recursive: true })
     writeFileSync(target, content)
+  }
+  const generated = new Set(artifacts.map((artifact) => artifact.path))
+  for (const folder of options.owns ?? []) {
+    if (!existsSync(join(options.root, folder))) continue
+    for (const entry of readdirSync(join(options.root, folder), { withFileTypes: true })) {
+      const path = `${folder}/${entry.name}`
+      if (!entry.isFile() || generated.has(path)) continue
+      stale.push(path)
+      if (!options.check) rmSync(join(options.root, path))
+    }
   }
   return stale
 }
