@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`same-path-contract` compares a path only among CLIs whose groups share a member.** It joined the members of every
+  group that covers the root, so the `crm` group (b24 and amo, covering `search`, `store` and `account`) compared amo
+  with tg, max and the "all" members, which share no group with it: amo's `audit:commands` failed on 20 new findings.
+  Groups that share a CLI (messengers, all, mail-shared and gcal-shared share tg and max) are still compared together,
+  so their findings do not change.
+
 ## 0.104.0 — 16.11.2026
 
 ### Added
