@@ -8,6 +8,29 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.109.0 — 16.11.2026
+
+### Added
+
+- **`apiSkillFiles` writes the API part of a CLI's agent skill from the manifest and the command tree**: an index,
+  `references/api.md`, and one file per tag, `references/api/api-<group>.md`, which an agent reads with
+  `<cli> skill show api-<group>`. Usage, arguments and flags come only from `describeProgram`, matched to each
+  operation by `api_operation`; a mismatch either way, two commands for one operation, two tags with one file name, a
+  hand-written part that would hide a generated one, or a `SKILL.md` that does not link the index stops the
+  generation. Vendor text is cut to one line and escaped. The manifest adds the call, effect, sign-in scopes, permission keys, paging
+  and body schema. No examples are made up. `writeArtifacts` takes `owns`, folders that hold only generated files, so a
+  file no longer generated is stale under `--check` and removed when writing.
+  [Kit surface](docs/standards/kit-surface.md#the-api-part-of-the-agent-skill)
+
+### Changed — may break callers
+
+- **`cli-dev ready` needs every contract of the CLI's category, not one.** A contract the CLI does not run goes in
+  `lint/contract-exceptions.json` with its reason (`[{ "contract": "crmSyncContract", "reason": "…" }]`); the row
+  then shows partially with the reason, and the exit code does not wait for it. An exception without a reason, for
+  another category's contract, for one that runs, listed twice, or for every contract is not verified, as is a file
+  that is not a JSON list. A CLI that ran one contract of several and was verified under 0.108.0 now exits 1 until it
+  runs or excepts the rest. [New CLI](docs/standards/new-cli.md#done-when)
+
 ## 0.108.0 — 16.11.2026
 
 ### Added
