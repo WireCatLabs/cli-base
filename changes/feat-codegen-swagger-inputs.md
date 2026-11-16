@@ -23,6 +23,9 @@
   `<group>.share` for the operations that make a public link. Each lands in the manifest as the operation's
   `permissions` and on the coverage page. cli-core does not check them yet; until it does, a CLI adds them to its
   `commandPermissions`, as notion-cli does.
+- **`takenMinutes(ciPage?)` from `@wirecat/cli-base/standards` reads WC-CI-9's table of monthly minutes**, from the
+  copy of `docs/standards/ci.md` this package ships when given no text, so cli-template's `new` stops keeping its own
+  parser. [New CLI](../docs/standards/new-cli.md) steps 3 and 4 now say that `new` sets the minute itself.
 - **The [kit surface](../docs/standards/kit-surface.md#the-api-generator) page describes the generator**: its inputs,
   the corrections a CLI passes, what the coverage page records, and its limits.
 

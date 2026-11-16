@@ -160,8 +160,9 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
 - **Why:** a repository with no merges for weeks still meets new advisories, new runner images and expired pins.
 - **Enforced by:** `monthly.yml:validation` · `monthly.yml:security` · `<app>: pnpm repo:check`.
 - **Example:** `monthly.yml`, from the community template, calls the repository's `ci.yml` and the pinned cli-base
-  `release-checks.yml`. Each repository has its own minute, between 02:17 and 03:20 UTC, so runs do not overlap. A CLI made from cli-template starts with
-  the template's own minute and changes it (see [New CLI](new-cli.md)). `cli-dev repo-check` refuses a minute held
+  `release-checks.yml`. Each repository has its own minute, between 02:17 and 03:20 UTC, so runs do not overlap. `new` in cli-template picks a free
+  minute for a new CLI (see [New CLI](new-cli.md)); `takenMinutes()` from `@wirecat/cli-base/standards` reads this
+  table. `cli-dev repo-check` refuses a minute held
   by another repository in this list, and a day other than the first. Taken minutes, from each `monthly.yml` on the
   default branch:
 
