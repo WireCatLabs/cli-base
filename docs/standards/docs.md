@@ -1,6 +1,6 @@
 # Documents
 
-<!-- cspell:ignore whatsapp -->
+<!-- cspell:ignore whatsapp ydisk -->
 
 ## Scope
 
@@ -75,10 +75,10 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Why:** most readers open only the README, and it must take them from "what is this" to a first result. A reader
   decides whether to install from what the tool does for them, so the gains and the "why" come before the steps.
 - **Enforced by:** review only.
-- **Example:** follow tg-cli's README order: the hero line with what the reader gets, three bold gains, what you get
-  (with an invented conversation), why this tool and a one-line link to the comparison, quick start, use it with your
-  agent, what it can do, how it works, settings and permissions, security, when something goes wrong,
-  documentation, development. The install command stays within the first two screens.
+- **Example:** follow tg-cli's README order: the hero line with what the reader gets, the links row (WC-DOC-24), three
+  bold gains, what you get (with an invented conversation), why this tool and a one-line link to the comparison, quick
+  start, use it with your agent, what it can do, how it works, settings and permissions, security, when something goes
+  wrong, documentation, development. The install command stays within the first two screens.
 - **Exceptions:** a library or a kit follows WC-DOC-23 instead.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-500.
 
@@ -278,6 +278,36 @@ An agent that opens the skill carries SKILL.md in every later turn of its sessio
 - **Exceptions:** none.
 - **Applies to:** cli-base, cli-core, cli-template and every other WireCat library or kit. **Since:** cli-base
   0.111.0. **Rulings:** none.
+
+### WC-DOC-24 · A CLI's README links Docs, Install and Usage in its first row
+
+The first row of links sits right under the hero line. It has three links, in this order, with labels in the README's
+own language:
+
+- **Docs:** the tool's page on wirecat.dev once it exists, until then `docs/index.md`.
+- **Install:** the site's install page for the tool once it exists, until then `docs/installation.md`.
+- **Usage:** `docs/usage.md`.
+
+A community link (Discord, Telegram or another) may follow as a fourth link, only where the tool's audience uses that
+community. A link to examples or a comparison goes in the body, for example in "Why this tool".
+
+- **Why:** a reader who arrives from npm, GitHub or a search looks for the same three things in every tool: what it
+  is, how to install it and how to use it. One row in one place lets them find each with one click. A community the
+  audience does not use is a dead end, so a tool for a mainly Russian-speaking audience has no Discord link.
+- **Enforced by:** review only, check planned: a docs check that reads the first links row of the README.
+- **Example:** ydisk-cli's README, below. The links are full GitHub addresses, since the npm package ships
+  `README.md` without `docs/` and a relative link breaks on npmjs.com. A README in Russian reads
+  "Документация · Установка · Использование".
+
+  ```html
+  <p align="center">
+    <a href="https://github.com/WireCatLabs/ydisk-cli/blob/main/docs/index.md">Docs</a> ·
+    <a href="https://github.com/WireCatLabs/ydisk-cli/blob/main/docs/installation.md">Install</a> ·
+    <a href="https://github.com/WireCatLabs/ydisk-cli/blob/main/docs/usage.md">Usage</a>
+  </p>
+  ```
+- **Exceptions:** a library or a kit keeps its own links row under WC-DOC-23.
+- **Applies to:** all CLIs. **Since:** cli-base 0.113.0. **Rulings:** none.
 
 ## Sources
 

@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A CLI's README has one first row of links: Docs, Install and Usage.**
+  [A new rule](docs/standards/docs.md#wc-doc-24--a-clis-readme-links-docs-install-and-usage-in-its-first-row) sets
+  the row under the hero line, with labels in the README's language and a community link only where the tool's
+  audience uses it. Today each CLI has its own row (Examples, Comparison, Discord or none), so a reader has to look
+  for the install page in a different place each time. It is checked in review, so no CLI fails a check. Each CLI
+  moves to the row at its next README change.
+
 ## 0.112.0 — 17.11.2026
 
 ### Added
