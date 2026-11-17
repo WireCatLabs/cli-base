@@ -364,3 +364,21 @@ describe("pagination detection does not guess", () => {
     )
   })
 })
+
+describe("sampleOf for a fake's answers", () => {
+  it("takes the union branch that asks the most, so a reader finds its fields", () => {
+    const inactive: SchemaNode = { type: "object", properties: { active: { type: "boolean" } }, required: ["active"] }
+    const active: SchemaNode = {
+      type: "object",
+      properties: { active: { type: "boolean" }, workspace_id: { type: "string" } },
+      required: ["active", "workspace_id"],
+    }
+    expect(sampleOf({ type: "union", of: [inactive, active] }, {})).toMatchObject({ workspace_id: expect.any(String) })
+  })
+
+  it("gives a string a pattern of groups or a wildcard takes", () => {
+    const duration = "P(?:(\\d+Y)?(\\d+D)?(?:T(\\d+H)?)?)"
+    for (const pattern of ["^https:\\/\\/.*", duration, "^[-+]?([1-8]?\\d(\\.\\d+)?|90(\\.0+)?)$"])
+      expect(new RegExp(pattern).test(String(sampleOf({ type: "string", pattern }, {}))), pattern).toBe(true)
+  })
+})

@@ -175,6 +175,26 @@ describe("command names and spec patches", () => {
     expect(commands).toEqual(["users-list", "users-me-get", "blocks-children-list"])
   })
 
+  it("names a PUT on a collection beside a PUT on its item upsert, so the two do not clash", () => {
+    const id = [{ name: "record_id", in: "path", required: true, schema: { type: "string" } }]
+    const attio = {
+      openapi: "3.1.0",
+      info: {},
+      paths: {
+        "/v2/records": { put: { operationId: "assert" } },
+        "/v2/records/{record_id}": { parameters: id, put: { operationId: "replace" } },
+        "/v2/notes": { get: { operationId: "notes" }, put: { operationId: "notes-put" } },
+      },
+      components: { schemas: {} },
+    }
+    const [manifest] = generate(adaptOpenApi(attio), [manifestGenerator({ path: "manifest.ts" })], {
+      banner: [],
+      names: { fromPath: true },
+    })
+    const commands = [...(manifest?.content.matchAll(/"command": "([^"]+)"/g) ?? [])].map(([, command]) => command)
+    expect(commands).toEqual(["records-upsert", "records-replace", "notes-list", "notes-replace"])
+  })
+
   it("refuses a name for an unknown operation or one that is not kebab case", () => {
     const { document } = patchSpec(hubspot, { stubMissingSchemas: "missing" })
     const run = (commands: Record<string, string>) =>
