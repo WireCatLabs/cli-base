@@ -213,8 +213,8 @@ system keychain, `resolvePaths` without `env` reads `process.env`. Passing them 
 timeout test finish instantly and a keyring test incapable of reaching a real keychain.
 
 **Generating an API catalog is `@wirecat/cli-base/codegen`**, a build-time tool. It reads a
-format-neutral `ApiModel` — operations with a transport binding (`http` method and path, or `rpc`
-name), an `effect` (`read`, `write`, `destructive`) and how far the source can be trusted
+format-neutral `ApiModel` — operations with a transport binding (`http` method and path, `rpc`
+name, or a `graphql` field), an `effect` (`read`, `write`, `destructive`) and how far the source can be trusted
 (`contract`, `example`, `inferred`, `override`) — and writes committed files. It parses no file
 format and adds no runtime dependency: `adaptOpenApi` reads a parsed OpenAPI document, `adaptDiscovery` parsed
 Google Discovery documents, and an adapter from Postman or anything else lives in the CLI that has that
@@ -252,6 +252,25 @@ generate(model, generators, {
   banner: ["Source: spec/google/*.json, verified by provenance.json", "Run: pnpm generate"],
 })
 ```
+
+**A GraphQL API comes from its introspection result.** `syncGraphql({ url, dir })` sends the standard introspection
+query (`INTROSPECTION_QUERY`) and writes `schema.json`, its types sorted by name, with a `provenance.json`;
+`readGraphql(dir)` loads it back and stops on a changed hash. `adaptGraphql(schema, { url, scalars, exclude })` makes one
+operation of each `Query` and `Mutation` field, with a `graphql` binding: the field, each argument's GraphQL type
+(`variables`) and a default selection — scalars and `{ id }` of each object, one level deep; a Relay connection's `nodes`
+and `pageInfo`. `graphqlDocument(binding, selection?)` builds the one document a call sends, with every variable
+declared and passed; a caller that needs more (`state { type }`) passes its own selection. Each argument is a body flag,
+the variables are the request body, and the answer is `data.<field>`, typed by the field's type; the fields of an
+answer type are all optional, since a selection asks for some. A query reads; a mutation writes; one whose name ends in
+`Delete` or `Archive` (not `Unarchive`) deletes, so `permissions` gives it `<group>.delete`. A connection with an `after`
+argument pages as `cursor`: `after` and `first` in the variables, `pageInfo.endCursor` and `pageInfo.hasNextPage` in the
+answer, rows under `nodes`. Each scalar the schema defines beyond GraphQL's five is mapped in `scalars`
+(`{ DateTime: { type: "string" } }`), else generation stops; SDL is not read, since that needs graphql-js. `exclude` names a field, or
+`query.<name>` / `mutation.<name>` when both roots have it. Sign-in is
+not in a GraphQL schema: `generate`'s `auth` gives it. `graphqlFake({ operations, definitions, url, auth, answers })`
+is the GraphQL counterpart of `fakeApi`: it takes only a document `graphqlDocument` built, refuses a selected field the
+type lacks, an object selected without fields and variables that break their schema, and answers `{ data: { <field> } }`
+within the selection, or a scenario's `errors` with HTTP 200.
 
 The generated schemas import `@wirecat/cli-base/codegen/runtime` at run time — a few number
 helpers, not the generator. Numbers are expected from a lossless JSON parser (`lossless-json`): a

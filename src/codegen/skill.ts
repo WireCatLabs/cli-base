@@ -8,7 +8,7 @@ import type { CommandInfo, OptionInfo } from "../commands/registry.js"
 import { flatten } from "../commands/registry.js"
 import type { ManifestOperation } from "./manifest.js"
 import type { GeneratedArtifact, Pagination } from "./model.js"
-import { kebab } from "./names.js"
+import { bindingLabel, kebab } from "./names.js"
 import { CodegenError } from "./pipeline.js"
 
 export interface ApiSkillOptions {
@@ -76,8 +76,7 @@ const flagRow = (option: OptionInfo) =>
   `| ${code(option.flags, true)} | ${option.mandatory ? "yes" : "no"} | ${text(option.description)} |`
 
 const section = (operation: ManifestOperation, command: CommandInfo): string[] => {
-  const call =
-    operation.binding.kind === "http" ? `${operation.binding.method} ${operation.binding.path}` : operation.binding.name
+  const call = bindingLabel(operation.binding)
   const scopes = (operation.security ?? []).map((requirement) =>
     Object.entries(requirement)
       .map(([scheme, list]) => (list.length > 0 ? `${scheme} (${list.join(", ")})` : scheme))

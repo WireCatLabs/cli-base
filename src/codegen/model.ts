@@ -28,7 +28,21 @@ export interface RpcBinding {
   name: string
 }
 
-export type Binding = HttpBinding | RpcBinding
+/**
+ * One field of a GraphQL schema's `Query` or `Mutation`. The request is one document, built by `graphqlDocument` from
+ * the field, its variables' GraphQL types and a selection; the answer is `data.<field>`.
+ */
+export interface GraphqlBinding {
+  kind: "graphql"
+  operation: "query" | "mutation"
+  field: string
+  /** Each argument's GraphQL type as written in the schema: `{ id: "String!", filter: "IssueFilter" }`. */
+  variables: Readonly<Record<string, string>>
+  /** The default selection: scalars, and `{ id }` of each object, one level deep; a connection's `nodes` and `pageInfo`. */
+  selection: string
+}
+
+export type Binding = HttpBinding | RpcBinding | GraphqlBinding
 
 interface SchemaCommon {
   sensitive?: boolean

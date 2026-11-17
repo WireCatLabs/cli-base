@@ -10,6 +10,16 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Added
+
+- **A GraphQL API generates its `api` group too.** `adaptGraphql` reads an introspection result into the model: one
+  operation per `Query` and `Mutation` field, with a new `graphql` binding (the field, its variables' GraphQL types and
+  a default selection), its arguments as body flags, a Relay connection paged as `cursor`, and `*Delete`/`*Archive`
+  mutations as deletes. `syncGraphql` and `readGraphql` keep the snapshot with its hash, `graphqlDocument` builds the
+  request, and `graphqlFake` is a strict fake for tests. Watch for: `Binding` has a third member, so code that reads
+  `binding.name` once a binding is not `http` must narrow to `rpc`; `bindingLabel` names any binding. See the
+  [reference](docs/REFERENCE.md). For the Linear pilot.
+
 ### Fixed
 
 - **`generate` with `auth` signs in an operation whose spec says `security: []`**, the same as one with no

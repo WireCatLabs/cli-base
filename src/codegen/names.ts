@@ -1,3 +1,5 @@
+import type { Binding } from "./model.js"
+
 const pascal = (text: string): string =>
   text
     .split(/[^A-Za-z0-9]+/)
@@ -47,3 +49,11 @@ export const kebab = (id: string): string =>
     .replace(/[^A-Za-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .toLowerCase()
+
+/** How a reader names the call: `GET /pages/{id}`, `sendMessage`, `query issues`. */
+export const bindingLabel = (binding: Binding): string =>
+  binding.kind === "http"
+    ? `${binding.method} ${binding.path}`
+    : binding.kind === "rpc"
+      ? binding.name
+      : `${binding.operation} ${binding.field}`

@@ -47,6 +47,7 @@ what it cannot do yet.
 | Swagger 2.0 | `adaptOpenApi(await upgradeToOpenApi3(document))` |
 | Swagger 1.2 (Yandex Disk) | `upgradeToOpenApi3(listing, declarations)`: the resource listing, and each API declaration keyed by its `apis[].path`, fetched from the listing's `basePath` followed by that path |
 | Google Discovery | `adaptDiscovery(readDiscovery(dir))`, snapshots written by `syncDiscovery` |
+| GraphQL (Linear) | `adaptGraphql(readGraphql(dir), { url, scalars })`, the introspection result written by `syncGraphql` |
 
 `upgradeToOpenApi3` converts with [swagger-converter](https://github.com/apigee-127/swagger-converter) (1.2 → 2.0) and
 [@scalar/openapi-upgrader](https://github.com/scalar/scalar/tree/main/packages/openapi-upgrader) (2.0 → 3.0). They are

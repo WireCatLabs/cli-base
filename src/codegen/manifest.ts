@@ -10,7 +10,7 @@ import type {
   SchemaNode,
   SecurityRequirement,
 } from "./model.js"
-import { kebab } from "./names.js"
+import { bindingLabel, kebab } from "./names.js"
 import { isLossless } from "./runtime.js"
 import { SchemaTree } from "./tree.js"
 
@@ -185,8 +185,7 @@ export const coverageGenerator =
     const tree = new SchemaTree(model)
     const rows = model.operations.map((operation) => {
       const entry = toManifest(operation, tree)
-      const binding =
-        entry.binding.kind === "http" ? `${entry.binding.method} ${entry.binding.path}` : entry.binding.name
+      const binding = bindingLabel(entry.binding)
       const status = entry.deprecated ? "deprecated" : "generated"
       return `| \`${entry.id}\` | \`${binding}\` | \`${options.command(entry)}\` | ${entry.effect} | ${
         entry.request?.confidence ?? "—"
