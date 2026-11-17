@@ -25,8 +25,19 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   wa, zm, gcal, drive, notion, mail, pbx, b24, amo, hubspot and cli-template shipped `--profiles all`; each now passes the
   required argument.
 
+### Changed â€” may break callers
+
+- **`signInPlace` signs an HTTP `basic` scheme**, as `Authorization: Basic <base64>` of a `<user>:<password>` token,
+  and marks the place `basic: true`; it returned `undefined` before. WordPress application passwords are Basic, and a
+  CLI's tests need `fakeApi` to take them. Watch for: a caller that told Basic apart by `undefined`, as cli-core's `api`
+  group up to 0.695.0 does, must read `place.basic` instead. Until it does, a call that offers Basic and a token may
+  be signed with Basic, and a token with no `:` is no longer refused. The caller keeps that check: `value` never throws.
+  Digest is still `undefined`.
+
 ### Fixed
 
+- **`fakeApi` refuses a token sent to another host in base64 too**, in a header or a query string, as Basic sends it,
+  not only as the raw token.
 - **The New CLI page lists every shared list a new WireCat CLI joins, with the file and when.** It left out the family
   audit's package map, `PACKAGES` in `src/dev/family.ts`, so a new CLI's neighbours never installed it for
   `cli-dev audit --family`.
