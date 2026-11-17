@@ -8,7 +8,7 @@ import {
   SHARED_DIFFERENCES,
 } from "../standards/audit.js"
 import { BASE_REASONS, type ErrorReason } from "../standards/errors.js"
-import { LINT_RULES, OVERRIDE_BUDGET, type Override } from "../standards/lint.js"
+import { LINT_RULES, OVERRIDE_BUDGET, type Override, overdue, overridesDueSoon } from "../standards/lint.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
 import { type Capabilities, capabilityDifference } from "./capabilities.js"
 import { judge, kindOf, lintCommands, longName, registeredKinds, summaryOf, walk } from "./lint.js"
@@ -66,6 +66,11 @@ export interface AuditOptions {
    * one of them is then not `only`'s to fix.
    */
   family?: boolean
+  /**
+   * cli-base's entity and reason differences, for groups that are not cli-base's own: they name no CLI list, so they
+   * hold in any group, and count against none.
+   */
+  shared?: ParityGroup["differences"]
 }
 
 export interface AuditResult {
@@ -432,7 +437,8 @@ export const auditClis = (
   )
   // An `absent` or `only` difference names no CLI list: it stands for every finding where only that CLI lacks the
   // flag, or only that CLI has it.
-  const differences = options.groups.flatMap((group) =>
+  const sharedGroup = { name: "cli-base", differences: options.shared ?? [] }
+  const differences = [...options.groups, sharedGroup].flatMap((group) =>
     group.differences.flatMap((entry) => {
       // Which CLIs share an entity or a reason changes with each release, so the entry names only what differs, and
       // its review_after, not a stale check, retires it.
@@ -478,13 +484,9 @@ export const auditClis = (
       )
     }
   }
-  for (const group of options.groups) {
-    const own = group.differences.filter(
-      (entry) => !SHARED_DIFFERENCES.some((shared) => shared.rule === entry.rule && shared.target === entry.target),
-    ).length
-    if (own > OVERRIDE_BUDGET)
-      problems.push(`${group.name} declares ${own} differences; the budget is ${OVERRIDE_BUDGET}`)
-  }
+  for (const group of options.groups)
+    if (group.differences.length > OVERRIDE_BUDGET)
+      problems.push(`${group.name} declares ${group.differences.length} differences; the budget is ${OVERRIDE_BUDGET}`)
 
   const baselined = new Set(
     Object.entries(options.baseline)
@@ -614,3 +616,16 @@ export const scorecardTable = (rows: readonly ScoreRow[]): string => {
   const widths = header.map((_, index) => Math.max(...lines.map((line) => line[index]?.length ?? 0)))
   return lines.map((line) => pad(line, widths).trimEnd()).join("\n")
 }
+
+/**
+ * The shared differences a groups file does not declare itself. Past their review_after they only warn there
+ * (`sharedReviews`): only cli-base can renew them, and its own weekly audit fails on them.
+ */
+export const sharedDifferences = (declared: ParityGroup["differences"]): ParityGroup["differences"] =>
+  SHARED_DIFFERENCES.filter((entry) => !declared.some((own) => own.rule === entry.rule && own.target === entry.target))
+
+/** The review warnings of the shared differences, due or overdue: never a failure outside cli-base's own audit. */
+export const sharedReviews = (shared: ParityGroup["differences"], today: string): string[] => [
+  ...overridesDueSoon(shared, today, "cli-base's audit"),
+  ...overdue(shared, today),
+]

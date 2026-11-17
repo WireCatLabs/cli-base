@@ -31,7 +31,7 @@ import {
   versionLevelProblem,
   versionScript,
 } from "../release/index.js"
-import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS, withShared } from "../standards/audit.js"
+import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
 import type { ErrorReason } from "../standards/errors.js"
 import { defineReasons } from "../standards/errors.js"
 import {
@@ -51,7 +51,7 @@ import { issuesOf, RegistryError } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { buildManifest, MANIFEST_FILE, ManifestError, type ManifestIdentity, manifestText } from "../wcat/manifest.js"
 import { adopt } from "./adopt.js"
-import { type AuditInput, auditClis, scorecardTable, snakeKeys } from "./audit.js"
+import { type AuditInput, auditClis, scorecardTable, sharedDifferences, sharedReviews, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
 import { familyPackages, installFamily } from "./family.js"
@@ -131,15 +131,15 @@ const USAGE = `usage: cli-dev <command> [options]
                                        Prints the scorecard; fails on a new finding (one naming
                                        --for's CLI, when given). --lint judges that CLI's lint
                                        rules by its own lint/ folder; the rest by --baseline
-                                       (audit/baseline). --groups replaces PARITY_GROUPS with the
-                                       groups in that file (each keeps cli-base's entity and reason
-                                       differences); --differences adds to the
-                                       groups in use. --family takes this CLI's one --cli and
-                                       installs the latest published CLIs of the parity groups beside
-                                       it (npm, without install scripts), runs each in an empty home,
-                                       reads every CLI's commands info (so same-error-reason and
-                                       same-entity-schema are measured), and defaults --for to this
-                                       CLI, --lint to its lint/ and --groups to config/parity-groups.json
+                                       (audit/baseline). --groups replaces PARITY_GROUPS (not its
+                                       entity and reason differences) with the groups in that file;
+                                       --differences adds to the groups in use. --family takes this
+                                       CLI's one --cli and installs the latest published CLIs of the
+                                       parity groups beside it (npm, without install scripts), runs
+                                       each in an empty home, reads every CLI's commands info (so
+                                       same-error-reason and same-entity-schema are measured), and
+                                       defaults --for to this CLI, --lint to its lint/ and --groups to
+                                       config/parity-groups.json
   bundle --bin <dist/bin/name.js> [--external <package>]... [--anchor <package>]... [--harmless <path>]...
                                        bundles the compiled bin with esbuild (a devDependency) into
                                        dist/bundle/ and turns the bin into its loader. --external keeps
@@ -880,7 +880,7 @@ const auditRun = (args: string[], io: DevIo, family = false) => {
   let groups = PARITY_GROUPS
   if (values.groups) {
     try {
-      groups = withShared(defineParityGroups(readJson(at(values.groups))))
+      groups = defineParityGroups(readJson(at(values.groups)))
     } catch (error) {
       if (error instanceof RegistryError) throw new Error(`${values.groups}: ${error.problems.join("; ")}`)
       throw error
@@ -915,12 +915,14 @@ const auditRun = (args: string[], io: DevIo, family = false) => {
     )
   }
   const differences = groups.flatMap((group) => group.differences)
+  const shared = values.groups ? sharedDifferences(differences) : []
   for (const line of overdue(differences, today(io))) problems.push(`parity difference: ${line}`)
-  for (const line of overridesDueSoon(differences, today(io), "the audit"))
-    io.err(`warning  parity difference: ${line}`)
+  const due = [...overridesDueSoon(differences, today(io), "the audit"), ...sharedReviews(shared, today(io))]
+  for (const line of due) io.err(`warning  parity difference: ${line}`)
   const result = auditClis(inputs, {
     ...(values.capabilities ? { capabilities: readCapabilities(readJson(at(values.capabilities))) } : {}),
     groups,
+    shared,
     roots: REQUIRED_ROOTS,
     vocabulary: VOCABULARY,
     baseline,

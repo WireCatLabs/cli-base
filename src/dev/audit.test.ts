@@ -621,7 +621,7 @@ describe("cli-dev audit", () => {
     expect(err.at(-1)).toBe("differences.json: unknown group outside")
   })
 
-  it("keeps cli-base's declared entity and reason differences when a --groups file replaces its groups", async () => {
+  it("keeps cli-base's entity and reason differences, warning past their review, when --groups replaces its groups", async () => {
     write("tg.json", tool("tg", notes("list notes", [["--limit <n>", "how many"]], "hit")))
     write("max.json", tool("max", notes("list notes", [["--limit <n>", "how many"]], "hit")))
     writeFileSync(join(root, "tg-schemas.json"), JSON.stringify({ hit: { type: "object" } }))
@@ -630,10 +630,22 @@ describe("cli-dev audit", () => {
       join(root, "groups.json"),
       JSON.stringify([{ name: "outside", members: ["tg", "max"], covers: ["notes"], differences: [] }]),
     )
-    io.now = () => new Date("2026-11-12T12:00:00Z")
     const schemas = ["--schemas", "tg=tg-schemas.json", "--schemas", "max=max-schemas.json"]
+    io.now = () => new Date("2026-11-12T12:00:00Z")
     expect(await audit("--groups", "groups.json", ...schemas)).toBe(0)
     expect(err.join("\n")).not.toContain("new  same-entity-schema")
+    const due = (lines: string[]) => lines.filter((line) => line.includes('"same-entity-schema entity hit" was due'))
+    err.length = 0
+    io.now = () => new Date("2027-01-01T12:00:00Z")
+    expect(await audit("--groups", "groups.json", ...schemas)).toBe(0)
+    expect(due(err)).toHaveLength(1)
+    writeFileSync(
+      join(root, "differences.json"),
+      JSON.stringify([
+        { group: "outside", rule: "same-entity-schema", target: "entity hit", reason: "this CLI keeps its own date" },
+      ]),
+    )
+    expect(await audit("--groups", "groups.json", "--differences", "differences.json", ...schemas)).toBe(0)
   })
 
   it("warns of a difference near its review_after and fails one long past it", async () => {
