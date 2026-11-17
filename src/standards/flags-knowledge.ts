@@ -37,6 +37,13 @@ export const KNOWLEDGE_FLAGS: VocabularyFlag[] = [
     unit: "characters",
   },
   {
+    name: "--tab",
+    value: "<id>",
+    role: "target",
+    type: "id",
+    meaning: "one tab of a document, by its id: only its text is read",
+  },
+  {
     name: "--tag",
     value: "<name>",
     role: "target",
