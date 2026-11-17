@@ -12,6 +12,14 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **Codegen writes what each operation answers.** `typesGenerator` adds `Responses`, a map from operation id to its
+  answer type, so a config-built CLI's paths into an answer are checked in the editor. A new `examplesGenerator` writes
+  the spec's own sample answers (each under 8 KB, none from an answer that holds a credential) to their own file, for a
+  fake to answer with. A schema named `Responses` now stops generation, since it would collide. After the bump, run
+  `pnpm generate`: each generated `types.ts` gains `Responses`, so `--check` calls it stale until then.
+- **A spec that names no operation still generates.** Attio's OpenAPI file has no `operationId` at all, so it gave an
+  empty catalog. Now each call gets an id from its method and path (`GET /v2/objects/{object}` â†’
+  `getV2ObjectsByObject`). A spec that names some operations still skips the paths without one, as before.
 - **README rules that put the reader's gain first.** [The README rule](docs/standards/docs.md#wc-doc-7--readmemd-is-the-full-introduction-to-the-tool)
   now asks for tg-cli's order: what you get and why this tool before the quick start. A
   [new rule](docs/standards/docs.md#wc-doc-23--a-librarys-or-a-kits-readme-opens-with-what-you-build-a-proof-and-who-builds-on-it)

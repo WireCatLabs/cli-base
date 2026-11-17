@@ -114,6 +114,33 @@ const jsonContent = (content: Json): unknown =>
 const SCHEME_TYPES = new Set<SecurityScheme["type"]>(["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"])
 const FLOWS = ["implicit", "password", "clientCredentials", "authorizationCode"] as const
 
+/** A spec without a single operationId (Attio's) still has calls: `get /v2/objects/{object}` → `getV2ObjectsByObject`. */
+const derivedId = (method: string, path: string): string =>
+  method +
+  path
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => {
+      const words = segment
+        .replace(/^\{|\}$/g, "")
+        .split(/[^A-Za-z0-9]+/)
+        .filter(Boolean)
+      const pascal = words.map((word) => (word[0] ?? "").toUpperCase() + word.slice(1)).join("")
+      return segment.startsWith("{") ? `By${pascal}` : pascal
+    })
+    .join("")
+
+/** A sample answer bigger than this stays in the spec: the manifest ships inside every CLI. */
+const LARGEST_EXAMPLE = 8 * 1024
+
+const exampleOf = (media: Json): unknown => {
+  const examples = isObject(media.examples) ? Object.values(media.examples) : []
+  const first = examples.find((one) => isObject(one) && one.value !== undefined) as Json | undefined
+  const example = "example" in media ? media.example : first?.value
+  if (example === undefined) return undefined
+  return JSON.stringify(example).length <= LARGEST_EXAMPLE ? example : undefined
+}
+
 const strings = (source: Json, keys: readonly string[]): Record<string, string> =>
   Object.fromEntries(keys.flatMap((key) => (typeof source[key] === "string" ? [[key, source[key]]] : [])))
 
@@ -472,14 +499,21 @@ class Adapter {
    * shape to check; a file, plain text or a `$ref` to a shared response is passed through as it is. Nothing at run time
    * validates an answer yet.
    */
-  #response(source: Json, where: string): SchemaNode | undefined {
+  #response(source: Json, where: string): ApiBody | undefined {
     const responses = isObject(source.responses) ? source.responses : {}
     for (const code of Object.keys(responses)
       .filter((code) => /^2(\d\d|XX)$/i.test(code))
       .sort()) {
       const answer = responses[code]
       const json = isObject(answer) && isObject(answer.content) ? jsonContent(answer.content) : undefined
-      if (isObject(json) && json.schema !== undefined) return this.schema(json.schema, `${where}.responses.${code}`)
+      if (!isObject(json) || json.schema === undefined) continue
+      const example = exampleOf(json)
+      return {
+        confidence: "contract",
+        required: true,
+        schema: this.schema(json.schema, `${where}.responses.${code}`),
+        ...(example === undefined ? {} : { example }),
+      }
     }
     return undefined
   }
@@ -565,6 +599,14 @@ class Adapter {
   operations(): ApiOperation[] {
     const operations: ApiOperation[] = []
     const paths = isObject(this.document.paths) ? this.document.paths : {}
+    const named = Object.values(paths).some(
+      (item) =>
+        isObject(item) &&
+        METHODS.some((method) => {
+          const operation = item[method]
+          return isObject(operation) && typeof operation.operationId === "string"
+        }),
+    )
     for (const [path, item] of Object.entries(paths)) {
       if (!isObject(item)) continue
       const shared = Array.isArray(item.parameters) ? item.parameters : []
@@ -573,7 +615,8 @@ class Adapter {
         if (!isObject(source)) continue
         const pointer = `#/paths/${path.replaceAll("~", "~0").replaceAll("/", "~1")}/${method}`
         // A path without an id is a description, not a call: Meta models its webhook payload this way.
-        if (typeof source.operationId !== "string") continue
+        if (named && typeof source.operationId !== "string") continue
+        const id = typeof source.operationId === "string" ? source.operationId : derivedId(method, path)
         const verb = method.toUpperCase() as HttpMethod
         const own = (Array.isArray(source.parameters) ? source.parameters : [])
           .map((parameter, index) => this.#parameter(parameter, `${pointer}.parameters[${index}]`))
@@ -592,7 +635,7 @@ class Adapter {
             this.problems.push(`${pointer}: path parameter "${name}" is not declared`)
         }
         const operation: ApiOperation = {
-          id: source.operationId,
+          id,
           binding: { kind: "http", method: verb, path },
           tags: Array.isArray(source.tags) ? source.tags.map(String) : [],
           parameters,
@@ -606,7 +649,7 @@ class Adapter {
         if (source.deprecated === true) operation.deprecated = true
         if (isObject(source.requestBody)) operation.requestBody = this.#requestBody(source.requestBody, pointer)
         const response = this.#response(source, pointer)
-        if (response) operation.response = { confidence: "contract", required: true, schema: response }
+        if (response) operation.response = response
         operations.push(operation)
       }
     }

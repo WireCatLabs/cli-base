@@ -32,6 +32,7 @@ export {
   type CoverageOptions,
   coverageGenerator,
   definitionsGenerator,
+  examplesGenerator,
   type ManifestOperation,
   manifestGenerator,
 } from "./manifest.js"

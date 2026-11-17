@@ -5,6 +5,7 @@ import { parse } from "yaml"
 import {
   adaptOpenApi,
   coverageGenerator,
+  examplesGenerator,
   generate,
   manifestGenerator,
   OpenApiError,
@@ -12,6 +13,7 @@ import {
   typesGenerator,
   valibotGenerator,
 } from "./index.js"
+import type { SchemaNode } from "./model.js"
 
 // facebook/openapi at e96a1c9dbf240c2937b6a95920685230458e346b (2026-08-11), MIT; the LICENSE is beside it. Its sample
 // phone numbers are replaced with fictional 1555-01NN ones, as whatsapp-cli's snapshot is: no real number in a fixture.
@@ -758,5 +760,141 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
     expect(coverageOf(["in_trash"])).toContain("| `archiveBatch` | `people.delete` | always |")
     expect(coverageOf(["in_trash"])).toContain("| `updateBlock` | `people.delete` | body `in_trash` is true |")
     expect(() => coverageOf(["erased"])).toThrow('deletingFlags: "erased" is in no request body or query')
+  })
+})
+
+describe("a spec a config-built CLI reads its answers from", () => {
+  const answer = (example: Record<string, unknown>) => ({
+    "200": {
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Record" },
+          ...example,
+        },
+      },
+    },
+  })
+  const records = {
+    openapi: "3.1.0",
+    info: { version: "v2" },
+    paths: {
+      "/v2/objects/{object}/records/{record_id}": {
+        get: {
+          parameters: [
+            { name: "object", in: "path", required: true, schema: { type: "string" } },
+            { name: "record_id", in: "path", required: true, schema: { type: "string" } },
+          ],
+          responses: answer({ example: { id: { record_id: "r1" }, values: {} } }),
+        },
+      },
+      "/v2/self": {
+        get: {
+          responses: answer({ examples: { first: { value: { id: { record_id: "me" }, big: { n: 1 } } } } }),
+        },
+      },
+      "/v2/lists": { get: { responses: answer({ example: { id: { record_id: "x".repeat(9000) } } }) } },
+    },
+    components: {
+      schemas: {
+        Record: {
+          type: "object",
+          properties: { id: { type: "object", properties: { record_id: { type: "string" } } } },
+        },
+      },
+    },
+  }
+
+  it("names every call by its method and path when the spec names none", () => {
+    expect(adaptOpenApi(records).operations.map(({ id }) => id)).toEqual([
+      "getV2ObjectsByObjectRecordsByRecordId",
+      "getV2Self",
+      "getV2Lists",
+    ])
+  })
+
+  it("writes small sample answers to their own file, and the answer of each operation in Responses", () => {
+    const files = generate(
+      adaptOpenApi(records),
+      [
+        manifestGenerator({ path: "manifest.ts" }),
+        examplesGenerator({ path: "examples.ts" }),
+        typesGenerator({ path: "types.ts" }),
+      ],
+      { banner: [] },
+    )
+    const content = (path: string) => files.find((one) => one.path === path)?.content ?? ""
+    expect(content("manifest.ts")).not.toContain('"r1"')
+    expect(content("examples.ts")).toContain('"record_id": "r1"')
+    expect(content("examples.ts")).toContain('"record_id": "me"')
+    expect(content("examples.ts")).not.toContain("x".repeat(9000))
+    expect(content("types.ts")).toContain(
+      "export interface Responses {\n  getV2ObjectsByObjectRecordsByRecordId: ApiRecord\n  getV2Self: ApiRecord\n  getV2Lists: ApiRecord\n}",
+    )
+  })
+
+  it("types an operation with no JSON answer as unknown, and stops on a schema named Responses", () => {
+    const plainText = {
+      ...records,
+      paths: { ...records.paths, "/v2/ping": { get: { responses: { "204": { description: "empty" } } } } },
+    }
+    const [types] = generate(adaptOpenApi(plainText), [typesGenerator({ path: "types.ts" })], { banner: [] })
+    expect(types?.content).toContain("  getV2Ping: unknown\n")
+    const taken = {
+      ...records,
+      components: { schemas: { ...records.components.schemas, Responses: { type: "string" } } },
+    }
+    expect(() => generate(adaptOpenApi(taken), [typesGenerator({ path: "types.ts" })], { banner: [] })).toThrow(
+      "a schema named Responses",
+    )
+  })
+
+  it("still skips the unnamed paths of a spec that names some", () => {
+    const mixed = {
+      ...records,
+      paths: { ...records.paths, "/v2/named": { get: { operationId: "named", responses: answer({}) } } },
+    }
+    expect(adaptOpenApi(mixed).operations.map(({ id }) => id)).toEqual(["named"])
+  })
+
+  it("writes lossless numbers exactly, and keeps no sample of an answer that holds a credential anywhere", () => {
+    const model = adaptOpenApi(records)
+    const [first, second] = model.operations as [(typeof model.operations)[number], (typeof model.operations)[number]]
+    const sample = (operation: typeof first, schema: SchemaNode, example: unknown) => ({
+      ...operation,
+      response: { confidence: "contract" as const, required: true, schema, example },
+    })
+    const changed = {
+      ...model,
+      schemas: [
+        ...model.schemas,
+        {
+          id: "Token",
+          schema: {
+            type: "object" as const,
+            properties: { token: { type: "string" as const, sensitive: true } },
+            required: [],
+          },
+        },
+      ],
+      operations: [
+        sample(
+          first,
+          { type: "unknown" },
+          {
+            small: { isLosslessNumber: true, value: "12" },
+            decimal: { isLosslessNumber: true, value: "10.50" },
+            big: { isLosslessNumber: true, value: "9007199254740993" },
+          },
+        ),
+        sample(second, { type: "array", items: { type: "ref", ref: "Token" } }, [
+          { token: "synthetic-credential-sample" },
+        ]),
+      ],
+    }
+    const [examples] = generate(changed, [examplesGenerator({ path: "examples.ts" })], { banner: [] })
+    expect(examples?.content).toContain('"small": 12')
+    expect(examples?.content).toContain('"decimal": 10.5')
+    expect(examples?.content).toContain('"big": "9007199254740993"')
+    expect(examples?.content).not.toContain("synthetic-credential-sample")
   })
 })

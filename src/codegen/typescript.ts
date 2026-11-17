@@ -1,5 +1,6 @@
 import type { ApiModel, CodeGenerator, SchemaNode } from "./model.js"
 import { identifier } from "./names.js"
+import { CodegenError } from "./pipeline.js"
 import { type Literal, SchemaTree } from "./tree.js"
 
 const doc = (text: string | undefined, indent: string): string => {
@@ -80,5 +81,14 @@ export const typesGenerator =
       const type = union ?? writer.node(schema.schema, schema.id, tree.literalFor(schema.id))
       return `${doc(schema.schema.description, "")}export type ${name} = ${type}\n`
     })
+    // The answer of each operation by its id, so a config's paths into an answer are checked in the editor.
+    const responses = model.operations.map(
+      (operation) => `  ${key(operation.id)}: ${tree.responseName(operation.id) ?? "unknown"}`,
+    )
+    if (tree.named.some(({ name }) => name === "Responses"))
+      throw new CodegenError(["a schema named Responses collides with the generated map of answers"])
+    declarations.push(
+      `/** What each operation answers, by its id. */\nexport interface Responses {\n${responses.join("\n")}\n}\n`,
+    )
     return [{ path: options.path, content: declarations.join("\n") }]
   }

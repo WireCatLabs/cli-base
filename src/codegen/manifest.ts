@@ -11,6 +11,7 @@ import type {
   SecurityRequirement,
 } from "./model.js"
 import { kebab } from "./names.js"
+import { isLossless } from "./runtime.js"
 import { SchemaTree } from "./tree.js"
 
 /** One operation as a CLI reads it at run time: enough to build a command, validate input and guard a write. */
@@ -108,6 +109,62 @@ export const definitionsGenerator =
       {
         path: options.path,
         content: `import type { SchemaNode } from "${options.coreImport ?? "@wirecat/cli-base/codegen"}"\n\nexport const definitions: Readonly<Record<string, SchemaNode>> = ${JSON.stringify(definitions, null, 2)}\n`,
+      },
+    ]
+  }
+
+/** A lossless parser's number → a plain one; an integer a double would round stays its exact text. */
+const plain = (value: unknown): unknown => {
+  if (isLossless(value))
+    return /^-?\d+$/.test(value.value) && !Number.isSafeInteger(Number(value.value)) ? value.value : Number(value.value)
+  if (Array.isArray(value)) return value.map(plain)
+  if (value === null || typeof value !== "object") return value
+  return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, plain(inner)]))
+}
+
+/** Whether a credential sits anywhere in the answer, behind references too. */
+const holdsSecret = (node: SchemaNode | undefined, tree: SchemaTree, seen = new Set<string>()): boolean => {
+  if (!node) return false
+  if (node.sensitive) return true
+  switch (node.type) {
+    case "ref": {
+      if (seen.has(node.ref)) return false
+      seen.add(node.ref)
+      return holdsSecret(tree.schema(node.ref).schema, tree, seen)
+    }
+    case "array":
+      return holdsSecret(node.items, tree, seen)
+    case "object":
+      return [...Object.values(node.properties), node.additionalProperties].some((inner) =>
+        holdsSecret(inner, tree, seen),
+      )
+    case "union":
+    case "allOf":
+      return node.of.some((inner) => holdsSecret(inner, tree, seen))
+    default:
+      return false
+  }
+}
+
+/**
+ * The spec's own sample answer of each operation that has one, for a fake to answer with. Its own file, so the manifest
+ * every CLI loads at start stays small; an answer that holds a credential keeps its sample in the spec.
+ */
+export const examplesGenerator =
+  (options: { path: string }): CodeGenerator =>
+  (model: ApiModel) => {
+    const tree = new SchemaTree(model)
+    const examples = Object.fromEntries(
+      model.operations.flatMap((operation) =>
+        operation.response?.example === undefined || holdsSecret(operation.response.schema, tree)
+          ? []
+          : [[operation.id, plain(operation.response.example)]],
+      ),
+    )
+    return [
+      {
+        path: options.path,
+        content: `export const examples: Readonly<Record<string, unknown>> = ${JSON.stringify(examples, null, 2)}\n`,
       },
     ]
   }
