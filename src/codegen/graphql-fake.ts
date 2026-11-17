@@ -53,40 +53,54 @@ export interface GraphqlFake {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
-/** The object or list a selection walks into: through references, lists and unions; `undefined` for a leaf. */
-const membersOf = (node: SchemaNode, definitions: Definitions, seen = 0): Extract<SchemaNode, { type: "object" }>[] => {
-  if (seen > 20) return []
+type ObjectNode = Extract<SchemaNode, { type: "object" }>
+type Shape = { kind: "leaf" } | { kind: "union" } | { kind: "object"; objects: ObjectNode[] }
+
+/** What a selection walks into, through references, lists and a nullable wrapper: an object, a union or a leaf. */
+const shapeOf = (node: SchemaNode, definitions: Definitions, depth = 0): Shape => {
+  if (depth > 20) return { kind: "leaf" }
   switch (node.type) {
     case "ref": {
       const target = definitions[identifier(node.ref)]
-      return target ? membersOf(target, definitions, seen + 1) : []
+      return target ? shapeOf(target, definitions, depth + 1) : { kind: "leaf" }
     }
     case "array":
-      return membersOf(node.items, definitions, seen + 1)
+      return shapeOf(node.items, definitions, depth + 1)
+    case "allOf": {
+      const objects = node.of.flatMap((one) => {
+        const inner = shapeOf(one, definitions, depth + 1)
+        return inner.kind === "object" ? inner.objects : []
+      })
+      return objects.length > 0 ? { kind: "object", objects } : { kind: "leaf" }
+    }
     case "union":
-      return node.of.flatMap((one) => membersOf(one, definitions, seen + 1))
+      return { kind: "union" }
     case "object":
-      return [node]
+      return { kind: "object", objects: [node] }
     default:
-      return []
+      return { kind: "leaf" }
   }
 }
 
-/** Every field the selection names that the type lacks, a leaf asked without a selection, or an object asked with one. */
+/**
+ * Every field the selection names that the type lacks, a leaf asked without a selection, or an object asked with one.
+ * On a union only `__typename` is selectable: its members' fields need fragments, which a selection here never has.
+ */
 export const selectionProblems = (
   selection: Selection,
   node: SchemaNode,
   definitions: Definitions,
   where = "selection",
 ): string[] => {
-  const members = membersOf(node, definitions)
-  if (members.length === 0) return [`${where}: a scalar has no fields to select`]
+  const shape = shapeOf(node, definitions)
+  if (shape.kind === "leaf") return [`${where}: a scalar has no fields to select`]
   return Object.entries(selection).flatMap(([name, inner]) => {
     if (name === "__typename") return inner === true ? [] : [`${where}.__typename: a scalar has no fields to select`]
-    const property = members.map((one) => one.properties[name]).find(Boolean)
+    if (shape.kind === "union") return [`${where}.${name}: a union takes only __typename`]
+    const property = shape.objects.map((one) => one.properties[name]).find(Boolean)
     if (!property) return [`${where}.${name}: no such field`]
-    const object = membersOf(property, definitions).length > 0
-    if (inner === true) return object ? [`${where}.${name}: an object needs a selection`] : []
+    const leaf = shapeOf(property, definitions).kind === "leaf"
+    if (inner === true) return leaf ? [] : [`${where}.${name}: an object needs a selection`]
     return selectionProblems(inner, property, definitions, `${where}.${name}`)
   })
 }
@@ -110,14 +124,18 @@ const sampleWithin = (node: SchemaNode, selection: Selection | true, definitions
     return target ? sampleWithin(target, selection, definitions) : null
   }
   if (node.type === "array") return [sampleWithin(node.items, selection, definitions)]
-  const [member] = membersOf(node, definitions)
-  if (!member) return null
+  const shape = shapeOf(node, definitions)
+  const objects = shape.kind === "object" ? shape.objects : []
   return Object.fromEntries(
     Object.entries(selection).map(([name, inner]) => [
       name,
       name === "__typename"
         ? "Object"
-        : sampleWithin(member.properties[name] ?? { type: "unknown" }, inner, definitions),
+        : sampleWithin(
+            objects.map((one) => one.properties[name]).find(Boolean) ?? { type: "unknown" },
+            inner,
+            definitions,
+          ),
     ]),
   )
 }
@@ -138,6 +156,7 @@ export const graphqlFake = (options: GraphqlFakeOptions): GraphqlFake => {
   const calls: GraphqlFakeCall[] = []
   const refusals: string[] = []
   const { definitions } = options
+  const endpoint = new URL(options.url).href
   const refuse = (status: number, problems: readonly string[]) => {
     for (const problem of problems) refusals.push(problem)
     return json(status, { errors: problems.map((message) => ({ message, extensions: { code: "FAKE_REFUSED" } })) })
@@ -158,7 +177,7 @@ export const graphqlFake = (options: GraphqlFakeOptions): GraphqlFake => {
     const variables = isObject(body) && isObject(body.variables) ? body.variables : {}
     const call: GraphqlFakeCall = { query, variables, headers: request.headers }
     calls.push(call)
-    if (request.url !== options.url) return refuse(404, [`${request.url} is not ${options.url}`])
+    if (request.url !== endpoint) return refuse(404, [`${request.url} is not ${endpoint}`])
     if (request.method !== "POST") return refuse(405, [`a GraphQL call is a POST, not ${request.method}`])
     if (!query) return refuse(400, ["the body is not JSON with a query"])
     if (options.auth && request.headers.get(options.auth.header) !== options.auth.value)
@@ -182,6 +201,9 @@ export const graphqlFake = (options: GraphqlFakeOptions): GraphqlFake => {
     const problems = [
       ...parseProblems,
       ...(response && found.text ? selectionProblems(selection, response, definitions, operation.id) : []),
+      ...(response && !found.text && shapeOf(response, definitions).kind !== "leaf"
+        ? [`${operation.id}: an object needs a selection`]
+        : []),
       ...(variablesSchema
         ? schemaProblems(variables, variablesSchema, definitions, "variables")
         : Object.keys(variables).map((name) => `${operation.id}: takes no argument "${name}"`)),

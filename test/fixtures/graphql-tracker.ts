@@ -68,6 +68,13 @@ export const trackerIntrospection = () => ({
             field("users", nonNull(object("UserConnection")), [...page, arg("includeArchived", scalar("Boolean"))]),
             field("workflowStates", nonNull(object("WorkflowStateConnection")), page),
             field("viewer", nonNull(object("User"))),
+            field("maybeIssue", object("Issue"), [arg("id", nonNull(scalar("String")))]),
+            field("recentIssues", nonNull(list(nonNull(object("Issue")))), [
+              arg("limit", nonNull(scalar("Int")), "10"),
+            ]),
+            field("search", nonNull(list(nonNull(named("UNION", "SearchResult")))), [
+              arg("term", nonNull(scalar("String"))),
+            ]),
           ],
         }),
         type("OBJECT", "Mutation", {
@@ -93,6 +100,7 @@ export const trackerIntrospection = () => ({
             field("assignee", object("User")),
             field("labels", nonNull(object("IssueLabelConnection")), page),
             field("history", nonNull(object("IssueLabelConnection")), [arg("since", nonNull(scalar("DateTime")))]),
+            { ...field("legacyKey", scalar("String")), isDeprecated: true },
           ],
         }),
         type("OBJECT", "WorkflowState", {
@@ -134,6 +142,7 @@ export const trackerIntrospection = () => ({
         }),
         type("OBJECT", "DeletePayload", { fields: [field("success", nonNull(scalar("Boolean")))] }),
         type("OBJECT", "ArchivePayload", { fields: [field("success", nonNull(scalar("Boolean")))] }),
+        type("UNION", "SearchResult", { possibleTypes: [{ name: "Issue" }, { name: "Team" }] }),
         type("ENUM", "PaginationOrderBy", { enumValues: [{ name: "createdAt" }, { name: "updatedAt" }] }),
         type("INPUT_OBJECT", "IssueFilter", {
           inputFields: [arg("updatedAt", input("DateComparator"))],

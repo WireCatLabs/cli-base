@@ -65,7 +65,10 @@ export interface GraphqlOptions {
    * "unknown" } }`. A scalar the schema uses that is not here stops generation: its shape is never guessed.
    */
   scalars?: Readonly<Record<string, SchemaNode>>
-  /** Fields of `Query` or `Mutation` left out, by name, each with the reason; one that matches no field stops generation. */
+  /**
+   * Fields of `Query` or `Mutation` left out, each with the reason: by name, or as `query.<name>` or `mutation.<name>`
+   * when both roots have one of that name. One that matches no field stops generation.
+   */
   exclude?: Readonly<Record<string, string>>
   sourceUrl?: string
   sourceRevision?: string
@@ -234,7 +237,7 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
     return type && (type.kind === "OBJECT" || type.kind === "INTERFACE") ? (type.fields ?? []) : undefined
   }
   const selectable = (field: Field) =>
-    !field.args.some((one) => one.type.kind === "NON_NULL" && one.defaultValue == null)
+    !field.isDeprecated && !field.args.some((one) => one.type.kind === "NON_NULL" && one.defaultValue == null)
   const isLeaf = (name: string) => {
     const kind = types.get(name)?.kind
     return kind === "SCALAR" || kind === "ENUM"
@@ -265,6 +268,13 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
     return node ? `nodes { ${oneLevel(node)} } pageInfo { hasNextPage endCursor }` : oneLevel(name)
   }
 
+  // An answer that is only a reference is named after its type, which would drop a nullable field's null: such an
+  // answer is wrapped, so it gets a name of its own that keeps it.
+  const answerOf = (node: SchemaNode): SchemaNode =>
+    node.type === "ref" && node.nullable
+      ? { type: "allOf", of: [{ type: "ref", ref: node.ref }], nullable: true }
+      : node
+
   const exclude = options.exclude ?? {}
   const excluded = new Set<string>()
   const operations: ApiOperation[] = []
@@ -275,8 +285,10 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
     const root = rootName(key)
     if (!root) continue
     for (const field of fieldsOf(root) ?? []) {
-      if (exclude[field.name] !== undefined) {
-        excluded.add(field.name)
+      const scoped = `${operation}.${field.name}`
+      const left = [scoped, field.name].find((name) => exclude[name] !== undefined)
+      if (left !== undefined) {
+        excluded.add(left)
         continue
       }
       const where = `${root}.${field.name}`
@@ -290,12 +302,20 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
         kind: "graphql",
         operation,
         field: field.name,
-        variables: Object.fromEntries(field.args.map((one) => [one.name, typeText(one.type)])),
+        // A non-null argument with a default may be left out; declared non-null, its variable could not be.
+        variables: Object.fromEntries(
+          field.args.map((one) => [
+            one.name,
+            one.defaultValue != null && one.type.kind === "NON_NULL" && one.type.ofType
+              ? typeText(one.type.ofType)
+              : typeText(one.type),
+          ]),
+        ),
         selection: selectionOf(answer),
       }
       const deletes = operation === "mutation" && DELETES.test(field.name) && !UNDOES.test(field.name)
       const has = (name: string, type: string) =>
-        field.args.some((one) => one.name === name && named(one.type) === type)
+        field.args.some((one) => one.name === name && one.type.kind !== "NON_NULL" && named(one.type) === type)
       const pages =
         operation === "query" && field.type.kind !== "LIST" && connectionOf(answer) && has("after", "String")
       const pagination: Pagination | undefined = pages
@@ -331,7 +351,7 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
               },
             }
           : {}),
-        response: { confidence: "contract", required: false, schema: reference(field.type, where) },
+        response: { confidence: "contract", required: false, schema: answerOf(reference(field.type, where)) },
         effect: operation === "query" ? "read" : deletes ? "destructive" : "write",
         ...(deletes ? { effectReason: GRAPHQL_DELETE_REASON } : {}),
         ...(pagination ? { pagination, paginationSource: "detected" } : {}),

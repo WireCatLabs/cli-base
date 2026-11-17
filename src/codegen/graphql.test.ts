@@ -61,6 +61,9 @@ describe("adaptGraphql", () => {
       issueDelete: "destructive",
       issueUnarchive: "write",
       issues: "read",
+      maybeIssue: "read",
+      recentIssues: "read",
+      search: "read",
       teams: "read",
       users: "read",
       viewer: "read",
@@ -100,6 +103,35 @@ describe("adaptGraphql", () => {
     const create = model().schemas.find((one) => one.id === "IssueCreateInput")?.schema
     // A non-null field with a default may be left out.
     expect(create).toMatchObject({ type: "object", required: ["title", "teamId"] })
+  })
+
+  it("declares a non-null argument with a default as a nullable variable, which may then be left out", () => {
+    expect(operation("recentIssues").binding).toMatchObject({ variables: { limit: "Int" } })
+    expect(operation("recentIssues").parameters[0]).toMatchObject({ name: "limit", required: false })
+  })
+
+  it("keeps a nullable answer's null, and leaves deprecated fields out of the default selection", () => {
+    const [types] = generate(model(), [typesGenerator({ path: "types.ts" })], { banner: [] })
+    expect(types?.content).toMatch(/export type MaybeIssueResponse = Issue \| null/)
+    expect(operation("issue").binding).not.toMatchObject({ selection: expect.stringContaining("legacyKey") })
+  })
+
+  it("selects only __typename of a union", () => {
+    expect(operation("search").binding).toMatchObject({ selection: "__typename" })
+  })
+
+  it("leaves out one root's field when both roots have its name", () => {
+    const both = trackerIntrospection()
+    const mutation = both.data.__schema.types.find((one) => one.name === "Mutation") as unknown as { fields: unknown[] }
+    const query = both.data.__schema.types.find((one) => one.name === "Query") as unknown as {
+      fields: { name: string }[]
+    }
+    mutation.fields.push({ ...query.fields.find((one) => one.name === "viewer") })
+    expect(() => generate(adaptGraphql(both, { url: URL_, scalars }), [], { banner: [] })).toThrow(
+      /two operations share the id "viewer"/,
+    )
+    const kept = adaptGraphql(both, { url: URL_, scalars, exclude: { "mutation.viewer": "a test clash" } })
+    expect(kept.operations.find((one) => one.id === "viewer")?.binding).toMatchObject({ operation: "query" })
   })
 
   it("pages a Relay connection as a cursor in the variables", () => {
@@ -254,6 +286,28 @@ describe("graphqlFake", () => {
     })
   })
 
+  it("refuses an object asked with no selection and a member's field asked on a union", async () => {
+    const { fake, operations } = make()
+    await post(fake, graphqlDocument(bindingOf(operations, "issue"), ""), { id: "a" })
+    await post(fake, graphqlDocument(bindingOf(operations, "search"), "id"), { term: "a" })
+    expect(fake.refusals).toEqual(["issue: an object needs a selection", "search.id: a union takes only __typename"])
+  })
+
+  it("answers null for a nullable answer, and a URL without a path matches", async () => {
+    const { operations, definitions } = generated()
+    const fake = graphqlFake({
+      operations,
+      definitions,
+      url: "https://api.tracker.example",
+      answers: { maybeIssue: () => ({ data: null }) },
+    })
+    const answer = await fake.fetch("https://api.tracker.example/", {
+      method: "POST",
+      body: JSON.stringify({ query: graphqlDocument(bindingOf(operations, "maybeIssue")), variables: { id: "a" } }),
+    })
+    expect(await answer.json()).toEqual({ data: { maybeIssue: null } })
+  })
+
   it("throws on a scenario that answers outside its selection", async () => {
     const { fake, operations } = make({ issue: () => ({ data: { id: "1", title: "x" } }) })
     await expect(post(fake, graphqlDocument(bindingOf(operations, "issue"), "id"), { id: "1" })).rejects.toThrow(
@@ -276,7 +330,7 @@ describe("syncGraphql and readGraphql", () => {
     expect(asked).toEqual({ query: INTROSPECTION_QUERY })
     expect(provenance).toMatchObject({ source: URL_, retrieved_at: "2026-11-17T00:00:00.000Z" })
     const read = readGraphql(dir)
-    expect(adaptGraphql(read, { url: URL_, scalars }).operations).toHaveLength(10)
+    expect(adaptGraphql(read, { url: URL_, scalars }).operations).toHaveLength(13)
     writeFileSync(join(dir, "schema.json"), "{}")
     expect(() => readGraphql(dir)).toThrow(/hash mismatch/)
   })

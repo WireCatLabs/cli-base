@@ -265,7 +265,8 @@ answer type are all optional, since a selection asks for some. A query reads; a 
 `Delete` or `Archive` (not `Unarchive`) deletes, so `permissions` gives it `<group>.delete`. A connection with an `after`
 argument pages as `cursor`: `after` and `first` in the variables, `pageInfo.endCursor` and `pageInfo.hasNextPage` in the
 answer, rows under `nodes`. Each scalar the schema defines beyond GraphQL's five is mapped in `scalars`
-(`{ DateTime: { type: "string" } }`), else generation stops; SDL is not read, since that needs graphql-js. Sign-in is
+(`{ DateTime: { type: "string" } }`), else generation stops; SDL is not read, since that needs graphql-js. `exclude` names a field, or
+`query.<name>` / `mutation.<name>` when both roots have it. Sign-in is
 not in a GraphQL schema: `generate`'s `auth` gives it. `graphqlFake({ operations, definitions, url, auth, answers })`
 is the GraphQL counterpart of `fakeApi`: it takes only a document `graphqlDocument` built, refuses a selected field the
 type lacks, an object selected without fields and variables that break their schema, and answers `{ data: { <field> } }`
