@@ -778,6 +778,7 @@ describe("audit --family", () => {
       ["memo", "@wirecat/cli-memo"],
       ["tg", "@wirecat/tg-cli"],
       ["wa", "@wirecat/whatsapp-cli"],
+      ["ydisk", "@wirecat/yandex-disk-cli"],
       ["zm", "@wirecat/zoom-cli"],
     ])
   })

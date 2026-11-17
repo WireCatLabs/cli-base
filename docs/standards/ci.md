@@ -184,6 +184,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
   | 02:55 | amo-cli |
   | 02:59 | max-cli |
   | 03:02 | cli-template |
+  | 03:04 | ydisk-cli |
   | 03:06 | tg-cli |
   | 03:09 | beeline-cli |
   | 03:11 | hubspot-cli |

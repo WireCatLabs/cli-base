@@ -10,6 +10,7 @@ const PACKAGES = new Map<string, string>([
   ...FIRST_PARTY_TOOLS.flatMap((tool) => (tool.package ? [[tool.name, tool.package] as [string, string]] : [])),
   ["gcal", "@wirecat/gcal-cli"],
   ["b24", "@wirecat/bitrix24-cli"],
+  ["ydisk", "@wirecat/yandex-disk-cli"],
 ])
 
 /** Every other CLI of the parity groups that npm has, by name. */
