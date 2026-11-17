@@ -244,6 +244,18 @@ describe("output registry", () => {
     expect(v.is(metaSchema, { ...meta, harder: ranking })).toBe(false)
   })
 
+  it("takes what a search made of its query in meta.query, and refuses an unknown key there", () => {
+    const query = {
+      chat: { word: "anna", chat_id: "12", title: "Anna Smith" },
+      respelled: [{ word: "recieve", tried: ["receive"] }],
+    }
+    expect(v.is(metaSchema, { ...meta, query })).toBe(true)
+    expect(v.is(metaSchema, { ...meta, query: { chat: { ...query.chat, title: null } } })).toBe(true)
+    expect(v.is(metaSchema, { ...meta, query: { respelled: [{ word: "recieve", tried: [] }] } })).toBe(false)
+    expect(v.is(metaSchema, { ...meta, query: { ...query, named: "anna" } })).toBe(false)
+    expect(v.is(metaSchema, { ...meta, named_chat: query.chat })).toBe(false)
+  })
+
   it("accepts a missing entry with no step, and refuses an unknown key", () => {
     const item = itemEnvelopeSchema(v.string())
     expect(v.is(item, { item: "x", missing: [{ field: "text", why: "not read" }], meta })).toBe(true)

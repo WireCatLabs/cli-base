@@ -48,6 +48,8 @@ export {
   nextStepSchema,
   type Page,
   pageSchema,
+  type Query,
+  querySchema,
   type Ranking,
   rankingSchema,
   reference,
