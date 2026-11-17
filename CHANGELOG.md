@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Changed â€” may break callers
+
+- **`names: { fromPath: true }` names a GET of a path ending in `/me` as one item, `-get`, not `-list`.** Notion's
+  `GET /v1/users/me` was `users-me-list` and is now `users-me-get`; a CLI that regenerates on this version renames that
+  command. Watch for: a path whose last fixed word follows a parameter (`/pages/{id}/markdown`) is still named
+  `-list`, since the path alone cannot tell it from a real list (`/blocks/{id}/children`); name it in `commands`.
+
 ### Added
 
 - **A GraphQL API generates its `api` group too.** `adaptGraphql` reads an introspection result into the model: one
