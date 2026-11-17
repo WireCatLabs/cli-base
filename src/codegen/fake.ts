@@ -232,8 +232,11 @@ const patternSample = (pattern: string): string | undefined => {
       atom = next === "d" ? "0" : next === "w" ? "x" : /[^a-zA-Z0-9]/.test(next) ? next : ""
       if (!atom) return undefined
       at += 2
-    } else if ("()|.".includes(char)) return undefined
-    else {
+    } else if ("()|".includes(char)) return undefined
+    else if (char === ".") {
+      atom = "x"
+      at += 1
+    } else {
       atom = char
       at += 1
     }
@@ -245,6 +248,12 @@ const patternSample = (pattern: string): string | undefined => {
   const sample = atoms.join("")
   return regexOf(pattern)?.test(sample) ? sample : undefined
 }
+
+const requiredCount = (node: SchemaNode, definitions: Definitions): number =>
+  objectParts(node, definitions)?.required.length ?? 0
+
+// Strings a pattern made of groups or alternatives often takes: a link, an ISO duration and date, a number, a word.
+const GUESSES = ["https://example.com", "P1D", "2026-01-01", "0", "000000", "x", "example", "a@example.com"]
 
 /** A value the schema accepts: the first enum value, the minimum, one array item, every object field. */
 export const sampleOf = (
@@ -258,8 +267,11 @@ export const sampleOf = (
       // A schema that contains itself stops at its first repeat.
       return target && !seen.has(node.ref) ? sampleOf(target, definitions, new Set([...seen, node.ref])) : null
     }
-    case "union":
-      return node.of[0] ? sampleOf(node.of[0], definitions, seen) : null
+    case "union": {
+      // The branch that asks the most: a first branch such as `{ active: false }` would leave out what a reader needs.
+      const [best] = [...node.of].sort((a, b) => requiredCount(b, definitions) - requiredCount(a, definitions))
+      return best ? sampleOf(best, definitions, seen) : null
+    }
     case "allOf": {
       const parts = objectParts(node, definitions)
       return parts ? sampleOf({ type: "object", ...parts }, definitions, seen) : null
@@ -268,7 +280,14 @@ export const sampleOf = (
       if (node.enum?.[0] !== undefined) return node.enum[0]
       if (node.format === "binary") return "attach://xxxxxx"
       const plain = "x".repeat(Math.max(node.minLength ?? 6, 1)).slice(0, node.maxLength ?? 64)
-      return node.pattern === undefined ? plain : (patternSample(node.pattern) ?? plain)
+      if (node.pattern === undefined) return plain
+      const pattern = regexOf(node.pattern)
+      const fits = (one: string | undefined): one is string =>
+        one !== undefined &&
+        one.length >= (node.minLength ?? 0) &&
+        one.length <= (node.maxLength ?? Number.POSITIVE_INFINITY) &&
+        pattern?.test(one) !== false
+      return [patternSample(node.pattern), ...GUESSES, plain].find(fits) ?? plain
     }
     case "integer":
     case "number":

@@ -78,12 +78,20 @@ const commandFromPath = (operation: ApiOperation, all: readonly ApiOperation[], 
       ((other.binding.method === "GET" && other.binding.path === path) ||
         (other.binding.path.startsWith(`${path}/{`) && !other.binding.path.slice(path.length + 1).includes("/"))),
   )
+  // A PUT on the collection beside a PUT on its item is the "create or update by a unique value" (Attio's assert).
+  const itemPut = all.some(
+    (other) =>
+      other.binding.kind === "http" &&
+      other.binding.method === "PUT" &&
+      other.binding.path.startsWith(`${path}/{`) &&
+      !other.binding.path.slice(path.length + 1).includes("/"),
+  )
   const verb = {
     GET: onItem || parts.at(-1) === "me" ? "get" : "list",
     HEAD: "head",
     DELETE: "delete",
     PATCH: "update",
-    PUT: onItem || collection ? "replace" : "",
+    PUT: onItem ? "replace" : collection ? (itemPut ? "upsert" : "replace") : "",
     POST: onItem ? "update" : collection ? "create" : "",
   }[method]
   return [...words, verb].filter(Boolean).join("-")

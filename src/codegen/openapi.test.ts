@@ -81,20 +81,52 @@ describe("adaptOpenApi refuses what it would otherwise get wrong", () => {
   })
 
   it("names an unknown keyword", () => {
-    expect(problemsOf(document({ Pet: { prefixItems: [{ type: "string" }] } }))).toEqual([
-      '#/components/schemas/Pet: unsupported keyword "prefixItems"',
+    expect(problemsOf(document({ Pet: { patternProperties: { "^x": { type: "string" } } } }))).toEqual([
+      '#/components/schemas/Pet: unsupported keyword "patternProperties"',
       "#/components/schemas/Pet: a schema with no type",
     ])
   })
 
-  it("refuses oneOf beside anyOf, and an allOf of two unions", () => {
+  it("refuses oneOf beside anyOf, and an allOf of two unions beside an object or of unions of objects", () => {
     const either = { oneOf: [{ type: "string" }, { type: "integer" }] }
+    const base = { type: "object", properties: { id: { type: "string" } } }
     expect(
-      problemsOf(document({ Both: { ...either, anyOf: [{ type: "string" }] }, Two: { allOf: [either, either] } })),
+      problemsOf(
+        document({
+          Both: { ...either, anyOf: [{ type: "string" }] },
+          Two: { allOf: [either, either] },
+          Three: { allOf: [either, either, base] },
+          Objects: { allOf: [{ oneOf: [base, { type: "string" }] }, { oneOf: [base, { type: "string" }] }] },
+        }),
+      ),
     ).toEqual([
       "#/components/schemas/Both: both oneOf and anyOf on one schema",
-      "#/components/schemas/Two: an allOf of several unions",
+      "#/components/schemas/Three: an allOf of several unions",
+      "#/components/schemas/Objects: an allOf of several unions",
     ])
+  })
+
+  it("reads a tuple as a list of its places, an allOf of unions as the first, and skips a property count", () => {
+    const path = {
+      anyOf: [
+        { type: "string" },
+        { type: "array", prefixItems: [{ type: "string" }], items: { type: "integer" }, minItems: 2 },
+      ],
+    }
+    const input = document({
+      Path: path,
+      Narrowed: { allOf: [{ $ref: "#/components/schemas/Path" }, { anyOf: [path.anyOf[0], { type: "null" }] }] },
+      Params: { type: "object", additionalProperties: { type: "string" }, minProperties: 1, maxProperties: 9 },
+    })
+    expect(problemsOf(input)).toEqual([])
+    expect(schema(input, "Path")?.schema).toMatchObject({
+      type: "union",
+      of: [
+        { type: "string" },
+        { type: "array", minItems: 2, items: { type: "union", of: [{ type: "string" }, { type: "integer" }] } },
+      ],
+    })
+    expect(schema(input, "Narrowed")?.schema).toMatchObject({ type: "ref", ref: "Path" })
   })
 
   it("refuses an allOf that distributes a union inside itself, instead of recursing forever", () => {

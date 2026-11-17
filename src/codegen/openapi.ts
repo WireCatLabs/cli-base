@@ -29,7 +29,19 @@ const METHODS = ["get", "post", "put", "patch", "delete", "head"] as const
  * Carried by the model, or harmless to lose. `not` only narrows what a payload may hold; losing it
  * accepts more, never refuses a valid request.
  */
-const IGNORED = new Set(["readOnly", "example", "examples", "externalDocs", "title", "xml", "writeOnly", "not"])
+// minProperties and maxProperties only check a count; the service checks it again, so a looser schema loses nothing.
+const IGNORED = new Set([
+  "readOnly",
+  "example",
+  "examples",
+  "externalDocs",
+  "title",
+  "xml",
+  "writeOnly",
+  "not",
+  "minProperties",
+  "maxProperties",
+])
 const KNOWN = new Set([
   ...IGNORED,
   "type",
@@ -46,6 +58,7 @@ const KNOWN = new Set([
   "minimum",
   "maximum",
   "items",
+  "prefixItems",
   "minItems",
   "maxItems",
   "uniqueItems",
@@ -258,7 +271,7 @@ class Adapter {
       const types = new Set(source.enum.map(typeOfConst))
       if (types.size === 1) return [...types][0]
     }
-    if (source.items !== undefined) return "array"
+    if (source.items !== undefined || source.prefixItems !== undefined) return "array"
     if (source.properties !== undefined || source.required !== undefined || source.additionalProperties !== undefined)
       return "object"
     return undefined
@@ -343,8 +356,12 @@ class Adapter {
       }
       case "array": {
         // JSON Schema reads a missing `items` as "any item".
-        const items =
-          source.items === undefined ? { type: "unknown" as const } : this.schema(source.items, `${where}[]`)
+        const rest = source.items === undefined ? { type: "unknown" as const } : this.schema(source.items, `${where}[]`)
+        // A tuple (`prefixItems`) is read as a list whose every item is one of its places: looser, never wrong.
+        const places = Array.isArray(source.prefixItems)
+          ? source.prefixItems.map((one, index) => this.schema(one, `${where}.prefixItems[${index}]`))
+          : []
+        const items: SchemaNode = places.length === 0 ? rest : { type: "union", of: [...places, rest] }
         const node: Node<"array"> = { ...common, type: "array", items }
         if (typeof source.minItems === "number") node.minItems = source.minItems
         if (typeof source.maxItems === "number") node.maxItems = source.maxItems
@@ -439,6 +456,22 @@ class Adapter {
     })
     if (unions.length === 0) return undefined
     const [union] = unions
+    // Every value of an allOf of unions of plain values passes each one, so the first alone is looser and never refuses
+    // a right value, as Attio's kanban status_attribute narrows a path union again. With an object in a branch the
+    // value may need fields from two unions at once, which the first alone would refuse.
+    const plain = (member: unknown) =>
+      !isObject(member) ||
+      (member.type !== "object" &&
+        member.properties === undefined &&
+        member.allOf === undefined &&
+        member.$ref === undefined)
+    if (
+      unions.length > 1 &&
+      union &&
+      unions.length === members.length &&
+      unions.every((one) => one.members.every(plain))
+    )
+      return { ...this.schema(union.member, `${where}.allOf[0]`), ...common }
     if (unions.length > 1 || !union) {
       this.problems.push(`${where}: an allOf of several unions`)
       return { type: "unknown" }
