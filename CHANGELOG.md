@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## 0.115.0 — 17.11.2026
+## Unreleased
 
 ### Changed — may break callers
 
@@ -16,6 +16,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `GET /v1/users/me` was `users-me-list` and is now `users-me-get`; a CLI that regenerates on this version renames that
   command. Watch for: a path whose last fixed word follows a parameter (`/pages/{id}/markdown`) is still named
   `-list`, since the path alone cannot tell it from a real list (`/blocks/{id}/children`); name it in `commands`.
+
+## 0.115.0 — 17.11.2026
 
 ### Added
 
