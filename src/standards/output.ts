@@ -132,6 +132,16 @@ export const rankingSchema = v.strictObject({
   ms: v.pipe(v.number(), v.integer(), v.minValue(0)),
 })
 
+/**
+ * What a search made of its query before it searched: `chat` when a word of it named one chat and the search ran
+ * there, `respelled` for each unknown word and the known spellings tried in its place. A program reads it instead of
+ * parsing the note.
+ */
+export const querySchema = v.strictObject({
+  chat: v.optional(v.strictObject({ word: text, chat_id: text, title: v.nullable(text) })),
+  respelled: v.optional(v.array(v.strictObject({ word: text, tried: v.pipe(v.array(text), v.minLength(1)) }))),
+})
+
 export const metaSchema = v.strictObject({
   run_id: text,
   duration_ms: v.pipe(v.number(), v.integer(), v.minValue(0)),
@@ -145,6 +155,7 @@ export const metaSchema = v.strictObject({
   now_local: v.optional(localTime),
   window: v.optional(v.strictObject({ since: v.optional(isoTime), until: v.optional(isoTime) })),
   ranking: v.optional(rankingSchema),
+  query: v.optional(querySchema),
 })
 
 const offsetOf = (at: number, zone: string): string => {
@@ -192,6 +203,7 @@ export type Page = v.InferOutput<typeof pageSchema>
 export type Issue = v.InferOutput<typeof issueSchema>
 export type Meta = v.InferOutput<typeof metaSchema>
 export type Ranking = v.InferOutput<typeof rankingSchema>
+export type Query = v.InferOutput<typeof querySchema>
 export interface ListEnvelope<T> {
   items: T[]
   page: Page
