@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **ydisk (`@wirecat/yandex-disk-cli`) joins the shared lists.** It is in `PARITY_GROUPS`' `shared-roots` group, beside
+  notion, so `cli-dev audit --family` installs its latest release and compares the root commands every CLI shares. Its
+  monthly run holds 03:04 UTC in WC-CI-9's table. Watch for: a CLI's `--family` audit now installs one more package.
+
 ## 0.116.0 — 17.11.2026
 
 ### Changed — may break callers
