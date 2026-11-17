@@ -5,7 +5,7 @@
  * adds no runtime dependency. `adaptOpenApi` reads an OpenAPI document and `adaptDiscovery` Google Discovery
  * documents the consumer has parsed, and `adaptGraphql` a GraphQL introspection result; `upgradeToOpenApi3` brings Swagger 1.2 and 2.0 to OpenAPI 3 through two optional
  * peer dependencies. `fakeApi` serves the generated manifest as a strict fake for a CLI's tests, and `signInRequirements` with
- * `signInPlace` say which sign-in a call needs and where its token goes. An adapter from
+ * `signInPlace` say which sign-in a call needs and where its token goes (Basic included). An adapter from
  * Postman or anything else lives in the consumer.
  */
 export {

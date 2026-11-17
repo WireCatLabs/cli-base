@@ -268,6 +268,37 @@ describe("fakeApi", () => {
     expect((await fake.fetch("http://u7.files.example/f")).status).toBe(400)
     expect(fake.refusals).toEqual(["body.nmae: no such field", "u7.files.example was called over http:"])
   })
+
+  it("takes a user name and password by Basic, and refuses them in base64 on another host", async () => {
+    const fake = fakeApi({
+      operations: [
+        {
+          id: "me",
+          command: "me",
+          binding: { kind: "http", method: "GET", path: "/users/me" },
+          effect: "read",
+          tags: [],
+          parameters: [],
+          response: { confidence: "contract", schema: "Me" },
+        },
+      ],
+      definitions: { Me: { type: "object", properties: { id: { type: "integer" } }, required: ["id"] } },
+      baseUrl: "https://blog.example/wp-json/wp/v2",
+      securitySchemes: { app: { type: "http", scheme: "basic" } },
+      security: [{ app: [] }],
+      token: "editor:abcd efgh",
+      hosts: { "cdn.example": () => ({ body: {} }) },
+    })
+    const me = "https://blog.example/wp-json/wp/v2/users/me"
+    const basic = (pair: string) => ({ headers: { authorization: `Basic ${btoa(pair)}` } })
+    expect((await fake.fetch(me, basic("editor:abcd efgh"))).status).toBe(200)
+    expect((await fake.fetch(me, basic("editor:wrong"))).status).toBe(401)
+    expect((await fake.fetch("https://cdn.example/a.png", basic("editor:abcd efgh"))).status).toBe(400)
+    expect(fake.refusals).toEqual([
+      "me: no sign-in where its security names it (app)",
+      "the token was sent to cdn.example, which is not the service",
+    ])
+  })
 })
 
 describe("pagination detection does not guess", () => {

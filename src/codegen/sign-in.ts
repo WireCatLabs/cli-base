@@ -10,11 +10,13 @@ export interface SignInPlace {
   /** A header name in lower case, or a query parameter as the spec spells it. */
   name: string
   value: (token: string) => string
+  /** Basic: the token is `<user>:<password>`, which a sign-in with a token alone does not keep. */
+  basic?: true
 }
 
 const BEARER: SignInPlace = { in: "header", name: "authorization", value: (token) => `Bearer ${token}` }
 
-/** `undefined` for a scheme a token cannot be sent by: basic, digest, a key in a cookie, mutual TLS. */
+/** `undefined` for a scheme a token cannot be sent by: digest, a key in a cookie, mutual TLS. */
 export const signInPlace = (scheme: SecurityScheme): SignInPlace | undefined => {
   if (scheme.type === "apiKey") {
     if (!scheme.name || (scheme.in !== "header" && scheme.in !== "query")) return undefined
@@ -26,7 +28,14 @@ export const signInPlace = (scheme: SecurityScheme): SignInPlace | undefined => 
   }
   if (scheme.type === "http") {
     if (!scheme.scheme || /^bearer$/i.test(scheme.scheme)) return BEARER
-    if (/^(basic|digest)$/i.test(scheme.scheme)) return undefined
+    if (/^basic$/i.test(scheme.scheme))
+      return {
+        in: "header",
+        name: "authorization",
+        value: (token) => `Basic ${Buffer.from(token).toString("base64")}`,
+        basic: true,
+      }
+    if (/^digest$/i.test(scheme.scheme)) return undefined
     return { in: "header", name: "authorization", value: (token) => `${scheme.scheme} ${token}` }
   }
   return scheme.type === "oauth2" || scheme.type === "openIdConnect" ? BEARER : undefined

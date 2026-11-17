@@ -376,8 +376,20 @@ export const fakeApi = (options: FakeApiOptions): FakeApi => {
   )
   const carries = (request: Request, url: URL, place: SignInPlace, token: string) =>
     (place.in === "header" ? request.headers.get(place.name) : url.searchParams.get(place.name)) === place.value(token)
+  // A Basic header holds the token in base64, so the signed values are looked for too.
+  const signedValues = (token: string) => [
+    ...new Set([
+      token,
+      ...Object.values(options.securitySchemes ?? {}).flatMap((scheme) => {
+        const place = signInPlace(scheme)
+        return place ? [place.value(token)] : []
+      }),
+    ]),
+  ]
   const leaks = (request: Request, url: URL, token: string) =>
-    [...request.headers.values()].some((value) => value.includes(token)) || url.search.includes(token)
+    signedValues(token).some(
+      (signed) => [...request.headers.values()].some((value) => value.includes(signed)) || url.search.includes(signed),
+    )
 
   const fetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const request = new Request(input, init)
