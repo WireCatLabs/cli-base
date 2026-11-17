@@ -420,6 +420,44 @@ describe("judging an audit", () => {
     ])
   })
 
+  it("accepts the one CLI whose summary differs by name, while the others agree, and fails a stale one", () => {
+    const said = (cli: string, summary: string) =>
+      inputOf(tool(cli, (root) => void root.command("notes").description("notes").command("list").summary(summary)))
+    const judge = (inputs: AuditInput[]) =>
+      auditClis(
+        inputs,
+        options({
+          groups: [
+            {
+              name: "pair",
+              members: ["a", "b", "c"],
+              covers: "tree",
+              differences: [
+                {
+                  rule: "same-path-contract",
+                  target: "notes list: summary",
+                  differs: "a",
+                  reason: "a names itself where the others name the profile",
+                },
+              ],
+            },
+          ],
+        }),
+      )
+    const summaries = (inputs: AuditInput[]) =>
+      judge(inputs).blocking.filter((one) => one.target.endsWith("notes list: summary"))
+
+    for (const others of [["b"], ["b", "c"]]) {
+      const result = judge([said("a", "a's notes"), ...others.map((cli) => said(cli, "this profile's notes"))])
+      expect(result.problems).toEqual([])
+      expect(summaries([said("a", "a's notes"), ...others.map((cli) => said(cli, "this profile's notes"))])).toEqual([])
+    }
+    expect(summaries([said("a", "a's notes"), said("b", "this profile's notes"), said("c", "c's own")])).toHaveLength(1)
+    expect(judge([said("a", "same"), said("b", "same")]).problems).toEqual([
+      "stale difference in pair, no such divergence — remove it: same-path-contract notes list: summary (differs in a)",
+    ])
+  })
+
   it("accepts a flag only one CLI has by name, however many other CLIs lack it, and fails a stale one", () => {
     const withAll = (cli: string) => inputOf(tool(cli, notes("list notes", [["--all", "every note"]])))
     const without = (cli: string) => inputOf(tool(cli, notes("list notes")))
