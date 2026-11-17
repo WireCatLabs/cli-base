@@ -200,26 +200,36 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   },
   // bitrix24-cli's search is cli-core's CRM `search all`, and beeline-cli's and asterisk-cli's meetings take call
   // recordings, not zoom-cli's: they are compared on the root commands every CLI shares, the way gcal and mail are.
-  // amo-cli shares them too, and its CRM commands are compared with b24 in `crm` below.
+  // amo-cli and hubspot-cli share them too, and their CRM commands are compared with b24 in `crm` below.
   // notion-cli joins here until its documents commands ship; then it moves next to drive.
   {
     name: "shared-roots",
-    members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline", "pbx", "notion", "amo"],
+    members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline", "pbx", "notion", "amo", "hubspot"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
     differences: [...MEMO_HAS_NO_PROFILES, ...MEMO_MCP_SUMMARIES, MEMO_DOCTOR_DEEP],
   },
-  // The CRM CLIs on cli-core's shared CRM commands. amo-cli (amoCRM and Kommo) is not on npm yet, so `audit --family`
-  // skips it, as beeline. Only b24 has `leads` (amoCRM has no lead apart from a deal), `products` (amo leaves them for
-  // later) and `deals delete` (amoCRM's API v4 cannot delete a lead,
-  // https://www.amocrm.ru/developers/content/crm_platform/leads-api); a list of roots does not compare presence, so
-  // these need no difference. `people`, `organizations`, `users`, `api` and `session` join once b24's released tree
-  // is on cli-core's shared people and organizations commands: measured against b24 0.23.0 on 2026-11-16 they differ
-  // in options, outputs and summaries.
+  // The CRM CLIs on cli-core's shared CRM commands. amo-cli (amoCRM and Kommo) is not on npm yet and hubspot-cli is
+  // not in the family packages, so `audit --family` skips them, as beeline. Only b24 and hubspot have `leads` (amoCRM
+  // has no lead apart from a deal), only b24 has `products` (amo leaves them for later) and `deals delete` (amoCRM's
+  // API v4 cannot delete a lead, https://www.amocrm.ru/developers/content/crm_platform/leads-api), and hubspot writes
+  // no deals yet; a list of roots does not compare presence, so these need no difference. `people`, `organizations`,
+  // `users`, `api` and `session` join once b24's released tree is on cli-core's shared people and organizations
+  // commands: measured against b24 0.23.0 on 2026-11-16 they differ in options, outputs and summaries.
   {
     name: "crm",
-    members: ["b24", "amo"],
+    members: ["b24", "amo", "hubspot"],
     covers: ["deals", "sync", "search", "store", "schedule", "account"],
-    differences: [],
+    differences: [
+      {
+        rule: "same-path-contract",
+        target: "schedule: summary",
+        differs: "hubspot",
+        reason:
+          "cli-core cuts the summary to a fixed width after it puts in the CLI's name " +
+          "(src/cli/help/commands-text.ts), so hubspot's longer name ends it a word earlier than b24's and amo's",
+        review_after: "2026-12-01",
+      },
+    ],
   },
 ])
 
