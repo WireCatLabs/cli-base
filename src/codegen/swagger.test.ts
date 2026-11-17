@@ -153,6 +153,28 @@ describe("command names and spec patches", () => {
     expect(commands).toEqual(["deals-list", "deals-create", "deals-get", "deals-delete", "deals-archive-batch"])
   })
 
+  it("names a read of `/me` as one item, not a list", () => {
+    const notion = {
+      openapi: "3.1.0",
+      info: { version: "1" },
+      paths: {
+        "/v1/users": { get: { operationId: "get-users" } },
+        "/v1/users/me": { get: { operationId: "get-self" } },
+        "/v1/blocks/{block_id}/children": {
+          parameters: [{ name: "block_id", in: "path", required: true, schema: { type: "string" } }],
+          get: { operationId: "get-block-children" },
+        },
+      },
+      components: { schemas: {} },
+    }
+    const [manifest] = generate(adaptOpenApi(notion), [manifestGenerator({ path: "manifest.ts" })], {
+      banner: [],
+      names: { fromPath: true },
+    })
+    const commands = [...(manifest?.content.matchAll(/"command": "([^"]+)"/g) ?? [])].map(([, command]) => command)
+    expect(commands).toEqual(["users-list", "users-me-get", "blocks-children-list"])
+  })
+
   it("refuses a name for an unknown operation or one that is not kebab case", () => {
     const { document } = patchSpec(hubspot, { stubMissingSchemas: "missing" })
     const run = (commands: Record<string, string>) =>

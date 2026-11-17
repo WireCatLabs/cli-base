@@ -79,7 +79,7 @@ const commandFromPath = (operation: ApiOperation, all: readonly ApiOperation[], 
         (other.binding.path.startsWith(`${path}/{`) && !other.binding.path.slice(path.length + 1).includes("/"))),
   )
   const verb = {
-    GET: onItem ? "get" : "list",
+    GET: onItem || parts.at(-1) === "me" ? "get" : "list",
     HEAD: "head",
     DELETE: "delete",
     PATCH: "update",
