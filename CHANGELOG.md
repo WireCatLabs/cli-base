@@ -8,6 +8,17 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **README rules that put the reader's gain first.** [The README rule](docs/standards/docs.md#wc-doc-7--readmemd-is-the-full-introduction-to-the-tool)
+  now asks for tg-cli's order: what you get and why this tool before the quick start. A
+  [new rule](docs/standards/docs.md#wc-doc-23--a-librarys-or-a-kits-readme-opens-with-what-you-build-a-proof-and-who-builds-on-it)
+  gives libraries and kits their own order: a hero line, a proof, "Built on it", install, the links, and the
+  documents table at the end. Both are checked in review, so no CLI fails a check. A README in max-cli's order
+  (quick start first) is now out of step and moves at its next rewrite.
+
 ## 0.110.0 — 17.11.2026
 
 ### Added

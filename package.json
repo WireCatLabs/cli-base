@@ -125,6 +125,7 @@
     "secrets:scan": "gitleaks git --no-banner --redact .",
     "prepublishOnly": "pnpm build",
     "standards:check": "node config/wirecat/check.mjs",
+    "docs:images": "node docs/images/src/render.ts",
     "docs:lint": "markdownlint-cli2",
     "docs:spell": "cspell lint --config cspell.json --no-progress README.md \"docs/standards/**/*.md\"",
     "ci:quick": "pnpm typecheck"

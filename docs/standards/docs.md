@@ -72,12 +72,14 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 
 ### WC-DOC-7 · `README.md` is the full introduction to the tool
 
-- **Why:** most readers open only the README; it must take them from "what is this" to a first result.
+- **Why:** most readers open only the README, and it must take them from "what is this" to a first result. A reader
+  decides whether to install from what the tool does for them, so the gains and the "why" come before the steps.
 - **Enforced by:** review only.
-- **Example:** follow max-cli's README order: quick start, what you can do, for AI agents, why this tool, the main
-  features, sign-in and profiles, settings and permissions, limits, security, when it does not work, documentation,
-  development.
-- **Exceptions:** none.
+- **Example:** follow tg-cli's README order: the hero line with what the reader gets, three bold gains, what you get
+  (with an invented conversation), why this tool and a one-line link to the comparison, quick start, use it with your
+  agent, what it can do, how it works, settings and permissions, security, when something goes wrong,
+  documentation, development. The install command stays within the first two screens.
+- **Exceptions:** a library or a kit follows WC-DOC-23 instead.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-500.
 
 ### WC-DOC-8 · A user guide follows the portal's authoring and terminology rules
@@ -235,7 +237,8 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
   unfinished next to the others, and one without topics is not found in GitHub search.
 - **Enforced by:** review only.
 - **Example:** `docs/images/social-preview.png` is 1280×640 in the shared style: the command name in the
-  cyan-violet-magenta gradient, a one-line tagline and the "part of WireCat · wirecat.dev" footer. `README.md` opens
+  cyan-violet-magenta gradient, a one-line tagline and the "part of WireCat · wirecat.dev" footer. Copy cli-base's
+  `docs/images/src/banner.html`, change its text, and render it with `pnpm docs:images`. `README.md` opens
   with it through an absolute `raw.githubusercontent.com` URL, so it also renders on npmjs.com, with the tagline as
   its alt text. The same file is the repository's social preview (Settings → Social preview; GitHub has no API for
   it). The homepage is the tool's wirecat.dev docs page, and the topics name the service, `cli`, `ai-agents`, `mcp`
@@ -262,6 +265,19 @@ An agent that opens the skill carries SKILL.md in every later turn of its sessio
   `commands --json` or `guide` already gives stays out of both; a trap that prevents a real mistake stays.
 - **Exceptions:** a SKILL.md under the limit needs no references.
 - **Applies to:** every CLI that ships an agent skill. **Since:** cli-base 0.106.0. **Rulings:** none.
+
+### WC-DOC-23 · A library's or a kit's README opens with what you build, a proof and who builds on it
+
+- **Why:** a developer decides in one screen whether a library fits their stack. A table of documents or a rename
+  history in that screen tells them nothing about what they would build.
+- **Enforced by:** review only.
+- **Example:** cli-base's README, in this order: the banner, one sentence that names what you build with it and on
+  which stack, one proof right below it (a short code sample with its real output in comments, or a GIF), "Built on
+  it" with two or three linked consumers and a count, install, the links row and badges, then the features as gains
+  with one checked number each. The "Key documents" table and the rename history go at the end.
+- **Exceptions:** none.
+- **Applies to:** cli-base, cli-core, cli-template and every other WireCat library or kit. **Since:** cli-base
+  0.111.0. **Rulings:** none.
 
 ## Sources
 

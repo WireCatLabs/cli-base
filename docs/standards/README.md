@@ -40,7 +40,7 @@ the four steps that need a person. A new CLI is ready for its first release when
 | [Data model](data-model.md) | `DATA` | 9 | Core entities, entities and source records, `external_id`, field names, links and duplicates, files, calendar entries |
 | [Testing](testing.md) | `TEST` | 19 | Sandbox, no network, no real waits, one test time limit, leak tests, coverage, contracts, test matrix, parity, fakes as strict as the service |
 | [Security](security.md) | `SECR` | 24 | Secrets, logs, keyring, argv, error text, untrusted text, scanners, workflow hardening, reporting, OAuth sign-in and which app it uses, meeting secrets, keyring in moved-folder runs |
-| [Documents](docs.md) | `DOC` | 22 | User pages and developer pages, generated pages, current facts, changelog, repository page |
+| [Documents](docs.md) | `DOC` | 23 | User pages and developer pages, generated pages, current facts, changelog, repository page |
 | [Comparisons](comparisons.md) | `CMP` | 11 | Which tools a comparison page lists, rows as user tasks, agents and safety, where others are better, proof of marks |
 | [Releases](releases.md) | `REL` | 16 | `bin/release`, the release lock, versions, the owner's yes, trusted publishing |
 | [CI](ci.md) | `CI` | 13 | Hooks, the pull request budget, full validation, monthly runs, conflict markers |
