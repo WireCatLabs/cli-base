@@ -258,6 +258,12 @@ helpers, not the generator. Numbers are expected from a lossless JSON parser (`l
 64-bit integer comes out as its exact decimal string, and any other integer that does not fit a JS
 number fails instead of rounding. Objects are loose, so a field the API added later passes through.
 Unions retain every alternative, including recursive references and Boolean literals.
+
+`typesGenerator` also writes `Responses`: what each operation answers, by its id, so a config's paths into an answer
+are checked in the editor. `manifestGenerator` keeps the spec's own sample answer of an operation in
+`response.example` when it is under 8 KB and not a credential. A spec that names no operation at all (Attio's) gets
+ids from the method and path: `GET /v2/objects/{object}` is `getV2ObjectsByObject`. In a spec that names some, a path
+without an id is still skipped, as Meta's webhook description is.
 `definitionsGenerator` emits the same schema nodes for runtime input traversal; RPC parameters can be in the JSON body.
 `requestSchema(operation, definitions)` turns a manifest operation's request body into a JSON Schema with its
 `$defs`, or `null` when it takes none — what an `api show` command prints.

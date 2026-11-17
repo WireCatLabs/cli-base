@@ -760,3 +760,104 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
     expect(() => coverageOf(["erased"])).toThrow('deletingFlags: "erased" is in no request body or query')
   })
 })
+
+describe("a spec a config-built CLI reads its answers from", () => {
+  const answer = (example: Record<string, unknown>) => ({
+    "200": {
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Record" },
+          ...example,
+        },
+      },
+    },
+  })
+  const records = {
+    openapi: "3.1.0",
+    info: { version: "v2" },
+    paths: {
+      "/v2/objects/{object}/records/{record_id}": {
+        get: {
+          parameters: [
+            { name: "object", in: "path", required: true, schema: { type: "string" } },
+            { name: "record_id", in: "path", required: true, schema: { type: "string" } },
+          ],
+          responses: answer({ example: { id: { record_id: "r1" }, values: {} } }),
+        },
+      },
+      "/v2/self": {
+        get: {
+          responses: answer({ examples: { first: { value: { id: { record_id: "me" }, big: { n: 1 } } } } }),
+        },
+      },
+      "/v2/lists": { get: { responses: answer({ example: { id: { record_id: "x".repeat(9000) } } }) } },
+    },
+    components: {
+      schemas: {
+        Record: {
+          type: "object",
+          properties: { id: { type: "object", properties: { record_id: { type: "string" } } } },
+        },
+      },
+    },
+  }
+
+  it("names every call by its method and path when the spec names none", () => {
+    expect(adaptOpenApi(records).operations.map(({ id }) => id)).toEqual([
+      "getV2ObjectsByObjectRecordsByRecordId",
+      "getV2Self",
+      "getV2Lists",
+    ])
+  })
+
+  it("keeps a small sample answer in the manifest, and the answer of each operation in Responses", () => {
+    const files = generate(
+      adaptOpenApi(records),
+      [manifestGenerator({ path: "manifest.ts" }), typesGenerator({ path: "types.ts" })],
+      { banner: [] },
+    )
+    const manifest = files.find(({ path }) => path === "manifest.ts")?.content ?? ""
+    expect(manifest).toContain('"record_id": "r1"')
+    expect(manifest).toContain('"record_id": "me"')
+    expect(manifest).not.toContain("x".repeat(9000))
+    const types = files.find(({ path }) => path === "types.ts")?.content ?? ""
+    expect(types).toContain(
+      "export interface Responses {\n  getV2ObjectsByObjectRecordsByRecordId: ApiRecord\n  getV2Self: ApiRecord\n  getV2Lists: ApiRecord\n}",
+    )
+  })
+
+  it("writes a lossless number as a number, a long one as text, and never a credential's sample", () => {
+    const model = adaptOpenApi(records)
+    const [self, secret] = model.operations
+    const changed = {
+      ...model,
+      operations: [
+        {
+          ...(self as (typeof model.operations)[number]),
+          response: {
+            confidence: "contract" as const,
+            required: true,
+            schema: { type: "unknown" as const },
+            example: {
+              small: { isLosslessNumber: true, value: "12" },
+              big: { isLosslessNumber: true, value: "9007199254740993" },
+            },
+          },
+        },
+        {
+          ...(secret as (typeof model.operations)[number]),
+          response: {
+            confidence: "contract" as const,
+            required: true,
+            schema: { type: "string" as const, sensitive: true },
+            example: "synthetic-credential-sample",
+          },
+        },
+      ],
+    }
+    const [manifest] = generate(changed, [manifestGenerator({ path: "manifest.ts" })], { banner: [] })
+    expect(manifest?.content).toContain('"small": 12')
+    expect(manifest?.content).toContain('"big": "9007199254740993"')
+    expect(manifest?.content).not.toContain("synthetic-credential-sample")
+  })
+})

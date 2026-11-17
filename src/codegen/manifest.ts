@@ -32,7 +32,8 @@ export interface ManifestOperation {
     schema: SchemaNode
   }[]
   request?: { required: boolean; confidence: Confidence; schema?: string; contentType?: string }
-  response?: { confidence: Confidence; schema?: string; sensitive?: boolean }
+  /** `example` is the spec's own sample answer, when it has a small one: a fake answers with it. */
+  response?: { confidence: Confidence; schema?: string; sensitive?: boolean; example?: unknown }
   security?: readonly SecurityRequirement[]
   permissions?: readonly OperationPermission[]
   pagination?: Pagination
@@ -40,6 +41,18 @@ export interface ManifestOperation {
 
 const withoutUndefined = <T extends object>(value: T): T =>
   Object.fromEntries(Object.entries(value).filter(([, field]) => field !== undefined)) as T
+
+/** A lossless parser's number → a plain one, or its text when a double would round it. */
+const plain = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(plain)
+  if (value === null || typeof value !== "object") return value
+  const lossless = value as { isLosslessNumber?: unknown; value?: unknown }
+  if (lossless.isLosslessNumber === true && typeof lossless.value === "string") {
+    const number = Number(lossless.value)
+    return String(number) === lossless.value ? number : lossless.value
+  }
+  return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, plain(inner)]))
+}
 
 const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperation =>
   withoutUndefined({
@@ -68,6 +81,8 @@ const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperatio
           confidence: operation.response.confidence,
           schema: tree.responseName(operation.id),
           sensitive: operation.response.schema?.sensitive,
+          // A credential's sample is still a credential's shape; it stays out of the shipped manifest.
+          example: operation.response.schema?.sensitive ? undefined : plain(operation.response.example),
         })
       : undefined,
   })
