@@ -236,7 +236,9 @@ still compared with every file; a line from before cli-base 0.80.8 has no `<tree
   `chore(release): 0.4.0` without `## Conformance` fails `release-pr.yml`. `bin/release` writes the section into
   the pull request it opens to raise a taken number, since only the number changes.
 - **Exceptions:** cli-template's own release has no service to check; its `bin/release` skips the live check where
-  `kit/` exists, a folder `new` never copies.
+  `kit/` exists, a folder `new` never copies. A CLI made outside WireCat with `new --preset generic` has
+  `"preset": "generic"` in its `template.json`, and its `bin/release` and `release-start.yml` skip the live check: its
+  owner decides how to check the real service. A CLI under `@wirecat` cannot be made with that preset.
 - **Applies to:** every CLI made from cli-template 0.17.0 or later. **Since:** cli-base 0.80.3. **Rulings:** none.
 
 ## Sources
