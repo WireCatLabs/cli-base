@@ -100,7 +100,12 @@ cli-core's entities, and the adapter behind cli-core's ports. CRM is the first d
   Telegram's app registration, or gcal's generated `api` commands. Known gap, as of 2026-11-08: b24's `people`,
   `organizations`, `products` and `users` are still its own commands, read live, with its own `people` and
   `organizations` writes; they move to cli-core's when it has them. Deals, leads, pipelines, stages and `sync` are
-  cli-core's.
+  cli-core's. Known gap, as of 2026-11-17: cli-core has no shared files domain yet, so the live `files` group that
+  reads and changes the provider's files is hand-written in each file-storage CLI: drive's `files list`, `get`,
+  `copy`, `move`, `update`, `mkdir` and `upload` (`src/commands/remote.ts`), and ydisk's `files list`, `download`,
+  `upload`, `copy`, `move`, `delete` and `restore` (`src/commands/files.ts`). Their paths, flags and output may differ
+  until the group moves to cli-core; a third file-storage CLI waits for it or copies the nearer of the two, not a
+  third shape.
 - **Applies to:** messenger CLIs (tg, max, wa), calendar CLIs (gcal) and CRM CLIs (b24). **Since:** cli-base 0.41.0
   (CRM, and the shared domain built first: cli-base 0.80.1). **Rulings:** NEED-820, NEED-440, NEED-301, NEED-444,
   NEED-2298.

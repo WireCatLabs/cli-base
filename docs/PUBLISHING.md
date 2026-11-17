@@ -162,7 +162,8 @@ The [official MCP Registry](https://registry.modelcontextprotocol.io) lists each
 `dev.wirecat/<repo>`, run with `npx`.
 
 **What the repository needs.** `server.json` at the root (schema 2025-12-11, `packages[0]` the npm package,
-arguments `mcp serve --profiles all`), and `"mcpName": "dev.wirecat/<repo>"` in `package.json`: the registry reads it
+arguments `mcp serve` and a required `--profiles` the installing client asks for, as
+[WC-MCP-9](standards/mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each) shows), and `"mcpName": "dev.wirecat/<repo>"` in `package.json`: the registry reads it
 from npm's copy of that version, so npm comes first. The `version` in `server.json` is overwritten at publish time.
 
 **Each release.** `mcp-registry-dry-run` runs `mcp-publisher validate`. `mcp-registry` (after `tag`) runs

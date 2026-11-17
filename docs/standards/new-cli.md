@@ -161,11 +161,22 @@ installing that command; nothing else is registered anywhere.
    [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing)
    and off the hour; a CLI outside WireCatLabs gets one between 04:01 and 05:59 UTC, after that window. Nothing to
    change by hand.
-4. **WireCat CLIs only: join the shared lists.** `new` prints the entries ready to paste. A pull request to cli-base
-   with the new minute in WC-CI-9's table and the CLI in `PARITY_GROUPS` (at least the `all` group, which compares the
-   shared root commands), a line in cli-core's `WIRECAT_TOOLS` and, after the first release, a line in cli-docs'
-   `tools.json`. A messenger also joins cli-core's `parity.json`. A CLI outside WireCatLabs keeps its parity groups
-   in its own repository and runs `cli-dev audit --groups <file>`. See [Testing](testing.md).
+4. **WireCat CLIs only: join the shared lists.** Each list below names every WireCat CLI by hand, and nothing adds a
+   new one by itself. `new` prints the entries for the first three, ready to paste; add the others the same way.
+
+   | Where | The entry | When |
+   |---|---|---|
+   | cli-base `docs/standards/ci.md`, the table under [WC-CI-9](ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing) | the monthly cron minute `new` picked, and the repository | before the first release |
+   | cli-core `src/ports/wirecat-tools.ts`, `WIRECAT_TOOLS` | the command, `appName`, `envPrefix`, package and what it does | before the first release |
+   | cli-docs `tools.json` | the command, repository, package, language, summaries and `docsRef` | after the first release, since `docsRef` is its tag |
+   | cli-base `src/standards/audit.ts`, `PARITY_GROUPS` | the command in `all` when its tree matches the messengers' and memo's, else in `shared-roots`, which compares only the root commands every CLI shares (ydisk, notion, the CRM CLIs); and in its category's group where one exists (`crm`) | before the first release |
+   | cli-base `src/dev/family.ts`, `PACKAGES` | the command and its npm package, so `cli-dev audit --family` installs it for its neighbours | after the first release, since the audit installs it from npm |
+
+   The cli-base entries due before the first release go in one pull request. A command in `FIRST_PARTY_TOOLS`
+   (`src/wcat/names.ts`) reaches `PACKAGES` from there, and that list also reserves the name (`RESERVED_NAMES`) and
+   makes `wcat --help` offer to install it; add a CLI there only when `wcat` should offer it. A messenger also joins
+   cli-core's `parity.json`. A CLI outside WireCatLabs joins none of these: it keeps its parity groups in its own
+   repository and runs `cli-dev audit --groups <file>`. See [Testing](testing.md).
 
 `cli-dev repo-check --cli <name>` checks steps 1, 3 and 4 on every pull request of a CLI made from cli-template
 (`ci.yml:repo-setup`): the ruleset's four rules on `main` and the required checks of step 1 (`conformance` only where

@@ -321,7 +321,8 @@ store and runs no search. A CLI declares its provider and may replace any step.
 - **Example:** new keyring entries are named `oauth:<provider>:<profile>`. drive's and zm's entries from before the
   module are read and refreshed in the shape they were stored in, so nobody signs in again.
 - **Exceptions:** a CLI that replaces a step still keeps the explicit profile, the lock, and tokens that are never
-  printed. A CLI that signs in another way (a bot token, a session) does not use the module.
+  printed. A CLI that signs in another way (a bot token, a session) does not use the module; a provider token the
+  owner pastes follows [WC-SECR-26](#wc-secr-26--a-provider-token-the-owner-pastes-is-read-hidden-checked-with-the-service-then-kept-in-the-keyring).
 - **Applies to:** every CLI that signs in with OAuth. **Since:** cli-base 0.57.1. **Rulings:** NEED-1734.
 
 ### WC-SECR-23 · Meeting passcodes and the query of a join link never reach the store, the output or an agent
@@ -417,6 +418,46 @@ cli-core's layer for Google and Microsoft, a tool's own layer for a provider onl
   refused.
 - **Applies to:** every CLI that signs in with OAuth, and wirecat-desktop. **Since:** cli-base 0.76.1.
   **Rulings:** owner, 2026-11-04.
+
+### WC-SECR-26 · A provider token the owner pastes is read hidden, checked with the service, then kept in the keyring
+
+Some providers hand the owner a token to copy instead of a sign-in the CLI can run itself: Yandex shows an OAuth token
+in the browser ([Yandex ID's guide](https://yandex.ru/dev/id/doc/en/tokens/debug-token)), and an API key page does
+the same. `session start` takes such a token, and the CLI keeps it the way it keeps any other secret.
+
+- **Read:** with cli-core's `readSecret`, typed at a terminal without echo or read as one line from stdin. Never as an
+  argument ([WC-SECR-5](#wc-secr-5--a-secret-is-never-taken-on-the-command-line)). `<TOOL>_TOKEN` in the environment
+  is read for CI ([WC-SECR-4](#wc-secr-4--secrets-come-from-the-environment-then-the-os-keyring-then-a-private-file)),
+  never written there and never printed, not in an answer, an error or a `--dry-run`.
+- **Checked before it is kept:** `session start` asks the service whose token it is, and keeps the token only when the
+  service accepts it. The answer says `verified: true`, the user and where the token went (`stored_in`), never the
+  token.
+- **Stored:** with cli-core's `ProfileTokenStore`, as `token:<profile>` under the CLI's app name: the keyring, a
+  `0600` file when no keyring works, and a temporary entry in a run with moved folders
+  ([WC-SECR-24](#wc-secr-24--a-run-with-moved-folders-shares-the-owners-keyring-entry-and-never-deletes-it)).
+- **Checked later:** `session status` says where the token comes from (the environment, the keyring or a file);
+  `session status --check` and `doctor --online` ask the service whose token it is.
+- **Revoked:** `session end` forgets the token on this computer. When the provider has a call that revokes such a
+  token, `session end` makes it first; when it has none, `session end` and the CLI's docs say that the token stays
+  valid at the provider and where the owner revokes it there.
+- **The app.** The CLI runs no OAuth flow, so [WC-SECR-25](#wc-secr-25--sign-in-with-wirecats-app-by-default-and-let-the-owner-choose-their-own)'s
+  order does not apply to it. The docs name the app the token is issued for: WireCat's when there is one, or the
+  steps to register the owner's own, with the narrowest access the commands need.
+
+- **Why:** a pasted token opens the account like a password. Shell history, a process list or a log line would keep
+  it where other programs and people can read it, and a token kept before the service accepted it breaks the next
+  command with a confusing error.
+- **Enforced by:** review only, check planned: a cli-core test that session start refuses a token given as an
+  argument and keeps none the service refused.
+- **Example:** `ydisk personal session start` asks `Yandex Disk OAuth token:` without echo, or reads
+  `ydisk personal session start < token.txt`, asks the Disk whose token it is, and answers
+  `{ "profile": "personal", "state": "saved", "stored_in": "keyring", "verified": true, "user": { … } }`.
+- **Exceptions:** a sign-in the CLI runs itself follows
+  [WC-SECR-22](#wc-secr-22--sign-in-with-oauth-through-cli-cores-sign-in-module). A bot token keeps its own entry,
+  `bot:<profile>` (WC-SECR-4). Known gap, as of 2026-11-17: ydisk's `session end` forgets the token and says it stays
+  valid at Yandex, but its docs do not yet say where to revoke it.
+- **Applies to:** every CLI whose sign-in takes a token the owner pastes (ydisk today). **Since:** cli-base 0.117.0.
+  **Rulings:** none.
 
 ## Sources
 

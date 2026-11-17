@@ -15,6 +15,30 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **ydisk (`@wirecat/yandex-disk-cli`) joins the shared lists.** It is in `PARITY_GROUPS`' `shared-roots` group, beside
   notion, so `cli-dev audit --family` installs its latest release and compares the root commands every CLI shares. Its
   monthly run holds 03:04 UTC in WC-CI-9's table. Watch for: a CLI's `--family` audit now installs one more package.
+- **The handbook has a rule for a provider token the owner pastes, WC-SECR-26.** Yandex Disk, for one, gives the
+  owner a token to copy instead of a sign-in a CLI can run. The rule says how `session start` reads it (hidden at a
+  terminal or from stdin, never an argument), checks it with the service before keeping it, keeps it in the keyring
+  through cli-core's `ProfileTokenStore`, and what `session status --check`, `doctor --online` and `session end` do.
+  Watch for: a CLI with such a sign-in checks its `session end` and docs against the "Revoked" line.
+- **WC-MCP-9 covers the MCP Registry entry.** A `server.json` passes `--profiles` as a required argument with a
+  placeholder such as `personal`, never a fixed `all`, and leaves its versions to `release.yml`. Watch for: tg, max,
+  wa, zm, gcal, drive, notion, mail, pbx, b24, amo, hubspot and cli-template shipped `--profiles all`; each now passes the
+  required argument.
+
+### Fixed
+
+- **The New CLI page lists every shared list a new WireCat CLI joins, with the file and when.** It left out the family
+  audit's package map, `PACKAGES` in `src/dev/family.ts`, so a new CLI's neighbours never installed it for
+  `cli-dev audit --family`.
+- **The Kit surface page no longer says that nothing checks the permission keys.** cli-core's `serviceApiCommand`
+  checks each operation's keys from 0.684.0; the page now says so, and that `--dry-run` shows them once the CLI merges
+  `serviceApiPermissions` into its `commandPermissions`. It also no longer says that cli-core cannot read every page:
+  `--all` does.
+- **WC-CMD-29 says what it requires of a CLI's name: the `wcat-<name>` key.** A short name beside it, as every WireCat
+  CLI installs, is fine; the lint's warning about it is not a failure, and an override only silences it.
+- **WC-ARCH-5 names a known gap:** drive's and ydisk's live `files` groups are hand-written in each CLI until cli-core
+  has a shared files domain.
+- **Publishing no longer tells a CLI to pass `--profiles all` in `server.json`.**
 
 ## 0.116.0 â€” 17.11.2026
 

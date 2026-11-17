@@ -153,6 +153,24 @@ profile by default. The server opens one messenger connection for each profile i
 profile shares it. When it serves more than one profile, each call names its profile; a call without one is refused
 and lists the profiles served. Each call follows its own profile's permissions.
 
+**The MCP Registry entry.** A `server.json` starts the server the same way: it passes `mcp serve` and a
+`--profiles` that the person installing it fills in. That argument is `"type": "named"`, `"isRequired": true`, with
+a `"placeholder"` such as `personal` and no `"value"`, so the client asks which profiles to serve. A fixed
+`"value": "all"` is the default this rule forbids: every client installed from the registry would reach every
+account on the computer. The person may still type `all`. memo, which has no profiles, passes `mcp serve` alone.
+The two `version` fields in `server.json`, the server's and its package's, are not kept by hand: `release.yml` sets
+both to the version it publishes, then runs `mcp-publisher validate`, so a new CLI leaves them at `0.0.0`.
+
+```json
+{
+  "type": "named",
+  "name": "--profiles",
+  "description": "The profiles this server serves: one name, a comma-separated list such as work,personal, or all for every profile on this computer",
+  "isRequired": true,
+  "placeholder": "personal"
+}
+```
+
 - **Why:** which accounts an agent can reach is the owner's choice, written in the agent's config. A connection per
   call would break the messenger's pace limits and look unlike the official client.
 - **Enforced by:** review only.
@@ -164,7 +182,8 @@ and lists the profiles served. Each call follows its own profile's permissions.
   it reads other CLIs' stores and selects their accounts with `--source email:<name>` or `--account telegram:1`
   ([cli-base#390](https://github.com/WireCatLabs/cli-base/issues/390), owner decision 2026-10-31). The audit declares
   this once, as a difference of memo, not of the other CLIs.
-- **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-1881.
+- **Applies to:** messenger CLIs; the MCP Registry entry above, every CLI that ships a `server.json`. **Since:**
+  cli-base 0.41.0; the registry entry since cli-base 0.117.0. **Rulings:** NEED-1881.
 
 ### WC-MCP-10 · A tool and its command give the same answer and the same error
 
