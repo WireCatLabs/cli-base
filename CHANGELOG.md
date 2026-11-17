@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`generate` with `auth` signs in an operation whose spec says `security: []`**, the same as one with no
+  `security`. Before, the empty list stayed, cli-core read it as "no sign-in", and the call went out without the key:
+  HubSpot's object specs mark 115 calls so, and each answered 401. An operation keeps its own `security` only when
+  it signs in by `auth`'s schemes. A CLI that drops an empty `security` from the generated manifest at runtime can
+  stop once it regenerates on this version.
+
 ## 0.114.0 — 17.11.2026
 
 ### Added

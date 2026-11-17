@@ -16,6 +16,7 @@ import type {
 } from "./model.js"
 import { identifier, kebab } from "./names.js"
 import { answerPaths, detectPagination, requestParameters } from "./pagination.js"
+import { signInRequirements } from "./sign-in.js"
 
 export class CodegenError extends Error {
   constructor(readonly problems: readonly string[]) {
@@ -283,8 +284,10 @@ const applyAuth = (model: ApiModel, auth: AuthOverride): ApiModel => {
     securitySchemes: auth.securitySchemes,
     security: auth.security,
     securityReason: auth.reason,
-    // A requirement naming the source's own schemes is replaced; `[]`, "no sign-in", stays.
+    // `[]` is replaced too: `auth` says the source's sign-in is wrong, and a key sent to a public call is ignored while
+    // a key left off a private one always fails.
     operations: model.operations.map(({ security, ...operation }) =>
+      signInRequirements({ security }, undefined) &&
       security?.every((requirement) => Object.keys(requirement).every((name) => names.has(name)))
         ? { ...operation, security }
         : operation,
