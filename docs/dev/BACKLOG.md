@@ -34,3 +34,6 @@ None open.
 - **BASE-7** · P2 · Windows: the last platform run failed 14 tests there (file modes, spawning `npm` and `tsc`;
   `README.md`, "Secrets in the OS keyring"), and no CI job runs on Windows, while the keyring promises Credential
   Manager.
+- **BASE-11** · P2 · `release-checks.yml` takes a list of advisories to skip in both dependency audits
+  (`.github/workflows/release-checks.yml:53` and `:73`). npm has no per-advisory ignore, so cli-docs copied both
+  audits with a jq filter for picomatch GHSA-fc5q-39xc-vjpf, which has no fix (cli-docs #678, its DOCS-14).
