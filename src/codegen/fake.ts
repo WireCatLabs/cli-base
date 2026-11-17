@@ -253,7 +253,7 @@ const requiredCount = (node: SchemaNode, definitions: Definitions): number =>
   objectParts(node, definitions)?.required.length ?? 0
 
 // Strings a pattern made of groups or alternatives often takes: a link, an ISO duration and date, a number, a word.
-const GUESSES = ["https://example.com", "P1D", "2026-01-01", "0", "x", "example", "a@example.com"]
+const GUESSES = ["https://example.com", "P1D", "2026-01-01", "0", "000000", "x", "example", "a@example.com"]
 
 /** A value the schema accepts: the first enum value, the minimum, one array item, every object field. */
 export const sampleOf = (
@@ -282,7 +282,12 @@ export const sampleOf = (
       const plain = "x".repeat(Math.max(node.minLength ?? 6, 1)).slice(0, node.maxLength ?? 64)
       if (node.pattern === undefined) return plain
       const pattern = regexOf(node.pattern)
-      return patternSample(node.pattern) ?? GUESSES.find((one) => pattern?.test(one)) ?? plain
+      const fits = (one: string | undefined): one is string =>
+        one !== undefined &&
+        one.length >= (node.minLength ?? 0) &&
+        one.length <= (node.maxLength ?? Number.POSITIVE_INFINITY) &&
+        pattern?.test(one) !== false
+      return [patternSample(node.pattern), ...GUESSES, plain].find(fits) ?? plain
     }
     case "integer":
     case "number":

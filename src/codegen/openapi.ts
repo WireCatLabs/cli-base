@@ -456,9 +456,21 @@ class Adapter {
     })
     if (unions.length === 0) return undefined
     const [union] = unions
-    // Every value of an allOf of unions passes each one, so the first alone is looser and never refuses a right value,
-    // as Attio's kanban status_attribute narrows a path union again.
-    if (unions.length > 1 && union && unions.length === members.length)
+    // Every value of an allOf of unions of plain values passes each one, so the first alone is looser and never refuses
+    // a right value, as Attio's kanban status_attribute narrows a path union again. With an object in a branch the
+    // value may need fields from two unions at once, which the first alone would refuse.
+    const plain = (member: unknown) =>
+      !isObject(member) ||
+      (member.type !== "object" &&
+        member.properties === undefined &&
+        member.allOf === undefined &&
+        member.$ref === undefined)
+    if (
+      unions.length > 1 &&
+      union &&
+      unions.length === members.length &&
+      unions.every((one) => one.members.every(plain))
+    )
       return { ...this.schema(union.member, `${where}.allOf[0]`), ...common }
     if (unions.length > 1 || !union) {
       this.problems.push(`${where}: an allOf of several unions`)

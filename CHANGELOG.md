@@ -55,19 +55,27 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   has a shared files domain.
 - **Publishing no longer tells a CLI to pass `--profiles all` in `server.json`.**
 
+### Changed — may break callers
+
+- **A sample of a union takes the branch with the most required fields, not the first.** Attio's `GET /v2/self`
+  answers `{ active: false }` first, so `fakeApi` answered a sign-in check without the workspace's id. Watch for: a
+  test that reads a sampled union, in `fakeApi` or the GraphQL fake, now sees the larger branch. A field typed
+  `string | { id }` samples as the object; Notion's description samples 92 of its 609 definitions differently, while
+  HubSpot's, ydisk's, Drive's and Calendar's sample as before.
+
 ### Fixed
 
 - **`names: { fromPath: true }` names a PUT on a collection `-upsert` when a PUT on its item exists too.** Attio's
   `PUT /v2/objects/{object}/records` (create or update by a unique value) and `PUT …/records/{record_id}` both became
-  `objects-records-replace`, and generation stopped. Only such a pair is renamed, and it never generated before.
-- **A sample of a union takes the branch with the most required fields, not the first.** Attio's `GET /v2/self`
-  answers `{ active: false }` first, so `fakeApi` answered a sign-in check without the workspace's id. Watch for: a test
-  that read the first branch of a sampled union now sees the larger one.
-- **A string with a `pattern` gets a sample the pattern takes.** A pattern of groups, alternatives or a `.` (Attio's
-  `^https:\/\/.*` and ISO 8601 durations) fell back to `xxxxxx`, which the strict fake then refused.
-- **The OpenAPI adapter reads `prefixItems`, an `allOf` whose members are all unions, and skips `minProperties` and
-  `maxProperties`.** Each stopped generation for Attio's description; each is read looser, never wrongly: a tuple as a
-  list of its places, an `allOf` of unions as its first member.
+  `objects-records-replace`, and generation stopped. Watch for: a CLI that named one of such a pair in
+  `names.commands` to avoid the clash now gets `-upsert` for the other.
+- **A string with a `pattern` gets a sample the pattern and its length bounds take.** A pattern of groups,
+  alternatives or a `.` (Attio's `^https:\/\/.*` and ISO 8601 durations) fell back to `xxxxxx`, which the strict fake
+  then refused.
+- **The OpenAPI adapter reads `prefixItems`, an `allOf` of unions of plain values, and skips `minProperties` and
+  `maxProperties`.** Each stopped generation for Attio's description. A tuple is read as a list of its places, an
+  `allOf` of unions with no object in any branch as its first member; one with an object is still refused. A closed
+  tuple (`items: false`) is still refused.
 
 ## 0.116.0 — 17.11.2026
 

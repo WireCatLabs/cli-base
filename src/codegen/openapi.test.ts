@@ -87,7 +87,7 @@ describe("adaptOpenApi refuses what it would otherwise get wrong", () => {
     ])
   })
 
-  it("refuses oneOf beside anyOf, and an allOf of two unions beside an object", () => {
+  it("refuses oneOf beside anyOf, and an allOf of two unions beside an object or of unions of objects", () => {
     const either = { oneOf: [{ type: "string" }, { type: "integer" }] }
     const base = { type: "object", properties: { id: { type: "string" } } }
     expect(
@@ -96,11 +96,13 @@ describe("adaptOpenApi refuses what it would otherwise get wrong", () => {
           Both: { ...either, anyOf: [{ type: "string" }] },
           Two: { allOf: [either, either] },
           Three: { allOf: [either, either, base] },
+          Objects: { allOf: [{ oneOf: [base, { type: "string" }] }, { oneOf: [base, { type: "string" }] }] },
         }),
       ),
     ).toEqual([
       "#/components/schemas/Both: both oneOf and anyOf on one schema",
       "#/components/schemas/Three: an allOf of several unions",
+      "#/components/schemas/Objects: an allOf of several unions",
     ])
   })
 

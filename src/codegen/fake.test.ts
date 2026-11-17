@@ -378,7 +378,12 @@ describe("sampleOf for a fake's answers", () => {
 
   it("gives a string a pattern of groups or a wildcard takes", () => {
     const duration = "P(?:(\\d+Y)?(\\d+D)?(?:T(\\d+H)?)?)"
-    for (const pattern of ["^https:\\/\\/.*", duration, "^[-+]?([1-8]?\\d(\\.\\d+)?|90(\\.0+)?)$"])
+    for (const pattern of ["^https:\\/\\/.*", duration, "^[-+]?([1-8]?\\d(\\.\\d+)?|90(\\.0+)?)$", "^id_.{4}$"])
       expect(new RegExp(pattern).test(String(sampleOf({ type: "string", pattern }, {}))), pattern).toBe(true)
+  })
+
+  it("keeps a pattern's sample inside the string's length bounds", () => {
+    expect(String(sampleOf({ type: "string", pattern: "^.*$", minLength: 3 }, {})).length).toBeGreaterThanOrEqual(3)
+    expect(String(sampleOf({ type: "string", pattern: "^(\\d+)$", minLength: 3 }, {}))).toMatch(/^\d{3,}$/)
   })
 })
