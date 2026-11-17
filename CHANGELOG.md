@@ -18,6 +18,9 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   gives libraries and kits their own order: a hero line, a proof, "Built on it", install, the links, and the
   documents table at the end. Both are checked in review, so no CLI fails a check. A README in max-cli's order
   (quick start first) is now out of step and moves at its next rewrite.
+- **The live check before a release is WireCat's own.** [WC-REL-17](docs/standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)
+  now names its exception for a CLI made outside WireCat with cli-template's `new --preset generic`: its
+  `bin/release` needs no recorded live check. WireCat's own CLIs keep the gate.
 
 ## 0.110.0 â€” 17.11.2026
 
