@@ -8,6 +8,41 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.110.0 — 17.11.2026
+
+### Added
+
+- **`node-ci.yml` warns about each test over 3 s** ([WC-TEST-20](docs/standards/testing.md#wc-test-20--one-test-time-limit-of-15-s-and-each-test-runs-within-3-s)).
+  The test run also writes Vitest's JSON report to `coverage/tests.json`, and a `slow tests` step runs
+  `cli-dev slow-tests` on it: the slowest tests and files in the log, and a warning annotation for each test over 3 s.
+  It never fails the job. With `test-shards` it runs in the `coverage` job on the merged report, so every shard's
+  tests count. A run with no report or no `cli-dev` gets a notice instead. A caller gets it by moving its
+  `uses: …/node-ci.yml@<sha>` pin; the 3 s warning needs `@wirecat/cli-base` 0.107.0 or later in its lockfile, and an
+  older one prints only the slowest tests. No `vitest.config.ts` changes.
+- **The vocabulary has `upload`, `publish`, `unpublish` and `stale`, and the flag `--tab <id>`.** drive-cli and
+  notion-cli kept `files upload` as an override and cli-core's shared `memories stale` and `memories extract --tab` in
+  a baseline; yandex-disk-cli needs the same words and `files publish` / `files unpublish` for a public link. A new
+  documents CLI now passes `cli-dev lint` without either.
+  `cli-dev lint` fails on a baseline or override entry the vocabulary now covers: at their next bump, drive-cli drops
+  `files upload`, `memories stale` and `memories extract --tab` from `lint/baseline/`, and notion-cli drops
+  `memories stale`, `memories extract --tab` and its `files upload` override.
+- **`meta.query`: what a search made of its query before it searched.** An optional, typed block of the answer
+  envelope's `meta`: `{ chat?: { word, chat_id, title }, respelled?: [{ word, tried }] }`. `chat` says a word of the
+  query named one chat and the search ran in it; `respelled` lists each unknown word and the known spellings tried in
+  its place. A program or an MCP client reads the decision instead of parsing the note. `meta` stays strict: any other
+  key is still refused. See
+  [WC-OUT-7](docs/standards/output.md#wc-out-7--put-the-facts-about-the-run-in-meta).
+
+### Changed — may break callers
+
+- **`node-ci.yml` names the test reporters on the command line**: `default`, `github-actions` and `json`, in the
+  unsharded test run and in the shard merge. That is Vitest's own default in CI plus the JSON report, but it replaces
+  any `reporters` a caller sets in `vitest.config.ts`; none sets one today.
+
+### Fixed
+
+- **`cli-dev slow-tests` with no report names the file and how to write it**, and exits 1, instead of a stack trace.
+
 ## 0.109.0 — 16.11.2026
 
 ### Added
