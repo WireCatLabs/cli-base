@@ -376,19 +376,16 @@ export const fakeApi = (options: FakeApiOptions): FakeApi => {
   )
   const carries = (request: Request, url: URL, place: SignInPlace, token: string) =>
     (place.in === "header" ? request.headers.get(place.name) : url.searchParams.get(place.name)) === place.value(token)
-  // A Basic header holds the token in base64, so the signed values are looked for too.
-  const signedValues = (token: string) => [
-    ...new Set([
-      token,
-      ...Object.values(options.securitySchemes ?? {}).flatMap((scheme) => {
-        const place = signInPlace(scheme)
-        return place ? [place.value(token)] : []
-      }),
-    ]),
-  ]
+  // A Basic header holds the token only in base64, which a query string may also carry URL-encoded.
+  const encoded = Object.values(options.securitySchemes ?? {}).some((scheme) => signInPlace(scheme)?.basic)
+  const secrets = (token: string) => {
+    if (!encoded) return [token]
+    const base64 = Buffer.from(token).toString("base64")
+    return [token, base64, encodeURIComponent(base64)]
+  }
   const leaks = (request: Request, url: URL, token: string) =>
-    signedValues(token).some(
-      (signed) => [...request.headers.values()].some((value) => value.includes(signed)) || url.search.includes(signed),
+    secrets(token).some(
+      (secret) => [...request.headers.values()].some((value) => value.includes(secret)) || url.search.includes(secret),
     )
 
   const fetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {

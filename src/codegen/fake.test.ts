@@ -286,16 +286,20 @@ describe("fakeApi", () => {
       baseUrl: "https://blog.example/wp-json/wp/v2",
       securitySchemes: { app: { type: "http", scheme: "basic" } },
       security: [{ app: [] }],
-      token: "editor:abcd efgh",
+      token: "rédacteur:abcd:efgh",
       hosts: { "cdn.example": () => ({ body: {} }) },
     })
     const me = "https://blog.example/wp-json/wp/v2/users/me"
-    const basic = (pair: string) => ({ headers: { authorization: `Basic ${btoa(pair)}` } })
-    expect((await fake.fetch(me, basic("editor:abcd efgh"))).status).toBe(200)
-    expect((await fake.fetch(me, basic("editor:wrong"))).status).toBe(401)
-    expect((await fake.fetch("https://cdn.example/a.png", basic("editor:abcd efgh"))).status).toBe(400)
+    const base64 = (pair: string) => Buffer.from(pair).toString("base64")
+    const basic = (pair: string) => ({ headers: { authorization: `Basic ${base64(pair)}` } })
+    expect((await fake.fetch(me, basic("rédacteur:abcd:efgh"))).status).toBe(200)
+    expect((await fake.fetch(me, basic("rédacteur:wrong"))).status).toBe(401)
+    expect((await fake.fetch("https://cdn.example/a.png", basic("rédacteur:abcd:efgh"))).status).toBe(400)
+    const query = `https://cdn.example/a.png?auth=${encodeURIComponent(base64("rédacteur:abcd:efgh"))}`
+    expect((await fake.fetch(query)).status).toBe(400)
     expect(fake.refusals).toEqual([
       "me: no sign-in where its security names it (app)",
+      "the token was sent to cdn.example, which is not the service",
       "the token was sent to cdn.example, which is not the service",
     ])
   })
