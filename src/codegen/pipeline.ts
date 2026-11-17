@@ -14,7 +14,7 @@ import type {
   SecurityRequirement,
   SecurityScheme,
 } from "./model.js"
-import { identifier, kebab } from "./names.js"
+import { bindingLabel, identifier, kebab } from "./names.js"
 import { answerPaths, detectPagination, requestParameters } from "./pagination.js"
 import { signInRequirements } from "./sign-in.js"
 
@@ -296,9 +296,7 @@ const applyAuth = (model: ApiModel, auth: AuthOverride): ApiModel => {
 }
 
 const bindingKey = (operation: ApiOperation): string =>
-  operation.binding.kind === "http"
-    ? `${operation.binding.method} ${operation.binding.path}`
-    : `rpc ${operation.binding.name}`
+  operation.binding.kind === "rpc" ? `rpc ${operation.binding.name}` : bindingLabel(operation.binding)
 
 const duplicates = (values: readonly string[]): string[] =>
   [...new Set(values.filter((value, index) => values.indexOf(value) !== index))].sort()
