@@ -37,6 +37,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   group up to 0.695.0 does, must read `place.basic` instead. Until it does, a call that offers Basic and a token may
   be signed with Basic, and a token with no `:` is no longer refused. The caller keeps that check: `value` never throws.
   Digest is still `undefined`.
+- **A sample of a union takes the branch with the most required fields, not the first.** Attio's `GET /v2/self`
+  answers `{ active: false }` first, so `fakeApi` answered a sign-in check without the workspace's id. Watch for: a
+  test that reads a sampled union, in `fakeApi` or the GraphQL fake, now sees the larger branch. A field typed
+  `string | { id }` samples as the object; Notion's description samples 92 of its 609 definitions differently, while
+  HubSpot's, ydisk's, Drive's and Calendar's sample as before.
 
 ### Fixed
 
@@ -54,17 +59,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **WC-ARCH-5 names a known gap:** drive's and ydisk's live `files` groups are hand-written in each CLI until cli-core
   has a shared files domain.
 - **Publishing no longer tells a CLI to pass `--profiles all` in `server.json`.**
-
-### Changed â€” may break callers
-
-- **A sample of a union takes the branch with the most required fields, not the first.** Attio's `GET /v2/self`
-  answers `{ active: false }` first, so `fakeApi` answered a sign-in check without the workspace's id. Watch for: a
-  test that reads a sampled union, in `fakeApi` or the GraphQL fake, now sees the larger branch. A field typed
-  `string | { id }` samples as the object; Notion's description samples 92 of its 609 definitions differently, while
-  HubSpot's, ydisk's, Drive's and Calendar's sample as before.
-
-### Fixed
-
 - **`names: { fromPath: true }` names a PUT on a collection `-upsert` when a PUT on its item exists too.** Attio's
   `PUT /v2/objects/{object}/records` (create or update by a unique value) and `PUT â€¦/records/{record_id}` both became
   `objects-records-replace`, and generation stopped. Watch for: a CLI that named one of such a pair in
