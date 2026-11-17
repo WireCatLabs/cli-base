@@ -87,3 +87,11 @@ change through — write the test. Nothing is excluded but the tests themselves;
 
 `bun test` cannot run the vitest suite, so [`scripts/smoke.ts`](../../scripts/smoke.ts) runs the real
 exports with plain assertions under Bun. A new entry point gets a line there.
+
+## Platforms
+
+This repository's CI runs the tests on Linux only. macOS runs the path tests when they change, and that run does not
+block a merge (`macos.yml`). Nothing runs on Windows here. A CLI built on this library can run its own unit suite on
+macOS and Windows through `node-ci.yml` with `platforms: true`. Here, Full validation started by hand with `platforms`
+does the same. On 2026-10-18 that run passed on macOS and failed 14 tests on Windows (file modes, spawning `npm` and
+`tsc`). In every test the keyring is a fake, so no test reaches a real Keychain or Credential Manager.
