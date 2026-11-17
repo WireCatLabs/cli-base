@@ -12,6 +12,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **The command vocabulary has a tracker's nouns: `issues`, `teams`, `states` and `labels`.** cli-core's tracker
+  commands (`issues list`, `teams list`â€¦) name them, so `cli-dev lint` passes a tracker CLI's command tree. `labels`
+  are a tracker's own, shared by its users; `tags` stay the labels the owner puts on things.
+
 - **ydisk (`@wirecat/yandex-disk-cli`) joins the shared lists.** It is in `PARITY_GROUPS`' `shared-roots` group, beside
   notion, so `cli-dev audit --family` installs its latest release and compares the root commands every CLI shares. Its
   monthly run holds 03:04 UTC in WC-CI-9's table. Watch for: a CLI's `--family` audit now installs one more package.
