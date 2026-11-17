@@ -73,6 +73,8 @@ const parityGroupSchema = v.strictObject({
       absent: v.optional(word),
       /** The one CLI that has the path or flag by design; every other CLI compared must lack it. */
       only: v.optional(word),
+      /** The one CLI whose value (a summary, a value name) differs by design; every other CLI compared must agree. */
+      differs: v.optional(word),
       reason: v.pipe(text, v.minLength(10, "say why, in a sentence")),
       /** Warns from 14 days before and fails 14 days after, as a lint override does. */
       review_after: v.optional(v.pipe(v.string(), v.isoDate("a date, YYYY-MM-DD"))),
@@ -82,6 +84,10 @@ const parityGroupSchema = v.strictObject({
 
 export type ParityGroup = v.InferOutput<typeof parityGroupSchema>
 
+/** Which of `absent`, `only` and `differs` a difference names: the CLI it measures by name. */
+const kindOf = (entry: ParityGroup["differences"][number]) =>
+  (["absent", "only", "differs"] as const).filter((one) => entry[one] !== undefined)
+
 export const defineParityGroups = (input: unknown): ParityGroup[] =>
   parseRegistry("parity groups", v.array(parityGroupSchema), input, (groups) => [
     ...duplicates(groups.map((group) => group.name)).map((name) => `"${name}" is listed twice`),
@@ -90,14 +96,19 @@ export const defineParityGroups = (input: unknown): ParityGroup[] =>
         (both) => `${group.name}: "${both}" is listed twice`,
       ),
       ...group.differences
-        .filter((entry) => (entry.absent || entry.only) && entry.expected)
+        .filter((entry) => kindOf(entry).length === 1 && entry.expected)
         .map(
           (entry) =>
-            `${group.name}: "${entry.target}" has \`${entry.absent ? "absent" : "only"}\`, which measures the values itself; drop \`expected\``,
+            `${group.name}: "${entry.target}" has \`${kindOf(entry)[0]}\`, which measures the values itself; drop \`expected\``,
         ),
       ...group.differences
-        .filter((entry) => entry.absent && entry.only)
-        .map((entry) => `${group.name}: "${entry.target}" has both \`absent\` and \`only\`; keep one`),
+        .filter((entry) => kindOf(entry).length > 1)
+        .map(
+          (entry) =>
+            `${group.name}: "${entry.target}" has ${kindOf(entry)
+              .map((one) => `\`${one}\``)
+              .join(" and ")}; keep one`,
+        ),
     ]),
   ])
 
@@ -114,6 +125,14 @@ const MEMO_HAS_NO_PROFILES = [
   reason:
     "memo has no profiles: it reads other CLIs' stores and selects their accounts with --source and --account " +
     "(https://github.com/WireCatLabs/cli-base/issues/390)",
+}))
+
+/** cli-core's shared `mcp` summaries name the profile; memo, which has none, names itself (cli-memo 0.143.0). */
+const MEMO_MCP_SUMMARIES = ["mcp", "mcp serve"].map((path) => ({
+  rule: "same-path-contract",
+  target: `${path}: summary`,
+  differs: "memo",
+  reason: "memo has no profiles, so its mcp commands serve memo's commands rather than a profile's",
 }))
 
 const MEMO_DOCTOR_DEEP = {
@@ -160,7 +179,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     name: "all",
     members: ["tg", "max", "memo", "drive", "zm", "wa"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "search", "notes", "meetings"],
-    differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
+    differences: [...MEMO_HAS_NO_PROFILES, ...MEMO_MCP_SUMMARIES, MEMO_DOCTOR_DEEP],
   },
   // mail's `search messages` is cli-core's mail search, not the messengers' command: --complete took their 20-odd
   // differences as inherited (https://github.com/WireCatLabs/cli-base/issues/390). mail is compared everywhere else
@@ -169,7 +188,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     name: "mail-shared",
     members: ["tg", "max", "memo", "drive", "zm", "wa", "mail"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "notes", "meetings"],
-    differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
+    differences: [...MEMO_HAS_NO_PROFILES, ...MEMO_MCP_SUMMARIES, MEMO_DOCTOR_DEEP],
   },
   // gcal is compared on what it already shares with every CLI; doctor, mcp, search and skill wait until the published
   // CLIs agree there (https://github.com/WireCatLabs/cli-base/issues/390), then gcal moves back into "all".
@@ -187,7 +206,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     name: "shared-roots",
     members: ["tg", "max", "memo", "drive", "zm", "wa", "b24", "beeline", "pbx", "notion", "amo"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
-    differences: [...MEMO_HAS_NO_PROFILES, MEMO_DOCTOR_DEEP],
+    differences: [...MEMO_HAS_NO_PROFILES, ...MEMO_MCP_SUMMARIES, MEMO_DOCTOR_DEEP],
   },
   // The CRM CLIs on cli-core's shared CRM commands. amo-cli (amoCRM and Kommo) is not on npm yet, so `audit --family`
   // skips it, as beeline. Only b24 has `leads` (amoCRM has no lead apart from a deal), `products` (amo leaves them for

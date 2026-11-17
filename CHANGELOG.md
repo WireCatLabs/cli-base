@@ -18,6 +18,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   audience uses it. Today each CLI has its own row (Examples, Comparison, Discord or none), so a reader has to look
   for the install page in a different place each time. It is checked in review, so no CLI fails a check. Each CLI
   moves to the row at its next README change.
+- **A parity difference can name the one CLI whose value differs.** Beside `absent` and `only`, an entry in a parity
+  group may say `differs: "<cli>"`: that CLI's summary or value name is its own by design, and every other CLI
+  compared must still agree. memo uses it for its `mcp` and `mcp serve` summaries, which name memo instead of a
+  profile (cli-memo 0.143.0). Before this, every CLI's `cli-dev audit` failed on those two summaries.
 
 ## 0.112.0 â€” 17.11.2026
 

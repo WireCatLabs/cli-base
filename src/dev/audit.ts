@@ -426,7 +426,7 @@ export const auditClis = (
         return findings
           .filter((finding) => finding.rule === entry.rule && finding.target.endsWith(` ${entry.target}`))
           .map((finding) => ({ ...entry, group: group.name, target: finding.target, expected: finding.message }))
-      const cli = entry.absent ?? entry.only
+      const cli = entry.absent ?? entry.only ?? entry.differs
       if (!cli) return [{ group: group.name, ...entry }]
       const matching = findings.filter((finding) => {
         if (finding.rule !== entry.rule || finding.target !== `${named(finding.clis)} ${entry.target}`) return false
@@ -435,13 +435,13 @@ export const auditClis = (
           .filter(([name]) => name !== cli)
           .map(([, value]) => value)
         if (mine === undefined || others.length === 0) return false
-        return entry.absent
-          ? mine === "absent" && new Set(others).size === 1
-          : mine !== "absent" && others.every((value) => value === "absent")
+        if (entry.absent) return mine === "absent" && new Set(others).size === 1
+        if (entry.only) return mine !== "absent" && others.every((value) => value === "absent")
+        return mine !== "absent" && new Set(others).size === 1 && !others.includes(mine) && !others.includes("absent")
       })
       if (matching.length === 0 && clis.includes(cli))
         problems.push(
-          `stale difference in ${group.name}, no such divergence — remove it: ${entry.rule} ${entry.target} (${entry.absent ? "absent" : "only"} in ${cli})`,
+          `stale difference in ${group.name}, no such divergence — remove it: ${entry.rule} ${entry.target} (${entry.absent ? "absent" : entry.only ? "only" : "differs"} in ${cli})`,
         )
       return matching.map((finding) => ({
         ...entry,
