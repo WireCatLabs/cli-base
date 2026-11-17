@@ -233,6 +233,32 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   },
 ])
 
+/**
+ * The declared entity and reason differences: they name no CLI list, so they hold in any group, and a CLI's own groups
+ * file keeps them without counting them against its budget.
+ */
+export const SHARED_DIFFERENCES = [
+  ...new Map(
+    PARITY_GROUPS.flatMap((group) => group.differences)
+      .filter((entry) => entry.rule === "same-entity-schema" || entry.rule === "same-error-reason")
+      .map((entry) => [`${entry.rule} ${entry.target}`, entry]),
+  ).values(),
+]
+
+/** A CLI's own parity groups, each with the shared differences it does not declare itself. */
+export const withShared = (groups: ParityGroup[]): ParityGroup[] =>
+  defineParityGroups(
+    groups.map((group) => ({
+      ...group,
+      differences: [
+        ...group.differences,
+        ...SHARED_DIFFERENCES.filter(
+          (entry) => !group.differences.some((own) => own.rule === entry.rule && own.target === entry.target),
+        ),
+      ],
+    })),
+  )
+
 const requiredRootSchema = v.strictObject({ path: v.pipe(v.array(segment), v.minLength(1)), meaning: text })
 export type RequiredRoot = v.InferOutput<typeof requiredRootSchema>
 

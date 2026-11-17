@@ -31,7 +31,7 @@ import {
   versionLevelProblem,
   versionScript,
 } from "../release/index.js"
-import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
+import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS, withShared } from "../standards/audit.js"
 import type { ErrorReason } from "../standards/errors.js"
 import { defineReasons } from "../standards/errors.js"
 import {
@@ -132,8 +132,9 @@ const USAGE = `usage: cli-dev <command> [options]
                                        --for's CLI, when given). --lint judges that CLI's lint
                                        rules by its own lint/ folder; the rest by --baseline
                                        (audit/baseline). --groups replaces PARITY_GROUPS with the
-                                       JSON list of parity groups in that file; --differences adds
-                                       to the groups in use. --family takes this CLI's one --cli and
+                                       groups in that file (each keeps cli-base's entity and reason
+                                       differences); --differences adds to the
+                                       groups in use. --family takes this CLI's one --cli and
                                        installs the latest published CLIs of the parity groups beside
                                        it (npm, without install scripts), runs each in an empty home,
                                        reads every CLI's commands info (so same-error-reason and
@@ -879,7 +880,7 @@ const auditRun = (args: string[], io: DevIo, family = false) => {
   let groups = PARITY_GROUPS
   if (values.groups) {
     try {
-      groups = defineParityGroups(readJson(at(values.groups)))
+      groups = withShared(defineParityGroups(readJson(at(values.groups))))
     } catch (error) {
       if (error instanceof RegistryError) throw new Error(`${values.groups}: ${error.problems.join("; ")}`)
       throw error

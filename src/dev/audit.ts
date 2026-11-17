@@ -1,6 +1,12 @@
 import type { CommandsDocument } from "../commands/document.js"
 import type { CommandInfo, OptionInfo } from "../commands/index.js"
-import { AUDIT_RULES, type AuditRule, type ParityGroup, type RequiredRoot } from "../standards/audit.js"
+import {
+  AUDIT_RULES,
+  type AuditRule,
+  type ParityGroup,
+  type RequiredRoot,
+  SHARED_DIFFERENCES,
+} from "../standards/audit.js"
 import { BASE_REASONS, type ErrorReason } from "../standards/errors.js"
 import { LINT_RULES, OVERRIDE_BUDGET, type Override } from "../standards/lint.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
@@ -472,9 +478,13 @@ export const auditClis = (
       )
     }
   }
-  for (const group of options.groups)
-    if (group.differences.length > OVERRIDE_BUDGET)
-      problems.push(`${group.name} declares ${group.differences.length} differences; the budget is ${OVERRIDE_BUDGET}`)
+  for (const group of options.groups) {
+    const own = group.differences.filter(
+      (entry) => !SHARED_DIFFERENCES.some((shared) => shared.rule === entry.rule && shared.target === entry.target),
+    ).length
+    if (own > OVERRIDE_BUDGET)
+      problems.push(`${group.name} declares ${own} differences; the budget is ${OVERRIDE_BUDGET}`)
+  }
 
   const baselined = new Set(
     Object.entries(options.baseline)

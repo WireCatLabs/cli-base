@@ -621,6 +621,21 @@ describe("cli-dev audit", () => {
     expect(err.at(-1)).toBe("differences.json: unknown group outside")
   })
 
+  it("keeps cli-base's declared entity and reason differences when a --groups file replaces its groups", async () => {
+    write("tg.json", tool("tg", notes("list notes", [["--limit <n>", "how many"]], "hit")))
+    write("max.json", tool("max", notes("list notes", [["--limit <n>", "how many"]], "hit")))
+    writeFileSync(join(root, "tg-schemas.json"), JSON.stringify({ hit: { type: "object" } }))
+    writeFileSync(join(root, "max-schemas.json"), JSON.stringify({ hit: { type: "array" } }))
+    writeFileSync(
+      join(root, "groups.json"),
+      JSON.stringify([{ name: "outside", members: ["tg", "max"], covers: ["notes"], differences: [] }]),
+    )
+    io.now = () => new Date("2026-11-12T12:00:00Z")
+    const schemas = ["--schemas", "tg=tg-schemas.json", "--schemas", "max=max-schemas.json"]
+    expect(await audit("--groups", "groups.json", ...schemas)).toBe(0)
+    expect(err.join("\n")).not.toContain("new  same-entity-schema")
+  })
+
   it("warns of a difference near its review_after and fails one long past it", async () => {
     write("max.json", tool("max", notes("list the notes", [["--limit <n>", "how many"]])))
     writeFileSync(

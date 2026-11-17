@@ -124,7 +124,7 @@ published CLIs of the parity groups into a temporary folder (npm, no install scr
 home with the keyring out of reach, and reads each one's `commands info --json`, so `same-entity-schema` and
 `same-error-reason` are measured and fail like the other rules; a known difference of either is a parity-group
 difference that names no CLI list (`entity hit`, `reason profile.unknown: code`), retired by its `review_after`, since
-which CLIs share the entity or reason changes with each release. It defaults `--for` to this CLI, `--lint` to its `lint/` and `--groups` to
+which CLIs share the entity or reason changes with each release; a `--groups` file keeps them, outside its budget. It defaults `--for` to this CLI, `--lint` to its `lint/` and `--groups` to
 `config/parity-groups.json`. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
 (`max+tg chats list --limit`, `tg: chats grab` for a lint violation); `--write-baseline` rewrites them. `--lint
 <cli>=<dir>` judges that CLI's lint rules by its own `lint/` folder instead. A new finding fails the run — only one
