@@ -8,6 +8,32 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.114.0 — 17.11.2026
+
+### Added
+
+- **hubspot-cli takes the monthly minute 03:11 UTC** in the [CI](docs/standards/ci.md) list, and joins the
+  `shared-roots` and `crm` parity groups next to b24 and amo. Like notion and pbx, it is not one of the CLIs
+  `audit --family` installs. Its `schedule` summary is a declared difference until cli-core stops cutting summaries
+  after the CLI's name, which ends hubspot's a word earlier than b24's.
+
+### Fixed
+
+- **An audit by a CLI's own parity groups keeps cli-base's declared entity schema and error reason differences.**
+  `cli-dev audit --groups`, and `--family` reading `config/parity-groups.json`, replaced cli-base's groups along with
+  differences such as `entity hit`, so every CLI made from cli-template blocked on a divergence cli-base had already
+  accepted. These differences name no CLI list, so they now hold in any audit, outside every group's budget. Past
+  their `review_after` they only warn there: only cli-base can renew them, and its own weekly audit fails on them. A
+  group that declares the same rule and target keeps its own entry.
+- **`cli-dev audit --family` no longer blocks a CLI on an entity schema a published CLI shares with it.** The published
+  CLIs then already disagree among themselves, as when some are on an older cli-core, and the release cannot fix it.
+  A schema no other CLI prints still blocks, and so does any shared one outside `--family`, where two local builds
+  could vouch for each other. The rule cannot tell ahead from behind, and the first CLI to take a new schema still
+  needs a declared difference. A CRM CLI made from cli-template on cli-core 0.695.0 was blocked on `entity hit`:
+  cli-core 0.688.0 added the `crm_file` kind, and zm 0.80.0 prints it while tg 0.133.0, max 0.118.0, wa 0.45.0,
+  cli-memo 0.143.0 and drive 0.71.0 do not yet. cli-base already declared that difference, and the entry above now
+  keeps it in a CLI's own audit.
+
 ## 0.113.0 — 17.11.2026
 
 ### Added
