@@ -8,6 +8,48 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`adaptOpenApi` reads an OpenAPI 3.1 field of several types.** `type: [string, number, "null"]`, as Resend's file
+  types its contact properties, becomes a union of one schema per type, nullable when the list holds `null`; each
+  member keeps the `enum` values and constraints that fit its type. Such a field stopped generation before. The types,
+  the Valibot schemas and `fakeApi` check it as any other union.
+- **`adaptOpenApi` reads an upload sent as bytes.** A body with no JSON, multipart or form type whose schema is a binary
+  string (or none), as Petstore 3's `application/octet-stream` image upload, keeps its content type and no schema;
+  the manifest's `request.contentType` says how it travels. It stopped generation before. cli-core sends it from
+  `--body-file`.
+- **`signInRequirements` and `signInPlace` say which sign-in a call needs and where the token goes.** The
+  requirements are the operation's own `security`, else the document's; a call whose requirements are absent or only
+  `{}` needs none. cli-core's `api` group signs by them and `fakeApi` checks by them, so a CLI's test and its real
+  calls follow one rule.
+- **`fakeApi` checks the document's sign-in and each operation's own scheme.** `security` gives it the manifest's
+  default requirements, which an operation's own `security` (`[]` included) replaces; with `auth`, a call the
+  document leaves open no longer needs the header. `token` with `securitySchemes` checks each call by its own
+  schemes: `Bearer <token>`, an `api_key` header, or a key in the query, and none for an open call. A CLI's test
+  then drops the copy of the document's `security` onto each operation. An upload's bytes are taken as sent, under
+  the operation's content type.
+- **`adaptOpenApi` reads three more shapes found in public specs.** An `allOf` member that holds only a description,
+  as Resend writes one beside a reference, now describes the field instead of stopping generation. A schema with only
+  `nullable: true`, as GitHub's file has, is a nullable "anything". An integer marked `unix-time` (Stripe) or
+  `unixtime` (OpenAI) is a plain integer; any other unknown integer format still stops generation. An `anyOf` or
+  `oneOf` whose members only add `required` fields to the object they sit on, as Resend's "give at least one of",
+  becomes a union of that whole object, once with each; before, each member was an empty object no body matched.
+- **`adaptDiscovery` carries a Discovery document's OAuth.** A document with `auth.oauth2` gives the model an `oauth2`
+  scheme with its scopes, and each of its methods `security: [{ oauth2: <its scopes> }]`. Before, the manifest named
+  no sign-in, and cli-core sent the token only because a manifest without schemes got a bearer header.
+
+### Fixed
+
+- **`fakeApi` answers a string schema with JSON text.** A sample answer of type string, as Petstore's `loginUser`, was
+  sent unquoted, as a file is, so the CLI could not read it. A string an answer in `answers` gives is still sent as it
+  is.
+- **`sampleOf` gives a value the generated schemas accept for a simple `pattern` and a binary string.** A pattern of
+  literals, classes and counts, as Resend's `^#[0-9A-Fa-f]{6}$`, gets a matching string (`#000000`); a binary
+  string gets `attach://xxxxxx`, which the Valibot schema asks for. Before, a CLI's generated test sent a sample its
+  own check refused.
+
 ## 0.111.0 — 17.11.2026
 
 ### Added

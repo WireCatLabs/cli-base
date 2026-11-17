@@ -61,17 +61,29 @@ describe("adaptOpenApi refuses what it would otherwise get wrong", () => {
     expect(problemsOf(document({}, paths))).toEqual([
       '#/paths/~1a~1{id}/post.parameters[0]: parameter "session" is in "cookie"',
       '#/paths/~1a~1{id}/post: path parameter "id" is not declared',
-      "#/paths/~1a~1{id}/post: a body must be JSON, multipart or a form, found text/plain",
+      "#/paths/~1a~1{id}/post: a body must be JSON, multipart, a form or bytes, found text/plain",
     ])
   })
 
-  it("names an unknown keyword and a type list it cannot hold as one", () => {
-    expect(
-      problemsOf(document({ Pet: { prefixItems: [{ type: "string" }] }, Id: { type: ["string", "integer"] } })),
-    ).toEqual([
+  it("reads GitHub's typeless `{ nullable: true }` as anything, and Stripe's unix-time as an integer", () => {
+    const input = document({
+      Run: {
+        type: "object",
+        properties: { conclusion: { nullable: true }, created: { type: "integer", format: "unix-time" } },
+      },
+    })
+    expect(schema(input, "Run")?.schema).toMatchObject({
+      properties: { conclusion: { type: "unknown", nullable: true }, created: { type: "integer" } },
+    })
+    expect(problemsOf(document({ Big: { type: "integer", format: "uint128" } }))).toEqual([
+      '#/components/schemas/Big: unsupported integer format "uint128"',
+    ])
+  })
+
+  it("names an unknown keyword", () => {
+    expect(problemsOf(document({ Pet: { prefixItems: [{ type: "string" }] } }))).toEqual([
       '#/components/schemas/Pet: unsupported keyword "prefixItems"',
       "#/components/schemas/Pet: a schema with no type",
-      '#/components/schemas/Id: a schema of several types ["string","integer"]',
     ])
   })
 

@@ -81,7 +81,7 @@ it changed, for the CLI's provenance.
 
 From the source the generator reads:
 
-- **Operations**: method and path, parameters, the request body (JSON, multipart or a form), and the first 2xx answer
+- **Operations**: method and path, parameters, the request body (JSON, multipart, a form, or bytes for an upload), and the first 2xx answer
   with a JSON body (`200`, `201` as HubSpot creates, `202`, `207`, or `2XX`). `application/hal+json`,
   `application/json; charset=utf-8` and other JSON types count as JSON.
 - **Effect**: GET and HEAD read, POST, PUT and PATCH write, DELETE is destructive.
@@ -130,14 +130,17 @@ From the source the generator reads:
 
 ### A strict fake for tests
 
-`fakeApi({ operations, definitions, baseUrl, auth, answers, hosts })` serves the generated manifest and definitions as
-a `fetch` for a CLI's tests. It refuses, with a 4xx and a line in `refusals`, an unknown path or method, an unknown or
-mistyped query parameter (a repeated one is a list), a missing required one, a body field the schema lacks (JSON, a
-form or multipart), and a call without the `auth` header, unless the operation's `security` is `[]`. An operation
-answers a sample built from its response schema, or what `answers` gives for it, checked against that schema: an
-answer off the schema throws. A string, bytes or a stream is sent as it is, for a file. `hosts` answers the other
-hosts a link points at (`downloader.disk.yandex.ru`, `*.disk.yandex.net`), and refuses a call there over another
-scheme or with the `auth` header. A CLI writes only its scenarios. `looseObjects` lets unknown fields through, for a
+`fakeApi({ operations, definitions, baseUrl, security, securitySchemes, token, answers, hosts })` serves the generated
+manifest and definitions as a `fetch` for a CLI's tests. It refuses, with a 4xx and a line in `refusals`, an unknown
+path or method, an unknown or mistyped query parameter (a repeated one is a list), a missing required one, a body field
+the schema lacks (JSON, a form or multipart), an upload under another content type, and a call without its sign-in.
+`token` is checked where the call's schemes put it (`Bearer <token>`, an `api_key` header, a key in the query), by
+`signInRequirements`: the operation's own `security`, else the document's `security`, and none when neither names
+one, as cli-core then sends none. The older `auth: { header, value }` is one header every call needs, unless its
+`security` is empty. An operation answers a sample built from its response schema, as JSON, or what `answers` gives
+for it, checked against that schema: an answer off the schema throws. A string, bytes or a stream an answer gives is
+sent as it is, for a file. `hosts` answers the other hosts a link points at (`downloader.disk.yandex.ru`,
+`*.disk.yandex.net`), and refuses a call there over another scheme or with the token. A CLI writes only its scenarios. `looseObjects` lets unknown fields through, for a
 source whose subtypes the definitions cannot tell apart.
 
 ### The API part of the agent skill

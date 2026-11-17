@@ -58,6 +58,11 @@ const KNOWN = new Set([
   "$ref",
   "discriminator",
 ])
+/** Seconds since 1970 as Stripe (`unix-time`) and OpenAI (`unixtime`) mark them: a plain integer. */
+const SECONDS = new Set(["unix-time", "unixtime"])
+
+/** What a type list's union keeps for itself instead of repeating it on each member. */
+const TYPE_LIST_OWN = new Set(["description", "default", "deprecated", "nullable", "const", "enum", "title"])
 const PRIMITIVE_CONSTRAINTS = ["pattern", "minLength", "maxLength", "minimum", "maximum", "enum"]
 
 /** What the HTTP client sets itself; as flags they would only invite a second, wrong value. */
@@ -150,6 +155,15 @@ const isNullOnly = (source: unknown): boolean =>
   (source.type === "null" ||
     (Array.isArray(source.type) && source.type.length > 0 && source.type.every((t) => t === "null")))
 
+const fits = (value: unknown, type: unknown): boolean =>
+  type === "integer"
+    ? Number.isInteger(value)
+    : type === "array"
+      ? Array.isArray(value)
+      : type === "object"
+        ? isObject(value)
+        : typeof value === type
+
 const pick = (source: Json, keys: readonly string[]): Json => Object.fromEntries(keys.map((key) => [key, source[key]]))
 
 const typeOfConst = (value: unknown): string | undefined =>
@@ -176,6 +190,19 @@ const typedFromExample = (schema: unknown): boolean => {
   }
   return isObject(schema) && !marked(schema)
 }
+
+const isRequiredOnly = (member: unknown): boolean =>
+  isObject(member) && Array.isArray(member.required) && Object.keys(member).every((key) => key === "required")
+
+const isNote = (member: unknown): member is Json =>
+  isObject(member) && Object.keys(member).every((keyword) => IGNORED.has(keyword) || keyword === "description")
+
+/** A body schema that says "any bytes": none, `{}`, or a binary string, as 3.0 writes it or 3.1 does. */
+const isBytes = (schema: unknown): boolean =>
+  schema === undefined ||
+  (isObject(schema) &&
+    (Object.keys(schema).length === 0 ||
+      (schema.type === "string" && (schema.format === "binary" || schema.contentMediaType !== undefined))))
 
 class Adapter {
   readonly problems: string[] = []
@@ -219,13 +246,11 @@ class Adapter {
   }
 
   /** OpenAPI 3.1 writes `nullable` as `type: [T, "null"]`. */
-  #type(source: Json, common: Common, where: string): unknown {
+  #type(source: Json, common: Common): unknown {
     if (Array.isArray(source.type)) {
       const types = source.type.filter((type) => type !== "null")
       if (types.length !== source.type.length) common.nullable = true
-      if (types.length === 1) return types[0]
-      this.problems.push(`${where}: a schema of several types ${JSON.stringify(source.type)}`)
-      return null
+      return types[0]
     }
     if (source.type !== undefined) return source.type
     if (source.const !== undefined) return typeOfConst(source.const)
@@ -266,10 +291,24 @@ class Adapter {
     const keyword = Array.isArray(source.oneOf) ? "oneOf" : Array.isArray(source.anyOf) ? "anyOf" : undefined
     if (keyword) {
       if (Array.isArray(source.type) && source.type.includes("null")) common.nullable = true
-      return this.#union(source[keyword] as unknown[], keyword, common, where)
+      const members = source[keyword] as unknown[]
+      // Resend's "give at least one of": members that only add required fields to the object they sit on.
+      if (isObject(source.properties) && members.every(isRequiredOnly)) {
+        const { [keyword]: _, ...object } = source
+        const required = Array.isArray(source.required) ? source.required : []
+        const whole = members.map((member) => ({
+          ...object,
+          required: [...required, ...((member as Json).required as unknown[])],
+        }))
+        return this.#union(whole, keyword, common, where)
+      }
+      return this.#union(members, keyword, common, where)
     }
 
-    const type = this.#type(source, common, where)
+    const types = Array.isArray(source.type) ? source.type.filter((type) => type !== "null") : []
+    if (types.length > 1) return this.#typeList(source, types, common, where)
+
+    const type = this.#type(source, common)
     const values = source.const !== undefined ? [source.const] : Array.isArray(source.enum) ? source.enum : undefined
     switch (type) {
       case "string": {
@@ -284,7 +323,7 @@ class Adapter {
       case "integer": {
         const node: Node<"integer"> = { ...common, type: "integer" }
         if (source.format === "int32" || source.format === "int64") node.format = source.format
-        else if (source.format !== undefined)
+        else if (source.format !== undefined && !SECONDS.has(String(source.format)))
           this.problems.push(`${where}: unsupported integer format "${source.format}"`)
         if (typeof source.minimum === "number") node.minimum = source.minimum
         if (typeof source.maximum === "number") node.maximum = source.maximum
@@ -317,7 +356,11 @@ class Adapter {
       case null:
         return { type: "unknown" }
       case undefined:
-        if (Object.keys(source).every((keyword) => IGNORED.has(keyword) || keyword === "description")) {
+        if (
+          Object.keys(source).every(
+            (keyword) => IGNORED.has(keyword) || keyword === "description" || keyword === "nullable",
+          )
+        ) {
           return { ...common, type: "unknown" }
         }
         this.problems.push(`${where}: a schema with no type`)
@@ -326,6 +369,22 @@ class Adapter {
         this.problems.push(`${where}: unsupported type ${JSON.stringify(type)}`)
         return { type: "unknown" }
     }
+  }
+
+  /**
+   * OpenAPI 3.1's `type: [string, number, "null"]`: a union of one schema per type, each keeping the constraints and
+   * enum values that fit it; a type no enum value fits is left out.
+   */
+  #typeList(source: Json, types: unknown[], common: Common, where: string): SchemaNode {
+    if ((source.type as unknown[]).includes("null")) common.nullable = true
+    const values = source.const !== undefined ? [source.const] : Array.isArray(source.enum) ? source.enum : undefined
+    const rest = Object.fromEntries(Object.entries(source).filter(([key]) => !TYPE_LIST_OWN.has(key)))
+    const of = types.flatMap((type) => {
+      const fitting = values?.filter((value) => fits(value, type))
+      if (fitting?.length === 0) return []
+      return [this.schema({ ...rest, type, ...(fitting ? { enum: fitting } : {}) }, where)]
+    })
+    return { ...common, type: "union", of }
   }
 
   #object(source: Json, common: Common, where: string): SchemaNode {
@@ -402,6 +461,20 @@ class Adapter {
   }
 
   #allOf(source: Json, members: unknown[], common: Common, where: string): SchemaNode {
+    // A member with only a description, as Resend writes one beside a reference, describes the field and adds nothing.
+    const notes = members.filter(isNote)
+    if (notes.length > 0 && notes.length < members.length) {
+      const [note] = notes.flatMap((one) =>
+        typeof one.description === "string" && one.description.trim() ? [one] : [],
+      )
+      if (note && !common.description) common.description = note.description as string
+      return this.#allOf(
+        source,
+        members.filter((one) => !isNote(one)),
+        common,
+        where,
+      )
+    }
     const distributed = this.#distribute(members, common, where)
     if (distributed) return distributed
     const of = members.map((member, index) => this.schema(member, `${where}.allOf[${index}]`))
@@ -469,7 +542,7 @@ class Adapter {
 
   /**
    * JSON when offered, unless a multipart body carries a file, which JSON cannot; then multipart,
-   * then a form. A content type outside these three refuses the operation.
+   * then a form, then bytes (a type whose schema is a binary string). Anything else refuses the operation.
    */
   #requestBody(source: Json, where: string): ApiBody {
     const content = isObject(source.content) ? source.content : {}
@@ -481,8 +554,11 @@ class Adapter {
     const type = carriesFile ? MULTIPART : (json ?? [MULTIPART, FORM].find((candidate) => offered.includes(candidate)))
     const body: ApiBody = { confidence: "contract", required: source.required === true }
     if (offered.length === 0) return body
+    // An upload sent as the bytes themselves: `application/octet-stream`, an image type.
+    const raw = type ? undefined : offered.find((candidate) => isBytes(schemaOf(candidate)))
+    if (raw) return { ...body, contentType: raw }
     if (!type) {
-      this.problems.push(`${where}: a body must be JSON, multipart or a form, found ${offered.join(", ")}`)
+      this.problems.push(`${where}: a body must be JSON, multipart, a form or bytes, found ${offered.join(", ")}`)
       return body
     }
     // Only a charset may be dropped: `application/merge-patch+json` must travel as itself.
