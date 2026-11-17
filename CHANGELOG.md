@@ -13,10 +13,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 ### Added
 
 - **Codegen writes what each operation answers.** `typesGenerator` adds `Responses`, a map from operation id to its
-  answer type, so a config-built CLI's paths into an answer are checked in the editor. `manifestGenerator` keeps the
-  spec's own sample answer in `response.example` when it is under 8 KB and not a credential; a fake can answer with
-  it. A schema named `Responses` now stops generation, since it would collide. After the bump, regenerate: a
-  generated `types.ts`, and a manifest whose spec has samples, change, so `--check` calls them stale.
+  answer type, so a config-built CLI's paths into an answer are checked in the editor. A new `examplesGenerator` writes
+  the spec's own sample answers (each under 8 KB, none from an answer that holds a credential) to their own file, for a
+  fake to answer with. A schema named `Responses` now stops generation, since it would collide. After the bump, run
+  `pnpm generate`: each generated `types.ts` gains `Responses`, so `--check` calls it stale until then.
 - **A spec that names no operation still generates.** Attio's OpenAPI file has no `operationId` at all, so it gave an
   empty catalog. Now each call gets an id from its method and path (`GET /v2/objects/{object}` â†’
   `getV2ObjectsByObject`). A spec that names some operations still skips the paths without one, as before.

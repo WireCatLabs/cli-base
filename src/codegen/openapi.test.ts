@@ -5,6 +5,7 @@ import { parse } from "yaml"
 import {
   adaptOpenApi,
   coverageGenerator,
+  examplesGenerator,
   generate,
   manifestGenerator,
   OpenApiError,
@@ -12,6 +13,7 @@ import {
   typesGenerator,
   valibotGenerator,
 } from "./index.js"
+import type { SchemaNode } from "./model.js"
 
 // facebook/openapi at e96a1c9dbf240c2937b6a95920685230458e346b (2026-08-11), MIT; the LICENSE is beside it. Its sample
 // phone numbers are replaced with fictional 1555-01NN ones, as whatsapp-cli's snapshot is: no real number in a fixture.
@@ -810,54 +812,89 @@ describe("a spec a config-built CLI reads its answers from", () => {
     ])
   })
 
-  it("keeps a small sample answer in the manifest, and the answer of each operation in Responses", () => {
+  it("writes small sample answers to their own file, and the answer of each operation in Responses", () => {
     const files = generate(
       adaptOpenApi(records),
-      [manifestGenerator({ path: "manifest.ts" }), typesGenerator({ path: "types.ts" })],
+      [
+        manifestGenerator({ path: "manifest.ts" }),
+        examplesGenerator({ path: "examples.ts" }),
+        typesGenerator({ path: "types.ts" }),
+      ],
       { banner: [] },
     )
-    const manifest = files.find(({ path }) => path === "manifest.ts")?.content ?? ""
-    expect(manifest).toContain('"record_id": "r1"')
-    expect(manifest).toContain('"record_id": "me"')
-    expect(manifest).not.toContain("x".repeat(9000))
-    const types = files.find(({ path }) => path === "types.ts")?.content ?? ""
-    expect(types).toContain(
+    const content = (path: string) => files.find((one) => one.path === path)?.content ?? ""
+    expect(content("manifest.ts")).not.toContain('"r1"')
+    expect(content("examples.ts")).toContain('"record_id": "r1"')
+    expect(content("examples.ts")).toContain('"record_id": "me"')
+    expect(content("examples.ts")).not.toContain("x".repeat(9000))
+    expect(content("types.ts")).toContain(
       "export interface Responses {\n  getV2ObjectsByObjectRecordsByRecordId: ApiRecord\n  getV2Self: ApiRecord\n  getV2Lists: ApiRecord\n}",
     )
   })
 
-  it("writes a lossless number as a number, a long one as text, and never a credential's sample", () => {
+  it("types an operation with no JSON answer as unknown, and stops on a schema named Responses", () => {
+    const plainText = {
+      ...records,
+      paths: { ...records.paths, "/v2/ping": { get: { responses: { "204": { description: "empty" } } } } },
+    }
+    const [types] = generate(adaptOpenApi(plainText), [typesGenerator({ path: "types.ts" })], { banner: [] })
+    expect(types?.content).toContain("  getV2Ping: unknown\n")
+    const taken = {
+      ...records,
+      components: { schemas: { ...records.components.schemas, Responses: { type: "string" } } },
+    }
+    expect(() => generate(adaptOpenApi(taken), [typesGenerator({ path: "types.ts" })], { banner: [] })).toThrow(
+      "a schema named Responses",
+    )
+  })
+
+  it("still skips the unnamed paths of a spec that names some", () => {
+    const mixed = {
+      ...records,
+      paths: { ...records.paths, "/v2/named": { get: { operationId: "named", responses: answer({}) } } },
+    }
+    expect(adaptOpenApi(mixed).operations.map(({ id }) => id)).toEqual(["named"])
+  })
+
+  it("writes lossless numbers exactly, and keeps no sample of an answer that holds a credential anywhere", () => {
     const model = adaptOpenApi(records)
-    const [self, secret] = model.operations
+    const [first, second] = model.operations as [(typeof model.operations)[number], (typeof model.operations)[number]]
+    const sample = (operation: typeof first, schema: SchemaNode, example: unknown) => ({
+      ...operation,
+      response: { confidence: "contract" as const, required: true, schema, example },
+    })
     const changed = {
       ...model,
-      operations: [
+      schemas: [
+        ...model.schemas,
         {
-          ...(self as (typeof model.operations)[number]),
-          response: {
-            confidence: "contract" as const,
-            required: true,
-            schema: { type: "unknown" as const },
-            example: {
-              small: { isLosslessNumber: true, value: "12" },
-              big: { isLosslessNumber: true, value: "9007199254740993" },
-            },
-          },
-        },
-        {
-          ...(secret as (typeof model.operations)[number]),
-          response: {
-            confidence: "contract" as const,
-            required: true,
-            schema: { type: "string" as const, sensitive: true },
-            example: "synthetic-credential-sample",
+          id: "Token",
+          schema: {
+            type: "object" as const,
+            properties: { token: { type: "string" as const, sensitive: true } },
+            required: [],
           },
         },
       ],
+      operations: [
+        sample(
+          first,
+          { type: "unknown" },
+          {
+            small: { isLosslessNumber: true, value: "12" },
+            decimal: { isLosslessNumber: true, value: "10.50" },
+            big: { isLosslessNumber: true, value: "9007199254740993" },
+          },
+        ),
+        sample(second, { type: "array", items: { type: "ref", ref: "Token" } }, [
+          { token: "synthetic-credential-sample" },
+        ]),
+      ],
     }
-    const [manifest] = generate(changed, [manifestGenerator({ path: "manifest.ts" })], { banner: [] })
-    expect(manifest?.content).toContain('"small": 12')
-    expect(manifest?.content).toContain('"big": "9007199254740993"')
-    expect(manifest?.content).not.toContain("synthetic-credential-sample")
+    const [examples] = generate(changed, [examplesGenerator({ path: "examples.ts" })], { banner: [] })
+    expect(examples?.content).toContain('"small": 12')
+    expect(examples?.content).toContain('"decimal": 10.5')
+    expect(examples?.content).toContain('"big": "9007199254740993"')
+    expect(examples?.content).not.toContain("synthetic-credential-sample")
   })
 })

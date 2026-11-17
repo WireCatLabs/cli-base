@@ -136,7 +136,7 @@ const LARGEST_EXAMPLE = 8 * 1024
 const exampleOf = (media: Json): unknown => {
   const examples = isObject(media.examples) ? Object.values(media.examples) : []
   const first = examples.find((one) => isObject(one) && one.value !== undefined) as Json | undefined
-  const example = media.example ?? first?.value
+  const example = "example" in media ? media.example : first?.value
   if (example === undefined) return undefined
   return JSON.stringify(example).length <= LARGEST_EXAMPLE ? example : undefined
 }
@@ -600,7 +600,12 @@ class Adapter {
     const operations: ApiOperation[] = []
     const paths = isObject(this.document.paths) ? this.document.paths : {}
     const named = Object.values(paths).some(
-      (item) => isObject(item) && METHODS.some((method) => isObject(item[method]) && "operationId" in item[method]),
+      (item) =>
+        isObject(item) &&
+        METHODS.some((method) => {
+          const operation = item[method]
+          return isObject(operation) && typeof operation.operationId === "string"
+        }),
     )
     for (const [path, item] of Object.entries(paths)) {
       if (!isObject(item)) continue

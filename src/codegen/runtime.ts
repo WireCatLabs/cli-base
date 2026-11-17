@@ -12,7 +12,7 @@ interface LosslessLike {
   value: string
 }
 
-const isLossless = (input: unknown): input is LosslessLike =>
+export const isLossless = (input: unknown): input is LosslessLike =>
   typeof input === "object" &&
   input !== null &&
   (input as { isLosslessNumber?: unknown }).isLosslessNumber === true &&
