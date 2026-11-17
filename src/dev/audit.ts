@@ -28,6 +28,8 @@ export interface Finding {
   message: string
   /** What each CLI showed, for a finding about one flag or output; `absent` when it lacks the flag. */
   values?: Record<string, string>
+  /** The CLIs that show the same thing, one list per variant, for a rule that compares whole values. */
+  variants?: string[][]
 }
 
 export interface ScoreRow {
@@ -53,6 +55,11 @@ export interface AuditOptions {
   blocks: "new" | "never"
   /** Only new findings that name this CLI block: the one being released. */
   only?: string
+  /**
+   * `--family`: `only` is the one local build, every other CLI its latest published version. A schema `only` shares with
+   * one of them is then not `only`'s to fix.
+   */
+  family?: boolean
 }
 
 export interface AuditResult {
@@ -278,6 +285,7 @@ const sameEntitySchema = (inputs: readonly AuditInput[]): Finding[] => {
           clis,
           target: `${named(clis)} entity ${entity}`,
           message: `${groups.length} different schemas: ${groups.map((one) => one.join(", ")).join(" / ")}`,
+          variants: groups,
         },
       ]
     })
@@ -556,12 +564,22 @@ export const auditClis = (
     findings,
     rows,
     blocking: [...unique.values()].filter(
-      (finding) => options.only === undefined || finding.clis.includes(options.only),
+      (finding) =>
+        options.only === undefined ||
+        (finding.clis.includes(options.only) && !(options.family && sharedWithAnother(finding, options.only))),
     ),
     nextBaseline,
     problems,
   }
 }
+
+/**
+ * The CLI being released shows what a published CLI shows: the published ones already disagree among themselves, as
+ * when some are on an older cli-core, so the divergence is not this CLI's to fix and does not block its release. It
+ * cannot tell ahead from behind: a CLI that keeps an older schema a lagging CLI still prints passes too.
+ */
+const sharedWithAnother = (finding: Finding, cli: string): boolean =>
+  (finding.variants?.find((variant) => variant.includes(cli))?.length ?? 0) > 1
 
 const pad = (cells: readonly string[], widths: readonly number[]) =>
   cells

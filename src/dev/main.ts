@@ -925,6 +925,7 @@ const auditRun = (args: string[], io: DevIo, family = false) => {
     baseline,
     blocks: AUDIT_BLOCKS,
     only: values.for,
+    family,
   })
   problems.push(...result.problems)
 
