@@ -87,8 +87,9 @@ From the source the generator reads:
 - **Effect**: GET and HEAD read, POST, PUT and PATCH write, DELETE is destructive.
 - **Servers and sign-in**: `servers` (each URL once, as written), `components/securitySchemes` and `security` go into
   the manifest as `servers`, `securitySchemes` and `security`, and an operation's own `security` (`[]` for one that
-  needs no sign-in) onto that operation. A CLI then does not copy its base URL or OAuth endpoints by hand. They appear
-  only when the source has them. A requirement naming a scheme the document lacks stops generation.
+  needs no sign-in, unless `auth` below replaces it) onto that operation. A CLI then does not copy its base URL or
+  OAuth endpoints by hand. They appear only when the source has them. A requirement naming a scheme the document lacks
+  stops generation.
 
 ### Corrections a CLI passes to `generate`
 
@@ -126,7 +127,9 @@ From the source the generator reads:
   parameter the operation does not take stops generation.
 - **`auth`**: `{ securitySchemes, security, reason }` replaces the source's sign-in, the operations' own requirements
   included. Yandex Disk's Swagger 1.2 has no scheme, and its header is `Authorization: OAuth <token>`:
-  `{ oauth: { type: "http", scheme: "OAuth" } }`. HubSpot's spec has no private app token.
+  `{ oauth: { type: "http", scheme: "OAuth" } }`. HubSpot's spec has no private app token. An operation keeps its own
+  `security` only when it signs in by `auth`'s schemes. One the source marks as needing no sign-in (`[]`) gets `auth`
+  as well: HubSpot's object specs mark 115 calls that way, and each answered 401 without the key.
 
 ### A strict fake for tests
 

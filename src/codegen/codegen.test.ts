@@ -6,11 +6,15 @@ import * as v from "valibot"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import {
   type ApiModel,
+  type ApiOperation,
+  type AuthOverride,
   CodegenError,
   coverageGenerator,
   generate,
   identifier,
   manifestGenerator,
+  type SecurityRequirement,
+  signInRequirements,
   typesGenerator,
   valibotGenerator,
   writeArtifacts,
@@ -235,6 +239,53 @@ describe("generate", () => {
     expect(once.find((artifact) => artifact.path === "coverage.md")?.content).toContain(
       "| `answerOnCallback` | `POST /answers` | `x api answer-on-callback` | write |",
     )
+  })
+
+  it("gives the CLI's auth to an operation the source marks as needing no sign-in, keeping one that uses it", () => {
+    const base = model({
+      securitySchemes: {
+        hapikey: { type: "apiKey", name: "hapikey", in: "query" },
+        token: { type: "oauth2", flows: {} },
+      },
+    })
+    const [template] = base.operations
+    const securities: Record<string, readonly SecurityRequirement[]> = {
+      none: [],
+      emptyRequirement: [{}],
+      sourceScheme: [{ hapikey: [] }],
+      token: [{ token: ["crm.read"] }],
+      optionalToken: [{}, { token: [] }],
+    }
+    const operations = Object.entries(securities).map(([id, security]) => ({
+      ...(template as ApiOperation),
+      id,
+      binding: { kind: "http" as const, method: "GET" as const, path: `/${id}` },
+      security,
+    }))
+    const signing = (auth?: AuthOverride) => {
+      let seen: ApiModel | undefined
+      const capture = (prepared: ApiModel) => {
+        seen = prepared
+        return []
+      }
+      generate({ ...base, operations }, [capture], { banner, ...(auth ? { auth } : {}) })
+      return Object.fromEntries(
+        (seen?.operations ?? []).map((operation) => [operation.id, signInRequirements(operation, seen?.security)]),
+      )
+    }
+    const auth: AuthOverride = {
+      securitySchemes: { token: { type: "http", scheme: "bearer" } },
+      security: [{ token: [] }],
+      reason: "x",
+    }
+    expect(signing(auth)).toEqual({
+      none: [{ token: [] }],
+      emptyRequirement: [{ token: [] }],
+      sourceScheme: [{ token: [] }],
+      token: [{ token: ["crm.read"] }],
+      optionalToken: [{}, { token: [] }],
+    })
+    expect(signing()).toMatchObject({ none: undefined, emptyRequirement: undefined, sourceScheme: [{ hapikey: [] }] })
   })
 })
 

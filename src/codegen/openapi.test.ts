@@ -680,7 +680,7 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
     ])
   })
 
-  it("replaces the source's sign-in everywhere with auth, and refuses a requirement naming no scheme", () => {
+  it("replaces the source's sign-in everywhere with auth, its no-sign-in [] included, and refuses a requirement naming no scheme", () => {
     const paths = {
       "/me": { get: { operationId: "getMe", security: [{ bearer: [] }] } },
       "/health": { get: { operationId: "health", security: [] } },
@@ -703,7 +703,7 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
       { banner: [], auth },
     )
     expect(manifest?.content).not.toContain('"bearer"')
-    expect(manifest?.content).toContain('"security": []')
+    expect(manifest?.content).not.toContain('"security": []')
     expect(coverage?.content).toContain("Not from the source: private app tokens are not in the spec")
     const dangling = { ...document({}, paths), security: [{ missing: [] }] }
     expect(() => generate(adaptOpenApi(dangling), [], { banner: [] })).toThrow('security names "missing"')
