@@ -37,3 +37,7 @@ None open.
 - **BASE-11** · P2 · `release-checks.yml` takes a list of advisories to skip in both dependency audits
   (`.github/workflows/release-checks.yml:53` and `:73`). npm has no per-advisory ignore, so cli-docs copied both
   audits with a jq filter for picomatch GHSA-fc5q-39xc-vjpf, which has no fix (cli-docs #678, its DOCS-14).
+- **BASE-12** · P2 · Debt: `bin/release` does not collect the `changes/` fragments; it has no `changes/` step.
+  With fragments waiting it renamed the released 0.113.0 heading to 0.114.0 (#630, refused by the changelog guard).
+  0.110.0 (#617) and 0.114.0 (#632) went out through a hand-made version PR running
+  `cli-dev changelog fragments --collect`.
