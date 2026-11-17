@@ -186,13 +186,17 @@ the coverage page after a spec sync.
 
 ### Limits
 
-- **Nothing checks the permission keys yet.** cli-core does not read an operation's `permissions`, `servers` or
-  `securitySchemes` today. Until it does, a CLI adds the keys to its own `commandPermissions`, as notion-cli's
-  `src/config.ts` does.
+- **cli-core checks the permission keys; the CLI still shows them.** From cli-core 0.684.0, `serviceApiCommand`
+  reads each operation's `permissions`, `servers` and `securitySchemes`: it sends the call to the operation's server
+  with the sign-in its scheme names, and checks `api.<operation>` and each manifest key that applies to the call
+  (`files.delete` when `permanently` is true) before it sends. That guard runs whatever the CLI declares. `--dry-run`
+  and permission discovery show those keys only when the CLI merges `serviceApiPermissions(...)` into its own
+  `commandPermissions`, field by field (`extra`, `alsoChecks`, `defaults`), as ydisk's `src/config.ts` does:
+  `alsoChecks: (path) => [...api.alsoChecks(path), ...own(path)]`.
 - A merge joins every source's servers at the top, for every operation; sources on different hosts need a
   `servers` entry per path, which the merge does not write.
 - Pagination is found only from the names above; a service with its own names needs an override per operation.
-  cli-core reads every page by the manifest once its executor does.
+  `serviceApiCommand` gives a read that pages `--all`, which reads every page.
 - Pagination is not found in an answer that is a union.
 - The fake checks shapes, not behaviour: it does not page, filter or keep state. A scenario that needs that writes
   it in `answers`. It checks neither header parameters nor RPC operations. A sample follows enums and limits but not
