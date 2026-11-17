@@ -177,6 +177,22 @@ describe("buildManifest", () => {
     expect(() => build({ meetingsProvider: "Acme PBX" }, describeProgram(tree))).toThrow("a provider name")
   })
 
+  it("passes the sign-ins Desktop runs in its window, only when declared and only for a command the CLI has", () => {
+    const token = { id: "token", label: "API token", words: ["{profile}", "session", "start", "--json"], stdin: true }
+    const signIn = { ...identity.signIn, methods: [token] } as ManifestIdentity["signIn"]
+    expect(build().desktop.signIn).not.toHaveProperty("methods")
+    expect(build({ signIn }).desktop.signIn?.methods).toEqual([token])
+    const as = (words: string[]) =>
+      ({ ...identity.signIn, methods: [{ ...token, words }] }) as ManifestIdentity["signIn"]
+    expect(() => build({ signIn: as(["session", "start"]) })).toThrow("start with {profile}")
+    expect(() => build({ signIn: as(["{profile}", "session"]) })).toThrow("`session` names no command")
+    expect(() => build({ signIn: as(["{profile}", "session", "start", "{port}"]) })).toThrow("the only slot")
+    expect(() => build({ signIn: as(["{profile}", "session", "start", "$(id)"]) })).toThrow("is not a plain word")
+    expect(() =>
+      build({ signIn: { ...identity.signIn, methods: [{ ...token, password: "ACME_TOKEN" }] } as never }),
+    ).toThrow(/password/)
+  })
+
   it("matches runs list's query: command:sync status:success are two exact terms", () => {
     const ast = parseLucene(["command:sync", "status:success"].join(" "), { defaultField: "none" })
     expect(JSON.stringify(ast)).toMatch(/"field":"command","operator":"term","value":"sync"/)
