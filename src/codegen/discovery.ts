@@ -106,6 +106,9 @@ export const adaptDiscovery = (
   const operations: ApiOperation[] = []
   const metadata: DiscoveryMetadata = { scopes: {}, omissions: [] }
   const services: Record<string, DiscoveryService> = {}
+  // A document's `auth.oauth2` is Google's OAuth 2.0, the one sign-in its methods take.
+  const scopes: Record<string, string> = {}
+  let signsIn = false
   const fail = (problem: string): never => {
     throw new CodegenError([problem])
   }
@@ -191,6 +194,10 @@ export const adaptDiscovery = (
     if (typeof document.rootUrl !== "string" || typeof document.servicePath !== "string")
       fail(`invalid Discovery document: ${service} has no rootUrl or servicePath`)
     services[service] = { rootUrl: String(document.rootUrl), servicePath: String(document.servicePath) }
+    const oauth2 = object(document.auth) && object(document.auth.oauth2) ? document.auth.oauth2 : undefined
+    if (oauth2) signsIn = true
+    for (const [scope, value] of Object.entries(oauth2 && object(oauth2.scopes) ? oauth2.scopes : {}))
+      scopes[scope] = object(value) && typeof value.description === "string" ? value.description : ""
     for (const [id, value] of Object.entries(document.schemas))
       schemas.push({ id: `${service}_${id}`, schema: node(value, service, `/schemas/${id}`) })
     const walk = (resources: Json, path: string) => {
@@ -235,6 +242,7 @@ export const adaptDiscovery = (
                 }
               }),
               source: { location: `${service}${location}/methods/${name}` },
+              ...(oauth2 ? { security: [{ oauth2: metadata.scopes[raw.id] ?? [] }] } : {}),
               ...(raw.deprecated === true ? { deprecated: true } : {}),
             }
             if (object(raw.request))
@@ -272,6 +280,7 @@ export const adaptDiscovery = (
       },
       operations: operations.sort((a, b) => a.id.localeCompare(b.id)),
       schemas,
+      ...(signsIn ? { securitySchemes: { oauth2: { type: "oauth2", flows: { authorizationCode: { scopes } } } } } : {}),
     },
     metadata,
     services,

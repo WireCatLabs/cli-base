@@ -1,0 +1,173 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "Resend",
+    "version": "1.5.1"
+  },
+  "servers": [
+    {
+      "url": "https://api.resend.com"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/contacts": {
+      "post": {
+        "operationId": "contacts/create",
+        "summary": "Create a new contact",
+        "tags": ["Contacts"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactOptions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/contacts/{id}": {
+      "patch": {
+        "operationId": "contacts/update",
+        "summary": "Update a single contact by ID or email",
+        "tags": ["Contacts"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The Contact ID or email address."
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactOptions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "CreateContactOptions": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address of the contact.",
+            "example": "steve.wozniak@gmail.com"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "First name of the contact.",
+            "example": "Steve"
+          },
+          "unsubscribed": {
+            "type": "boolean",
+            "description": "The Contact's global subscription status. If set to true, the contact will be unsubscribed from all Broadcasts.",
+            "example": false
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": ["string", "number", "null"]
+            },
+            "description": "A map of custom property keys and values to create."
+          }
+        }
+      },
+      "UpdateContactOptions": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address of the contact.",
+            "example": "steve.wozniak@gmail.com"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": ["string", "number", "boolean", "null"]
+            },
+            "description": "A map of custom property keys and values to update."
+          }
+        }
+      },
+      "UpdateInboxOptions": {
+        "type": "object",
+        "description": "Provide at least one of `name` or `from_name`.",
+        "anyOf": [
+          {
+            "required": ["name"]
+          },
+          {
+            "required": ["from_name"]
+          }
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "New internal name for the inbox. Recipients do not see it. Between 1 and 64 characters after trimming.",
+            "example": "Customer Support"
+          },
+          "from_name": {
+            "type": "string",
+            "maxLength": 78,
+            "description": "The name recipients see when mail is sent from this inbox. A plain name, not a `Name <email>` address. Max 78 characters. It cannot contain a colon, `<`, `>`, line breaks, or other control characters. An email address inside the name must be on a domain the team has verified for sending. An empty string removes it.",
+            "example": "Ada from Support"
+          }
+        }
+      },
+      "CreateInboxLabelOptions": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "The name of the label. Max 64 characters. Leading and trailing whitespace is trimmed. Must not match another label on the inbox, compared without case.",
+            "example": "Urgent"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "description": "The color of the label, as a `#RRGGBB` hex color. It is stored in uppercase. When omitted, a random color from the dashboard palette is used.",
+            "example": "#E93D82"
+          }
+        }
+      }
+    }
+  }
+}

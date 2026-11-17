@@ -89,6 +89,19 @@ describe("adaptDiscovery", () => {
     })
   })
 
+  it("signs every method in by Google's OAuth with its own scopes, and a document without auth in by nothing", () => {
+    const signed = drive()
+    Object.assign(signed.drive, { auth: { oauth2: { scopes: { scope: { description: "See your files" } } } } })
+    const { model } = adaptDiscovery(signed)
+    expect(model.securitySchemes).toEqual({
+      oauth2: { type: "oauth2", flows: { authorizationCode: { scopes: { scope: "See your files" } } } },
+    })
+    expect(model.operations[0]?.security).toEqual([{ oauth2: ["scope"] }])
+    const open = adaptDiscovery(drive()).model
+    expect(open.securitySchemes).toBeUndefined()
+    expect(open.operations[0]?.security).toBeUndefined()
+  })
+
   it("refuses unknown constraints instead of silently weakening validation", () => {
     const source = drive()
     Object.assign(source.drive.schemas.File.properties.size, { inventedConstraint: true })

@@ -5,8 +5,9 @@
  * A name typed from memory then fails a test instead of reaching a real account.
  */
 import type { ManifestOperation } from "./manifest.js"
-import type { SchemaNode } from "./model.js"
+import type { SchemaNode, SecurityRequirement, SecurityScheme } from "./model.js"
 import { identifier } from "./names.js"
+import { type SignInPlace, signInPlace, signInRequirements } from "./sign-in.js"
 
 export interface FakeCall {
   method: string
@@ -37,8 +38,21 @@ export interface FakeApiOptions {
   definitions: Readonly<Record<string, SchemaNode>>
   /** The server the CLI calls: `https://cloud-api.yandex.net`. */
   baseUrl: string
-  /** The header and value every call to `baseUrl` must carry; omit for a service without sign-in. */
+  /**
+   * The header and value every call to `baseUrl` must carry, unless its `security` (its own, else the document's) is
+   * empty; omit for a service without sign-in. `token` instead checks each call by its schemes.
+   */
   auth?: { header: string; value: string }
+  /**
+   * The token a call must carry where one of its security schemes puts it (`securitySchemes`): `Bearer <token>`, an
+   * `api_key` header, a key in the query. A call whose security, its own or else the document's, is absent or empty
+   * needs none, as cli-core's `api` group then sends none.
+   */
+  token?: string
+  /** The document's default requirements, the manifest's `security`; an operation's own `security` replaces them. */
+  security?: readonly SecurityRequirement[]
+  /** The manifest's `securitySchemes`, which `token` is checked by. */
+  securitySchemes?: Readonly<Record<string, SecurityScheme>>
   /** Answers by operation id. One without an answer gets a sample built from its response schema, with status 200. */
   answers?: Readonly<Record<string, Answering>>
   /**
@@ -197,6 +211,41 @@ export const schemaProblems = (
   }
 }
 
+/**
+ * A string a simple pattern accepts: anchors, literals, `[...]` classes, `\d`, `\w` and `{n}`, `{n,m}`, `+`, `*`, `?`.
+ * `undefined` for anything else, and for a sample the pattern still refuses.
+ */
+const patternSample = (pattern: string): string | undefined => {
+  const atoms: string[] = []
+  let at = pattern.startsWith("^") ? 1 : 0
+  const end = pattern.endsWith("$") && !pattern.endsWith("\\$") ? pattern.length - 1 : pattern.length
+  while (at < end) {
+    const char = pattern[at] as string
+    let atom: string
+    if (char === "[") {
+      const close = pattern.indexOf("]", at + 1)
+      if (close < 0 || pattern[at + 1] === "^") return undefined
+      atom = pattern[at + 1] === "\\" ? (pattern[at + 2] === "d" ? "0" : "x") : (pattern[at + 1] as string)
+      at = close + 1
+    } else if (char === "\\") {
+      const next = pattern[at + 1] ?? ""
+      atom = next === "d" ? "0" : next === "w" ? "x" : /[^a-zA-Z0-9]/.test(next) ? next : ""
+      if (!atom) return undefined
+      at += 2
+    } else if ("()|.".includes(char)) return undefined
+    else {
+      atom = char
+      at += 1
+    }
+    const quantifier = /^(\{(\d+)(,\d*)?\}|\+|\*|\?)/.exec(pattern.slice(at, end))
+    const times = quantifier ? (quantifier[2] !== undefined ? Number(quantifier[2]) : quantifier[0] === "+" ? 1 : 0) : 1
+    if (quantifier) at += quantifier[0].length
+    atoms.push(atom.repeat(times))
+  }
+  const sample = atoms.join("")
+  return regexOf(pattern)?.test(sample) ? sample : undefined
+}
+
 /** A value the schema accepts: the first enum value, the minimum, one array item, every object field. */
 export const sampleOf = (
   node: SchemaNode,
@@ -215,8 +264,12 @@ export const sampleOf = (
       const parts = objectParts(node, definitions)
       return parts ? sampleOf({ type: "object", ...parts }, definitions, seen) : null
     }
-    case "string":
-      return node.enum?.[0] ?? "x".repeat(Math.max(node.minLength ?? 6, 1)).slice(0, node.maxLength ?? 64)
+    case "string": {
+      if (node.enum?.[0] !== undefined) return node.enum[0]
+      if (node.format === "binary") return "attach://xxxxxx"
+      const plain = "x".repeat(Math.max(node.minLength ?? 6, 1)).slice(0, node.maxLength ?? 64)
+      return node.pattern === undefined ? plain : (patternSample(node.pattern) ?? plain)
+    }
     case "integer":
     case "number":
       return (node.type === "integer" ? node.enum?.[0] : undefined) ?? node.minimum ?? Math.min(1, node.maximum ?? 1)
@@ -277,6 +330,9 @@ const specificity = (template: string): [number, number] => [
 ]
 
 const JSON_BODY = /[/+]json\s*(;|$)/i
+const JSON_TYPE = { "content-type": "application/json" }
+const FORM_BODY = /^(multipart\/form-data|application\/x-www-form-urlencoded)\s*(;|$)/i
+const mediaType = (type: string | null | undefined): string | undefined => type?.split(";")[0]?.trim().toLowerCase()
 
 const hostAnswer = (hosts: FakeApiOptions["hosts"], host: string): Answering | undefined =>
   hosts?.[host] ??
@@ -303,6 +359,25 @@ export const fakeApi = (options: FakeApiOptions): FakeApi => {
   const definitions = options.definitions
   const problemsOf = (value: unknown, node: SchemaNode, where: string) =>
     schemaProblems(value, node, definitions, where, options.looseObjects)
+  const placesOf = (requirements: readonly SecurityRequirement[]) => {
+    const names = [...new Set(requirements.flatMap((one) => Object.keys(one)))]
+    const places = names.flatMap((name) => {
+      const scheme = options.securitySchemes?.[name]
+      const place = scheme && signInPlace(scheme)
+      return place ? [place] : []
+    })
+    return { names, places }
+  }
+  const keyParameters = new Set(
+    Object.values(options.securitySchemes ?? {}).flatMap((scheme) => {
+      const place = signInPlace(scheme)
+      return place?.in === "query" ? [place.name] : []
+    }),
+  )
+  const carries = (request: Request, url: URL, place: SignInPlace, token: string) =>
+    (place.in === "header" ? request.headers.get(place.name) : url.searchParams.get(place.name)) === place.value(token)
+  const leaks = (request: Request, url: URL, token: string) =>
+    [...request.headers.values()].some((value) => value.includes(token)) || url.search.includes(token)
 
   const fetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const request = new Request(input, init)
@@ -329,6 +404,8 @@ export const fakeApi = (options: FakeApiOptions): FakeApi => {
       if (url.protocol !== base.protocol) return refuse(400, `${url.host} was called over ${url.protocol}`)
       if (options.auth && request.headers.has(options.auth.header))
         return refuse(400, `the ${options.auth.header} header was sent to ${url.host}, which is not the service`)
+      if (options.token !== undefined && leaks(request, url, options.token))
+        return refuse(400, `the token was sent to ${url.host}, which is not the service`)
       const { status = 200, body, headers } = await answer(call)
       return json(status, body, headers)
     }
@@ -351,14 +428,23 @@ export const fakeApi = (options: FakeApiOptions): FakeApi => {
     call.operation = operation.id
     call.path = matchPath(operation.binding.path, path) ?? {}
     const where = `${operation.id}`
-    const open = operation.security?.length === 0
+    const declaredSecurity = operation.security ?? options.security
+    const open = declaredSecurity?.every((one) => Object.keys(one).length === 0) === true
     if (options.auth && !open && request.headers.get(options.auth.header) !== options.auth.value)
       return refuse(401, `${where}: no ${options.auth.header} header with the expected sign-in`)
+    const requirements = signInRequirements(operation, options.security)
+    if (options.token !== undefined && requirements) {
+      const { names, places } = placesOf(requirements)
+      const token = options.token
+      if (!places.some((place) => carries(request, url, place, token)))
+        return refuse(401, `${where}: no sign-in where its security names it (${names.join(" or ")})`)
+    }
 
     const problems: string[] = []
     const declared = (location: "query" | "path") => operation.parameters.filter((one) => one.in === location)
     for (const name of url.searchParams.keys())
-      if (!declared("query").some((one) => one.name === name)) problems.push(`${where}: no query parameter "${name}"`)
+      if (!declared("query").some((one) => one.name === name) && !keyParameters.has(name))
+        problems.push(`${where}: no query parameter "${name}"`)
     for (const parameter of [...declared("query"), ...declared("path")]) {
       const values = parameter.in === "query" ? url.searchParams.getAll(parameter.name) : [call.path[parameter.name]]
       const [first] = values
@@ -377,7 +463,11 @@ export const fakeApi = (options: FakeApiOptions): FakeApi => {
     const contentType = operation.request?.contentType
     if (text !== "") {
       if (!operation.request) problems.push(`${where}: takes no body`)
-      else if (contentType && !JSON_BODY.test(contentType)) {
+      else if (contentType && !JSON_BODY.test(contentType) && !FORM_BODY.test(contentType)) {
+        const sent = mediaType(request.headers.get("content-type"))
+        if (sent !== mediaType(contentType))
+          problems.push(`${where}: the body is sent as ${sent ?? "no content type"}, not ${contentType}`)
+      } else if (contentType && !JSON_BODY.test(contentType)) {
         try {
           const form = await new Response(bytes, { headers: request.headers }).formData()
           call.body = Object.fromEntries(form)
@@ -405,7 +495,8 @@ export const fakeApi = (options: FakeApiOptions): FakeApi => {
 
     const response = operation.response?.schema ? definitions[operation.response.schema] : undefined
     const answering = options.answers?.[operation.id]
-    if (!answering) return json(200, response ? sampleOf(response, definitions) : undefined)
+    // A sample of a string answer is JSON text, never the bytes of a download.
+    if (!answering) return json(200, response ? JSON.stringify(sampleOf(response, definitions)) : undefined, JSON_TYPE)
     const { status = 200, body, headers } = await answering(call)
     // A scenario that answers off the schema tests a service that does not exist.
     if (status >= 200 && status < 300 && response && body !== undefined) {
