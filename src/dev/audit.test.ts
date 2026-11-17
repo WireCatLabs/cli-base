@@ -288,6 +288,25 @@ describe("audit rules", () => {
     expect(auditClis(inputs, declared("entity person")).blocking.map((one) => one.target)).toEqual(["a+c entity note"])
   })
 
+  it("in a family run, does not block the released CLI on an entity schema a published CLI shares, only on its own", () => {
+    const withNote = (cli: string, type: string) =>
+      inputOf(tool(cli, notes("list notes", [], "note")), { schemas: { note: { type } } })
+    const blocks = (inputs: AuditInput[], more: Partial<AuditOptions>) =>
+      auditClis(inputs, options(more)).blocking.map((one) => one.target)
+    const lag = [withNote("a", "object"), withNote("b", "object"), withNote("c", "array")]
+    expect(blocks(lag, { only: "a", family: true })).toEqual([])
+    expect(blocks(lag, { only: "c", family: true })).toEqual(["a+b+c entity note"])
+    // Two local builds would vouch for each other: only a family run, against published CLIs, lets it pass.
+    expect(blocks(lag, { only: "a" })).toEqual(["a+b+c entity note"])
+    const own = [withNote("a", "string"), withNote("b", "object"), withNote("c", "object")]
+    expect(blocks(own, { only: "a", family: true })).toEqual(["a+b+c entity note"])
+    const three = [withNote("a", "string"), withNote("b", "object"), withNote("c", "array")]
+    expect(blocks(three, { only: "a", family: true })).toEqual(["a+b+c entity note"])
+    expect(blocks([withNote("a", "string"), withNote("b", "object")], { only: "a", family: true })).toEqual([
+      "a+b entity note",
+    ])
+  })
+
   it("finds a shared reason under another name, and one reason id with two codes", () => {
     const found = cross(
       [

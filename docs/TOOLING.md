@@ -128,7 +128,8 @@ which CLIs share the entity or reason changes with each release. It defaults `--
 `config/parity-groups.json`. Known findings live in `audit/baseline/<rule>.json` (`--baseline`), targets naming the CLIs
 (`max+tg chats list --limit`, `tg: chats grab` for a lint violation); `--write-baseline` rewrites them. `--lint
 <cli>=<dir>` judges that CLI's lint rules by its own `lint/` folder instead. A new finding fails the run — only one
-naming `--for <cli>` when given — and a fixed one is reported, not failed. `AUDIT_BLOCKS` decides whether a new
+naming `--for <cli>` when given; under `--family`, not an entity schema that CLI shares with a published one, as the
+published CLIs then already disagree — and a fixed one is reported, not failed. `AUDIT_BLOCKS` decides whether a new
 cross-CLI divergence fails the run (`"new"`) or only shows (`"never"`); a new lint violation always fails. A document
 from a cli-base before 0.26, with camelCase keys, is read too, and `key-casing` reports it. The weekly `Weekly CLI
 audit` workflow runs it over the five latest published CLIs and rewrites the pinned issue labelled `cli-audit`.
