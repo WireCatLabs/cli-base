@@ -15,7 +15,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **The command vocabulary has a tracker's nouns: `issues`, `teams`, `states` and `labels`.** cli-core's tracker
   commands (`issues list`, `teams list`â€¦) name them, so `cli-dev lint` passes a tracker CLI's command tree. `labels`
   are a tracker's own, shared by its users; `tags` stay the labels the owner puts on things.
-
+- **A CLI can say how Desktop signs it in, in Desktop's own window.** `ManifestIdentity.signIn` takes an optional
+  `methods` list, each `{ id, label, words, stdin? }`, and `cli-dev manifest` writes it to `desktop.signIn.methods`.
+  Until now an own tool could only be signed in at a terminal. `words` start with `{profile}` and name a command the
+  CLI has; `stdin: true` says the secret the person types is the command's whole stdin. Nothing else (a password
+  variable, a client file, OAuth words) is accepted, because Desktop does not take those from a tool it did not build.
+  Watch for: a manifest without `methods` is byte-for-byte as before; one with it needs a Desktop that shows a token
+  field for a `stdin` method.
 - **ydisk (`@wirecat/yandex-disk-cli`) joins the shared lists.** It is in `PARITY_GROUPS`' `shared-roots` group, beside
   notion, so `cli-dev audit --family` installs its latest release and compares the root commands every CLI shares. Its
   monthly run holds 03:04 UTC in WC-CI-9's table. Watch for: a CLI's `--family` audit now installs one more package.

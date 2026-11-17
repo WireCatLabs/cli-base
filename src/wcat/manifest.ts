@@ -43,11 +43,26 @@ const plainWord = v.pipe(
 const words = v.pipe(v.array(plainWord), v.minLength(1))
 const line = (max: number) => v.pipe(v.string(), v.regex(/^\S(?:[^\n\r]*\S)?$/, "one line of text"), v.maxLength(max))
 
+/**
+ * A sign-in Desktop runs in its own window. Only the parts Desktop accepts from a tool it did not build: the words, and
+ * whether the secret the person types is the command's whole stdin.
+ */
+const signInMethodSchema = v.strictObject({
+  id: v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{0,31}$/, "a lower-case method id")),
+  /** The button or tab: "API token". */
+  label: line(40),
+  /** `{profile}` first, then the command: `["{profile}", "session", "start", "--json"]`. */
+  words,
+  stdin: v.optional(v.boolean()),
+})
+
 const signInSchema = v.strictObject({
   /** What signing in lets the agent do, in a sentence: "Lets your agent read your Acme contacts." */
   gives: line(300),
   /** What the person is asked for: "An Acme API token, from Settings → API." */
   asks: line(300),
+  /** Left out when the CLI signs in only at a terminal, so the manifest of every other CLI stays as it was. */
+  methods: v.optional(v.pipe(v.array(signInMethodSchema), v.minLength(1))),
 })
 
 export type SignIn = v.InferOutput<typeof signInSchema>
@@ -294,6 +309,24 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       }
     : {}
 
+  const methods = identity.signIn?.methods
+  for (const method of methods ?? []) {
+    const [first, ...rest] = method.words
+    if (first !== "{profile}" || !profiles)
+      throw new ManifestError([
+        `signIn method ${method.id}: Desktop signs in a profile, so its words start with {profile}`,
+      ])
+    // Arguments may follow the command (`session start qr`), so any leading run of words that is a command will do.
+    const runsAt = (end: number) => {
+      const command = at.get(rest.slice(0, end + 1).join(" "))
+      return command !== undefined && (command.commands.length === 0 || command.runnable === true)
+    }
+    if (!rest.some((_, end) => runsAt(end)))
+      throw new ManifestError([`signIn method ${method.id}: \`${rest.join(" ")}\` names no command of this CLI`])
+    if (rest.some((word) => word.includes("{")))
+      throw new ManifestError([`signIn method ${method.id}: {profile} is the only slot Desktop fills in a sign-in`])
+  }
+
   const twice = identity.hosts?.filter((host, index) => identity.hosts?.indexOf(host) !== index) ?? []
   if (twice.length > 0) throw new ManifestError(twice.map((host) => `hosts: ${host} is listed twice`))
   if (identity.userHosts && !identity.hosts)
@@ -349,7 +382,9 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
         : null,
       search: null,
       setup: setupPath ? [...profile, ...setupPath.split(" ")] : null,
-      signIn: identity.signIn ? { gives: identity.signIn.gives, asks: identity.signIn.asks } : null,
+      signIn: identity.signIn
+        ? { gives: identity.signIn.gives, asks: identity.signIn.asks, ...(methods ? { methods } : {}) }
+        : null,
       skill:
         skills && has("skill status", "skill install", "skill show")
           ? {

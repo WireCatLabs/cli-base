@@ -389,7 +389,7 @@ cli-dev manifest --program dist/program.js --identity dist/wcat.js --check  # fa
 
 `--program` exports `createProgram`; `--identity` exports `WCAT`, a `ManifestIdentity`: the `wcatStart` argument
 (`command`, `version`, `description`, `docs`) plus cli-core's `appName` and `envPrefix`, and the only texts the
-developer types: `tagline` (at most 55 characters), `signIn: { gives, asks }` and, when the CLI has a sync command,
+developer types: `tagline` (at most 55 characters), `signIn: { gives, asks, methods? }` and, when the CLI has a sync command,
 `syncs` (what it copies, at most 40 characters), and `hosts` (every host it contacts, `[]` for none) with
 `userHosts` (hosts the person chooses, in words, at most 120 characters), and `meetingsProvider` (cli-core's
 provider name on the calls or meetings it saves) for a CLI whose calls Desktop opens. An optional
@@ -411,7 +411,7 @@ come from `package.json`.
 | `desktop.sync` | for a root `sync`, or the only `<noun> sync`: `run` is `[{profile}] <path> --record --json`; `last` is `runs list command:sync status:success --limit 50 --no-record --json` for a root `sync` with `runs list`, else `null` (`runs list` matches `command:` exactly, and a plain word cannot hold the space of `contacts sync`); `lastShape: "runs"`, `what` from `syncs`, `note: null`. A sync without `syncs` is refused |
 | `desktop.storage` | `{ app: appName, env: envPrefix }` |
 | `desktop.meetings` | with `meetingsProvider`: `{ provider, show, transcript }`, `[{profile}] meetings show {id}` and `meetings transcript {id}`, `--no-record --json`; how Desktop opens a client's call. Absent, not `null`, without it: Desktop 0.6.8 and older refuse a key they do not read. A provider without both commands is refused |
-| `desktop.tagline`, `desktop.signIn` | as declared; `signIn` is `null` when not |
+| `desktop.tagline`, `desktop.signIn` | as declared; `signIn` is `null` when not. `signIn.methods`, only when declared: `{ id, label, words, stdin? }` for each sign-in Desktop runs in its window; `words` start with `{profile}` and name a command of the CLI, and `stdin: true` sends what the person types as the whole stdin |
 | every other catalog key | `null`: `search`, `tasks`, `settings` and the `store*` keys |
 
 Every string in every array is a plain word, Desktop's own rule (`PLAIN_WORD`): letters, digits and `._:=,/+@-`, at
