@@ -381,13 +381,7 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     type: "string",
     meaning: "a person whose reply counts as an answer; repeat it for more",
   },
-  {
-    name: "--browser",
-    value: "<program>",
-    role: "mode",
-    type: "string",
-    meaning: "the browser program to open for sign-in",
-  },
+  { name: "--browser", value: "<program>", role: "mode", type: "string", meaning: "the browser to open for sign-in" },
   {
     name: "--credential-storage",
     value: "<storage>",
@@ -396,6 +390,8 @@ export const HOW_FLAGS: VocabularyFlag[] = [
     meaning: "where a sign-in is kept: keyring, which falls back to a private file by itself, or file (WC-SECR-4)",
   },
   { name: "--checkpoint", value: "<file>", role: "mode", type: "path", meaning: "keep resume progress in this file" },
+  { name: "--site", value: "<address>", role: "mode", type: "string", meaning: "the owner's site a sign-in is for" },
+  { name: "--login", value: "<name>", role: "mode", type: "string", meaning: "the user name a password is for" },
   {
     name: "--expected-event-id",
     value: "<id>",
