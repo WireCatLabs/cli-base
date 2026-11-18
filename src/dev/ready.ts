@@ -58,6 +58,7 @@ const CATEGORY_CONTRACTS: { names: string[]; contracts: string[] }[] = [
       "meetingTranscriptStoreContract",
     ],
   },
+  { names: ["tracker", "issue tracker (issues, projects, teams)"], contracts: ["trackerSourceContract"] },
   { names: ["messenger", "notes"], contracts: [] },
 ]
 
