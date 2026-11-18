@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.120.0 — 19.11.2026
 
 ### Added
 
@@ -38,6 +38,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `host/other`. With `credentialScope: "https://host/blog/wp-json"`, a signed request outside it is refused before it
   is sent, and a redirect out of it drops `authorization`, `cookie` and `proxy-authorization`. A path with an encoded
   slash (`%2F`, `%5C`) counts as outside, as a server that decodes it before routing could leave the scope.
+- **attio-cli joins the `shared-roots` and `crm` parity groups**, beside amo-cli and hubspot-cli: its root commands are
+  compared with every CLI's, and its CRM commands with bitrix24-cli's.
 
 ### Changed — may break callers
 
