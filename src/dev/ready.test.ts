@@ -232,6 +232,21 @@ describe("cli-dev ready", () => {
     })
   })
 
+  it("asks a tracker for cli-core's tracker contract, by the category's value or its label", () => {
+    for (const category of ["tracker", "issue tracker (issues, projects, teams)"]) {
+      const cwd = cli({
+        "docs/dev/DESIGN.md": `- **Category:** ${category}\n`,
+        "src/tracker.test.ts": "it('x', () => {})\n",
+      })
+      expect(row(cwd, shell(cwd).run, "contracts")).toMatchObject({
+        status: "not verified",
+        fix:
+          "run cli-core's trackerSourceContract in a test (testing.md), or except it in lint/contract-exceptions.json " +
+          "with its reason, then run cli-dev ready again",
+      })
+    }
+  })
+
   it("does not verify the live check from another version's record or from code changed since", () => {
     const other = cli({ "docs/dev/live-checks.txt": "0.2.0 abc123 2026-11-10 bin/acme-live\n" })
     expect(row(other, shell(other).run, "live")).toMatchObject({
