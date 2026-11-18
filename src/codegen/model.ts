@@ -175,13 +175,21 @@ export type Pagination =
   /** The answer holds the next page's whole URL. */
   | { style: "link"; next: string; items?: string }
 
-/** A key a call must pass: always, or, when `body` or `query` is given, only when one of those flags is `true`. */
+/**
+ * A key a call must pass: always, or, when `body`, `query` or `values` is given, only when one of those flags is `true`
+ * or one of those fields holds one of its values.
+ */
 export interface OperationPermission {
   key: string
   /** Top-level request body fields. */
   body?: readonly string[]
   /** Query parameters. */
   query?: readonly string[]
+  /**
+   * A top-level body field or query parameter of this name holding one of these values: `{ status: ["publish"] }`.
+   * Both places count, as a service that merges them (WordPress) publishes from either.
+   */
+  values?: Readonly<Record<string, readonly string[]>>
 }
 
 /** The scheme names an operation needs, each with its OAuth scopes; one requirement of the list is enough. */

@@ -201,10 +201,22 @@ export interface PermissionRule {
   deletingFlags?: readonly string[]
   /** Operation ids that make something public, as a share link does: neither a plain write nor a delete. */
   shares?: readonly string[]
+  /**
+   * A field whose value is the change, not a flag: WordPress publishes by `status: "publish"`. Each gives
+   * `<group>.<key>` to every write or delete whose body field or query parameter `field` lists one of `values` in its
+   * `enum`, so a field of the same name that means something else (a comment's `status`) gets no key, nor does a read
+   * that filters by the value. Where the field's default is one of `values` (a WordPress template), leaving it out
+   * publishes too, and the key always applies.
+   */
+  valueKeys?: readonly { key: string; field: string; values: readonly string[] }[]
 }
 
-/** The top-level property names a body may carry, through references, inheritance, unions and subtypes. */
-const bodyFields = (node: SchemaNode, schemas: ReadonlyMap<string, ApiSchema>, seen = new Set<string>()): string[] => {
+/** The top-level properties a body may carry, through references, inheritance, unions and subtypes. */
+const bodyFields = (
+  node: SchemaNode,
+  schemas: ReadonlyMap<string, ApiSchema>,
+  seen = new Set<string>(),
+): [string, SchemaNode][] => {
   switch (node.type) {
     case "ref": {
       const target = schemas.get(node.ref)
@@ -216,7 +228,7 @@ const bodyFields = (node: SchemaNode, schemas: ReadonlyMap<string, ApiSchema>, s
       return [...bodyFields(target.schema, schemas, inner), ...subtypes]
     }
     case "object":
-      return Object.keys(node.properties)
+      return Object.entries(node.properties)
     case "union":
     case "allOf":
       return node.of.flatMap((member) => bodyFields(member, schemas, seen))
@@ -234,10 +246,58 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
   const fields = new Map(
     model.operations.map((operation) => [
       operation.id,
-      new Set(operation.requestBody?.schema ? bodyFields(operation.requestBody.schema, schemas) : []),
+      new Map(operation.requestBody?.schema ? bodyFields(operation.requestBody.schema, schemas) : []),
     ]),
   )
-  const fieldsOf = (operation: ApiOperation) => fields.get(operation.id) ?? new Set<string>()
+  const fieldsOf = (operation: ApiOperation) => fields.get(operation.id) ?? new Map<string, SchemaNode>()
+  /** The enums and defaults of a field, through references and every alternative of a union. */
+  const valuesIn = (
+    node: SchemaNode | undefined,
+    seen = new Set<string>(),
+  ): { enums: unknown[]; defaults: unknown[] } => {
+    if (!node) return { enums: [], defaults: [] }
+    const own = {
+      enums: "enum" in node && node.enum ? [...node.enum] : [],
+      defaults: node.default === undefined ? [] : [node.default],
+    }
+    const inner =
+      node.type === "ref" && !seen.has(node.ref)
+        ? [valuesIn(schemas.get(node.ref)?.schema, new Set([...seen, node.ref]))]
+        : node.type === "union" || node.type === "allOf"
+          ? node.of.map((member) => valuesIn(member, seen))
+          : []
+    return {
+      enums: [...own.enums, ...inner.flatMap((one) => one.enums)],
+      defaults: [...own.defaults, ...inner.flatMap((one) => one.defaults)],
+    }
+  }
+  const valuesOf = (operation: ApiOperation, name: string) => {
+    const nodes = [
+      fieldsOf(operation).get(name),
+      operation.parameters.find((parameter) => parameter.in === "query" && parameter.name === name)?.schema,
+    ].map((node) => valuesIn(node))
+    return { enums: nodes.flatMap((one) => one.enums), defaults: nodes.flatMap((one) => one.defaults) }
+  }
+  const valueKeys = rule.valueKeys ?? []
+  // A field whose default is one of the values publishes when the call leaves it out: the key then always applies.
+  const valued = (operation: ApiOperation): OperationPermission[] =>
+    operation.effect === "read"
+      ? []
+      : valueKeys.flatMap(({ key, field, values }) => {
+          const { enums, defaults } = valuesOf(operation, field)
+          const named = values.filter((value) => enums.includes(value))
+          if (named.length === 0) return []
+          return defaults.some((value) => values.includes(value as string))
+            ? [{ key }]
+            : [{ key, values: { [field]: named } }]
+        })
+  const idle = valueKeys.filter(
+    ({ key }) => !model.operations.some((operation) => valued(operation).some((one) => one.key === key)),
+  )
+  if (idle.length > 0)
+    throw new CodegenError(
+      idle.map(({ field, values }) => `valueKeys: no write lists ${values.join(" or ")} in the enum of "${field}"`),
+    )
   const unused = flags.filter(
     (flag) =>
       !model.operations.some(
@@ -267,6 +327,7 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
             ...(query.length > 0 ? { query } : {}),
           })
       }
+      for (const permission of valued(operation)) permissions.push({ ...permission, key: `${group}.${permission.key}` })
       return permissions.length > 0 ? { ...operation, permissions } : operation
     }),
   }

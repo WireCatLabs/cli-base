@@ -8,6 +8,27 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A WordPress API from the site's own index: `syncWpJson`, `readWpJson` and `wpJsonToOpenApi`.** WordPress has no
+  OpenAPI, but `/wp-json/?context=help` lists every route with its arguments and the schema of its answer.
+  `syncWpJson` keeps that one answer, without the site's name, address and links, with its provenance;
+  `wpJsonToOpenApi` turns the routes of the namespaces a CLI offers into OpenAPI 3.1 for `adaptOpenApi`. WordPress
+  6.9.4's `wp/v2` gives 152 operations (`getWpV2Posts`, `postWpV2PostsById`…). A route whose value may hold a slash
+  (templates, plugins, fonts) is left out and listed in `omissions`. Watch for: an array argument in the query is
+  one comma-separated string, as WordPress splits it and PHP keeps only the last of a repeated name, so it loses
+  its `enum`; WordPress's lists
+  page by headers, so `pagination: true` finds no paging for them yet.
+- **A permission key from a field's value: `permissions.valueKeys`.** `{ key: "publish", field: "status", values:
+  ["publish", "future"] }` gives `posts.publish` to a write that sends `status: "publish"`, in the body or the query,
+  so a profile that denies publishing also stops the raw `api` group. Where the field defaults to such a value
+  (WordPress's templates, template parts and menu items), the key applies on every call, as leaving the field out
+  publishes. `OperationPermission.values` carries it in the manifest, and the coverage page's "When" says `` `status` is publish or future ``. Watch for: cli-core checks
+  `values` only from the release that reads them; an older cli-core asks for the key on every call of that operation,
+  as it does for a key with no flags.
+
 ## 0.117.0 — 18.11.2026
 
 ### Added

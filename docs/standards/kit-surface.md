@@ -48,6 +48,7 @@ what it cannot do yet.
 | Swagger 1.2 (Yandex Disk) | `upgradeToOpenApi3(listing, declarations)`: the resource listing, and each API declaration keyed by its `apis[].path`, fetched from the listing's `basePath` followed by that path |
 | Google Discovery | `adaptDiscovery(readDiscovery(dir))`, snapshots written by `syncDiscovery` |
 | GraphQL (Linear) | `adaptGraphql(readGraphql(dir), { url, scalars })`, the introspection result written by `syncGraphql` |
+| WordPress's REST index | `adaptOpenApi(wpJsonToOpenApi(readWpJson(dir), { namespaces: ["wp/v2"] }).document)`, the index written by `syncWpJson` |
 
 `upgradeToOpenApi3` converts with [swagger-converter](https://github.com/apigee-127/swagger-converter) (1.2 → 2.0) and
 [@scalar/openapi-upgrader](https://github.com/scalar/scalar/tree/main/packages/openapi-upgrader) (2.0 → 3.0). They are
@@ -106,7 +107,7 @@ From the source the generator reads:
   empty or not in kebab case stops generation; map that operation in `commands`. `segments` renames a path segment
   or, with `""`, leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. Without `names` the command is the operation
   id in kebab case, as before.
-- **`permissions`**: `{ group, deletingFlags, shares }`. `group` is a name (`files`) or a function of the operation, for
+- **`permissions`**: `{ group, deletingFlags, shares, valueKeys }`. `group` is a name (`files`) or a function of the operation, for
   example the first word of its `command` (set only with `names`). Each key lands in the manifest as the operation's `permissions`.
   - `<group>.delete` for every destructive operation (Yandex Disk's `DELETE /trash/resources` empties the whole
     trash), and for every operation that takes a flag in `deletingFlags`, as a top-level body field (Notion's
@@ -114,6 +115,13 @@ From the source the generator reads:
     key applies when the flag is `true`. A flag no operation takes stops generation.
   - `<group>.share` for the operation ids in `shares`: a public link opens a file to anyone, which is neither a
     plain write nor a delete.
+  - `<group>.<key>` for each of `valueKeys`, `{ key, field, values }`, on every write or delete whose body field or
+    query parameter `field` lists one of `values` in its `enum`, through a reference or a union too: WordPress
+    publishes by `status: "publish"`, so `{ key: "publish", field: "status", values: ["publish", "future"] }` gives
+    `posts.publish` and `pages.publish`. The key applies when the call sends one of those values, in the body or the
+    query; where the field's default is one of them (a WordPress template), leaving it out publishes too, and the key
+    always applies. A read that filters by the value gets no key, nor a field of that name without such an enum (a
+    comment's `status`); a rule no write matches stops generation.
 
   Which flags delete is the CLI's call: read the service's documentation, and count an undocumented flag as a delete.
   A flag counts on every method, a GET included: Yandex Disk's upload link is a GET whose `overwrite` replaces a file.
