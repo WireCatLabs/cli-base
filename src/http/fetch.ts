@@ -9,6 +9,11 @@ export interface HostFetchOptions {
   /** For the whole exchange, every redirect and the body. */
   timeoutMs?: number
   redirects?: number
+  /**
+   * Where the sign-in may go, as `https://host/blog/wp-json`: a site under a path shares its host with others. A signed
+   * request outside it is refused, and a redirect out of it drops the sign-in. Without it, the origin is the limit.
+   */
+  credentialScope?: string
 }
 
 export const HOST_FETCH_TIMEOUT_MS = 30_000
@@ -58,6 +63,22 @@ const checked = (url: URL, hosts: readonly string[]): URL => {
   return url
 }
 
+// A server that decodes `%2F` before it routes would take `/blog/..%2F..%2Fother` out of the scope the prefix saw.
+const ENCODED_SLASH = /%2f|%5c/i
+
+const scopeOf = (scope: string | undefined) => {
+  if (scope === undefined) return undefined
+  if (!URL.canParse(scope)) throw new CliError("configuration_error", `credentialScope ${scope} is not a URL`)
+  const { origin, pathname } = new URL(scope)
+  const prefix = pathname.endsWith("/") ? pathname : `${pathname}/`
+  return (url: URL) =>
+    url.origin === origin &&
+    (url.pathname === pathname || url.pathname.startsWith(prefix)) &&
+    !ENCODED_SLASH.test(url.pathname)
+}
+
+const signedHeaders = (headers: Headers) => CREDENTIAL_HEADERS.some((name) => headers.has(name))
+
 /**
  * A name lookup or a connection the host refused fails before a byte of the request leaves, so even a write may be sent
  * again. Node's fetch puts the system's code on the cause, an AggregateError when it tried several addresses; a
@@ -77,6 +98,7 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
   const problems = hostProblems(options.hosts)
   if (problems.length > 0) throw new CliError("configuration_error", problems.join("; "))
   const { hosts, fetch: send = globalThis.fetch, timeoutMs = HOST_FETCH_TIMEOUT_MS, redirects = REDIRECTS } = options
+  const inScope = scopeOf(options.credentialScope)
 
   return async (input, init = {}) => {
     const request = input instanceof Request ? input : undefined
@@ -88,6 +110,14 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
     let method = (init.method ?? request?.method ?? "GET").toUpperCase()
     let body = init.body ?? request?.body ?? undefined
     const headers = new Headers(init.headers ?? request?.headers)
+    if (inScope && signedHeaders(headers) && !inScope(url))
+      throw new CliError(
+        "configuration_error",
+        `the sign-in goes only under ${options.credentialScope}, not ${url.origin}${url.pathname}`,
+        {
+          sent: false,
+        },
+      )
     // A redirect means the first request arrived: a later hop's failure no longer proves nothing was sent.
     let answered = false
 
@@ -111,7 +141,8 @@ export const hostFetch = (options: HostFetchOptions): FetchLike => {
             "invalid_response",
             `${url.hostname} redirected a streamed body, which cannot be sent again`,
           )
-        if (next.origin !== url.origin) for (const name of CREDENTIAL_HEADERS) headers.delete(name)
+        if (inScope ? !inScope(next) : next.origin !== url.origin)
+          for (const name of CREDENTIAL_HEADERS) headers.delete(name)
         url = next
         response = await send(url, { ...init, method, headers, body, signal, redirect: "manual" })
       }

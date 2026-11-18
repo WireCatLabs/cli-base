@@ -133,7 +133,8 @@ const SCHEME_TYPES = new Set<SecurityScheme["type"]>(["apiKey", "http", "oauth2"
 const FLOWS = ["implicit", "password", "clientCredentials", "authorizationCode"] as const
 
 /** A spec without a single operationId (Attio's) still has calls: `get /v2/objects/{object}` → `getV2ObjectsByObject`. */
-const derivedId = (method: string, path: string): string =>
+/** The id `adaptOpenApi` gives an operation without an `operationId`: `getWpV2PostsById`. */
+export const derivedId = (method: string, path: string): string =>
   method +
   path
     .split("/")

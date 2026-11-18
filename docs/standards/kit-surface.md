@@ -108,7 +108,7 @@ From the source the generator reads:
   empty or not in kebab case stops generation; map that operation in `commands`. `segments` renames a path segment
   or, with `""`, leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. Without `names` the command is the operation
   id in kebab case, as before.
-- **`permissions`**: `{ group, deletingFlags, shares, valueKeys }`. `group` is a name (`files`) or a function of the operation, for
+- **`permissions`**: `{ group, deletingFlags, forceFlags, shares, valueKeys }`. `group` is a name (`files`) or a function of the operation, for
   example the first word of its `command` (set only with `names`). Each key lands in the manifest as the operation's `permissions`.
   - `<group>.delete` for every destructive operation (Yandex Disk's `DELETE /trash/resources` empties the whole
     trash), and for every operation that takes a flag in `deletingFlags`, as a top-level body field (Notion's
@@ -122,7 +122,14 @@ From the source the generator reads:
     `posts.publish` and `pages.publish`. The key applies when the call sends one of those values, in the body or the
     query; where the field's default is one of them (a WordPress template), leaving it out publishes too, and the key
     always applies. A read that filters by the value gets no key, nor a field of that name without such an enum (a
-    comment's `status`); a rule no write matches stops generation.
+    comment's `status`); a rule no write matches stops generation. `also` names fields that make the same change
+    another way: WordPress publishes a scheduled post whose `date` moves into the past, so with
+    `also: ["date", "date_gmt"]` setting either needs the key too, unless the call itself sets `field` to another value
+    its enum lists (for WordPress `draft`, `pending`, `private`). A call that leaves `field` out needs the key: the
+    stored value is unknown without a read. An `also` field no guarded write takes stops generation.
+  - `<group>.delete.force` beside `<group>.delete` on every delete that takes a flag in `forceFlags`: WordPress's
+    `force=true` deletes for good, where a delete without it moves to the trash. The key applies when the flag is
+    `true`. A flag no delete takes stops generation.
 
   Which flags delete is the CLI's call: read the service's documentation, and count an undocumented flag as a delete.
   A flag counts on every method, a GET included: Yandex Disk's upload link is a GET whose `overwrite` replaces a file.
@@ -134,7 +141,9 @@ From the source the generator reads:
   string, so a `start` date is not taken for an offset. Answer fields are dotted paths. Only reads page: a POST
   search pages once `readingPosts` or an override makes it a read. An override's
   `pagination` sets it where detection misses or misreads, and `pagination: null` says the read does not page; a
-  parameter the operation does not take stops generation.
+  parameter the operation does not take stops generation. A page style may say where the first page is (`start: 1`)
+  and name a response header with the number of pages (`pagesHeader: "x-wp-totalpages"`), with `items: ""` when the
+  answer itself is the list: WordPress's, which `wpJsonToOpenApi` gives in its `overrides`.
 - **`auth`**: `{ securitySchemes, security, reason }` replaces the source's sign-in, the operations' own requirements
   included. Yandex Disk's Swagger 1.2 has no scheme, and its header is `Authorization: OAuth <token>`:
   `{ oauth: { type: "http", scheme: "OAuth" } }`. HubSpot's spec has no private app token. An operation keeps its own

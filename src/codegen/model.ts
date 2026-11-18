@@ -171,7 +171,18 @@ export type Pagination =
       limit?: PageParameter
     }
   | { style: "offset"; offset: PageParameter; limit?: PageParameter; items: string; total?: string }
-  | { style: "page"; page: PageParameter; limit?: PageParameter; items: string; total?: string }
+  | {
+      style: "page"
+      page: PageParameter
+      limit?: PageParameter
+      /** `""` when the answer itself is the list, as WordPress's. */
+      items: string
+      total?: string
+      /** The first page's number, where the source says it (WordPress counts from 1): `--all` then needs none given. */
+      start?: number
+      /** A response header holding the number of pages, as WordPress's `X-WP-TotalPages`: that page is the last. */
+      pagesHeader?: string
+    }
   /** The answer holds the next page's whole URL. */
   | { style: "link"; next: string; items?: string }
 
@@ -190,6 +201,11 @@ export interface OperationPermission {
    * Both places count, as a service that merges them (WordPress) publishes from either.
    */
   values?: Readonly<Record<string, readonly string[]>>
+  /**
+   * The key does not apply when the call itself sets a field to one of these: `{ status: ["draft", "pending", "private"] }` keeps
+   * a draft's date change free. A call that leaves the field out still needs the key, as the stored value is unknown.
+   */
+  unless?: Readonly<Record<string, readonly string[]>>
 }
 
 /** The scheme names an operation needs, each with its OAuth scopes; one requirement of the list is enough. */

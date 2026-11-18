@@ -19,6 +19,30 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   never a contract. Braze's collection gives 95 operations from 99 requests (four documented twice). See
   [the reference](docs/REFERENCE.md). Watch for: a POST that only reads keeps the write effect its method gives, so
   the CLI corrects it with an override.
+- **A WordPress list pages by its header.** The page style takes `start` (the first page's number) and `pagesHeader`
+  (a response header with the number of pages), and `items: ""` when the answer itself is the list.
+  `wpJsonToOpenApi` returns `overrides` that give every collection read this style, from 1, by `X-WP-TotalPages`;
+  pass them to `generate`. Before, a WordPress read had no paging, so `api … --all` refused it. Watch for: an executor
+  that reads `pagination` must handle the two new fields; cli-core does from its next release.
+- **A permanent delete gets its own key: `permissions.forceFlags`.** WordPress's `force=true` deletes for good, while a
+  delete without it moves the item to the trash. `forceFlags: ["force"]` gives such a delete `<group>.delete.force`
+  besides `<group>.delete`, applying when the flag is `true`, so a CLI can ask before a permanent delete and still
+  allow the trash. See [the generator's options](docs/standards/kit-surface.md).
+- **A publish key covers a date change: `valueKeys[].also`.** WordPress publishes a scheduled post whose `date` moves
+  into the past, with no `status` in the call. `also: ["date", "date_gmt"]` makes setting either need the key, unless
+  the call itself sets `status` to a value outside `values` (`draft`, `pending` or `private`). The manifest carries it
+  as the key's `body` fields with `unless`. Watch for: an executor that does not read `unless` asks for the key on a
+  draft's date change too, which is safe.
+- **A sign-in stays under its site's path: `hostFetch`'s `credentialScope`.** Sites under a path share a host
+  (`host/blog`, a WordPress multisite in subfolders), and the origin check let a redirect carry the sign-in to
+  `host/other`. With `credentialScope: "https://host/blog/wp-json"`, a signed request outside it is refused before it
+  is sent, and a redirect out of it drops `authorization`, `cookie` and `proxy-authorization`. A path with an encoded
+  slash (`%2F`, `%5C`) counts as outside, as a server that decodes it before routing could leave the scope.
+
+### Changed — may break callers
+
+- **`wpJsonToOpenApi` refuses the `batch/v1` namespace.** A batch call carries requests to other routes in its body,
+  past the keys those routes need, so a CLI never offers it. A CLI that listed it stops generating.
 
 ## 0.119.0 — 18.11.2026
 

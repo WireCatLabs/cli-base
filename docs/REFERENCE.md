@@ -50,13 +50,16 @@ positive byte budget, then decodes strict UTF-8 JSON. It bounds declared length 
 bytes, cancels on rejection/interruption and releases its own reader. It never fetches or interprets
 HTTP status, provider fields or credentials. A caller still owns those policies and its deadline.
 
-`hostFetch({ hosts, fetch?, timeoutMs?, redirects? })` is the `fetch` a CLI sends HTTP through
+`hostFetch({ hosts, fetch?, timeoutMs?, redirects?, credentialScope? })` is the `fetch` a CLI sends HTTP through
 ([WC-CMD-32](standards/commands.md#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch)).
 It returns a `FetchLike` that refuses, before anything is sent, a URL whose host is not in `hosts`
 (`configuration_error`, reason `network.host-undeclared`, the message naming the host and `hosts`), and any scheme
 but http and https. It follows redirects itself, at most `redirects` (5), so every hop is checked; a 303, or a 301
 or 302 after a POST, goes on as a GET without the body; a hop to another origin drops `authorization`, `cookie` and
-`proxy-authorization`. A caller's `redirect: "manual"` or `"error"` is passed on. `timeoutMs` (30 s,
+`proxy-authorization`. A site under a path shares its host with others (`host/blog`, a WordPress multisite in
+subfolders): `credentialScope` (`https://host/blog/wp-json`) then limits the sign-in to that origin and path. A request
+outside it that carries one of those headers is refused before it is sent (`configuration_error`), and a hop out of it
+drops them. A caller's `redirect: "manual"` or `"error"` is passed on. `timeoutMs` (30 s,
 `HOST_FETCH_TIMEOUT_MS`) bounds the whole exchange, body included, beside the caller's own `signal`; a timeout is
 `timeout` and a failed connection `network_error`. `hostCovered(hostname, hosts)` and `hostProblems(hosts)` are the
 matching and the check it uses: `*.acme.example` covers `api.acme.example`, never `acme.example`.
@@ -289,7 +292,9 @@ template's `theme//slug`, a plugin's `dir/file`) fits no path segment and is lef
 namespaces not offered; a route
 that is still a pattern, a second route on one path or an argument with no type stops generation, unless `exclude`
 names the route with a reason. WordPress answers a list without its page count in the body, so `pagination: true`
-finds no paging for it.
+finds no paging for it; the result's `overrides`, passed to `generate`, give each collection read the page style from 1
+with the count in `X-WP-TotalPages`. The `batch/v1` namespace is refused: one batch call runs other routes' writes
+past the keys they need.
 
 **A Postman collection becomes OpenAPI.** `postmanToOpenApi(collection, { variables, exclude, version })` takes a
 parsed collection, v2.0 or v2.1, and returns an OpenAPI 3.1 document for `adaptOpenApi` with its `omissions`. Commit

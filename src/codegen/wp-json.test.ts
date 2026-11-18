@@ -12,6 +12,7 @@ import {
   generate,
   type ManifestOperation,
   manifestGenerator,
+  type PermissionRule,
   readWpJson,
   type SchemaNode,
   syncWpJson,
@@ -76,6 +77,9 @@ describe("wpJsonToOpenApi", () => {
   it("leaves out other namespaces, the namespace's own index, and a route whose value may hold a slash", () => {
     expect(model.operations.some((one) => one.id.includes("Oembed"))).toBe(false)
     expect(omissions).toContain("oembed/1.0: not offered, 1 routes")
+    expect(problems(() => wpJsonToOpenApi(excerpt(), { namespaces: ["wp/v2", "batch/v1"] }))).toEqual([
+      "batch/v1 is never offered: a batch call runs other routes' writes past their own keys",
+    ])
     expect(operation("getWpV2")).toBeUndefined()
     expect(model.operations.some((one) => one.id.includes("Templates"))).toBe(false)
     expect(omissions).toContain(`${TEMPLATE}: left out, as its value may hold a slash, which no path segment carries`)
@@ -161,9 +165,10 @@ describe("wpJsonToOpenApi", () => {
 })
 
 describe("the api group of a WordPress CLI from its snapshot", () => {
-  const model = adaptOpenApi(wpJsonToOpenApi(excerpt(), { namespaces: ["wp/v2"] }).document)
+  const converted = wpJsonToOpenApi(excerpt(), { namespaces: ["wp/v2"] })
+  const model = adaptOpenApi(converted.document)
   const group = (one: ApiOperation) => (one.binding.kind === "http" ? (one.binding.path.split("/")[3] ?? "wp") : "wp")
-  const build = (valueKeys: readonly { key: string; field: string; values: readonly string[] }[]) =>
+  const build = (valueKeys: NonNullable<PermissionRule["valueKeys"]>, rule: Pick<PermissionRule, "forceFlags"> = {}) =>
     generate(
       model,
       [
@@ -173,7 +178,7 @@ describe("the api group of a WordPress CLI from its snapshot", () => {
         typesGenerator({ path: "types.ts" }),
         valibotGenerator({ path: "schemas.ts", typesImport: "./types.js" }),
       ],
-      { banner: [], permissions: { group, valueKeys } },
+      { banner: [], overrides: converted.overrides, permissions: { group, valueKeys, ...rule } },
     )
   const [manifest, definitions, coverage] = build([{ key: "publish", field: "status", values: ["publish", "future"] }])
   const operations = exported(manifest?.content, "operations") as ManifestOperation[]
@@ -244,6 +249,57 @@ describe("the api group of a WordPress CLI from its snapshot", () => {
     expect(problems(() => build([{ key: "publish", field: "status", values: ["published"] }]))).toEqual([
       'valueKeys: no write lists published in the enum of "status"',
     ])
+  })
+
+  it("needs posts.publish to set a post's date unless the call itself keeps it a draft, pending or private", () => {
+    const [dated] = build([
+      { key: "publish", field: "status", values: ["publish", "future"], also: ["date", "date_gmt"] },
+    ])
+    const listed = exported(dated?.content, "operations") as ManifestOperation[]
+    const keyOf = (id: string) => listed.find((one) => one.id === id)?.permissions
+    expect(keyOf("postWpV2PostsById")).toEqual([
+      {
+        key: "posts.publish",
+        values: { status: ["publish", "future"] },
+        body: ["date", "date_gmt"],
+        unless: { status: ["draft", "pending", "private"] },
+      },
+    ])
+    expect(keyOf("postWpV2MenuItems")).toEqual([{ key: "menu-items.publish" }])
+  })
+
+  it("needs a delete.force key besides delete when force=true deletes for good instead of moving to the trash", () => {
+    const [forced, , listing] = build([{ key: "publish", field: "status", values: ["publish", "future"] }], {
+      forceFlags: ["force"],
+    })
+    const listed = exported(forced?.content, "operations") as ManifestOperation[]
+    expect(listed.find((one) => one.id === "deleteWpV2PostsById")?.permissions).toEqual([
+      { key: "posts.delete" },
+      { key: "posts.delete.force", query: ["force"] },
+    ])
+    expect(listing?.content).toContain("| `deleteWpV2PostsById` | `posts.delete.force` | query `force` is true |")
+    expect(
+      problems(() =>
+        build([{ key: "publish", field: "status", values: ["publish", "future"], also: ["dat"] }], {
+          forceFlags: ["force"],
+        }),
+      ),
+    ).toEqual(['valueKeys: also "dat" is in no write that "publish" guards'])
+    expect(problems(() => build([], { forceFlags: ["purge"] }))).toEqual([
+      'forceFlags: "purge" is in no delete\'s request body or query',
+    ])
+  })
+
+  it("pages a collection read from 1 by the X-WP-TotalPages header, the answer itself being the list", () => {
+    const read = operations.find((one) => one.id === "getWpV2Posts")
+    expect(read?.pagination).toEqual({
+      style: "page",
+      page: { in: "query", name: "page" },
+      limit: { in: "query", name: "per_page" },
+      items: "",
+      start: 1,
+      pagesHeader: "x-wp-totalpages",
+    })
   })
 
   it("serves the generated calls from a fake that checks the application password", async () => {
