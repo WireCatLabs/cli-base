@@ -8,6 +8,27 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.119.0 — 18.11.2026
+
+### Added
+
+- **The manifest tells WireCat Desktop how to remove an account.** `desktop.accountRemove` is written from the
+  command tree: `signOut` when the CLI has `session end`, `remove` when its `account remove` takes `--keep-data`,
+  `--delete-data` and `--dry-run`. The key is left out for a CLI with neither, because a Desktop that does
+  not read it refuses the whole manifest. See [the reference](docs/REFERENCE.md). Watch for: WireCat Desktop
+  0.7.2 and older refuse a manifest with the key; 0.7.3 reads it.
+
+### Fixed
+
+- **WireCat Desktop shows when a `<noun> sync` last ran.** For `meetings sync`, `desktop.sync.last` was `null`; it is
+  now `runs list 'command:"meetings sync" status:success'`, one word as in Desktop's catalog. It is the one word the
+  manifest takes that is not plain, and only in `sync.last`. See [the reference](docs/REFERENCE.md). Desktop 0.7.3
+  accepts it.
+- **A schema's `additionalProperties: true` (or `{}`) stays open.** `adaptOpenApi` dropped it, so `fakeApi` refused
+  every field of an object the spec leaves open, such as Attio's records filter and its `$or`, as "no such field".
+- **`cli-dev ready` knows the tracker category** that `new` writes (`tracker`, or its label "issue tracker (issues,
+  projects, teams)") and asks for cli-core's `trackerSourceContract`. A tracker CLI got "is no category new writes".
+
 ## 0.118.0 — 18.11.2026
 
 ### Added
