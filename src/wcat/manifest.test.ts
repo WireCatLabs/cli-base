@@ -177,6 +177,46 @@ describe("buildManifest", () => {
     expect(() => build({ meetingsProvider: "Acme PBX" }, describeProgram(tree))).toThrow("a provider name")
   })
 
+  it("removes an account with session end and account remove, and leaves the key out for a CLI with neither", () => {
+    const withAccounts = (account: Command) => {
+      const root = program().addCommand(account)
+      root.commands.find((command) => command.name() === "session")?.addCommand(new Command("end").action(() => {}))
+      return describeProgram(root)
+    }
+    const remove = new Command("remove").action(() => {})
+    for (const flag of ["--keep-data", "--delete-data", "--dry-run"]) remove.option(flag, flag)
+    const full = new Command("account").addCommand(new Command("list").action(() => {})).addCommand(remove)
+    expect(build({}, withAccounts(full)).desktop.accountRemove).toEqual({
+      signOut: ["{profile}", "session", "end", "--record", "--json"],
+      remove: {
+        minVersion: "0.0.0",
+        keepData: ["{profile}", "account", "remove", "--keep-data", "--record", "--json"],
+        deleteData: ["{profile}", "account", "remove", "--delete-data", "--record", "--json"],
+        dryRun: "--dry-run",
+        confirm: "--yes",
+      },
+      removes: ["signIn"],
+      keeps: ["settings", "data", "listed"],
+    })
+
+    const listOnly = new Command("account").addCommand(new Command("list").action(() => {}))
+    expect(build({}, withAccounts(listOnly)).desktop.accountRemove).toEqual({
+      signOut: ["{profile}", "session", "end", "--record", "--json"],
+      remove: null,
+      removes: ["signIn"],
+      keeps: ["settings", "data", "listed"],
+    })
+
+    const removeOnly = program().addCommand(full)
+    expect(build({}, describeProgram(removeOnly)).desktop.accountRemove).toMatchObject({
+      signOut: null,
+      removes: [],
+      keeps: [],
+    })
+
+    expect(build().desktop).not.toHaveProperty("accountRemove")
+  })
+
   it("passes the sign-ins Desktop runs in its window, only when declared and only for a command the CLI has", () => {
     const token = { id: "token", label: "API token", words: ["{profile}", "session", "start", "--json"], stdin: true }
     const signIn = { ...identity.signIn, methods: [token] } as ManifestIdentity["signIn"]

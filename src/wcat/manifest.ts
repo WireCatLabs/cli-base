@@ -111,6 +111,26 @@ const desktopSchema = v.strictObject({
   }),
   settings: v.null(),
   /**
+   * Removing one account: `session end` signs it out, cli-core's `account remove` forgets it. `removes` and `keeps`
+   * say what the sign-out alone takes and leaves. Left out when the CLI has neither, like `meetings`.
+   */
+  accountRemove: v.optional(
+    v.strictObject({
+      signOut: v.nullable(words),
+      remove: v.nullable(
+        v.strictObject({
+          minVersion: v.literal("0.0.0"),
+          keepData: words,
+          deleteData: words,
+          dryRun: plainWord,
+          confirm: plainWord,
+        }),
+      ),
+      removes: v.array(v.literal("signIn")),
+      keeps: v.array(v.picklist(["settings", "data", "listed"])),
+    }),
+  ),
+  /**
    * How a client's call or a meeting this tool saved opens: Desktop finds the tool by `provider`. Left out, not `null`,
    * when the tool records none, because Desktop 0.6.8 and older refuse a manifest with a key they do not read.
    */
@@ -309,6 +329,31 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       }
     : {}
 
+  const signOut = profiles && has("session end") ? [...profile, "session", "end", "--record", "--json"] : null
+  // `--yes` is a global flag of cli-core's programs, read with optsWithGlobals, so `account remove` does not list it.
+  const remove =
+    profiles && ["--keep-data", "--delete-data", "--dry-run"].every((flag) => takes("account remove", flag))
+      ? {
+          // The manifest ships inside the version it describes, so that version always has the command.
+          minVersion: "0.0.0",
+          keepData: [...profile, "account", "remove", "--keep-data", "--record", "--json"],
+          deleteData: [...profile, "account", "remove", "--delete-data", "--record", "--json"],
+          dryRun: "--dry-run",
+          confirm: "--yes",
+        }
+      : null
+  const accountRemove =
+    signOut || remove
+      ? {
+          accountRemove: {
+            signOut,
+            remove,
+            removes: signOut ? ["signIn"] : [],
+            keeps: signOut ? ["settings", "data", "listed"] : [],
+          },
+        }
+      : {}
+
   const methods = identity.signIn?.methods
   for (const method of methods ?? []) {
     const [first, ...rest] = method.words
@@ -406,6 +451,7 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       storeReset: null,
       storage: { app: identity.appName, env: identity.envPrefix },
       settings: null,
+      ...accountRemove,
       ...meetings,
     },
   }
