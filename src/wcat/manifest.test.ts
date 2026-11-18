@@ -147,14 +147,14 @@ describe("buildManifest", () => {
     ])
   })
 
-  it("runs a single <noun> sync but finds its last run only for a one-word sync, which a plain word can name", () => {
+  it("runs a single <noun> sync and finds its last run by the quoted phrase, as Desktop's catalog does", () => {
     const tree = new Command("acme")
       .addCommand(new Command("doctor").action(() => {}))
       .addCommand(new Command("runs").addCommand(new Command("list").action(() => {})))
       .addCommand(new Command("contacts").addCommand(new Command("sync").action(() => {})))
     expect(build({}, describeProgram(tree)).desktop.sync).toEqual({
       run: ["contacts", "sync", "--record", "--json"],
-      last: null,
+      last: ["runs", "list", 'command:"contacts sync" status:success', "--limit", "50", "--no-record", "--json"],
       lastShape: "runs",
       what: "contacts and deals",
       note: null,
@@ -177,6 +177,46 @@ describe("buildManifest", () => {
     expect(() => build({ meetingsProvider: "Acme PBX" }, describeProgram(tree))).toThrow("a provider name")
   })
 
+  it("removes an account with session end and account remove, and leaves the key out for a CLI with neither", () => {
+    const withAccounts = (account: Command) => {
+      const root = program().addCommand(account)
+      root.commands.find((command) => command.name() === "session")?.addCommand(new Command("end").action(() => {}))
+      return describeProgram(root)
+    }
+    const remove = new Command("remove").action(() => {})
+    for (const flag of ["--keep-data", "--delete-data", "--dry-run"]) remove.option(flag, flag)
+    const full = new Command("account").addCommand(new Command("list").action(() => {})).addCommand(remove)
+    expect(build({}, withAccounts(full)).desktop.accountRemove).toEqual({
+      signOut: ["{profile}", "session", "end", "--record", "--json"],
+      remove: {
+        minVersion: "0.0.0",
+        keepData: ["{profile}", "account", "remove", "--keep-data", "--record", "--json"],
+        deleteData: ["{profile}", "account", "remove", "--delete-data", "--record", "--json"],
+        dryRun: "--dry-run",
+        confirm: "--yes",
+      },
+      removes: ["signIn"],
+      keeps: ["settings", "data", "listed"],
+    })
+
+    const listOnly = new Command("account").addCommand(new Command("list").action(() => {}))
+    expect(build({}, withAccounts(listOnly)).desktop.accountRemove).toEqual({
+      signOut: ["{profile}", "session", "end", "--record", "--json"],
+      remove: null,
+      removes: ["signIn"],
+      keeps: ["settings", "data", "listed"],
+    })
+
+    const removeOnly = program().addCommand(full)
+    expect(build({}, describeProgram(removeOnly)).desktop.accountRemove).toMatchObject({
+      signOut: null,
+      removes: [],
+      keeps: [],
+    })
+
+    expect(build().desktop).not.toHaveProperty("accountRemove")
+  })
+
   it("passes the sign-ins Desktop runs in its window, only when declared and only for a command the CLI has", () => {
     const token = { id: "token", label: "API token", words: ["{profile}", "session", "start", "--json"], stdin: true }
     const signIn = { ...identity.signIn, methods: [token] } as ManifestIdentity["signIn"]
@@ -197,6 +237,28 @@ describe("buildManifest", () => {
     const ast = parseLucene(["command:sync", "status:success"].join(" "), { defaultField: "none" })
     expect(JSON.stringify(ast)).toMatch(/"field":"command","operator":"term","value":"sync"/)
     expect(JSON.stringify(ast)).toMatch(/"field":"status","operator":"term","value":"success"/)
+  })
+
+  it("matches runs list's query: a quoted command is one phrase, so it equals the recorded `contacts sync`", () => {
+    const ast = JSON.stringify(parseLucene('command:"contacts sync" status:success', { defaultField: "none" }))
+    expect(ast).toMatch(/"field":"command","operator":"phrase","value":"contacts sync"/)
+    expect(ast).toMatch(/"field":"status","operator":"term","value":"success"/)
+  })
+
+  it("takes the quoted sync query in sync.last only, and no other quoted word", () => {
+    const manifest = build()
+    const query = 'command:"contacts sync" status:success'
+    const at = (desktop: object) => v.safeParse(manifestSchema, { ...manifest, desktop }).success
+    const sync = manifest.desktop.sync as NonNullable<typeof manifest.desktop.sync>
+    expect(at({ ...manifest.desktop, sync: { ...sync, last: ["runs", "list", query] } })).toBe(true)
+    expect(at({ ...manifest.desktop, sync: { ...sync, run: ["runs", "list", query] } })).toBe(false)
+    expect(at({ ...manifest.desktop, doctor: [query] })).toBe(false)
+    for (const word of [
+      'command:"contacts sync"; rm -rf ~',
+      'command:"$(id) x" status:success',
+      'command:"sync" status:success',
+    ])
+      expect(at({ ...manifest.desktop, sync: { ...sync, last: ["runs", "list", word] } })).toBe(false)
   })
 
   it("refuses a CLI without doctor, a tagline or its wcat- bin, saying what to add", () => {

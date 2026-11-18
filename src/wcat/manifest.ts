@@ -1,7 +1,8 @@
 /**
  * `contracts/wirecat.json`, format 2: what a CLI tells WireCat Desktop about itself, built from its command tree so
  * nothing in it is typed by hand except the tagline and the sign-in texts. Desktop reads it out of the npm tarball
- * without running the package, so every array holds plain words only: the same rule as Desktop's `community.rs`.
+ * without running the package, so every array holds plain words only, the same rule as Desktop's `community.rs`, but
+ * the one query in `sync.last` (`SYNC_QUERY`).
  */
 import * as v from "valibot"
 import { type CommandInfo, flatten, type OptionInfo, summaryOf } from "../commands/registry.js"
@@ -41,6 +42,14 @@ const plainWord = v.pipe(
   ),
 )
 const words = v.pipe(v.array(plainWord), v.minLength(1))
+
+/**
+ * The one word that is not plain: `runs list` matches `command:` exactly, so a `<noun> sync` is found only as the
+ * quoted phrase, `command:"meetings sync" status:success`. Desktop runs it without a shell and accepts this form in
+ * `sync.last` only.
+ */
+export const SYNC_QUERY = /^command:"[a-z0-9][a-z0-9-]*(?: [a-z0-9][a-z0-9-]*)+" status:success$/
+const lastWords = v.pipe(v.array(v.union([plainWord, v.pipe(v.string(), v.regex(SYNC_QUERY))])), v.minLength(1))
 const line = (max: number) => v.pipe(v.string(), v.regex(/^\S(?:[^\n\r]*\S)?$/, "one line of text"), v.maxLength(max))
 
 /**
@@ -91,7 +100,7 @@ const desktopSchema = v.strictObject({
   sync: v.nullable(
     v.strictObject({
       run: words,
-      last: v.nullable(words),
+      last: v.nullable(lastWords),
       lastShape: v.literal("runs"),
       what: line(40),
       note: v.null(),
@@ -110,6 +119,26 @@ const desktopSchema = v.strictObject({
     env: v.pipe(v.string(), v.regex(/^[A-Z][A-Z0-9_]*$/, "an upper-case environment prefix")),
   }),
   settings: v.null(),
+  /**
+   * Removing one account: `session end` signs it out, cli-core's `account remove` forgets it. `removes` and `keeps`
+   * say what the sign-out alone takes and leaves. Left out when the CLI has neither, like `meetings`.
+   */
+  accountRemove: v.optional(
+    v.strictObject({
+      signOut: v.nullable(words),
+      remove: v.nullable(
+        v.strictObject({
+          minVersion: v.literal("0.0.0"),
+          keepData: words,
+          deleteData: words,
+          dryRun: plainWord,
+          confirm: plainWord,
+        }),
+      ),
+      removes: v.array(v.literal("signIn")),
+      keeps: v.array(v.picklist(["settings", "data", "listed"])),
+    }),
+  ),
   /**
    * How a client's call or a meeting this tool saved opens: Desktop finds the tool by `provider`. Left out, not `null`,
    * when the tool records none, because Desktop 0.6.8 and older refuse a manifest with a key they do not read.
@@ -280,11 +309,10 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     throw new ManifestError([
       `no syncs: \`${syncPath.join(" ")}\` exists, so add \`syncs\`, what it copies in at most 40 characters`,
     ])
-  // `runs list` matches `command:` exactly and a plain word holds no space, so only a one-word path can be found.
+  const query =
+    syncPath?.length === 1 ? ["command:sync", "status:success"] : [`command:"${syncPath?.join(" ")}" status:success`]
   const last =
-    syncPath?.length === 1 && has("runs list")
-      ? ["runs", "list", "command:sync", "status:success", "--limit", "50", "--no-record", "--json"]
-      : null
+    syncPath && has("runs list") ? ["runs", "list", ...query, "--limit", "50", "--no-record", "--json"] : null
   const sync = syncPath
     ? {
         run: [...profile, ...syncPath, "--record", "--json"],
@@ -308,6 +336,31 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
         },
       }
     : {}
+
+  const signOut = profiles && has("session end") ? [...profile, "session", "end", "--record", "--json"] : null
+  // `--yes` is a global flag of cli-core's programs, read with optsWithGlobals, so `account remove` does not list it.
+  const remove =
+    profiles && ["--keep-data", "--delete-data", "--dry-run"].every((flag) => takes("account remove", flag))
+      ? {
+          // The manifest ships inside the version it describes, so that version always has the command.
+          minVersion: "0.0.0",
+          keepData: [...profile, "account", "remove", "--keep-data", "--record", "--json"],
+          deleteData: [...profile, "account", "remove", "--delete-data", "--record", "--json"],
+          dryRun: "--dry-run",
+          confirm: "--yes",
+        }
+      : null
+  const accountRemove =
+    signOut || remove
+      ? {
+          accountRemove: {
+            signOut,
+            remove,
+            removes: signOut ? ["signIn"] : [],
+            keeps: signOut ? ["settings", "data", "listed"] : [],
+          },
+        }
+      : {}
 
   const methods = identity.signIn?.methods
   for (const method of methods ?? []) {
@@ -406,6 +459,7 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       storeReset: null,
       storage: { app: identity.appName, env: identity.envPrefix },
       settings: null,
+      ...accountRemove,
       ...meetings,
     },
   }
