@@ -139,6 +139,11 @@ describe("postmanToOpenApi on a v2.1 collection", () => {
             variable: [{ key: "orderId", description: "The order" }],
           }),
           request("Ping", "GET", "{{baseUrl}}/ping", { auth: { type: "noauth" } }),
+          request("Note", "POST", "{{baseUrl}}/orders/:orderId/notes", {
+            auth: { type: "inherit" },
+            header: [{ key: "Content-Type", value: "text/plain" }],
+            body: { mode: "raw", raw: "Leave at the door" },
+          }),
         ],
       },
       request("Upload", "POST", "{{baseUrl}}/files", {
@@ -194,13 +199,15 @@ describe("postmanToOpenApi on a v2.1 collection", () => {
     })
     expect(operation("getOrdersByOrderId")?.security).toEqual([{ bearer: [] }])
     expect(operation("getPing")?.security).toEqual([])
+    expect(operation("postOrdersByOrderIdNotes")?.security).toEqual([{ bearer: [] }])
     expect(operation("postFiles")?.security).toEqual([{ apiKey: [] }])
     expect(operation("postLogin")?.security).toEqual([{ oauth2: [] }])
   })
 
-  it("sends form fields as a form, and a file field as multipart", () => {
+  it("sends form fields as a form, a file field as multipart, and a body that is not JSON as its bytes", () => {
     expect(operation("postFiles")?.requestBody?.contentType).toBe("multipart/form-data")
     expect(operation("postLogin")?.requestBody?.contentType).toBe("application/x-www-form-urlencoded")
+    expect(operation("postOrdersByOrderIdNotes")?.requestBody?.contentType).toBe("text/plain")
   })
 
   it("stops on what it cannot convert, and on a stale exclusion", () => {
