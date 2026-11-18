@@ -3,10 +3,10 @@
  * manifest and a coverage page. Build-time, apart from the small helpers a CLI reads the generated
  * files with (`identifier`, `requestSchema`), and format-neutral: it parses no file format and
  * adds no runtime dependency. `adaptOpenApi` reads an OpenAPI document and `adaptDiscovery` Google Discovery
- * documents the consumer has parsed, and `adaptGraphql` a GraphQL introspection result; `wpJsonToOpenApi` turns WordPress's REST index into OpenAPI; `upgradeToOpenApi3` brings Swagger 1.2 and 2.0 to OpenAPI 3 through two optional
+ * documents the consumer has parsed, and `adaptGraphql` a GraphQL introspection result; `wpJsonToOpenApi` turns WordPress's REST index into OpenAPI and `postmanToOpenApi` a Postman collection; `upgradeToOpenApi3` brings Swagger 1.2 and 2.0 to OpenAPI 3 through two optional
  * peer dependencies. `fakeApi` serves the generated manifest as a strict fake for a CLI's tests, and `signInRequirements` with
  * `signInPlace` say which sign-in a call needs and where its token goes (Basic included). An adapter from
- * Postman or anything else lives in the consumer.
+ * any other format lives in the consumer.
  */
 export {
   adaptDiscovery,
@@ -106,6 +106,7 @@ export {
   type WriteOptions,
   writeArtifacts,
 } from "./pipeline.js"
+export { type PostmanOptions, type PostmanResult, postmanToOpenApi } from "./postman.js"
 export { type SignInPlace, signInPlace, signInRequirements } from "./sign-in.js"
 export { API_SKILL_GROUPS, API_SKILL_INDEX, type ApiSkillOptions, apiSkillFiles } from "./skill.js"
 export { upgradeToOpenApi3 } from "./swagger.js"

@@ -8,6 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **A Postman collection becomes OpenAPI: `postmanToOpenApi`.** A service that publishes only a Postman collection
+  (Braze) is now generated like any other: the converter turns a parsed collection, v2.0 or v2.1, into OpenAPI 3.1 for
+  `adaptOpenApi`. Requests become operations named by method and path, folders their tag, `{{x}}`, `:x` and `{x}` path
+  parameters, and the collection's auth or the `Authorization` header an existing sign-in kind. A body is an example,
+  never a contract. Braze's collection gives 95 operations from 99 requests (four documented twice). See
+  [the reference](docs/REFERENCE.md). Watch for: a POST that only reads keeps the write effect its method gives, so
+  the CLI corrects it with an override.
+
 ## 0.119.0 — 18.11.2026
 
 ### Added
