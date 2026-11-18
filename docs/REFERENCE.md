@@ -272,6 +272,25 @@ is the GraphQL counterpart of `fakeApi`: it takes only a document `graphqlDocume
 type lacks, an object selected without fields and variables that break their schema, and answers `{ data: { <field> } }`
 within the selection, or a scenario's `errors` with HTTP 200.
 
+**A WordPress site describes its own API.** WordPress publishes no OpenAPI, but one call to
+`/wp-json/?context=help` lists every route with its arguments and the schema of its answer, the same schema an
+`OPTIONS` call returns. `syncWpJson({ root, dir, version })` asks for it and writes `wp-json.json`, without the site's
+name, address and links, with a `provenance.json` that keeps the URL it asked, without a user or password; take it from a plain WordPress in Docker, as the CLI serves every
+site, and give the WordPress `version`, which the index does not say. `readWpJson(dir)` loads it back and stops on a
+changed hash. `wpJsonToOpenApi(index, { namespaces, exclude, site, version })` turns the routes of `namespaces`
+(`["wp/v2"]`) into an OpenAPI 3.1 document for `adaptOpenApi`, with its `omissions`. GET reads, DELETE deletes with
+its arguments in the query (`force`), and a route that takes POST, PUT and PATCH gets one write, POST, whose
+arguments are its JSON body. Ids come from the method and path: `getWpV2Posts`, `postWpV2PostsById`. A collection read
+(it takes `page` and `per_page`) answers a list of the route's schema. An array argument in the query becomes one
+comma-separated string, which WordPress splits; PHP would keep only the last of a repeated name. The string loses the
+array's `enum`, so WordPress, not the CLI, refuses a wrong value in it. The server is
+`https://{site}/wp-json` and the sign-in an application password by Basic. A route whose value may hold a slash (a
+template's `theme//slug`, a plugin's `dir/file`) fits no path segment and is left out, listed in `omissions` with the
+namespaces not offered; a route
+that is still a pattern, a second route on one path or an argument with no type stops generation, unless `exclude`
+names the route with a reason. WordPress answers a list without its page count in the body, so `pagination: true`
+finds no paging for it.
+
 The generated schemas import `@wirecat/cli-base/codegen/runtime` at run time — a few number
 helpers, not the generator. Numbers are expected from a lossless JSON parser (`lossless-json`): a
 64-bit integer comes out as its exact decimal string, and any other integer that does not fit a JS

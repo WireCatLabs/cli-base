@@ -6,11 +6,11 @@
  * Strict like `adaptOpenApi`: an unknown schema keyword, format or parameter location stops generation.
  * Effects come from the HTTP verb; a method the verb misjudges is corrected with `generate`'s `overrides`.
  */
-import { createHash } from "node:crypto"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { ApiModel, ApiOperation, ApiSchema, Effect, HttpMethod, SchemaNode } from "./model.js"
 import { CodegenError } from "./pipeline.js"
+import { sha256, sortKeys } from "./snapshot.js"
 
 type Json = Record<string, unknown>
 
@@ -304,20 +304,6 @@ export interface SyncDiscoveryOptions {
   dir: string
   fetch?: typeof globalThis.fetch
 }
-
-const sha256 = (bytes: string | Buffer): string => createHash("sha256").update(bytes).digest("hex")
-
-/** Google serves the same revision with its keys in a different order each time; arrays keep theirs. */
-const sortKeys = (value: unknown): unknown =>
-  Array.isArray(value)
-    ? value.map(sortKeys)
-    : object(value)
-      ? Object.fromEntries(
-          Object.keys(value)
-            .sort()
-            .map((key) => [key, sortKeys(value[key])]),
-        )
-      : value
 
 const NORMALIZATION = "object keys sorted, 2-space JSON; values and array order unchanged"
 

@@ -197,10 +197,12 @@ export const coverageGenerator =
     const guarded = model.operations.flatMap((operation) =>
       (operation.permissions ?? []).map((permission) => ({ id: operation.id, permission })),
     )
-    const when = ({ body, query }: OperationPermission) =>
-      [...(body ?? []).map((flag) => `body \`${flag}\``), ...(query ?? []).map((flag) => `query \`${flag}\``)].join(
-        " or ",
-      )
+    const when = ({ body, query, values }: OperationPermission) =>
+      [
+        ...(body ?? []).map((flag) => `body \`${flag}\` is true`),
+        ...(query ?? []).map((flag) => `query \`${flag}\` is true`),
+        ...Object.entries(values ?? {}).map(([field, listed]) => `\`${field}\` is ${listed.join(" or ")}`),
+      ].join(" or ")
     const content = [
       `# ${options.title}`,
       "",
@@ -254,7 +256,7 @@ export const coverageGenerator =
             "|---|---|---|",
             ...guarded.map(({ id, permission }) => {
               const flags = when(permission)
-              return `| \`${id}\` | \`${permission.key}\` | ${flags ? `${flags} is true` : "always"} |`
+              return `| \`${id}\` | \`${permission.key}\` | ${flags || "always"} |`
             }),
           ]
         : []),

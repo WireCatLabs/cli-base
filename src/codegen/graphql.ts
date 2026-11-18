@@ -8,11 +8,11 @@
  * ends in `Delete` or `Archive` deletes. A Relay connection pages as a `cursor`: `after`, `pageInfo.endCursor`.
  * SDL is not read: that needs graphql-js, and codegen adds no runtime dependency.
  */
-import { createHash } from "node:crypto"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { ApiModel, ApiOperation, ApiSchema, GraphqlBinding, Pagination, SchemaNode } from "./model.js"
 import { CodegenError } from "./pipeline.js"
+import { sha256, sortKeys } from "./snapshot.js"
 
 type Json = Record<string, unknown>
 
@@ -405,19 +405,6 @@ export interface GraphqlProvenance {
   retrieved_at: string
   normalization: string
 }
-
-const sha256 = (bytes: string | Buffer): string => createHash("sha256").update(bytes).digest("hex")
-
-const sortKeys = (value: unknown): unknown =>
-  Array.isArray(value)
-    ? value.map(sortKeys)
-    : object(value)
-      ? Object.fromEntries(
-          Object.keys(value)
-            .sort()
-            .map((key) => [key, sortKeys(value[key])]),
-        )
-      : value
 
 const byName = (list: unknown): unknown =>
   Array.isArray(list)
