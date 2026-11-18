@@ -376,6 +376,10 @@ const singulars: [string, string][] = [
   ["metadata", "a profile's cached source attributes"],
   ["auth", "the credentials a bot profile uses: its token and the secrets beside it"],
   [
+    "scheduled",
+    "a chat's messages the messenger will send later; their ids are their own, never the ids of sent messages",
+  ],
+  [
     "schedule",
     "a profile's timers the owner saved, each running a command of this tool or an agent; the tool's own background work is jobs",
   ],
