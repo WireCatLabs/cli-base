@@ -202,7 +202,7 @@ export interface OperationPermission {
    */
   values?: Readonly<Record<string, readonly string[]>>
   /**
-   * The key does not apply when the call itself sets a field to one of these: `{ status: ["draft", "pending"] }` keeps
+   * The key does not apply when the call itself sets a field to one of these: `{ status: ["draft", "pending", "private"] }` keeps
    * a draft's date change free. A call that leaves the field out still needs the key, as the stored value is unknown.
    */
   unless?: Readonly<Record<string, readonly string[]>>

@@ -63,11 +63,18 @@ const checked = (url: URL, hosts: readonly string[]): URL => {
   return url
 }
 
+// A server that decodes `%2F` before it routes would take `/blog/..%2F..%2Fother` out of the scope the prefix saw.
+const ENCODED_SLASH = /%2f|%5c/i
+
 const scopeOf = (scope: string | undefined) => {
   if (scope === undefined) return undefined
+  if (!URL.canParse(scope)) throw new CliError("configuration_error", `credentialScope ${scope} is not a URL`)
   const { origin, pathname } = new URL(scope)
   const prefix = pathname.endsWith("/") ? pathname : `${pathname}/`
-  return (url: URL) => url.origin === origin && (url.pathname === pathname || url.pathname.startsWith(prefix))
+  return (url: URL) =>
+    url.origin === origin &&
+    (url.pathname === pathname || url.pathname.startsWith(prefix)) &&
+    !ENCODED_SLASH.test(url.pathname)
 }
 
 const signedHeaders = (headers: Headers) => CREDENTIAL_HEADERS.some((name) => headers.has(name))

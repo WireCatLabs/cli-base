@@ -145,10 +145,14 @@ export const applyPagination = (
       if (operation.effect !== "read") problems.push(`${at} on an operation that is not a read`)
       const request = requestParameters(operation, schemas)
       const answer = answerPaths(operation, schemas)
-      const { style: _, start: __, pagesHeader: ___, ...fields } = override.pagination as Record<string, unknown>
+      const { style, start, pagesHeader, ...fields } = override.pagination as Record<string, unknown>
+      if (start !== undefined && (style !== "page" || !Number.isInteger(start) || (start as number) < 0))
+        problems.push(`${at}: start must be a whole number from 0, on the page style`)
+      if (pagesHeader !== undefined && (style !== "page" || typeof pagesHeader !== "string" || pagesHeader === ""))
+        problems.push(`${at}: pagesHeader must name a header, on the page style`)
       for (const [field, value] of Object.entries(fields)) {
-        // `""`: the answer itself is the list.
-        if (value === "") continue
+        // `items: ""`: the answer itself is the list.
+        if (field === "items" && value === "") continue
         if (typeof value === "string") {
           // An answer without a schema has nothing to check the path against.
           if (answer.size > 0 && !answer.has(value))
@@ -331,6 +335,18 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
     throw new CodegenError(
       idle.map(({ field, values }) => `valueKeys: no write lists ${values.join(" or ")} in the enum of "${field}"`),
     )
+  // A misspelt `also` would leave the other door open without a word.
+  const idleAlso = valueKeys.flatMap(({ key, also = [] }) =>
+    also
+      .filter(
+        (name) =>
+          !model.operations.some((operation) =>
+            valued(operation).some((one) => one.key === key && (one.body?.includes(name) || one.query?.includes(name))),
+          ),
+      )
+      .map((name) => `valueKeys: also "${name}" is in no write that "${key}" guards`),
+  )
+  if (idleAlso.length > 0) throw new CodegenError(idleAlso)
   const unused = flags.filter(
     (flag) =>
       !model.operations.some(

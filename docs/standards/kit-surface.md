@@ -124,9 +124,9 @@ From the source the generator reads:
     always applies. A read that filters by the value gets no key, nor a field of that name without such an enum (a
     comment's `status`); a rule no write matches stops generation. `also` names fields that make the same change
     another way: WordPress publishes a scheduled post whose `date` moves into the past, so with
-    `also: ["date", "date_gmt"]` setting either needs the key too, unless the call itself sets `field` to a value
-    outside `values` (`draft`, `pending`, `private`). A call that leaves `field` out needs the key: the stored value is
-    unknown without a read.
+    `also: ["date", "date_gmt"]` setting either needs the key too, unless the call itself sets `field` to another value
+    its enum lists (for WordPress `draft`, `pending`, `private`). A call that leaves `field` out needs the key: the
+    stored value is unknown without a read. An `also` field no guarded write takes stops generation.
   - `<group>.delete.force` beside `<group>.delete` on every delete that takes a flag in `forceFlags`: WordPress's
     `force=true` deletes for good, where a delete without it moves to the trash. The key applies when the flag is
     `true`. A flag no delete takes stops generation.

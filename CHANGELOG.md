@@ -36,7 +36,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **A sign-in stays under its site's path: `hostFetch`'s `credentialScope`.** Sites under a path share a host
   (`host/blog`, a WordPress multisite in subfolders), and the origin check let a redirect carry the sign-in to
   `host/other`. With `credentialScope: "https://host/blog/wp-json"`, a signed request outside it is refused before it
-  is sent, and a redirect out of it drops `authorization`, `cookie` and `proxy-authorization`.
+  is sent, and a redirect out of it drops `authorization`, `cookie` and `proxy-authorization`. A path with an encoded
+  slash (`%2F`, `%5C`) counts as outside, as a server that decodes it before routing could leave the scope.
 
 ### Changed â€” may break callers
 

@@ -278,6 +278,13 @@ describe("the api group of a WordPress CLI from its snapshot", () => {
       { key: "posts.delete.force", query: ["force"] },
     ])
     expect(listing?.content).toContain("| `deleteWpV2PostsById` | `posts.delete.force` | query `force` is true |")
+    expect(
+      problems(() =>
+        build([{ key: "publish", field: "status", values: ["publish", "future"], also: ["dat"] }], {
+          forceFlags: ["force"],
+        }),
+      ),
+    ).toEqual(['valueKeys: also "dat" is in no write that "publish" guards'])
     expect(problems(() => build([], { forceFlags: ["purge"] }))).toEqual([
       'forceFlags: "purge" is in no delete\'s request body or query',
     ])

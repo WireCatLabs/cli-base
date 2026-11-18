@@ -103,6 +103,9 @@ describe("hostFetch", () => {
     await expect(fetch("https://host.example/blog/wp-jsonx/x", signed)).rejects.toMatchObject({
       code: "configuration_error",
     })
+    await expect(fetch("https://host.example/blog/wp-json/..%2F..%2Fother/x", signed)).rejects.toMatchObject({
+      code: "configuration_error",
+    })
     expect(sent).toEqual([])
     await fetch("https://host.example/blog/wp-json/a", signed)
     await fetch("https://host.example/blog/wp-json/b", signed)
