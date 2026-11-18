@@ -415,9 +415,12 @@ class Adapter {
       properties,
       required: Array.isArray(source.required) ? source.required.map(String) : [],
     }
-    // `true` and `{}` say "anything else may appear", which a loose object already allows.
+    // `true` and `{}` say "anything else may appear": kept as any value, so a strict fake takes a field the spec leaves
+    // open (Attio's records filter, whose `$or` it lists nowhere).
     if (isObject(source.additionalProperties) && Object.keys(source.additionalProperties).length > 0) {
       node.additionalProperties = this.schema(source.additionalProperties, `${where}.*`)
+    } else if (source.additionalProperties === true || isObject(source.additionalProperties)) {
+      node.additionalProperties = { type: "unknown" }
     }
     return node
   }

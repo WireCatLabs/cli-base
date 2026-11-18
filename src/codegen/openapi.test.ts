@@ -255,6 +255,19 @@ describe("adaptOpenApi reads the OpenAPI 3.1 shapes Notion's file uses", () => {
     })
   })
 
+  it("keeps an object the spec leaves open to any field, and a closed or silent one closed", () => {
+    const input = document({
+      Filter: { type: "object", additionalProperties: true, example: { name: "Ada" } },
+      Empty: { type: "object", additionalProperties: {} },
+      Closed: { type: "object", properties: { name: { type: "string" } }, additionalProperties: false },
+      Silent: { type: "object", properties: { name: { type: "string" } } },
+    })
+    expect(schema(input, "Filter")?.schema).toMatchObject({ type: "object", additionalProperties: { type: "unknown" } })
+    expect(schema(input, "Empty")?.schema).toMatchObject({ additionalProperties: { type: "unknown" } })
+    expect(schema(input, "Closed")?.schema).not.toHaveProperty("additionalProperties")
+    expect(schema(input, "Silent")?.schema).not.toHaveProperty("additionalProperties")
+  })
+
   it("distributes an allOf over its union member, inline or behind a reference", () => {
     const common = {
       type: "object",
