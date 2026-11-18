@@ -1,0 +1,925 @@
+{
+  "info": {
+    "_postman_id": "29829c45-e619-4c12-910f-564ec8ccfda9",
+    "name": "Braze Endpoints",
+    "description": "<html><head></head><body><h1 id=\"braze-api-overview\">Braze API overview</h1>\n<p>Braze provides a high-performance REST API to allow you to track users, send messages, export data, and more. This reference article covers what a REST API is, the terminology, a brief overview of API keys, and API limits.</p>\n<p>A REST API is a way to programmatically transfer information over the web using a predefined schema. Braze has created many different endpoints which perform various actions and/or return various data.</p>\n<p>Braze manages a number of different instances for our dashboard and REST Endpoints. When your account is provisioned you will log in to one of the following URLs. Use the correct REST endpoint based on which instance you are provisioned to. If you are unsure, open a <a href=\"https://www.braze.com/docs/braze_support/\">support ticket</a> or use the following table to match the URL of the dashboard you use to the correct REST Endpoint.</p>\n<blockquote>\n<p>Customers using Braze\u2019s EU database should use the <code>https://rest.fra-01.braze.eu/</code> endpoint. This endpoint will be used when configuring the Braze <a href=\"https://www.braze.com/docs/developer_guide/platform_integration_guides/ios/initial_sdk_setup/completing_integration/#compile-time-endpoint-configuration-recommended\">iOS</a>, <a href=\"https://www.braze.com/docs/developer_guide/platform_integration_guides/android/initial_sdk_setup/android_sdk_integration/#step-2-configure-the-braze-sdk-in-brazexml\">Android</a>, and <a href=\"https://www.braze.com/docs/developer_guide/platform_integration_guides/web/initial_sdk_setup/#step-2-initialize-braze\">Web</a> SDKs. </p>\n</blockquote>\n<h2 id=\"braze-instances\">Braze Instances</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Instance</th>\n<th>Dashboard URL</th>\n<th>REST Endpoint</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>US-01</td>\n<td><code>https://dashboard.braze.com</code> or  <br><code>https://dashboard-01.braze.com</code></td>\n<td><code>https://rest.iad-01.braze.com</code></td>\n</tr>\n<tr>\n<td>US-02</td>\n<td><code>https://dashboard-02.braze.com</code></td>\n<td><code>https://rest.iad-02.braze.com</code></td>\n</tr>\n<tr>\n<td>US-03</td>\n<td><code>https://dashboard-03.braze.com</code></td>\n<td><code>https://rest.iad-03.braze.com</code></td>\n</tr>\n<tr>\n<td>US-04</td>\n<td><code>https://dashboard-04.braze.com</code></td>\n<td><code>https://rest.iad-04.braze.com</code></td>\n</tr>\n<tr>\n<td>US-05</td>\n<td><code>https://dashboard-05.braze.com</code></td>\n<td><code>https://rest.iad-05.braze.com</code></td>\n</tr>\n<tr>\n<td>US-06</td>\n<td><code>https://dashboard-06.braze.com</code></td>\n<td><code>https://rest.iad-06.braze.com</code></td>\n</tr>\n<tr>\n<td>US-07</td>\n<td><code>https://dashboard-07.braze.com</code></td>\n<td><code>https://rest.iad-07.braze.com</code></td>\n</tr>\n<tr>\n<td>US-08</td>\n<td><code>https://dashboard-08.braze.com</code></td>\n<td><code>https://rest.iad-08.braze.com</code></td>\n</tr>\n<tr>\n<td>EU-01</td>\n<td><code>https://dashboard-01.braze.eu</code></td>\n<td><code>https://rest.fra-01.braze.eu</code></td>\n</tr>\n<tr>\n<td>EU-02</td>\n<td><code>https://dashboard-02.braze.eu</code></td>\n<td><code>https://rest.fra-02.braze.eu</code></td>\n</tr>\n</tbody>\n</table>\n</div><h1 id=\"using-brazes-postman-collection\">Using Braze's Postman collection</h1>\n<p>If you have a Postman account (you can download macOS, Windows, and Linux versions from the <a href=\"https://www.getpostman.com/\">Postman website</a> ), you can open our Postman documentation in your own Postman app by clicking the orange <strong>Run in Postman</strong> button. You can then <a href=\"https://www.braze.com/docs/api/postman_collection/#setting-up-your-postman-environment\">create an environment</a>, or use our Braze REST API environment as a template, and edit the available <code>POST</code> and <code>GET</code> requests to suit your own needs.</p>\n<h2 id=\"setting-up-your-postman-environment\">Setting up your Postman environment</h2>\n<p>The Braze Postman Collection uses a templating variable, <code>{{instance_url}}</code>, to substitute the REST API URL of your Braze instance into the pre-built requests, and the <code>{{api_key}}</code> variable for your API Key. Rather than having to manually edit all requests in the Collection, you can set up this variable in your Postman environment. You can either select our templated environment (Braze REST API Environment Template) from the dropdown and replace the variable values with your own, or you can set up your own environment.</p>\n<p>To set up your own environment, perform the following steps:</p>\n<ol>\n<li><p>From the <strong>Workspaces</strong> tab, select <strong>Environments</strong>.</p>\n</li>\n<li><p>Click the <strong>+</strong> plus button to create a new environment.</p>\n</li>\n<li><p>Give this environment a name (e.g., \u201cBraze API Requests\u201d) and add keys for <code>instance_url</code> and <code>api_key</code> with values corresponding to your <a href=\"https://www.braze.com/docs/developer_guide/rest_api/basics/#endpoints\">Braze instance</a> and <a href=\"https://www.braze.com/docs/api/api_key/\">Braze REST API Key</a>.</p>\n</li>\n<li><p>Click <strong>Save</strong>.</p>\n</li>\n</ol>\n<h2 id=\"using-the-pre-built-requests-from-the-collection\">Using the pre-built requests from the collection</h2>\n<p>Once you have configured your environment. You can use any of the pre-built requests in the collection as a template for building new API requests. To start using one of the pre-built requests, click on it within the <strong>Collections</strong> menu of Postman. This will open the request as a new tab in the main window of the Postman app.</p>\n<p>In general, there are two types of requests that Braze\u2019s API endpoints accept - <code>GET</code> and <code>POST</code>. Depending on which <code>HTTP</code> method the endpoint uses, you\u2019ll need to edit the pre-built request differently.</p>\n<h3 id=\"edit-a-post-request\">Edit a POST request</h3>\n<p>When editing a <code>POST</code> request, open the request and navigate to the <strong>Body</strong> section in the request editor. For readability, select the <strong>raw</strong> radio button to format the <code>JSON</code> request body.</p>\n<h3 id=\"edit-a-get-request\">Edit a GET request</h3>\n<p>When editing a <code>GET</code> request, edit the parameters passed in the request URL. To do so, select the <strong>Params</strong> tab and edit the key-value pairs in the fields that appear.</p>\n<h2 id=\"send-your-request\">Send your request</h2>\n<p>Once your API request is ready, click <strong>Send</strong>. The request sends and the response data populates in a section underneath the request editor. From here, you can view the raw data returned from Braze\u2019s API, see the HTTP response code, see how long the request took to process, and view header information.</p>\n<p>The following documentation can be found on the Braze documentation site:</p>\n<ul>\n<li><p><a href=\"https://www.braze.com/docs/api/objects_filters/\">Object &amp; filter specifications</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/api_key/\">API key overview</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/identifier_types/\">API identifier types</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/errors/\">Errors &amp; responses</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/parameters\">Parameters</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/data_retention/\">Data retention</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/network_connectivity_issues\">API network connectivity issues</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/api_limits/\">Rate limits</a></p>\n</li>\n<li><p><a href=\"https://www.braze.com/docs/api/api_campaigns/\">API campaigns</a></p>\n</li>\n</ul>\n</body></html>",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+    "toc": [
+      {
+        "content": "Braze API overview",
+        "slug": "braze-api-overview"
+      },
+      {
+        "content": "Using Braze's Postman collection",
+        "slug": "using-brazes-postman-collection"
+      }
+    ],
+    "owner": "4689407",
+    "collectionId": "29829c45-e619-4c12-910f-564ec8ccfda9",
+    "publishedId": "SVYrsdsG",
+    "public": true,
+    "customColor": {
+      "top-bar": "27378f",
+      "right-sidebar": "303030",
+      "highlight": "3dcdde"
+    },
+    "publishDate": "2021-04-12T19:21:20.000Z"
+  },
+  "item": [
+    {
+      "name": "Catalogs",
+      "item": [
+        {
+          "name": "Catalog Items",
+          "item": [
+            {
+              "name": "Synchronous",
+              "item": [
+                {
+                  "name": "Delete a catalog item",
+                  "id": "0dcce797-1346-472f-9384-082f14541689",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": "https://{{instance_url}}/catalogs/{catalog_name}/items/{item_id}",
+                    "description": "<blockquote>\n<p>Use this endpoint to delete an item in your catalog. </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>catalogs.delete_item</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a shared rate limit of 50 requests per minute between all synchronous catalog item endpoints, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog_name</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Name of the catalog.</td>\n</tr>\n<tr>\n<td><code>item_id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The ID of the catalog item.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<p>There is no request body for this endpoint.</p>\n<h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request DELETE 'https://rest.iad-03.braze.com/catalogs/restaurants/items/restaurant1' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY'\n\n</code></pre><h2 id=\"response\">Response</h2>\n<p>There are three status code responses for this endpoint: <code>202</code>, <code>400</code>, and <code>404</code>.</p>\n<h3 id=\"example-success-response\">Example success response</h3>\n<p>The status code <code>202</code> could return the following response body.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"message\": \"success\"\n}\n\n</code></pre>\n<h3 id=\"example-error-response\">Example error response</h3>\n<p>The status code <code>400</code> could return the following response body. Refer to <a href=\"#troubleshooting\">Troubleshooting</a> for more information about errors you may encounter.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"errors\": [\n    {\n      \"id\": \"item-not-found\",\n      \"message\": \"Could not find item\",\n      \"parameters\": [\n        \"item_id\"\n      ],\n      \"parameter_values\": [\n        \"restaurant34\"\n      ]\n    }\n  ],\n  \"message\": \"Invalid Request\"\n}\n\n</code></pre>\n<h2 id=\"troubleshooting\">Troubleshooting</h2>\n<p>The following table lists possible returned errors and their associated troubleshooting steps.</p>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Error</th>\n<th>Troubleshooting</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>arbitrary-error</code></td>\n<td>An arbitrary error occurred. Please try again or contact <a href=\"https://www.braze.com/docs/support_contact/\">Support</a>.</td>\n</tr>\n<tr>\n<td><code>catalog-not-found</code></td>\n<td>Check that the catalog name is valid.</td>\n</tr>\n<tr>\n<td><code>item-not-found</code></td>\n<td>Check that the item to be deleted exists in your catalog.</td>\n</tr>\n</tbody>\n</table>\n</div>",
+                    "urlObject": {
+                      "protocol": "https",
+                      "path": ["catalogs", "{catalog_name}", "items", "{item_id}"],
+                      "host": ["{{instance_url}}"],
+                      "query": [],
+                      "variable": []
+                    }
+                  },
+                  "response": [],
+                  "_postman_id": "0dcce797-1346-472f-9384-082f14541689"
+                },
+                {
+                  "name": "List catalog item details",
+                  "id": "52c6631c-7366-48e5-9e0e-16de7b6285cc",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": "https://{{instance_url}}/catalogs/{catalog_name}/items/{item_id}",
+                    "description": "<blockquote>\n<p>Use this endpoint to return a catalog item and its content. </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>catalogs.get_item</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a shared rate limit of 50 requests per minute between all synchronous catalog item endpoints, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog_name</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Name of the catalog.</td>\n</tr>\n<tr>\n<td><code>item_id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The ID of the catalog item.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<p>There is no request body for this endpoint.</p>\n<h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request GET 'https://rest.iad-03.braze.com/catalogs/restaurants/items/restaurant1' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY'\n\n</code></pre><h2 id=\"response\">Response</h2>\n<p>There are two status code responses for this endpoint: <code>200</code> and <code>404</code>.</p>\n<h3 id=\"example-success-response\">Example success response</h3>\n<p>The status code <code>200</code> could return the following response body.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"items\": [\n    {\n      \"id\": \"restaurant3\",\n      \"Name\": \"Restaurant1\",\n      \"City\": \"New York\",\n      \"Cuisine\": \"American\",\n      \"Rating\": 5,\n      \"Loyalty_Program\": true,\n      \"Open_Time\": \"2022-11-01T09:03:19.967Z\"\n    }\n  ],\n  \"message\": \"success\"\n}\n\n</code></pre>\n<h3 id=\"example-error-response\">Example error response</h3>\n<p>The status code <code>404</code> could return the following response. Refer to <a href=\"#troubleshooting\">Troubleshooting</a> for more information about errors you may encounter.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"errors\": [\n    {\n      \"id\": \"item-not-found\",\n      \"message\": \"Could not find item\",\n      \"parameters\": [\n        \"item_id\"\n      ],\n      \"parameter_values\": [\n        \"restaurant34\"\n      ]\n    }\n  ],\n  \"message\": \"Invalid Request\"\n}\n\n</code></pre>\n<h2 id=\"troubleshooting\">Troubleshooting</h2>\n<p>The following table lists possible returned errors and their associated troubleshooting steps, if applicable.</p>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Error</th>\n<th>Troubleshooting</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog-not-found</code></td>\n<td>Check that the catalog name is valid.</td>\n</tr>\n<tr>\n<td><code>item-not-found</code></td>\n<td>Check that the item is in the catalog.</td>\n</tr>\n</tbody>\n</table>\n</div>",
+                    "urlObject": {
+                      "protocol": "https",
+                      "path": ["catalogs", "{catalog_name}", "items", "{item_id}"],
+                      "host": ["{{instance_url}}"],
+                      "query": [],
+                      "variable": []
+                    }
+                  },
+                  "response": [],
+                  "_postman_id": "52c6631c-7366-48e5-9e0e-16de7b6285cc"
+                },
+                {
+                  "name": "List multiple catalog item details",
+                  "id": "63a19dd5-10e0-4649-bdf0-097216748bbb",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": "https://{{instance_url}}/catalogs/{catalog_name}/items",
+                    "description": "<blockquote>\n<p>Use this endpoint to return multiple catalog items and their content. </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>catalogs.get_items</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a shared rate limit of 50 requests per minute between all synchronous catalog item endpoints, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog_name</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Name of the catalog.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"query-parameters\">Query parameters</h2>\n<p>Note that each call to this endpoint will return 50 items. For a catalog with more than 50 items, use the <code>Link</code> header to retrieve the data on the next page as shown in the following example response.</p>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>cursor</code></td>\n<td>Optional</td>\n<td>String</td>\n<td>Determines the pagination of the catalog items.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<p>There is no request body for this endpoint.</p>\n<h2 id=\"example-requests\">Example requests</h2>\n<h3 id=\"without-cursor\">Without cursor</h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request GET 'https://rest.iad-03.braze.com/catalogs/restaurants/items' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY'\n\n</code></pre><h3 id=\"with-cursor\">With cursor</h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request GET 'https://rest.iad-03.braze.com/catalogs/restaurants/items?cursor=c2tpcDow' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY'\n\n</code></pre><h2 id=\"response\">Response</h2>\n<p>There are three status code responses for this endpoint: <code>200</code>, <code>400</code>, and <code>404</code>.</p>\n<h3 id=\"example-success-response\">Example success response</h3>\n<p>The status code <code>200</code> could return the following response header and body.</p>\n<blockquote>\n<p><strong>Note:</strong> The <code>Link</code> header won't exist if the catalog has less than or equal to 50 items. For calls without a cursor, <code>prev</code> will not show. When looking at the last page of items, <code>next</code> will not show.  </p>\n</blockquote>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>Link: &lt;/catalogs/all_restaurants/items?cursor=c2tpcDow&gt;; rel=\"prev\",&lt;/catalogs/all_restaurants/items?cursor=c2tpcDoxMDA=&gt;; rel=\"next\"\n\n</code></pre><pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"items\": [\n    {\n      \"id\": \"restaurant1\",\n      \"Name\": \"Restaurant1\",\n      \"City\": \"New York\",\n      \"Cuisine\": \"American\",\n      \"Rating\": 5,\n      \"Loyalty_Program\": true,\n      \"Open_Time\": \"2022-11-02T09:03:19.967Z\"\n    },\n    {\n      \"id\": \"restaurant2\",\n      \"Name\": \"Restaurant2\",\n      \"City\": \"New York\",\n      \"Cuisine\": \"American\",\n      \"Rating\": 10,\n      \"Loyalty_Program\": true,\n      \"Open_Time\": \"2022-11-02T09:03:19.967Z\"\n    },\n    {\n      \"id\": \"restaurant3\",\n      \"Name\": \"Restaurant3\",\n      \"City\": \"New York\",\n      \"Cuisine\": \"American\",\n      \"Rating\": 5,\n      \"Loyalty_Program\": false,\n      \"Open_Time\": \"2022-11-02T09:03:19.967Z\"\n    }\n  ],\n  \"message\": \"success\"\n}\n\n</code></pre>\n<h3 id=\"example-error-response\">Example error response</h3>\n<p>The status code <code>400</code> could return the following response body. Refer to <a href=\"#troubleshooting\">Troubleshooting</a> for more information about errors you may encounter.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"errors\": [\n    {\n      \"id\": \"invalid-cursor\",\n      \"message\": \"'cursor' is not valid\",\n      \"parameters\": [\n        \"cursor\"\n      ],\n      \"parameter_values\": [\n        \"bad-cursor\"\n      ]\n    }\n  ],\n  \"message\": \"Invalid Request\"\n}\n\n</code></pre>\n<h2 id=\"troubleshooting\">Troubleshooting</h2>\n<p>The following table lists possible returned errors and their associated troubleshooting steps.</p>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Error</th>\n<th>Troubleshooting</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog-not-found</code></td>\n<td>Check that the catalog name is valid.</td>\n</tr>\n<tr>\n<td><code>invalid-cursor</code></td>\n<td>Check that your <code>cursor</code> is valid.</td>\n</tr>\n</tbody>\n</table>\n</div>",
+                    "urlObject": {
+                      "protocol": "https",
+                      "path": ["catalogs", "{catalog_name}", "items"],
+                      "host": ["{{instance_url}}"],
+                      "query": [],
+                      "variable": []
+                    }
+                  },
+                  "response": [],
+                  "_postman_id": "63a19dd5-10e0-4649-bdf0-097216748bbb"
+                },
+                {
+                  "name": "Edit catalog items",
+                  "id": "e35976ae-ff77-42b7-b691-a883c980d8c0",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"items\": [\n    {\n      \"Name\": \"Restaurant\",\n      \"Loyalty_Program\": false,\n      \"Open_Time\": \"2021-09-03T09:03:19.967+00:00\"\n    }\n  ]\n}"
+                    },
+                    "url": "https://{{instance_url}}/catalogs/{catalog_name}/items/{item_id}",
+                    "description": "<blockquote>\n<p>Use this endpoint to edit an item in your catalog. </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>catalogs.update_item</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a shared rate limit of 50 requests per minute between all synchronous catalog item endpoints, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog_name</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Name of the catalog.</td>\n</tr>\n<tr>\n<td><code>item_id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The ID of the catalog item.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>items</code></td>\n<td>Required</td>\n<td>Array</td>\n<td>An array that contains item objects. The item objects should contain fields that exist in the catalog except for the <code>id</code> field. Only one item object is allowed per request.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request PATCH 'https://rest.iad-03.braze.com/catalogs/restaurants/items/restaurant1' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY' \\\n--data-raw '{\n  \"items\": [\n    {\n      \"Name\": \"Restaurant\",\n      \"Loyalty_Program\": false,\n      \"Location\": {\n        \"Latitude\": 33.6112,\n        \"Longitude\": -117.8711\n      },\n      \"Top_Dishes\": {\n        \"$add\": [\n          \"Biscuits\",\n          \"Coleslaw\"\n        ],\n        \"$remove\": [\n          \"French Fries\"\n        ]\n      },\n      \"Open_Time\": \"2021-09-03T09:03:19.967+00:00\"\n    }\n  ]\n}'\n\n</code></pre><blockquote>\n<p><strong>Note:</strong> The $<code>add</code> and <code>$remove</code> operators are only applicable to array type fields, and are only supported by PATCH endpoints. </p>\n</blockquote>\n<h2 id=\"response\">Response</h2>\n<p>There are three status code responses for this endpoint: <code>200</code>, <code>400</code>, and <code>404</code>.</p>\n<h3 id=\"example-success-response\">Example success response</h3>\n<p>The status code <code>200</code> could return the following response body.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"message\": \"success\"\n}\n\n</code></pre>\n<h3 id=\"example-error-response\">Example error response</h3>\n<p>The status code <code>400</code> could return the following response body. Refer to <a href=\"#troubleshooting\">Troubleshooting</a> for more information about errors you may encounter.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"errors\": [\n    {\n      \"id\": \"invalid-fields\",\n      \"message\": \"Some of the fields given do not exist in the catalog\",\n      \"parameters\": [\n        \"id\"\n      ],\n      \"parameter_values\": [\n        \"restaurant1\"\n      ]\n    }\n  ],\n  \"message\": \"Invalid Request\"\n}\n\n</code></pre>\n<h2 id=\"troubleshooting\">Troubleshooting</h2>\n<p>The following table lists possible returned errors and their associated troubleshooting steps.</p>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Error</th>\n<th>Troubleshooting</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>arbitrary-error</code></td>\n<td>An arbitrary error occurred. Please try again or contact <a href=\"https://www.braze.com/docs/support_contact/\">Support</a>.</td>\n</tr>\n<tr>\n<td><code>catalog-not-found</code></td>\n<td>Check that the catalog name is valid.</td>\n</tr>\n<tr>\n<td><code>filtered-set-field-too-long</code></td>\n<td>The field value is being used in a filtered set that exceeds the character limit for an item.</td>\n</tr>\n<tr>\n<td><code>id-in-body</code></td>\n<td>An item ID already exists in the catalog.</td>\n</tr>\n<tr>\n<td><code>ids-too-large</code></td>\n<td>Character limit for each item ID is 250 characters.</td>\n</tr>\n<tr>\n<td><code>invalid-ids</code></td>\n<td>Supported characters for item ID names are letters, numbers, hyphens, and underscores.</td>\n</tr>\n<tr>\n<td><code>invalid-fields</code></td>\n<td>Confirm that the fields in the request exist in the catalog.</td>\n</tr>\n<tr>\n<td><code>invalid-keys-in-value-object</code></td>\n<td>Item object keys can't include <code>.</code> or <code>$</code>.</td>\n</tr>\n<tr>\n<td><code>item-not-found</code></td>\n<td>Check that the item is in the catalog.</td>\n</tr>\n<tr>\n<td><code>item-array-invalid</code></td>\n<td><code>items</code> must be an array of objects.</td>\n</tr>\n<tr>\n<td><code>items-too-large</code></td>\n<td>Character limit for each item is 5,000 characters.</td>\n</tr>\n<tr>\n<td><code>request-includes-too-many-items</code></td>\n<td>You can only edit one catalog item per request.</td>\n</tr>\n<tr>\n<td><code>too-deep-nesting-in-value-object</code></td>\n<td>Item objects can't have more than 50 levels of nesting.</td>\n</tr>\n<tr>\n<td><code>unable-to-coerce-value</code></td>\n<td>Item types can't be converted.</td>\n</tr>\n</tbody>\n</table>\n</div>",
+                    "urlObject": {
+                      "protocol": "https",
+                      "path": ["catalogs", "{catalog_name}", "items", "{item_id}"],
+                      "host": ["{{instance_url}}"],
+                      "query": [],
+                      "variable": []
+                    }
+                  },
+                  "response": [],
+                  "_postman_id": "e35976ae-ff77-42b7-b691-a883c980d8c0"
+                },
+                {
+                  "name": "Create catalog item",
+                  "id": "820c305b-ea6a-4b71-811a-55003a212a40",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"items\": [\n    {\n      \"Name\": \"Restaurant1\",\n      \"City\": \"New York\",\n      \"Cuisine\": \"American\",\n      \"Rating\": 5,\n      \"Loyalty_Program\": true,\n      \"Created_At\": \"2022-11-01T09:03:19.967+00:00\"\n    }\n  ]\n}"
+                    },
+                    "url": "https://{{instance_url}}/catalogs/{catalog_name}/items/{item_id}",
+                    "description": "<blockquote>\n<p>Use this endpoint to create an item in your catalog. </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>catalogs.create_item</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a shared rate limit of 50 requests per minute between all synchronous catalog item endpoints, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog_name</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Name of the catalog.</td>\n</tr>\n<tr>\n<td><code>item_id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The ID of the catalog item.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>items</code></td>\n<td>Required</td>\n<td>Array</td>\n<td>An array that contains item objects. The item objects should contain all of the fields in the catalog except for the <code>id</code> field. Only one item object is allowed per request.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request POST 'https://rest.iad-03.braze.com/catalogs/restaurants/items/restaurant1' \\\ncurl --location --request POST 'https://rest.iad-03.braze.com/catalogs/restaurants/items/restaurant1' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY' \\\n--data-raw '{\n  \"items\": [\n    {\n      \"Name\": \"Restaurant1\",\n      \"City\": \"New York\",\n      \"Cuisine\": \"American\",\n      \"Rating\": 5,\n      \"Loyalty_Program\": true,\n      \"Location\": {\n        \"Latitude\": 33.6112,\n        \"Longitude\": -117.8711\n      },\n      \"Top_Dishes\": [\n        \"Hamburger\",\n        \"Deluxe Cheeseburger\"\n      ],\n      \"Created_At\": \"2022-11-01T09:03:19.967+00:00\"\n    }\n  ]\n}'\n\n</code></pre><h2 id=\"response\">Response</h2>\n<p>There are three status code responses for this endpoint: <code>201</code>, <code>400</code>, and <code>404</code>.</p>\n<h3 id=\"example-success-response\">Example success response</h3>\n<p>The status code <code>201</code> could return the following response body.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"message\": \"success\"\n}\n\n</code></pre>\n<h3 id=\"example-error-response\">Example error response</h3>\n<p>The status code <code>400</code> could return the following response body. Refer to <a href=\"#troubleshooting\">Troubleshooting</a> for more information about errors you may encounter.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"errors\": [\n    {\n      \"id\": \"invalid-fields\",\n      \"message\": \"Some of the fields given do not exist in the catalog\",\n      \"parameters\": [\n        \"id\"\n      ],\n      \"parameter_values\": [\n        \"restaurant1\"\n      ]\n    }\n  ],\n  \"message\": \"Invalid Request\"\n}\n\n</code></pre>\n<h2 id=\"troubleshooting\">Troubleshooting</h2>\n<p>The following table lists possible returned errors and their associated troubleshooting steps.</p>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Error</th>\n<th>Troubleshooting</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>already-reached-catalog-item-limit</code></td>\n<td>Maximum number of catalogs reached. Contact your Braze account manager for more information.</td>\n</tr>\n<tr>\n<td><code>already-reached-company-item-limit</code></td>\n<td>Maximum number of catalog items reached. Contact your Braze account manager for more information.</td>\n</tr>\n<tr>\n<td><code>arbitrary-error</code></td>\n<td>An arbitrary error occurred. Please try again or contact <a href=\"https://www.braze.com/docs/support_contact/\">Support</a>.</td>\n</tr>\n<tr>\n<td><code>catalog-not-found</code></td>\n<td>Check that the catalog name is valid.</td>\n</tr>\n<tr>\n<td><code>filtered-set-field-too-long</code></td>\n<td>The field value is being used in a filtered set that exceeds the character limit for an item.</td>\n</tr>\n<tr>\n<td><code>id-in-body</code></td>\n<td>Remove any item IDs in the request body.</td>\n</tr>\n<tr>\n<td><code>ids-too-large</code></td>\n<td>Character limit for each item ID is 250 characters.</td>\n</tr>\n<tr>\n<td><code>invalid-ids</code></td>\n<td>Supported characters for item ID names are letters, numbers, hyphens, and underscores.</td>\n</tr>\n<tr>\n<td><code>invalid-fields</code></td>\n<td>Confirm that the fields in the request exist in the catalog.</td>\n</tr>\n<tr>\n<td><code>invalid-keys-in-value-object</code></td>\n<td>Item object keys can't include <code>.</code> or <code>$</code>.</td>\n</tr>\n<tr>\n<td><code>item-already-exists</code></td>\n<td>The item already exists in the catalog.</td>\n</tr>\n<tr>\n<td><code>item-array-invalid</code></td>\n<td><code>items</code> must be an array of objects.</td>\n</tr>\n<tr>\n<td><code>items-too-large</code></td>\n<td>Character limit for each item is 5,000 characters.</td>\n</tr>\n<tr>\n<td><code>request-includes-too-many-items</code></td>\n<td>You can only create one catalog item per request.</td>\n</tr>\n<tr>\n<td><code>too-deep-nesting-in-value-object</code></td>\n<td>Item objects can't have more than 50 levels of nesting.</td>\n</tr>\n<tr>\n<td><code>unable-to-coerce-value</code></td>\n<td>Item types can't be converted.</td>\n</tr>\n</tbody>\n</table>\n</div>",
+                    "urlObject": {
+                      "protocol": "https",
+                      "path": ["catalogs", "{catalog_name}", "items", "{item_id}"],
+                      "host": ["{{instance_url}}"],
+                      "query": [],
+                      "variable": []
+                    }
+                  },
+                  "response": [],
+                  "_postman_id": "820c305b-ea6a-4b71-811a-55003a212a40"
+                },
+                {
+                  "name": "Update catalog item",
+                  "id": "b2871ed7-734e-4a37-b8f1-e11584e569f5",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"items\": [\n    {\n      \"Name\": \"Restaurant\",\n      \"Loyalty_Program\": false,\n      \"Location\": {\n        \"Latitude\": 33.6112,\n        \"Longitude\": -117.8711\n      },\n      \"Open_Time\": \"2021-09-03T09:03:19.967+00:00\"\n    }\n  ]\n}"
+                    },
+                    "url": "https://{{instance_url}}/catalogs/{catalog_name}/items/{item_id}",
+                    "description": "<blockquote>\n<p>Use this endpoint to update an item in your catalog. </p>\n</blockquote>\n<p>If the <code>item_id</code> isn't found, this endpoint will create the item. This endpoint is synchronous.</p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you'll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>catalogs.replace_item</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a shared rate limit of 50 requests per minute between all synchronous catalog item endpoints, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>catalog_name</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Name of the catalog.</td>\n</tr>\n<tr>\n<td><code>item_id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The ID of the catalog item.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>items</code></td>\n<td>Required</td>\n<td>Array</td>\n<td>An array that contains item objects. The item objects should contain fields that exist in the catalog except for the <code>id</code> field. Only one item object is allowed per request.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request PUT 'https://rest.iad-03.braze.com/catalogs/restaurants/items/restaurant1' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY' \\\n--data-raw '{\n  \"items\": [\n    {\n      \"Name\": \"Restaurant\",\n      \"Loyalty_Program\": false,\n      \"Location\": {\n        \"Latitude\": 33.6112,\n        \"Longitude\": -117.8711\n      },\n      \"Top_Dishes\": [\n        \"Hamburger\",\n        \"Deluxe Cheeseburger\"\n      ],\n      \"Open_Time\": \"2021-09-03T09:03:19.967+00:00\"\n    }\n  ]\n}'\n\n</code></pre><h2 id=\"response\">Response</h2>\n<p>There are three status code responses for this endpoint: <code>200</code>, <code>400</code>, and <code>404</code>.</p>\n<h3 id=\"example-success-response\">Example success response</h3>\n<p>The status code <code>200</code> could return the following response body.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"message\": \"success\"\n}\n\n</code></pre>\n<h3 id=\"example-error-response\">Example error response</h3>\n<p>The status code <code>400</code> could return the following response body. Refer to <a href=\"#troubleshooting\">Troubleshooting</a> for more information about errors you may encounter.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n  \"errors\": [\n    {\n      \"id\": \"invalid-fields\",\n      \"message\": \"Some of the fields given do not exist in the catalog\",\n      \"parameters\": [\n        \"id\"\n      ],\n      \"parameter_values\": [\n        \"restaurant1\"\n      ]\n    }\n  ],\n  \"message\": \"Invalid Request\"\n}\n\n</code></pre>\n<h2 id=\"troubleshooting\">Troubleshooting</h2>\n<p>The following table lists possible returned errors and their associated troubleshooting steps.</p>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Error</th>\n<th>Troubleshooting</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>already_reached_catalog_item_limit</code></td>\n<td>Maximum number of catalogs reached. Contact your Braze account manager for more information.</td>\n</tr>\n<tr>\n<td><code>already_reached_company_item_limit</code></td>\n<td>Maximum number of items reached. Contact your Braze account manager for more information.</td>\n</tr>\n<tr>\n<td><code>arbitrary_error</code></td>\n<td>An arbitrary error occurred. Please try again or contact <a href=\"https://www.braze.com/docs/support_contact/\">Support</a>.</td>\n</tr>\n<tr>\n<td><code>catalog_not_found</code></td>\n<td>Check that the catalog name is valid.</td>\n</tr>\n<tr>\n<td><code>filtered-set-field-too-long</code></td>\n<td>The field value is being used in a filtered set that exceeds the character limit for an item.</td>\n</tr>\n<tr>\n<td><code>id_in_body</code></td>\n<td>Remove any item IDs in the request body.</td>\n</tr>\n<tr>\n<td><code>ids_too_large</code></td>\n<td>Character limit for each item ID is 250 characters.</td>\n</tr>\n<tr>\n<td><code>invalid_ids</code></td>\n<td>Supported characters for item ID names are letters, numbers, hyphens, and underscores.</td>\n</tr>\n<tr>\n<td><code>invalid_fields</code></td>\n<td>Confirm that the fields in the request exist in the catalog.</td>\n</tr>\n<tr>\n<td><code>invalid_keys_in_value_object</code></td>\n<td>Item object keys can't include <code>.</code> or <code>$</code>.</td>\n</tr>\n<tr>\n<td><code>item_already_exists</code></td>\n<td>The item already exists in the catalog.</td>\n</tr>\n<tr>\n<td><code>item_array_invalid</code></td>\n<td><code>items</code> must be an array of objects.</td>\n</tr>\n<tr>\n<td><code>items_too_large</code></td>\n<td>Item values can't exceed 5,000 characters.</td>\n</tr>\n<tr>\n<td><code>request_includes_too_many_items</code></td>\n<td>Your request has too many items. The item limit per request is 50.</td>\n</tr>\n<tr>\n<td><code>too_deep_nesting_in_value_object</code></td>\n<td>Item objects can't have more than 50 levels of nesting.</td>\n</tr>\n<tr>\n<td><code>unable_to_coerce_value</code></td>\n<td>Item types can't be converted.</td>\n</tr>\n</tbody>\n</table>\n</div>",
+                    "urlObject": {
+                      "protocol": "https",
+                      "path": ["catalogs", "{catalog_name}", "items", "{item_id}"],
+                      "host": ["{{instance_url}}"],
+                      "query": [],
+                      "variable": []
+                    }
+                  },
+                  "response": [],
+                  "_postman_id": "b2871ed7-734e-4a37-b8f1-e11584e569f5"
+                }
+              ],
+              "id": "4d5f85a9-fbaa-4304-af83-a9a71206b5ed",
+              "_postman_id": "4d5f85a9-fbaa-4304-af83-a9a71206b5ed",
+              "description": ""
+            }
+          ],
+          "id": "ab52029c-d19c-4241-b59a-f3c08f2815e8",
+          "_postman_id": "ab52029c-d19c-4241-b59a-f3c08f2815e8",
+          "description": ""
+        }
+      ],
+      "id": "dbe0b381-5d9b-4e6d-9622-c934727d4b47",
+      "description": "<p>Use the Braze Catalogs Endpoints to add, edit, and manage your catalogs and catalog item details. You can use the asynchronous catalog endpoints to make bulk changes to your catalog.</p>\n<p>Looking for guidance on creating a catalog? Check out our article for\u00a0<a href=\"https://www.braze.com/docs/user_guide/personalization_and_dynamic_content/catalog/\">creating and using catalogs</a>.</p>\n",
+      "_postman_id": "dbe0b381-5d9b-4e6d-9622-c934727d4b47"
+    },
+    {
+      "name": "Email Lists & Addresses",
+      "item": [
+        {
+          "name": "Query hard bounced emails",
+          "id": "7c2ef84f-ddf5-451a-a72c-beeabc06ad9d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": "https://{{instance_url}}/email/hard_bounces?start_date=2019-01-01&end_date=2019-02-01&limit=100&offset=1&email=example@braze.com",
+            "description": "<blockquote>\n<p>Use this endpoint to pull a list of email addresses that have \u201chard bounced\u201d your email messages within a certain time frame. </p>\n</blockquote>\n<blockquote>\n<p><strong>Note:</strong> You must provide an <code>end_date</code>, as well as either an <code>email</code> or a <code>start_date</code>. If you provide all three, <code>start_date</code>, <code>end_date</code>, and an <code>email</code>, we prioritize the emails given and disregard the date range. </p>\n</blockquote>\n<p>If your date range has more than <code>limit</code> number of hard bounces, you will need to make multiple API calls, each time increasing the <code>offset</code> until a call returns either fewer than <code>limit</code> or zero results.</p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>email.hard_bounces</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>We apply the default Braze rate limit of 250,000 requests per hour to this endpoint, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request GET 'https://rest.iad-01.braze.com/email/hard_bounces?start_date=2019-01-01&amp;end_date=2019-02-01&amp;limit=100&amp;offset=1&amp;email=example@braze.com' \\\n--header 'Authorization: Bearer YOUR-API-KEY-HERE'\n\n</code></pre><h2 id=\"response\">Response</h2>\n<p>Entries are listed in descending order.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">Content-Type: application/json\nAuthorization: Bearer YOUR-REST-API-KEY\n{\n  \"emails\": [\n    {\n      \"email\": \"example1@braze.com\",\n      \"hard_bounced_at\": \"2016-08-25 15:24:32 +0000\"\n    },\n    {\n      \"email\": \"example2@braze.com\",\n      \"hard_bounced_at\": \"2016-08-24 17:41:58 +0000\"\n    },\n    {\n      \"email\": \"example3@braze.com\",\n      \"hard_bounced_at\": \"2016-08-24 12:01:13 +0000\"\n    }\n  ],\n  \"message\": \"success\"\n}\n\n</code></pre>\n",
+            "urlObject": {
+              "protocol": "https",
+              "path": ["email", "hard_bounces"],
+              "host": ["{{instance_url}}"],
+              "query": [
+                {
+                  "description": {
+                    "content": "<p>(Optional*) String in YYYY-MM-DD format </p>\n<p>Start date of the range to retrieve hard bounces, must be earlier than <code>end_date</code>. This is treated as midnight in UTC time by the API.</p>\n<p>*You must provide either an <code>email</code> or a <code>start_date</code>, and an <code>end_date</code>.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "start_date",
+                  "value": "2019-01-01"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional*) String in YYYY-MM-DD format</p>\n<p>String in YYYY-MM-DD format. End date of the range to retrieve hard bounces. This is treated as midnight in UTC time by the API.</p>\n<p>*You must provide either an <code>email</code> or a <code>start_date</code>, and an <code>end_date</code>.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "end_date",
+                  "value": "2019-02-01"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional) Integer</p>\n<p>Optional field to limit the number of results returned. Defaults to 100, maximum is 500.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "limit",
+                  "value": "100"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional) Integer</p>\n<p>Optional beginning point in the list to retrieve from.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "offset",
+                  "value": "1"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional*) String</p>\n<p>If provided, we will return whether or not the user has hard bounced.</p>\n<p>*You must provide either an <code>email</code> or a <code>start_date</code>, and an <code>end_date</code>.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "email",
+                  "value": "example@braze.com"
+                }
+              ],
+              "variable": []
+            }
+          },
+          "response": [],
+          "_postman_id": "7c2ef84f-ddf5-451a-a72c-beeabc06ad9d"
+        },
+        {
+          "name": "Query list of unsubscribed email addresses",
+          "id": "d2966b81-188a-407b-ba7e-e6c252c44b4a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth",
+              "isInherited": false
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": "https://{{instance_url}}/email/unsubscribes?start_date=2020-01-01&end_date=2020-02-01&limit=1&offset=1&sort_direction=desc&email=example@braze.com",
+            "description": "<blockquote>\n<p>Use this endpoint to return emails that have unsubscribed during the time period from <code>start_date</code> to <code>end_date</code>. </p>\n</blockquote>\n<p>You can use this endpoint to set up a bi-directional sync between Braze and other email systems or your own database.</p>\n<blockquote>\n<p><strong>Note:</strong> You must provide an <code>end_date</code>, as well as either an <code>email</code> or a <code>start_date</code>. </p>\n</blockquote>\n<p>If your date range has more than <code>limit</code> number of unsubscribes, you will need to make multiple API calls, each time increasing the <code>offset</code> until a call returns either fewer than <code>limit</code> or zero results.</p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://braze.com/docs/api/api_key/\">API key</a> with the <code>email.unsubscribe</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>We apply the default Braze rate limit of 250,000 requests per hour to this endpoint, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code>curl --location --request GET 'https://rest.iad-01.braze.com/email/unsubscribes?start_date=2020-01-01&amp;end_date=2020-02-01&amp;limit=1&amp;offset=1&amp;sort_direction=desc&amp;email=example@braze.com' \\\n--header 'Authorization: Bearer YOUR-API-KEY-HERE'\n\n</code></pre><h2 id=\"response\">Response</h2>\n<p>Entries are listed in descending order.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">Content-Type: application/json\nAuthorization: Bearer YOUR-REST-API-KEY\n{\n  \"emails\": [\n    {\n      \"email\": \"example1@braze.com\",\n      \"unsubscribed_at\": \"2016-08-25 15:24:32 +0000\"\n    },\n    {\n      \"email\": \"example2@braze.com\",\n      \"unsubscribed_at\": \"2016-08-24 17:41:58 +0000\"\n    },\n    {\n      \"email\": \"example3@braze.com\",\n      \"unsubscribed_at\": \"2016-08-24 12:01:13 +0000\"\n    }\n  ],\n  \"message\": \"success\"\n}\n\n</code></pre>\n",
+            "urlObject": {
+              "protocol": "https",
+              "path": ["email", "unsubscribes"],
+              "host": ["{{instance_url}}"],
+              "query": [
+                {
+                  "description": {
+                    "content": "<p>(Optional*) String in YYYY-MM-DD format</p>\n<p>Start date of the range to retrieve unsubscribes, must be earlier than end_date. This is treated as midnight in UTC time by the API.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "start_date",
+                  "value": "2020-01-01"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional*)  String in YYYY-MM-DD format</p>\n<p>End date of the range to retrieve unsubscribes. This is treated as midnight in UTC time by the API.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "end_date",
+                  "value": "2020-02-01"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional) Integer</p>\n<p>Optional field to limit the number of results returned. Limit must be greater than 1. Defaults to 100, maximum is 500.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "limit",
+                  "value": "1"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional) Integer </p>\n<p>Optional beginning point in the list to retrieve from.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "offset",
+                  "value": "1"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional) String</p>\n<p>Pass in the value <code>asc</code> to sort unsubscribes from oldest to newest. Pass in <code>desc</code> to sort from newest to oldest. If sort_direction is not included, the default order is newest to oldest.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "sort_direction",
+                  "value": "desc"
+                },
+                {
+                  "description": {
+                    "content": "<p>(Optional*) String</p>\n<p>If provided, we will return whether or not the user has unsubscribed.</p>\n",
+                    "type": "text/plain"
+                  },
+                  "key": "email",
+                  "value": "example@braze.com"
+                }
+              ],
+              "variable": []
+            }
+          },
+          "response": [],
+          "_postman_id": "d2966b81-188a-407b-ba7e-e6c252c44b4a"
+        }
+      ],
+      "id": "e4c30d01-354b-49db-8772-b86d64484600",
+      "description": "<p>Using this set of endpoints, you can update a user\u2019s email subscription status, and use the Braze API to set up bi-directional sync between Braze and other email systems or your own database.</p>\n",
+      "_postman_id": "e4c30d01-354b-49db-8772-b86d64484600"
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Schedule Mesages",
+          "item": [
+            {
+              "name": "Create scheduled messages",
+              "id": "25272fb8-bc39-41df-9a41-07ecfd76cb1d",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"broadcast\": \"false\",\n  \"external_user_ids\": \"external_user_identifiers\",\n  \"user_aliases\": {\n    \"alias_name\" : \"example_name\",\n    \"alias_label\" : \"example_label\"\n  },\n  \"segment_id\": \"segment_identifiers\",\n  \"audience\": {\n    \"AND\": [\n      {\n        \"custom_attribute\": {\n          \"custom_attribute_name\": \"eye_color\",\n          \"comparison\": \"equals\",\n          \"value\": \"blue\"\n        }\n      },\n      {\n        \"custom_attribute\": {\n          \"custom_attribute_name\": \"favorite_foods\",\n          \"comparison\": \"includes_value\",\n          \"value\": \"pizza\"\n        }\n      },\n      {\n        \"OR\": [\n          {\n            \"custom_attribute\": {\n              \"custom_attribute_name\": \"last_purchase_time\",\n              \"comparison\": \"less_than_x_days_ago\",\n              \"value\": 2\n            }\n          },\n          {\n            \"push_subscription_status\": {\n              \"comparison\": \"is\",\n              \"value\": \"opted_in\"\n            }\n          }\n        ]\n      },\n      {\n        \"email_subscription_status\": {\n          \"comparison\": \"is_not\",\n          \"value\": \"subscribed\"\n        }\n      },\n      {\n        \"last_used_app\": {\n          \"comparison\": \"after\",\n          \"value\": \"2019-07-22T13:17:55+0000\"\n        }\n      }\n    ]\n  },\n  \"campaign_id\": \"campaign_identifier\",\n  \"send_id\": \"send_identifier\",\n  \"override_messaging_limits\": false,\n  \"recipient_subscription_state\": \"subscribed\",\n  \"schedule\": {\n    \"time\": \"\",\n    \"in_local_time\": true,\n    \"at_optimal_time\": true\n  },\n  \"messages\": {\n    \"apple_push\": (optional, Apple Push Object),\n    \"android_push\": (optional, Android Push Object),\n    \"windows_push\": (optional, Windows Phone 8 Push Object),\n    \"windows8_push\": (optional, Windows Universal Push Object),\n    \"kindle_push\": (optional, Kindle/FireOS Push Object),\n    \"web_push\": (optional, Web Push Object),\n    \"email\": (optional, Email object)\n    \"webhook\": (optional, Webhook object)\n    \"content_card\": (optional, Content Card Object)\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "https://{{instance_url}}/messages/schedule/create",
+                "description": "<blockquote>\n<p>Use this endpoint to schedule a campaign, Canvas, or other message to be sent at a designated time and provides you with an identifier to reference that message for updates. </p>\n</blockquote>\n<p>If you are targeting a segment, a record of your request will be stored in the <a href=\"https://dashboard.braze.com/app_settings/developer_console/activitylog/\">Developer Console</a> after all scheduled messages have been sent.</p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an API key with the <code>messages.schedule.create</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>We apply the default Braze rate limit of 250,000 requests per hour to this endpoint, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<p>Braze endpoints support <a href=\"https://www.braze.com/docs/api/api_limits/#batching-api-requests\">batching API requests</a>. A single request to the messaging endpoints can reach any of the following:</p>\n<ul>\n<li>Up to 50 specific external_ids, each with individual message parameters</li>\n<li>A segment of any size created in the Braze dashboard, specified by its <code>segment_id</code></li>\n<li>An ad-hoc audience segment of any size, defined in the request as a <a href=\"https://www.braze.com/docs/api/objects_filters/connected_audience/\">Connected Audience</a> object</li>\n</ul>\n<h2 id=\"request-parameters\">Request parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>broadcast</code></td>\n<td>Optional</td>\n<td>Boolean</td>\n<td>See <a href=\"https://www.braze.com/docs/api/parameters/#broadcast\">broadcast</a>. This parameter defaults to false (as of August 31, 2017).  <br />  <br />If <code>recipients</code> is omitted, <code>broadcast</code> must be set to true. However, use caution when setting <code>broadcast: true</code>, as unintentionally setting this flag may cause you to send your message to a larger than expected audience.</td>\n</tr>\n<tr>\n<td><code>external_user_ids</code></td>\n<td>Optional</td>\n<td>Array of strings</td>\n<td>See <a href=\"https://www.braze.com/docs/api/parameters/#external-user-id\">external user identifier</a>.</td>\n</tr>\n<tr>\n<td><code>user_aliases</code></td>\n<td>Optional</td>\n<td>Array of user alias objects</td>\n<td>See <a href=\"https://www.braze.com/docs/api/objects_filters/user_alias_object/\">user alias object</a>.</td>\n</tr>\n<tr>\n<td><code>audience</code></td>\n<td>Optional</td>\n<td>Connected audience object</td>\n<td>See <a href=\"https://www.braze.com/docs/api/objects_filters/connected_audience/\">connected audience</a>.</td>\n</tr>\n<tr>\n<td><code>segment_id</code></td>\n<td>Optional</td>\n<td>String</td>\n<td>See <a href=\"https://www.braze.com/docs/api/identifier_types/\">segment identifier</a>.</td>\n</tr>\n<tr>\n<td><code>campaign_id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>See <a href=\"https://www.braze.com/docs/api/identifier_types/\">campaign identifier</a>.</td>\n</tr>\n<tr>\n<td><code>recipients</code></td>\n<td>Optional</td>\n<td>Array of recipients objects</td>\n<td>See <a href=\"https://www.braze.com/docs/api/objects_filters/recipient_object/\">recipients object</a>.</td>\n</tr>\n<tr>\n<td><code>send_id</code></td>\n<td>Optional</td>\n<td>String</td>\n<td>See <a href=\"https://www.braze.com/docs/api/identifier_types/\">send identifier</a>.</td>\n</tr>\n<tr>\n<td><code>override_messaging_limits</code></td>\n<td>Optional</td>\n<td>Boolean</td>\n<td>Ignore global rate limits for campaigns, defaults to false</td>\n</tr>\n<tr>\n<td><code>recipient_subscription_state</code></td>\n<td>Optional</td>\n<td>String</td>\n<td>Use this to send messages to only users who have opted in (<code>opted_in</code>), only users who have subscribed or are opted in (<code>subscribed</code>) or to all users, including unsubscribed users (<code>all</code>).  <br />  <br />Using <code>all</code> users is useful for transactional email messaging. Defaults to <code>subscribed</code>.</td>\n</tr>\n<tr>\n<td><code>schedule</code></td>\n<td>Required</td>\n<td>Schedule object</td>\n<td>See <a href=\"https://www.braze.com/docs/api/objects_filters/schedule_object/\">schedule object</a></td>\n</tr>\n<tr>\n<td><code>messages</code></td>\n<td>Optional</td>\n<td>Messaging object</td>\n<td>See available <a href=\"https://www.braze.com/docs/api/objects_filters/#messaging-objects\">messaging objects</a>.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"response\">Response</h2>\n<h3 id=\"example-success-response\">Example success response</h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n    \"dispatch_id\": (string) the dispatch identifier,\n    \"schedule_id\": (string) the schedule identifier,\n    \"message\": \"success\"\n}\n\n</code></pre>\n",
+                "urlObject": {
+                  "protocol": "https",
+                  "path": ["messages", "schedule", "create"],
+                  "host": ["{{instance_url}}"],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "response": [],
+              "_postman_id": "25272fb8-bc39-41df-9a41-07ecfd76cb1d"
+            }
+          ],
+          "id": "bc3d171a-1e16-4698-aaab-ec0a82cb2157",
+          "_postman_id": "bc3d171a-1e16-4698-aaab-ec0a82cb2157",
+          "description": ""
+        }
+      ],
+      "id": "2caba516-ea27-47ed-b8d5-a64b211db7d0",
+      "description": "<p>The Braze Messaging API provides you with two distinct options for sending messages to your users. You can provide the message contents and configuration in the API request with the <code>/messages/send</code> and <code>/messages/schedule</code> endpoints. Alternatively, you can manage the details of your message with an API-triggered campaign in the Braze dashboard and just control when and to whom it is sent with the <code>/campaigns/trigger/send</code> and <code>/campaigns/trigger/schedule</code> endpoints. The following sections will detail the request specification for both methods.</p>\n<p>Similarly to other campaigns, you can limit the number of times a particular user can receive a messaging API campaign by configuring <a href=\"https://www.braze.com/docs/user_guide/engagement_tools/campaigns/building_campaigns/delivery_types/api_triggered_delivery/#re-eligibility-with-api-triggered-campaigns\">re-eligibility settings</a> in the Braze dashboard. Braze will not deliver API messages to users who haven\u2019t become re-eligible for the campaign regardless of how many API requests are sent.</p>\n<p>The Send Message endpoints allow you to send immediate messages to designated users. If you are targeting a segment, a record of your request will be stored in the <strong>Message Activity Log</strong>. Use the Schedule Message endpoints to send messages at a designated time, and modify or cancel messages that you have already scheduled.</p>\n",
+      "_postman_id": "2caba516-ea27-47ed-b8d5-a64b211db7d0"
+    },
+    {
+      "name": "SCIM",
+      "item": [
+        {
+          "name": "Remove dashboard user account",
+          "id": "9c7c71ea-afd6-414a-99d1-4eb1fe274f16",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-Origin",
+                "value": "YOUR-REQUEST-ORIGIN-HERE",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR-SCIM-TOKEN-HERE",
+                "type": "text"
+              }
+            ],
+            "url": "https://{{instance_url}}/scim/v2/Users/{id}",
+            "description": "<blockquote>\n<p>Use this endpoint to permanently delete an existing dashboard user by specifying the resource <code>id</code> returned by the SCIM <a href=\"https://www.braze.com/docs/scim/post_create_user_account/\">&lt;code&gt;POST&lt;/code&gt;</a> method. </p>\n</blockquote>\n<p>This is similar to deleting a user in the <strong>Manage Users</strong> section of the Braze dashboard.</p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you'll need a SCIM token. For more information, refer to <a href=\"https://www.braze.com/docs/scim/automated_user_provisioning/\">Automated user provisioning</a>.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a rate limit of 5000 requests per day, per company. This rate limit is shared with the <code>/scim/v2/Users/</code> PUT, GET, and POST endpoints as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The user\u2019s resource ID. This parameter is returned by the <code>POST</code> <code>/scim/v2/Users/</code> or <code>GET</code> <code>/scim/v2/Users?filter=userName eq \"[user@test.com](mailto:user@test.com)\"</code> methods.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<p>There is no request body for this endpoint.</p>\n<h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">curl --location --request DELETE 'https://rest.iad-01.braze.com/scim/v2/Users/dfa245b7-24195aec-887bb3ad-602b3340' \\\n--header 'Content-Type: application/json' \\\n--header 'X-Request-Origin: YOUR-REQUEST-ORIGIN-HERE' \\\n--header 'Authorization: Bearer YOUR-SCIM-TOKEN-HERE' \\\n\n</code></pre>\n<h2 id=\"response\">Response</h2>\n<h3 id=\"example-error-response\">Example error response</h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">HTTP/1.1 204 Not Found\nContent-Type: text/html; charset=UTF-8\n\n</code></pre>\n<p>If a developer with this ID doesn\u2019t exist in Braze, the endpoint will respond with:</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">HTTP/1.1 404 Not Found Content-Type: text/html; charset=UTF-8\n{ \"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:Error\"], \"detail\": \"User not found\", \"status\": 404 }\n\n</code></pre>\n",
+            "urlObject": {
+              "protocol": "https",
+              "path": ["scim", "v2", "Users", "{id}"],
+              "host": ["{{instance_url}}"],
+              "query": [],
+              "variable": []
+            }
+          },
+          "response": [],
+          "_postman_id": "9c7c71ea-afd6-414a-99d1-4eb1fe274f16"
+        },
+        {
+          "name": "Search existing dashboard user by email",
+          "id": "5037d810-b822-4c54-bb51-f30470a42a95",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-Origin",
+                "value": "YOUR-REQUEST-ORIGIN-HERE",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR-SCIM-TOKEN-HERE",
+                "type": "text"
+              }
+            ],
+            "url": "https://{{instance_url}}/scim/v2/Users?filter={userName@example.com}",
+            "description": "<blockquote>\n<p>Use this endpoint to look up an existing dashboard user account by specifying their email in the filter query parameter. </p>\n</blockquote>\n<p>Note that when the query parameter is URL encoded it will read like this: <code>/scim/v2/Users?filter=userName eq \"user@test.com\"</code></p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you'll need a SCIM token. For more information, refer to <a href=\"https://www.braze.com/docs/scim/automated_user_provisioning/\">Automated user provisioning</a>.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a rate limit of 5000 requests per day, per company. This rate limit is shared with the <code>/scim/v2/Users/</code> PUT, GET, DELETE, and POST endpoints as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>userName@example.com</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The user's email.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<p>There is no request body for this endpoint.</p>\n<h2 id=\"response\">Response</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">Content-Type: application/json\nX-Request-Origin: YOUR-REQUEST-ORIGIN-HERE\nAuthorization: Bearer YOUR-SCIM-TOKEN-HERE\n{\n    \"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"],\n    \"totalResults\": 1,\n    \"Resources\": [\n        {\n            \"userName\": \"user@test.com\",\n            \"id\": \"dfa245b7-24195aec-887bb3ad-602b3340\",\n            \"name\": {\n                \"givenName\": \"Test\",\n                \"familyName\": \"User\"\n            },\n            \"department\": \"finance\",\n            \"lastSignInAt\": \"Thursday, January 1, 1970 12:00:00 AM\",\n            \"permissions\": {\n                \"companyPermissions\": [\"manage_company_settings\"],\n                \"appGroup\": [\n                    {\n                        \"appGroupId\": \"241adcd25789fabcded\",\n                        \"appGroupName\": \"Test Workspace\",\n                        \"appGroupPermissions\": [\"basic_access\",\"send_campaigns_canvases\"],\n                        \"team\": [\n                            {\n                                \"teamId\": \"241adcd25789fabcded\",\n                                \"teamName\": \"Test Team\",                  \n                                \"teamPermissions\": [\"admin\"]\n                            }\n                        ]\n                    } \n                ]\n            }\n        }\n    ]\n}\n\n</code></pre>\n",
+            "urlObject": {
+              "protocol": "https",
+              "path": ["scim", "v2", "Users"],
+              "host": ["{{instance_url}}"],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "{userName@example.com}"
+                }
+              ],
+              "variable": []
+            }
+          },
+          "response": [],
+          "_postman_id": "5037d810-b822-4c54-bb51-f30470a42a95"
+        },
+        {
+          "name": "Look up an existing dashboard user account",
+          "id": "3df40764-8f74-4532-aed3-ab8a6cb92122",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-Origin",
+                "value": "YOUR-REQUEST-ORIGIN-HERE",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR-SCIM-TOKEN-HERE",
+                "type": "text"
+              }
+            ],
+            "url": "https://{{instance_url}}/scim/v2/Users/{id}",
+            "description": "<blockquote>\n<p>Use this endpoint to look up an existing dashboard user account by specifying the resource <code>id</code> returned by the SCIM <a href=\"https://www.braze.com/docs/scim/post_create_user_account/\">&lt;code&gt;POST&lt;/code&gt;</a> method. </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you'll need a SCIM token. For more information, refer to <a href=\"https://www.braze.com/docs/scim/automated_user_provisioning/\">Automated user provisioning</a>.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a rate limit of 5000 requests per day, per company. This rate limit is shared with the <code>/scim/v2/Users/</code> PUT, GET, DELETE, and POST endpoints as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The user's resource ID. This parameter is returned by the <code>POST</code> <code>/scim/v2/Users/</code> or <code>GET</code> <code>/scim/v2/Users?filter=userName eq \"user@test.com\"</code> methods.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<p>There is no request body for this endpoint.</p>\n<h2 id=\"example-request\">Example request</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">curl --location --request GET 'https://rest.iad-01.braze.com/scim/v2/Users/dfa245b7-24195aec-887bb3ad-602b3340' \\\n--header 'Content-Type: application/json' \\\n--header 'X-Request-Origin: YOUR-REQUEST-ORIGIN-HERE' \\\n--header 'Authorization: Bearer YOUR-API-KEY-HERE' \\\n\n</code></pre>\n<h2 id=\"response\">Response</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n    \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n    \"id\": \"dfa245b7-24195aec-887bb3ad-602b3340\",\n    \"userName\": \"user@test.com\",\n    \"name\": {\n        \"givenName\": \"Test\",\n        \"familyName\": \"User\"\n    },\n    \"department\": \"finance\",\n    \"lastSignInAt\": \"Thursday, January 1, 1970 12:00:00 AM\",\n    \"createdAt\": \"Thursday, January 1, 1970 12:00:00 AM\",\n    \"permissions\": {\n        \"companyPermissions\": [\"manage_company_settings\"],\n        \"roles\": [\n            {\n                \"roleName\": \"Another Test Role\",\n                \"roleId\": \"23125dad23dfaae7,\n                \"appGroup\": [\n                    {\n                        \"appGroupId\": \"241adcd25adfabcded\",\n                        \"appGroupName\": \"Production Workspace\",\n                        \"appGroupPermissionSets\": [\n                            {\n                                \"appGroupPermissionSetName\": \"A Permission Set\",\n                                \"appGroupPermissionSetId\": \"dfa385109bc38\",\n                                \"permissions\": [\"basic_access\",\"publish_cards\"]\n                            }\n                        ]\n                    } \n                ]\n            }\n        ],\n        \"appGroup\": [\n            {\n                \"appGroupId\": \"241adcd25789fabcded\",\n                \"appGroupName\": \"Test Workspace\",\n                \"appGroupPermissions\": [\"basic_access\",\"send_campaigns_canvases\"],\n                \"team\": [\n                    {\n                         \"teamId\": \"241adcd25789fabcded\",\n                         \"teamName\": \"Test Team\",                  \n                         \"teamPermissions\": [\"admin\"]\n                    }\n                ]\n            } \n        ]\n    }\n}\n\n</code></pre>\n",
+            "urlObject": {
+              "protocol": "https",
+              "path": ["scim", "v2", "Users", "{id}"],
+              "host": ["{{instance_url}}"],
+              "query": [],
+              "variable": []
+            }
+          },
+          "response": [],
+          "_postman_id": "3df40764-8f74-4532-aed3-ab8a6cb92122"
+        },
+        {
+          "name": "Create new dashboard user account",
+          "id": "768a3c9d-ce1d-44fc-a0e4-d556b09f7aa3",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-Origin",
+                "value": "YOUR-REQUEST-ORIGIN-HERE",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR-SCIM-TOKEN-HERE",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n    \"userName\": \"user@test.com\",\n    \"name\": {\n        \"givenName\": \"Test\",\n        \"familyName\": \"User\"\n    },\n    \"department\": \"finance\",\n    \"permissions\": {\n        \"companyPermissions\": [\"manage_company_settings\"],\n        \"appGroup\": [\n            {\n                \"appGroupName\": \"Test App Group\",\n                \"appGroupPermissions\": [\"basic_access\",\"send_campaigns_canvases\"],\n                \"team\": [\n                    {\n                         \"teamName\": \"Test Team\",                  \n                         \"teamPermissions\": [\"basic_access\",\"export_user_data\"]\n                    }\n                ]\n            } \n        ]\n    }\n}"
+            },
+            "url": "https://{{instance_url}}/scim/v2/Users",
+            "description": "<blockquote>\n<p>Use this endpoint to create a new dashboard user account by specifying email, given and family names, permissions (for setting permissions at the company, app group, and team level). </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you'll need a SCIM token. For more information, refer to <a href=\"https://www.braze.com/docs/scim/automated_user_provisioning/\">Automated user provisioning</a>.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a rate limit of 5000 requests per day, per company. This rate limit is shared with the <code>/scim/v2/Users/</code> PUT, GET, and DELETE endpoints as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"request-parameters\">Request parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>schemas</code></td>\n<td>Required</td>\n<td>Array of strings</td>\n<td>Expected SCIM 2.0 schema name for user object.</td>\n</tr>\n<tr>\n<td><code>userName</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The user\u2019s email address.</td>\n</tr>\n<tr>\n<td><code>name</code></td>\n<td>Required</td>\n<td>JSON object</td>\n<td>This object contains the user's given name and family name.</td>\n</tr>\n<tr>\n<td><code>department</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Valid department string from the <a href=\"https://%7B%7Bsite.baseurl%7D%7D/scim_api_appendix/#department-strings\">department string documentation</a>.</td>\n</tr>\n<tr>\n<td><code>permissions</code></td>\n<td>Required</td>\n<td>JSON object</td>\n<td>Permissions object as described in the <a href=\"https://%7B%7Bsite.baseurl%7D%7D/scim_api_appendix/#permissions-object\">permissions object documentation</a>.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"response\">Response</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n    \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n    \"id\": \"dfa245b7-24195aec-887bb3ad-602b3340\",\n    \"userName\": \"user@test.com\",\n    \"name\": {\n        \"givenName\": \"Test\",\n        \"familyName\": \"User\"\n    },\n    \"department\": \"finance\",\n    \"lastSignInAt\": \"Thursday, January 1, 1970 12:00:00 AM\",\n    \"permissions\": {\n        \"companyPermissions\": [\"manage_company_settings\"],\n        \"appGroup\": [\n            {\n                \"appGroupId\": \"241adcd25789fabcded\",\n                \"appGroupName\": \"Test App Group\",\n                \"appGroupPermissions\": [\"basic_access\",\"send_campaigns_canvases\"],\n                \"team\": [\n                    {\n                         \"teamId\": \"2519dafcdba238ae7\",\n                         \"teamName\": \"Test Team\",                  \n                         \"teamPermissions\": [\"basic_access\",\"export_user_data\"]\n                    }\n                ]\n            } \n        ]\n    }\n}\n\n</code></pre>\n<h3 id=\"error-states\">Error states</h3>\n<p>If a user with this email address already exists in Braze, the endpoint will respond with:</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">HTTP/1.1 409 Conflict\nDate: Tue, 10 Sep 2019 02:22:30 GMT\nContent-Type: text/json;charset=UTF-8\n{\n  \"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:Error\"],\n  \"detail\": \"User already exists in the database.\",\n  \"status\": 409\n}\n\n</code></pre>\n",
+            "urlObject": {
+              "protocol": "https",
+              "path": ["scim", "v2", "Users"],
+              "host": ["{{instance_url}}"],
+              "query": [],
+              "variable": []
+            }
+          },
+          "response": [],
+          "_postman_id": "768a3c9d-ce1d-44fc-a0e4-d556b09f7aa3"
+        },
+        {
+          "name": "Update dashboard user account",
+          "id": "5f9a1642-988e-4011-8fb8-db4340ea1ac7",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-Origin",
+                "value": "YOUR-REQUEST-ORIGIN-HERE",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer YOUR-SCIM-TOKEN-HERE",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n    \"name\": {\n        \"givenName\": \"Test\",\n        \"familyName\": \"User\"\n    },\n    \"department\": \"finance\",\n    \"permissions\": {\n        \"companyPermissions\": [\"manage_company_settings\"],\n        \"appGroup\": [\n            {\n                \"appGroupName\": \"Test App Group\",\n                \"appGroupPermissions\": [\"basic_access\",\"send_campaigns_canvases\"],\n                \"team\": [\n                    {\n                         \"teamName\": \"Test Team\",\n                         \"teamPermissions\": [\"admin\"]\n                    } \n                ]\n            } \n        ]\n   }\n}"
+            },
+            "url": "https://{{instance_url}}/scim/v2/Users/{id}",
+            "description": "<blockquote>\n<p>Use this endpoint to update an existing dashboard user account by specifying the resource <code>id</code> returned by the SCIM <a href=\"https://www.braze.com/docs/scim/post_create_user_account/\">&lt;code&gt;POST&lt;/code&gt;</a> method. </p>\n</blockquote>\n<p>It allows you to update of given and family names, permissions (for setting permissions at the company, app group, and team level) and department.</p>\n<p>For security reasons, <code>userName</code> (email address) cannot be updated through this endpoint. If you would like to change the <code>userName</code> (email address) for a user, contact <a href=\"https://www.braze.com/docs/support_contact/\">Support</a>.</p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you'll need a SCIM token. For more information, refer to <a href=\"https://www.braze.com/docs/scim/automated_user_provisioning/\">Automated user provisioning</a>.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a rate limit of 5000 requests per day, per company. This rate limit is shared with the <code>/scim/v2/Users/</code> GET, DELETE, and POST endpoints as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"path-parameters\">Path parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The user's resource ID. This parameter is returned by the <code>POST</code> <code>/scim/v2/Users/</code> or <code>GET</code> <code>/scim/v2/Users?filter=userName eq \"user@test.com\"</code> methods.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"request-parameters\">Request parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>schemas</code></td>\n<td>Required</td>\n<td>Array of strings</td>\n<td>Expected SCIM 2.0 schema name for user object.</td>\n</tr>\n<tr>\n<td><code>name</code></td>\n<td>Required</td>\n<td>JSON object</td>\n<td>This object contains the user's given name and family name.</td>\n</tr>\n<tr>\n<td><code>department</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Valid department string from the <a href=\"https://%7B%7Bsite.baseurl%7D%7D/scim_api_appendix/#department-strings\">department string documentation</a>.</td>\n</tr>\n<tr>\n<td><code>permissions</code></td>\n<td>Required</td>\n<td>JSON object</td>\n<td>Permissions object as described in the <a href=\"https://%7B%7Bsite.baseurl%7D%7D/scim_api_appendix/#permissions-object\">permissions object documentation</a>.</td>\n</tr>\n</tbody>\n</table>\n</div><h2 id=\"response\">Response</h2>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n    \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n    \"id\": \"dfa245b7-24195aec-887bb3ad-602b3340\",\n    \"userName\": \"user@test.com\",\n    \"name\": {\n        \"givenName\": \"Test\",\n        \"familyName\": \"User\"\n    },\n    \"department\": \"finance\",\n    \"lastSignInAt\": \"Thursday, January 1, 1970 12:00:00 AM\",\n    \"permissions\": {\n        \"companyPermissions\": [\"manage_company_settings\"],\n        \"appGroup\": [\n            {\n                \"appGroupId\": \"241adcd25789fabcded\",\n                \"appGroupName\": \"Test App Group\",\n                \"appGroupPermissions\": [\"basic_access\",\"send_campaigns_canvases\"],\n                \"team\": [\n                    {\n                         \"teamId\": \"2519dafcdba238ae7\",\n                         \"teamName\": \"Test Team\",                  \n                         \"teamPermissions\": [\"admin\"]\n                    }\n                ]\n            } \n        ]\n    }\n}\n\n</code></pre>\n<h3 id=\"error-states\">Error states</h3>\n<p>If a user with this ID doesn\u2019t exist in Braze, the endpoint will respond with:</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8\n{\n    \"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:Error\"],\n    \"detail\": \"User not found\",\n    \"status\": 404\n}\n\n</code></pre>\n",
+            "urlObject": {
+              "protocol": "https",
+              "path": ["scim", "v2", "Users", "{id}"],
+              "host": ["{{instance_url}}"],
+              "query": [],
+              "variable": []
+            }
+          },
+          "response": [],
+          "_postman_id": "5f9a1642-988e-4011-8fb8-db4340ea1ac7"
+        }
+      ],
+      "id": "d66cf93b-b3ac-473b-b878-cc1ab9c4956a",
+      "description": "<p>The\u00a0<a href=\"http://www.simplecloud.info/\">System for Cross-domain Identity Management (SCIM)</a>\u00a0\u00a0specification is designed to make managing user identities in cloud-based applications and services easier by providing a defined schema for representing users and groups. Use the Braze SCIM endpoints to manage automated user provisioning.</p>\n",
+      "_postman_id": "d66cf93b-b3ac-473b-b878-cc1ab9c4956a"
+    },
+    {
+      "name": "Subscription Groups",
+      "item": [
+        {
+          "name": "Email",
+          "item": [
+            {
+              "name": "List user's subscription group",
+              "id": "d1c3b617-22f1-47bf-9ee8-499526824470",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "graphql",
+                  "graphql": {
+                    "query": "",
+                    "variables": ""
+                  }
+                },
+                "url": "https://{{instance_url}}/subscription/user/status?external_id={{external_id}}&email=example@braze.com&limit=100&offset=0",
+                "description": "<blockquote>\n<p>Use this endpoint to list and get the subscription groups of a certain user. </p>\n</blockquote>\n<h2 id=\"prequisites\">Prequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://www.braze.com/docs/api/basics#rest-api-key/\">API key</a> with the <code>subscription.groups.get</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>We apply the default Braze rate limit of 250,000 requests per hour to this endpoint, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"example-request\">Example request</h2>\n<h3 id=\"multiple-users\">Multiple users</h3>\n<p><code>https://rest.iad-03.braze.com/subscription/user/status?external_id[]=1&amp;external_id[]=2</code></p>\n<h3 id=\"email\">Email</h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">curl --location -g --request GET 'https://rest.iad-01.braze.com/subscription/user/status?external_id={{external_id}}&amp;email=example@braze.com&amp;limit=100&amp;offset=0' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY'\n\n</code></pre>\n",
+                "urlObject": {
+                  "protocol": "https",
+                  "path": ["subscription", "user", "status"],
+                  "host": ["{{instance_url}}"],
+                  "query": [
+                    {
+                      "description": {
+                        "content": "<p>(Required) String</p>\n<p>The <code>external_id</code> of the user. Must include at least one and at most 50 <code>external_ids</code>.</p>\n<p>If there are multiple users (multiple\u00a0<code>external_ids</code>) who share the same email address, all users will be returned as a separate user (even if they have the same email address or subscription group).</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "external_id",
+                      "value": "{{external_id}}"
+                    },
+                    {
+                      "description": {
+                        "content": "<p>(Required) String</p>\n<p>The email address of the user, can be passed as an array of strings. Must include at least one email address (with a maximum of 50).</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "email",
+                      "value": "example@braze.com"
+                    },
+                    {
+                      "description": {
+                        "content": "<p>(Optional) Integer</p>\n<p>The limit on the maximum number of results returned. Default (and maximum) limit is 100.</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "100"
+                    },
+                    {
+                      "description": {
+                        "content": "<p>(Optional) Integer</p>\n<p>Number of templates to skip before returning the rest of the templates that fit the search criteria.</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "offset",
+                      "value": "0"
+                    }
+                  ],
+                  "variable": []
+                }
+              },
+              "response": [],
+              "_postman_id": "d1c3b617-22f1-47bf-9ee8-499526824470"
+            },
+            {
+              "name": "Update user's subscription group status",
+              "id": "8895e87e-6324-47a3-a833-adf29a258bb9",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n   \"subscription_group_id\": (required, string) the id of your subscription group,\n   \"subscription_state\": (required, string) available values are \"unsubscribed\" (not in subscription group) or \"subscribed\" (in subscription group),\n   \"external_id\": (required*, array of strings) the external ID of the user or users, may include up to 50 IDs,\n   \"email\": (required*, array of strings) the email address of the user (must include at least one email and at most 50 emails),\n   // Email subscription group - one of external_id or email is required\n   // Note that sending an email address that is linked to multiple profiles will update all relevant profiles\n }"
+                },
+                "url": "https://{{instance_url}}/subscription/status/set",
+                "description": "<blockquote>\n<p>Use this endpoint to batch update the subscription state of up to 50 users on the Braze dashboard. </p>\n</blockquote>\n<p>You can access a subscription group\u2019s <code>subscription_group_id</code> by navigating to the <strong>Subscription Group</strong> page.</p>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an\u00a0<a href=\"https://www.braze.com/docs/api/basics#rest-api-key/\">API key</a>\u00a0with the\u00a0<code>subscription.status.set</code>\u00a0permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a rate limit of 5,000 requests per minute shared across the\u00a0<code>/subscription/status/set</code>\u00a0and\u00a0<code>/v2/subscription/status/set</code>\u00a0endpoint as documented in\u00a0<a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h2 id=\"request-parameters\">Request parameters</h2>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"https://www.braze.com/docs/api/identifier_types?tab=subscription%20group%20ids\"><code>subscription_group_id</code></a></td>\n<td>Required</td>\n<td>String</td>\n<td>The <code>id</code> of your subscription group.</td>\n</tr>\n<tr>\n<td><code>subscription_state</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Available values are <code>unsubscribed</code> (not in subscription group) or <code>subscribed</code> (in subscription group).</td>\n</tr>\n<tr>\n<td><code>external_id</code></td>\n<td>Required*</td>\n<td>Array of strings</td>\n<td>The <code>external_id</code> of the user or users, may include up to 50 <code>id</code>s.</td>\n</tr>\n<tr>\n<td><code>email</code></td>\n<td>Required*</td>\n<td>String</td>\n<td>The email address of the user, can be passed as an array of strings. Must include at least one email address (with a max of 50).  <br />  <br />If multiple users (external_id) in the same app group share the same email address, then all users that share the email address are updated with the subscription group changes.</td>\n</tr>\n</tbody>\n</table>\n</div><p>This property should not be used for updating a user\u2019s profile information. Use the\u00a0<a href=\"https://www.braze.com/docs/api/endpoints/user_data/post_user_track/\">/users/track</a>\u00a0property instead.</p>\n<blockquote>\n<p>When creating new users via the\u00a0<a href=\"https://www.braze.com/docs/api/endpoints/user_data/post_user_track/\">/users/track</a>\u00a0endpoint, you can set subscription groups within the user attributes object, which allows you to create a user and set the subscription group state in one API call. </p>\n</blockquote>\n<h2 id=\"example-requests\">Example requests</h2>\n<h3 id=\"email\">Email</h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">curl --location --request POST 'https://rest.iad-01.braze.com/subscription/status/set' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY' \\\n--data-raw '{\n  \"subscription_group_id\": \"subscription_group_identifier\",\n  \"subscription_state\": \"unsubscribed\",\n  \"external_id\": \"external_identifier\",\n  \"email\": [\"example1@email.com\", \"example2@email.com\"]\n}\n'\n\n</code></pre>\n<h2 id=\"example-success-response\">Example success response</h2>\n<p>The status code\u00a0<code>201</code>\u00a0could return the following response body.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n    \"message\": \"success\"\n}\n\n</code></pre>\n<blockquote>\n<p>The endpoint only accepts the\u00a0<code>email</code>\u00a0or\u00a0<code>phone</code>\u00a0value, not both. If given both, you will receive this response:\u00a0<code>{\"message\":\"Either an email address or a phone number should be provided, but not both.\"}</code></p>\n</blockquote>\n",
+                "urlObject": {
+                  "protocol": "https",
+                  "path": ["subscription", "status", "set"],
+                  "host": ["{{instance_url}}"],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "response": [],
+              "_postman_id": "8895e87e-6324-47a3-a833-adf29a258bb9"
+            }
+          ],
+          "id": "729cb3ab-ef56-4bf4-a455-5b52d8a7703b",
+          "_postman_id": "729cb3ab-ef56-4bf4-a455-5b52d8a7703b",
+          "description": ""
+        },
+        {
+          "name": "SMS and WhatsApp",
+          "item": [
+            {
+              "name": "List user's subscription group",
+              "id": "54bd7ca8-60d9-4654-aff5-406479f3c666",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": "https://{{instance_url}}/subscription/user/status?external_id={{external_id}}&limit=100&offset=1&phone=+11112223333",
+                "description": "<blockquote>\n<p>Use this endpoint to list and get the subscription groups of a certain user. </p>\n</blockquote>\n<h2 id=\"prequisites\">Prequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://www.braze.com/docs/api/basics#rest-api-key/\">API key</a> with the <code>subscription.groups.get</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>We apply the default Braze rate limit of 250,000 requests per hour to this endpoint, as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<blockquote>\n<p>If there are multiple users (multiple <code>external_ids</code>) who share the same email address, all users will be returned as a separate user (even if they have the same email address or subscription group). </p>\n</blockquote>\n<h2 id=\"example-request\">Example request</h2>\n<h3 id=\"multiple-users\">Multiple users</h3>\n<p><code>https://rest.iad-03.braze.com/subscription/user/status?external_id[]=1&amp;external_id[]=2</code></p>\n<h3 id=\"sms-and-whatsapp\">SMS and WhatsApp</h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">curl --location -g --request GET 'https://rest.iad-01.braze.com/subscription/user/status?external_id={{external_id}}&amp;limit=100&amp;offset=1&amp;phone=+11112223333' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY'\n\n</code></pre>\n",
+                "urlObject": {
+                  "protocol": "https",
+                  "path": ["subscription", "user", "status"],
+                  "host": ["{{instance_url}}"],
+                  "query": [
+                    {
+                      "description": {
+                        "content": "<p>(Required*) String</p>\n<p>The external_id of the user (must include at least one and at most 50 external_ids).</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "external_id",
+                      "value": "{{external_id}}"
+                    },
+                    {
+                      "description": {
+                        "content": "<p>(Optional) Integer</p>\n<p>The limit on the maximum number of results returned. Default (and maximum) limit is 100.</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "100"
+                    },
+                    {
+                      "description": {
+                        "content": "<p>(Optional) Integer</p>\n<p>Number of templates to skip before returning the rest of the templates that fit the search criteria.</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "offset",
+                      "value": "1"
+                    },
+                    {
+                      "description": {
+                        "content": "<p>(Required*) String in <a href=\"https://en.wikipedia.org/wiki/E.164\">E.164</a> format</p>\n<p>The phone number of the user. Must include at least one phone number (with a maximum of 50).</p>\n",
+                        "type": "text/plain"
+                      },
+                      "key": "phone",
+                      "value": "+11112223333"
+                    }
+                  ],
+                  "variable": []
+                }
+              },
+              "response": [],
+              "_postman_id": "54bd7ca8-60d9-4654-aff5-406479f3c666"
+            },
+            {
+              "name": "Update user's subscription group status",
+              "id": "72558b32-7dbe-4cba-bd22-a7ce513076dd",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n   \"subscription_group_id\": (required, string) the id of your subscription group,\n   \"subscription_state\": (required, string) available values are \"unsubscribed\" (not in subscription group) or \"subscribed\" (in subscription group),\n   \"external_id\": (required*, array of strings) the external ID of the user or users, may include up to 50 IDs,\n   \"phone\": (required*, array of strings in E.164 format) The phone number of the user (must include at least one phone number and at most 50 phone numbers),\n   // SMS subscription group - one of external_id or phone is required\n }"
+                },
+                "url": "https://{{instance_url}}/subscription/status/set",
+                "description": "<blockquote>\n<p>Use this endpoint to batch update the subscription state of up to 50 users on the Braze dashboard. </p>\n</blockquote>\n<h2 id=\"prerequisites\">Prerequisites</h2>\n<p>To use this endpoint, you\u2019ll need an <a href=\"https://www.braze.com/docs/api/basics#rest-api-key/\">API key</a> with the <code>subscription.status.set</code> permission.</p>\n<h2 id=\"rate-limit\">Rate limit</h2>\n<p>This endpoint has a rate limit of 5,000 requests per minute shared across the <code>/subscription/status/set</code> and <code>/v2/subscription/status/set</code> endpoint as documented in <a href=\"https://www.braze.com/docs/api/api_limits/\">API rate limits</a>.</p>\n<h3 id=\"request-parameters\">Request parameters</h3>\n<div class=\"click-to-expand-wrapper is-table-wrapper\"><table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Required</th>\n<th>Data Type</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>subscription_group_id</code></td>\n<td>Required</td>\n<td>String</td>\n<td>The <code>id</code> of your subscription group.</td>\n</tr>\n<tr>\n<td><code>subscription_state</code></td>\n<td>Required</td>\n<td>String</td>\n<td>Available values are <code>unsubscribed</code> (not in subscription group) or <code>subscribed</code> (in subscription group).</td>\n</tr>\n<tr>\n<td><code>external_id</code></td>\n<td>Required*</td>\n<td>Array of strings</td>\n<td>The <code>external_id</code> of the user or users, may include up to 50 <code>id</code>s.</td>\n</tr>\n<tr>\n<td><code>phone</code></td>\n<td>Required*</td>\n<td>String in <a href=\"https://en.wikipedia.org/wiki/E.164\">E.164</a> format</td>\n<td>The phone number of the user, can be passed as an array of strings. Must include at least one phone number (with a max of 50).  <br />  <br />If multiple users (<code>external_id</code>) in the same workspace share the same phone number, then all users that share the phone number are updated with the same subscription group changes.</td>\n</tr>\n</tbody>\n</table>\n</div><p>This property should not be used for updating a user\u2019s profile information. Use the <a href=\"https://www.braze.com/docs/api/endpoints/user_data/post_user_track/\">/users/track</a> property instead.</p>\n<blockquote>\n<p>When creating new users via the <a href=\"https://www.braze.com/docs/api/endpoints/user_data/post_user_track/\">/users/track</a> endpoint, you can set subscription groups within the user attributes object, which allows you to create a user and set the subscription group state in one API call. </p>\n</blockquote>\n<h2 id=\"example-requests\">Example requests</h2>\n<h3 id=\"sms-and-rcs\">SMS <strong>and RCS</strong></h3>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">curl --location --request POST 'https://rest.iad-01.braze.com/subscription/status/set' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer YOUR-REST-API-KEY' \\\n--data-raw '{\n  \"subscription_group_id\": \"504e09e6-ffa4-4b31-96c3-c05d50d903cf\",\n  \"subscription_state\": \"unsubscribed\",\n  \"external_id\": [\n    \"user1\",\n    \"user2\"\n  ],\n  \"emails\": [\n    \"test1@braze.com\",\n    \"test2@braze.com\"\n  ],\n  \"phones\": [\n    \"+445555555555\",\n    \"+445555555556\"\n  ]\n}\n'\n\n</code></pre>\n<h2 id=\"example-success-response\">Example success response</h2>\n<p>The status code <code>201</code> could return the following response body.</p>\n<pre class=\"click-to-expand-wrapper is-snippet-wrapper\"><code class=\"language-json\">{\n    \"message\": \"success\"\n}\n\n</code></pre>\n<blockquote>\n<p>The endpoint only accepts the <code>email</code> or <code>phone</code> value, not both. If given both, you will receive this response: <code>{\"message\":\"Either an email address or a phone number should be provided, but not both.\"}</code></p>\n</blockquote>\n",
+                "urlObject": {
+                  "protocol": "https",
+                  "path": ["subscription", "status", "set"],
+                  "host": ["{{instance_url}}"],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "response": [],
+              "_postman_id": "72558b32-7dbe-4cba-bd22-a7ce513076dd"
+            }
+          ],
+          "id": "53ea7760-5280-4be6-84de-f05f5343c498",
+          "_postman_id": "53ea7760-5280-4be6-84de-f05f5343c498",
+          "description": ""
+        }
+      ],
+      "id": "41314f9c-bef6-42b0-ac57-e0808165679b",
+      "description": "<p>Use the Subscription Group REST APIs to programmatically manage the subscription groups that you have stored on the Braze dashboard, on the\u00a0<strong>Subscription Group</strong>\u00a0page. This applies to both SMS and email subscription groups.  </p>\n<p>Looking for guidance on creating subscription groups? Check out our articles for\u00a0<a href=\"https://www.braze.com/docs/user_guide/message_building_by_channel/sms/sms_subscription_group//\">SMS subscription groups</a>\u00a0and\u00a0<a href=\"https://www.braze.com/docs/user_guide/message_building_by_channel/email/managing_user_subscriptions/\">email subscription groups</a>.</p>\n",
+      "_postman_id": "41314f9c-bef6-42b0-ac57-e0808165679b"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "fe2426d8-1773-4b52-8ae4-5c0891772518",
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "5c6ba08d-e78a-4ca3-988b-0266805b9f32",
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ]
+}

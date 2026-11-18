@@ -1,0 +1,6 @@
+braze-excerpt.json is cut from Braze's public Postman collection "Braze Endpoints" (schema v2.0.0), the one Braze's
+documentation links to at https://www.braze.com/docs/api/postman_collection, as braze-cli committed it on 2026-09-13
+(sha256 e64c492ed4c8bb428d1edf3bfb58554b395fa9262a25716ddf8ea6a249ea2e28). 18 of its 99 requests, unchanged, with their
+folders. It holds no credentials: `{{api_key}}` and `YOUR-SCIM-TOKEN-HERE` are the collection's own placeholders.
+
+Copyright Braze, Inc. Used here only to test the converter.

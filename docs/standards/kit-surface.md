@@ -49,6 +49,7 @@ what it cannot do yet.
 | Google Discovery | `adaptDiscovery(readDiscovery(dir))`, snapshots written by `syncDiscovery` |
 | GraphQL (Linear) | `adaptGraphql(readGraphql(dir), { url, scalars })`, the introspection result written by `syncGraphql` |
 | WordPress's REST index | `adaptOpenApi(wpJsonToOpenApi(readWpJson(dir), { namespaces: ["wp/v2"] }).document)`, the index written by `syncWpJson` |
+| A Postman collection v2.0 or v2.1 (Braze) | `adaptOpenApi(postmanToOpenApi(collection, { variables }).document)`, the collection committed in `spec/<service>/` with its provenance; a POST that only reads gets an `effect` override |
 
 `upgradeToOpenApi3` converts with [swagger-converter](https://github.com/apigee-127/swagger-converter) (1.2 → 2.0) and
 [@scalar/openapi-upgrader](https://github.com/scalar/scalar/tree/main/packages/openapi-upgrader) (2.0 → 3.0). They are

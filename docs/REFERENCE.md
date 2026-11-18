@@ -291,6 +291,22 @@ that is still a pattern, a second route on one path or an argument with no type 
 names the route with a reason. WordPress answers a list without its page count in the body, so `pagination: true`
 finds no paging for it.
 
+**A Postman collection becomes OpenAPI.** `postmanToOpenApi(collection, { variables, exclude, version })` takes a
+parsed collection, v2.0 or v2.1, and returns an OpenAPI 3.1 document for `adaptOpenApi` with its `omissions`. Commit
+the collection in the CLI's `spec/` with its provenance; nothing fetches it at build or run time. Each request becomes
+an operation named by its method and path (`getEmailHardBounces`), its folders its tag (`Catalogs / Catalog Items`),
+and its name its summary. The path and query are read from the URL string, as Braze leaves `url.query` empty;
+`{{x}}`, `:x` and `{x}` in the path become path parameters, and the URL's host the server, its `{{variables}}` taken
+from the collection or from `variables` (Braze's `instance_url` has no value in the collection). A header other than
+`Authorization`, `Content-Type` and `Accept` becomes a header parameter. The sign-in is the request's `auth`, its
+folders' or the collection's: bearer and basic become HTTP schemes, apikey an API key, oauth2 its flow; with none, an
+`Authorization: Bearer` or `Basic` header gives it, and `noauth` none at all. A raw JSON body becomes an open schema of
+the example's kind, which `adaptOpenApi` marks `confidence: "example"`, never a contract; a form or multipart body
+lists its fields. Two requests on one method and path become one operation, and `omissions` lists the second with a
+body that is not JSON and a GraphQL body. Requests on two hosts, a host variable without a value or a sign-in with no
+OpenAPI equivalent (digest, AWS) stop generation, unless `exclude` names the request as `METHOD /path` with a reason.
+The effect follows the method, so a POST that only reads, as Braze's exports, needs an `effect` override.
+
 The generated schemas import `@wirecat/cli-base/codegen/runtime` at run time — a few number
 helpers, not the generator. Numbers are expected from a lossless JSON parser (`lossless-json`): a
 64-bit integer comes out as its exact decimal string, and any other integer that does not fit a JS
