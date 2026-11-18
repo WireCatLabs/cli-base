@@ -1,7 +1,8 @@
 /**
  * `contracts/wirecat.json`, format 2: what a CLI tells WireCat Desktop about itself, built from its command tree so
  * nothing in it is typed by hand except the tagline and the sign-in texts. Desktop reads it out of the npm tarball
- * without running the package, so every array holds plain words only: the same rule as Desktop's `community.rs`.
+ * without running the package, so every array holds plain words only, the same rule as Desktop's `community.rs`, but
+ * the one query in `sync.last` (`SYNC_QUERY`).
  */
 import * as v from "valibot"
 import { type CommandInfo, flatten, type OptionInfo, summaryOf } from "../commands/registry.js"
@@ -41,6 +42,14 @@ const plainWord = v.pipe(
   ),
 )
 const words = v.pipe(v.array(plainWord), v.minLength(1))
+
+/**
+ * The one word that is not plain: `runs list` matches `command:` exactly, so a `<noun> sync` is found only as the
+ * quoted phrase, `command:"meetings sync" status:success`. Desktop runs it without a shell and accepts this form in
+ * `sync.last` only.
+ */
+export const SYNC_QUERY = /^command:"[a-z0-9][a-z0-9-]*(?: [a-z0-9][a-z0-9-]*)+" status:success$/
+const lastWords = v.pipe(v.array(v.union([plainWord, v.pipe(v.string(), v.regex(SYNC_QUERY))])), v.minLength(1))
 const line = (max: number) => v.pipe(v.string(), v.regex(/^\S(?:[^\n\r]*\S)?$/, "one line of text"), v.maxLength(max))
 
 /**
@@ -91,7 +100,7 @@ const desktopSchema = v.strictObject({
   sync: v.nullable(
     v.strictObject({
       run: words,
-      last: v.nullable(words),
+      last: v.nullable(lastWords),
       lastShape: v.literal("runs"),
       what: line(40),
       note: v.null(),
@@ -300,11 +309,10 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     throw new ManifestError([
       `no syncs: \`${syncPath.join(" ")}\` exists, so add \`syncs\`, what it copies in at most 40 characters`,
     ])
-  // `runs list` matches `command:` exactly and a plain word holds no space, so only a one-word path can be found.
+  const query =
+    syncPath?.length === 1 ? ["command:sync", "status:success"] : [`command:"${syncPath?.join(" ")}" status:success`]
   const last =
-    syncPath?.length === 1 && has("runs list")
-      ? ["runs", "list", "command:sync", "status:success", "--limit", "50", "--no-record", "--json"]
-      : null
+    syncPath && has("runs list") ? ["runs", "list", ...query, "--limit", "50", "--no-record", "--json"] : null
   const sync = syncPath
     ? {
         run: [...profile, ...syncPath, "--record", "--json"],
