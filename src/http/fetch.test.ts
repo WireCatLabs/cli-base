@@ -83,6 +83,38 @@ describe("hostFetch", () => {
     expect(hop?.headers.get("x-trace")).toBe("1")
   })
 
+  it("keeps a site's sign-in under its path: refused outside it, dropped on a hop out of it, kept on one within", async () => {
+    const { sent, send } = recorder({
+      "https://host.example/blog/wp-json/a": redirect(302, "/other/wp-json/a"),
+      "https://host.example/blog/wp-json/b": redirect(302, "/blog/wp-json/c"),
+      "https://host.example/blog/wp-json/c": ok,
+      "https://host.example/other/wp-json/a": ok,
+    })
+    const fetch = hostFetch({
+      hosts: ["host.example"],
+      fetch: send,
+      credentialScope: "https://host.example/blog/wp-json",
+    })
+    const signed = { headers: { authorization: "Basic eA==" } }
+    await expect(fetch("https://host.example/blog/wp-json/../../other/wp-json/x", signed)).rejects.toMatchObject({
+      code: "configuration_error",
+      details: { sent: false },
+    })
+    await expect(fetch("https://host.example/blog/wp-jsonx/x", signed)).rejects.toMatchObject({
+      code: "configuration_error",
+    })
+    expect(sent).toEqual([])
+    await fetch("https://host.example/blog/wp-json/a", signed)
+    await fetch("https://host.example/blog/wp-json/b", signed)
+    expect(sent.map((one) => [one.url, one.headers.get("authorization")])).toEqual([
+      ["https://host.example/blog/wp-json/a", "Basic eA=="],
+      ["https://host.example/other/wp-json/a", null],
+      ["https://host.example/blog/wp-json/b", "Basic eA=="],
+      ["https://host.example/blog/wp-json/c", "Basic eA=="],
+    ])
+    expect((await fetch("https://host.example/other/wp-json/a")).status).toBe(200)
+  })
+
   it("hands back the redirect itself when the caller asked for manual redirects", async () => {
     const { send } = recorder({ "https://api.acme.example/a": redirect(302, "https://evil.example.net/") })
     const fetch = hostFetch({ hosts: ["api.acme.example"], fetch: send })

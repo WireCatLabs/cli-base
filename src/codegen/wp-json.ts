@@ -10,6 +10,8 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import type { Override } from "./model.js"
+import { derivedId } from "./openapi.js"
 import { CodegenError } from "./pipeline.js"
 import { sha256, sortKeys } from "./snapshot.js"
 
@@ -31,6 +33,11 @@ export interface WpJsonOptions {
 export interface WpJsonResult {
   /** An OpenAPI 3.1 document for `adaptOpenApi`. */
   document: Json
+  /**
+   * For `generate`'s `overrides`: how each collection read pages. WordPress answers the list itself, counts pages from
+   * 1 and gives their number in `X-WP-TotalPages`; a page past it is an error, not an empty list.
+   */
+  overrides: Record<string, Override>
   /** What the document leaves out, one line each, for a reviewer. */
   omissions: string[]
 }
@@ -145,6 +152,8 @@ const template = (route: string): { path: string; patterns: Record<string, strin
   return { path, patterns }
 }
 
+const BATCH = "batch/v1"
+
 /** Collection reads page with `page` and `per_page` and answer a list; every other answer is one item. */
 const isList = (args: Json) => "per_page" in args && "page" in args
 
@@ -156,11 +165,15 @@ const isList = (args: Json) => "per_page" in args && "page" in args
  */
 export const wpJsonToOpenApi = (index: unknown, options: WpJsonOptions): WpJsonResult => {
   if (!object(index) || !object(index.routes)) throw new CodegenError(["not a WordPress REST index: no routes"])
+  // One batch call carries requests to other routes in its body, past every key those routes need.
+  if (options.namespaces.includes(BATCH))
+    throw new CodegenError([`${BATCH} is never offered: a batch call runs other routes' writes past their own keys`])
   const exclude = options.exclude ?? {}
   const used = new Set<string>()
   const problems: string[] = []
   const omissions: string[] = []
   const paths: Record<string, Json> = {}
+  const overrides: Record<string, Override> = {}
   const schemas: Record<string, Json> = {}
   const left = new Map<string, number>()
   const schemaRef = (route: string, schema: unknown): Json => {
@@ -255,6 +268,18 @@ export const wpJsonToOpenApi = (index: unknown, options: WpJsonOptions): WpJsonR
           if (raw.schema !== undefined && method !== "DELETE") {
             const ref = schemaRef(route, raw.schema)
             const answer = method === "GET" && isList(args) ? { type: "array", items: ref } : ref
+            if (method === "GET" && isList(args))
+              overrides[derivedId("get", path)] = {
+                pagination: {
+                  style: "page",
+                  page: { in: "query", name: "page" },
+                  limit: { in: "query", name: "per_page" },
+                  items: "",
+                  start: 1,
+                  pagesHeader: "x-wp-totalpages",
+                },
+                reason: "WordPress counts pages from 1 and gives their number in X-WP-TotalPages",
+              }
             operation.responses = { "200": { description: "OK", content: { "application/json": { schema: answer } } } }
           } else operation.responses = { "200": { description: "OK" } }
           item[verb] = operation
@@ -283,6 +308,7 @@ export const wpJsonToOpenApi = (index: unknown, options: WpJsonOptions): WpJsonR
       paths,
     },
     omissions,
+    overrides,
   }
 }
 

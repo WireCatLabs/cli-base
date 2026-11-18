@@ -145,8 +145,10 @@ export const applyPagination = (
       if (operation.effect !== "read") problems.push(`${at} on an operation that is not a read`)
       const request = requestParameters(operation, schemas)
       const answer = answerPaths(operation, schemas)
-      const { style: _, ...fields } = override.pagination as Record<string, unknown>
+      const { style: _, start: __, pagesHeader: ___, ...fields } = override.pagination as Record<string, unknown>
       for (const [field, value] of Object.entries(fields)) {
+        // `""`: the answer itself is the list.
+        if (value === "") continue
         if (typeof value === "string") {
           // An answer without a schema has nothing to check the path against.
           if (answer.size > 0 && !answer.has(value))
@@ -207,8 +209,17 @@ export interface PermissionRule {
    * `enum`, so a field of the same name that means something else (a comment's `status`) gets no key, nor does a read
    * that filters by the value. Where the field's default is one of `values` (a WordPress template), leaving it out
    * publishes too, and the key always applies.
+   *
+   * `also` names fields that make the same change through another door: WordPress publishes a scheduled post whose
+   * `date` moves into the past. Setting one applies the key too, unless the call itself sets `field` to a value
+   * outside `values` (a draft's new date); a call that leaves `field` out cannot say what is stored, so it needs the key.
    */
-  valueKeys?: readonly { key: string; field: string; values: readonly string[] }[]
+  valueKeys?: readonly { key: string; field: string; values: readonly string[]; also?: readonly string[] }[]
+  /**
+   * Flags that make a delete permanent instead of a move to the trash: WordPress's `force`. A delete that takes one
+   * also needs `<group>.delete.force` when the flag is `true`; without it the trash is `<group>.delete` alone.
+   */
+  forceFlags?: readonly string[]
 }
 
 /** The top-level properties a body may carry, through references, inheritance, unions and subtypes. */
@@ -280,16 +291,38 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
   }
   const valueKeys = rule.valueKeys ?? []
   // A field whose default is one of the values publishes when the call leaves it out: the key then always applies.
+  const takes = (operation: ApiOperation, names: readonly string[]) => ({
+    body: names.filter((name) => fieldsOf(operation).has(name)),
+    query: names.filter((name) =>
+      operation.parameters.some((parameter) => parameter.in === "query" && parameter.name === name),
+    ),
+  })
+  const flagged = ({ body, query }: { body: string[]; query: string[] }) => ({
+    ...(body.length > 0 ? { body } : {}),
+    ...(query.length > 0 ? { query } : {}),
+  })
   const valued = (operation: ApiOperation): OperationPermission[] =>
     operation.effect === "read"
       ? []
-      : valueKeys.flatMap(({ key, field, values }) => {
+      : valueKeys.flatMap(({ key, field, values, also = [] }) => {
           const { enums, defaults } = valuesOf(operation, field)
           const named = values.filter((value) => enums.includes(value))
           if (named.length === 0) return []
-          return defaults.some((value) => values.includes(value as string))
-            ? [{ key }]
-            : [{ key, values: { [field]: named } }]
+          if (defaults.some((value) => values.includes(value as string))) return [{ key }]
+          const others = takes(operation, also)
+          const unless = [...new Set(enums.filter((value): value is string => typeof value === "string"))].filter(
+            (value) => !values.includes(value),
+          )
+          return [
+            {
+              key,
+              values: { [field]: named },
+              ...flagged(others),
+              ...(others.body.length + others.query.length > 0 && unless.length > 0
+                ? { unless: { [field]: unless } }
+                : {}),
+            },
+          ]
         })
   const idle = valueKeys.filter(
     ({ key }) => !model.operations.some((operation) => valued(operation).some((one) => one.key === key)),
@@ -308,14 +341,30 @@ export const applyPermissionRule = (model: ApiModel, rule: PermissionRule): ApiM
   )
   if (unused.length > 0)
     throw new CodegenError(unused.map((flag) => `deletingFlags: "${flag}" is in no request body or query`))
+  const forceFlags = rule.forceFlags ?? []
+  const forcing = (operation: ApiOperation) => takes(operation, forceFlags)
+  const idleForce = forceFlags.filter(
+    (flag) =>
+      !model.operations.some((operation) => {
+        if (operation.effect !== "destructive") return false
+        const { body, query } = forcing(operation)
+        return body.includes(flag) || query.includes(flag)
+      }),
+  )
+  if (idleForce.length > 0)
+    throw new CodegenError(idleForce.map((flag) => `forceFlags: "${flag}" is in no delete's request body or query`))
   return {
     ...model,
     operations: model.operations.map((operation) => {
       const group = typeof rule.group === "string" ? rule.group : rule.group(operation)
       const permissions: OperationPermission[] = []
       if (rule.shares?.includes(operation.id)) permissions.push({ key: `${group}.share` })
-      if (operation.effect === "destructive") permissions.push({ key: `${group}.delete` })
-      else {
+      if (operation.effect === "destructive") {
+        permissions.push({ key: `${group}.delete` })
+        const force = forcing(operation)
+        if (force.body.length + force.query.length > 0)
+          permissions.push({ key: `${group}.delete.force`, ...flagged(force) })
+      } else {
         const body = flags.filter((flag) => fieldsOf(operation).has(flag))
         const query = flags.filter((flag) =>
           operation.parameters.some((parameter) => parameter.in === "query" && parameter.name === flag),

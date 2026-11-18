@@ -197,12 +197,17 @@ export const coverageGenerator =
     const guarded = model.operations.flatMap((operation) =>
       (operation.permissions ?? []).map((permission) => ({ id: operation.id, permission })),
     )
-    const when = ({ body, query, values }: OperationPermission) =>
-      [
-        ...(body ?? []).map((flag) => `body \`${flag}\` is true`),
-        ...(query ?? []).map((flag) => `query \`${flag}\` is true`),
+    const when = ({ body, query, values, unless }: OperationPermission) => {
+      const set = [
         ...Object.entries(values ?? {}).map(([field, listed]) => `\`${field}\` is ${listed.join(" or ")}`),
+        ...(body ?? []).map((flag) => `body \`${flag}\` is ${unless ? "set" : "true"}`),
+        ...(query ?? []).map((flag) => `query \`${flag}\` is ${unless ? "set" : "true"}`),
       ].join(" or ")
+      const except = Object.entries(unless ?? {}).map(
+        ([field, listed]) => `the call sets \`${field}\` to ${listed.join(" or ")}`,
+      )
+      return except.length > 0 ? `${set}, unless ${except.join(" or ")}` : set
+    }
     const content = [
       `# ${options.title}`,
       "",
@@ -241,6 +246,7 @@ export const coverageGenerator =
                 page.items ? `items \`${page.items}\`` : undefined,
                 "hasMore" in page && page.hasMore ? `more \`${page.hasMore}\`` : undefined,
                 "total" in page && page.total ? `total \`${page.total}\`` : undefined,
+                "pagesHeader" in page && page.pagesHeader ? `pages header \`${page.pagesHeader}\`` : undefined,
               ].filter(Boolean)
               return `| \`${id}\` | ${page.style} | ${request.join(", ") || "—"} | ${answer.join(", ")} | ${cell(paginationSource)} |`
             }),
