@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`--site` and `--login` have their role in the option vocabulary.** cli-core's `tokenSessionCommand` adds them to
+  `session start` for a service on the owner's own site (WordPress), and `cli-dev lint` refused both as options
+  without a role (`option-role`), so a WordPress CLI made from cli-template failed its lint.
+
 ## 0.120.0 — 19.11.2026
 
 ### Added
