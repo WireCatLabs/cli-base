@@ -8,6 +8,7 @@ import { KNOWLEDGE_FLAGS } from "./flags-knowledge.js"
 import { MAIL_FLAGS } from "./flags-mail.js"
 import { PRIVACY_FLAGS } from "./flags-privacy.js"
 import { SCHEDULE_FLAGS } from "./flags-schedule.js"
+import { SEARCH_FLAGS } from "./flags-search.js"
 import { WHAT_FLAGS } from "./flags-what.js"
 import { duplicates, parseRegistry, text, word } from "./registry.js"
 
@@ -468,5 +469,6 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
     ...CRM_FLAGS,
     ...SCHEDULE_FLAGS,
     ...CONTENT_FLAGS,
+    ...SEARCH_FLAGS,
   ],
 })

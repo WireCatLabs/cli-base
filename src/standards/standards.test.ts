@@ -153,6 +153,14 @@ describe("vocabulary registry", () => {
     expect(flag("--source")?.replaces).toEqual(["--target-accounts"])
   })
 
+  it("knows --like <text> as a second query, searched by meaning beside the first", () => {
+    expect(VOCABULARY.flags.find((entry) => entry.name === "--like")).toMatchObject({
+      value: "<text>",
+      role: "query",
+      type: "string",
+    })
+  })
+
   it("gives an event a new meeting link with --conference <service> that a write sets", () => {
     expect(VOCABULARY.flags.find((entry) => entry.name === "--conference")).toMatchObject({
       value: "<service>",
