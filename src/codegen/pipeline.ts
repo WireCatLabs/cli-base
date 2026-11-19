@@ -14,7 +14,7 @@ import type {
   SecurityRequirement,
   SecurityScheme,
 } from "./model.js"
-import { bindingLabel, identifier, kebab } from "./names.js"
+import { apiCommandPath, bindingLabel, identifier, kebab } from "./names.js"
 import { answerPaths, detectPagination, requestParameters } from "./pagination.js"
 import { signInRequirements } from "./sign-in.js"
 
@@ -53,6 +53,13 @@ export interface CommandNames {
   fromPath?: boolean
   /** A path segment → its word in a command; `""` leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. */
   segments?: Readonly<Record<string, string>>
+  /**
+   * Puts the operations in subgroups of `api`: by their first tag (a Postman folder is one), or by the first word of
+   * their command where the tags do not name resources (HubSpot's `Basic` and `Batch`). Left out, `api` stays flat.
+   */
+  groups?: "tags" | "first-word"
+  /** A tag or a first word → its group, kebab case; `""` keeps those operations flat: `{ "Activity records": "activities" }`. */
+  groupNames?: Readonly<Record<string, string>>
 }
 
 const COMMAND = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -126,7 +133,51 @@ export const applyNames = (model: ApiModel, names: CommandNames): ApiModel => {
     return { ...operation, command }
   })
   if (problems.length > 0) throw new CodegenError(problems)
-  return { ...model, operations }
+  return { ...model, operations: names.groups ? applyGroups(operations, names) : operations }
+}
+
+// `api list` and `api show` are the group's own commands.
+const RESERVED_GROUPS = new Set(["list", "show", "help"])
+
+const applyGroups = (operations: readonly ApiOperation[], names: CommandNames): ApiOperation[] => {
+  const commandOf = (operation: ApiOperation) => operation.command ?? kebab(operation.id)
+  const sourceOf = (operation: ApiOperation) =>
+    names.groups === "tags" ? operation.tags[0] : commandOf(operation).split("-")[0]
+  const problems: string[] = []
+  const sources = new Set(operations.map(sourceOf))
+  for (const source of Object.keys(names.groupNames ?? {}))
+    if (!sources.has(source))
+      problems.push(`names: group "${source}" is no ${names.groups === "tags" ? "tag" : "word"}`)
+  const grouped = operations.map((operation) => {
+    const source = sourceOf(operation)
+    if (source === undefined) return { operation }
+    const named = names.groupNames && Object.hasOwn(names.groupNames, source) ? names.groupNames[source] : kebab(source)
+    return { operation, group: named || undefined }
+  })
+  const sizes = new Map<string, number>()
+  for (const { group } of grouped) if (group) sizes.set(group, (sizes.get(group) ?? 0) + 1)
+  // A group of one only makes its operation's path longer.
+  const result = grouped.map(({ operation, group }) =>
+    group && (sizes.get(group) ?? 0) > 1 ? { ...operation, group } : operation,
+  )
+  const commands = new Set(result.map(commandOf))
+  const paths = new Map<string, string>()
+  for (const operation of result) {
+    const path = apiCommandPath({ command: commandOf(operation), group: operation.group }).join(" ")
+    const other = paths.get(path)
+    if (other !== undefined) problems.push(`names: "${other}" and "${commandOf(operation)}" are both api ${path}`)
+    paths.set(path, commandOf(operation))
+  }
+  for (const group of new Set(result.flatMap(({ group }) => (group ? [group] : [])))) {
+    if (!COMMAND.test(group)) problems.push(`names: group "${group}" is not kebab case; rename it in groupNames`)
+    if (RESERVED_GROUPS.has(group))
+      problems.push(`names: group "${group}" is api's own command; rename it in groupNames`)
+    // The old flat key `api.<command>` stays an alias of the moved command, so it must never name a whole group.
+    if (commands.has(group))
+      problems.push(`names: group "${group}" is also the command "${group}"; rename one in groupNames or commands`)
+  }
+  if (problems.length > 0) throw new CodegenError(problems)
+  return result
 }
 
 /** Each read's pagination, detected unless an override set it, or said with `null` that the read does not page. */

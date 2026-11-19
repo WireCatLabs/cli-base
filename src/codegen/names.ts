@@ -50,6 +50,13 @@ export const kebab = (id: string): string =>
     .replace(/^-|-$/g, "")
     .toLowerCase()
 
+/** The words after `api`: `contacts-list` in the group `contacts` is `contacts list`; `move-page` in `pages` keeps its name. */
+export const apiCommandPath = (operation: { command: string; group?: string }): string[] => {
+  const { command, group } = operation
+  if (!group) return [command]
+  return [group, command.startsWith(`${group}-`) ? command.slice(group.length + 1) : command]
+}
+
 /** How a reader names the call: `GET /pages/{id}`, `sendMessage`, `query issues`. */
 export const bindingLabel = (binding: Binding): string =>
   binding.kind === "http"

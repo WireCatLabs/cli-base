@@ -86,7 +86,7 @@ export type {
   SourceInfo,
   SourceReference,
 } from "./model.js"
-export { bindingLabel, identifier, kebab } from "./names.js"
+export { apiCommandPath, bindingLabel, identifier, kebab } from "./names.js"
 export { adaptOpenApi, OpenApiError } from "./openapi.js"
 export { detectPagination } from "./pagination.js"
 export { type PatchedSpec, type PatchSpecOptions, patchSpec, type SpecPatch } from "./patch.js"

@@ -18,6 +18,17 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## 0.121.0 â€” 19.11.2026
 
+### Added
+
+- **The generator puts operations in subgroups of `api`: `names.groups`.** With `"tags"` each operation gets its first
+  tag as its `group` in the manifest (a Postman folder is one), with `"first-word"` the first word of its command, for
+  a spec whose tags name no resource. `names.groupNames` renames a group or keeps it flat. cli-core then mounts
+  `contacts-list` in the group `contacts` as `api contacts list`, with the key `api.contacts.list`. Generation stops
+  on a group named `list`, `show` or `help`, a group named like a command, or two operations on one path. Without
+  `names.groups` the manifest is as before. `apiCommandPath` gives an operation's words after `api`. WordPress
+  routes get their resource as a tag (`posts`), so a wp-json CLI can group too. The rule is
+  [WC-CMD-33](docs/standards/commands.md#wc-cmd-33--group-a-generated-api-by-resource-api-group-command).
+
 ### Fixed
 
 - **`--site` and `--login` have their role in the option vocabulary.** cli-core's `tokenSessionCommand` adds them to

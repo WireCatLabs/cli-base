@@ -1,6 +1,6 @@
 /**
  * The API part of a CLI's agent skill: `references/api.md`, a short index, and `references/api/api-<group>.md`, one
- * file per first tag of the operations, so an agent loads only the group it needs (`<cli> skill show api-<group>`). Each command,
+ * file per group of the operations (their `group`, else their first tag), so an agent loads only the group it needs (`<cli> skill show api-<group>`). Each command,
  * its usage, arguments and flags come from the built program's command tree, as `--help` prints them; the manifest
  * adds only what the API says: the HTTP call, the effect, sign-in scopes, permission keys and paging.
  */
@@ -141,7 +141,8 @@ export const apiSkillFiles = (options: ApiSkillOptions): GeneratedArtifact[] => 
 
   const groups = new Map<string, { tag: string; operations: ManifestOperation[] }>()
   for (const operation of options.operations) {
-    const tag = operation.tags[0] ?? "untagged"
+    // The skill's files follow the command groups where the manifest has them, so `api-contacts.md` holds `api contacts`.
+    const tag = operation.group ?? operation.tags[0] ?? "untagged"
     const name = kebab(tag)
     const group = groups.get(name)
     if (!name) problems.push(`tag "${tag}" of ${operation.id} has no Latin letter or digit for a file name`)

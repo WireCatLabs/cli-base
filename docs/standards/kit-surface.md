@@ -35,8 +35,9 @@ loads `@wirecat/cli-base/testing/setup`, and `.vale.ini` reads the styles in `co
 ## The API generator
 
 `@wirecat/cli-base/codegen` turns a service's API description into committed files: types, Valibot schemas, an
-operation manifest and a coverage page. cli-core's `generatedApiCommand` builds the `api <operation>` group from the
-manifest. The [reference](../REFERENCE.md) has the API; this section says what goes in, what a CLI can correct, and
+operation manifest and a coverage page. cli-core's `generatedApiCommand` builds the `api` group from the manifest: `api <group> <command>` once
+`names.groups` puts the operations in groups
+([WC-CMD-33](commands.md#wc-cmd-33--group-a-generated-api-by-resource-api-group-command)), `api <command>` without. The [reference](../REFERENCE.md) has the API; this section says what goes in, what a CLI can correct, and
 what it cannot do yet.
 
 ### Inputs
@@ -170,7 +171,7 @@ source whose subtypes the definitions cannot tell apart.
 `apiSkillFiles({ cli, folder, files, service, skill, operations, commands, banner })` writes the API part of the
 CLI's skill, in the shape of [openapi-to-skills](https://github.com/neutree-ai/openapi-to-skills): `references/api.md`,
 a short index of the groups with their effects, and `references/api/api-<group>.md`, one file per group. An
-operation's group is its first tag; one without a tag is in `api-untagged.md`. A tag with no Latin letter or digit
+operation's group is its `group` (WC-CMD-33), else its first tag; one without either is in `api-untagged.md`. A tag with no Latin letter or digit
 cannot name a file and stops the generation. An agent reads
 the index, then only the group it needs, with `<cli> skill show api-<group>`. The `skill` command already ships and
 shows every file beside `SKILL.md`; nothing else is needed.
@@ -206,7 +207,7 @@ the coverage page after a spec sync.
 
 - **cli-core checks the permission keys; the CLI still shows them.** From cli-core 0.684.0, `serviceApiCommand`
   reads each operation's `permissions`, `servers` and `securitySchemes`: it sends the call to the operation's server
-  with the sign-in its scheme names, and checks `api.<operation>` and each manifest key that applies to the call
+  with the sign-in its scheme names, and checks the command's own key (`api.<group>.<command>`, its path) and each manifest key that applies to the call
   (`files.delete` when `permanently` is true) before it sends. That guard runs whatever the CLI declares. `--dry-run`
   and permission discovery show those keys only when the CLI merges `serviceApiPermissions(...)` into its own
   `commandPermissions`, field by field (`extra`, `alsoChecks`, `defaults`), as ydisk's `src/config.ts` does:
