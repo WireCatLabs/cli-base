@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The words of a content CLI (posts on a site or blog).** `posts` and `channels` are resources, `stats` is a view
+  as well as the root command (`posts stats <post>`), and `--slug <slug>`, `--tags <ids>` and `--replace-body` have
+  their roles. cli-core's content commands use them, and reuse the words the vocabulary had: `--text-file`,
+  `--description`, `--at-time`, `--allow-delete`, `tags` and `users`. Before this, `cli-dev lint` refused a CLI made
+  from cli-core's content commands.
+
 ## 0.122.0 — 19.11.2026
 
 ### Added

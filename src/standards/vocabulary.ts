@@ -1,6 +1,7 @@
 import * as v from "valibot"
 import { ACCOUNT_FLAGS } from "./flags-account.js"
 import { CALENDAR_FLAGS } from "./flags-calendar.js"
+import { CONTENT_FLAGS } from "./flags-content.js"
 import { CRM_FLAGS } from "./flags-crm.js"
 import { HOW_FLAGS } from "./flags-how.js"
 import { KNOWLEDGE_FLAGS } from "./flags-knowledge.js"
@@ -256,6 +257,8 @@ const collections: [string, string][] = [
   ["messages", "posts in a messenger chat, or emails"],
   ["drafts", "e-mails saved in a mailbox's Drafts folder, written and not sent"],
   ["polls", "polls in a chat"],
+  ["posts", "posts and pages on a site or blog the owner publishes"],
+  ["channels", "the sites and social accounts the owner publishes posts on"],
   ["reactions", "reactions to a message"],
   ["recipients", "who a message goes to"],
   ["replies", "the automatic replies of a profile"],
@@ -387,6 +390,7 @@ const singulars: [string, string][] = [
 
 const views: [string, string][] = [
   ["tree", "the parent and child hierarchy of stored sources"],
+  ["stats", "a thing's own numbers, such as a post's views, as read at each sync"],
   ["logs", "the log of a running process"],
   ["events", "what happened in a thing over time"],
   ["scheduled", "what is scheduled to happen"],
@@ -463,5 +467,6 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
     ...KNOWLEDGE_FLAGS,
     ...CRM_FLAGS,
     ...SCHEDULE_FLAGS,
+    ...CONTENT_FLAGS,
   ],
 })
