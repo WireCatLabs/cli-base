@@ -449,6 +449,24 @@ describe("lint rules", () => {
     expect(lintOf(root)).toEqual(lintOf(clean()))
   })
 
+  it("passes a scheduled list that also holds the actions on its messages", () => {
+    const root = clean()
+    const messages = root.command("messages").description("messages in a chat")
+    const scheduled = ran(
+      messages
+        .command("scheduled")
+        .description("messages waiting to be sent later")
+        .argument("[chat]", "the chat")
+        .action(() => {}),
+      { examples: ["tool messages scheduled 7"] },
+    )
+    ran(scheduled.command("cancel").description("cancel scheduled messages").argument("<chat>", "the chat"), {
+      examples: ["tool messages scheduled cancel 7"],
+      effects: { remote: "write", local: "write" },
+    })
+    expect(lintOf(root)).toEqual(lintOf(clean()))
+  })
+
   for (const [rule, breakIt] of Object.entries(failing))
     it(`fails ${rule}`, () => {
       const root = clean()

@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **`scheduled` is a resource too, not only a view.** cli-core adds `messages scheduled cancel`, `edit` and `send`
+  under the scheduled list, and `cli-dev lint` refused a group named with a view (`unknown-resource`). A CLI that
+  names its own `scheduled` group now passes.
+
 ## 0.121.0 — 19.11.2026
 
 ### Fixed
