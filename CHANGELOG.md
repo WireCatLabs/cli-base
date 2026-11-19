@@ -8,6 +8,13 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- `audit --family` installs amo-cli too, so a CRM CLI is measured against amoCRM's beside Bitrix24's: `@wirecat/amo-cli`
+  is on npm since 0.1.0.
+
 ## 0.124.0 — 19.11.2026
 
 ### Added

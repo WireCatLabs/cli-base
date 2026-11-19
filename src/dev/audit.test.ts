@@ -771,6 +771,7 @@ describe("cli-dev audit", () => {
 describe("audit --family", () => {
   it("installs every other published CLI of the parity groups", () => {
     expect([...familyPackages(PARITY_GROUPS, "b24")]).toEqual([
+      ["amo", "@wirecat/amo-cli"],
       ["drive", "@wirecat/drive-cli"],
       ["gcal", "@wirecat/gcal-cli"],
       ["mail", "@wirecat/mail-cli"],
