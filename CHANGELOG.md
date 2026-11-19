@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Changed — may break callers
+
+- **WC-CMD-33 keeps no alias for an old flat `api` key.** A config that still names `api.contacts-list` after the
+  command moved to `api contacts list` is refused, with a message that names the new key, instead of being checked
+  beside it. WC-CMD-8 has no exception again. cli-core makes the refusal; a CLI that grouped its `api` lists the moved
+  keys in its release notes.
+
 ## 0.124.0 — 19.11.2026
 
 ### Added
