@@ -8,7 +8,25 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.125.0 — 19.11.2026
+
+### Added
+
+- **`audit --family` installs wordpress.** `@wirecat/wordpress-cli` is on npm since 0.1.0, so the family audit now
+  compares it with the other CLIs of its parity group, `shared-roots`.
+- **linear-cli joins `shared-roots`, the family packages and WC-CI-9.** `@wirecat/linear-cli` is on npm since 0.1.0,
+  so the family audit compares its root commands with the other CLIs', and its monthly run holds 03:16 UTC. It is the
+  first tracker CLI, so its issues commands have no group yet.
+- **`meta.model_run`: what a model a command calls on its own did in the run.** `{ provider, model, endpoint, sent,
+  done, left, usage?, cost_usd, ms }`: the items sent, those handled, those left for the next run, the tokens the
+  provider counted and the cost when a price is known. cli-core's mail `inbox` reports its sorting run in it
+  ([WC-OUT-7](docs/standards/output.md#wc-out-7--put-the-facts-about-the-run-in-meta)).
+- **`--like <text>` in the vocabulary.** A query flag: a made-up example of the text sought, such as a reply that would
+  answer the question, searched by meaning beside the query. cli-core's `search conversations` takes it, so an agent
+  searches with the question and a guessed answer in one call.
+- **`cli-dev docs-check` refuses a page header YAML cannot read.** It parses each page's `---` header with `yaml`,
+  which moves from the development dependencies to the dependencies. An agent that parses a skill's header refuses a
+  bad one: wordpress-cli 0.1.0 shipped `description: … site: posts …` unquoted, and cli-docs' sync stopped on it.
 
 ### Fixed
 
