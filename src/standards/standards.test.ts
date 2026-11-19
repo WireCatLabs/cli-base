@@ -252,6 +252,25 @@ describe("output registry", () => {
     expect(v.is(metaSchema, { ...meta, harder: ranking })).toBe(false)
   })
 
+  it("takes what a model did in the run in meta.model_run, and refuses an unknown key there", () => {
+    const run = {
+      provider: "openai",
+      model: "gpt-4o-mini",
+      endpoint: "https://api.openai.com/v1",
+      sent: 12,
+      done: 11,
+      left: 3,
+      cost_usd: null,
+      ms: 4200,
+    }
+    expect(v.is(metaSchema, { ...meta, model_run: run })).toBe(true)
+    expect(
+      v.is(metaSchema, { ...meta, model_run: { ...run, usage: { input: 5100, output: 640 }, cost_usd: 0.0012 } }),
+    ).toBe(true)
+    expect(v.is(metaSchema, { ...meta, model_run: { ...run, host: "api.openai.com" } })).toBe(false)
+    expect(v.is(metaSchema, { ...meta, model_run: { ...run, left: -1 } })).toBe(false)
+  })
+
   it("takes what a search made of its query in meta.query, and refuses an unknown key there", () => {
     const query = {
       chat: { word: "anna", chat_id: "12", title: "Anna Smith" },

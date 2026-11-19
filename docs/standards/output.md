@@ -82,7 +82,7 @@ JSON Schema 2020-12.
 
 - **Why:** `run_id` finds the run later, and `complete` says whether the answer can be trusted as whole.
 - **Enforced by:** review only.
-- **Example:** `{ run_id, duration_ms, accounts?, complete, issues?, truncated?, timezone?, window?, ranking?, query? }`.
+- **Example:** `{ run_id, duration_ms, accounts?, complete, issues?, truncated?, timezone?, window?, ranking?, model_run?, query? }`.
   `timezone`
   names the zone a time without one was read or shown in, and `window` the UTC bounds a date filter used
   ([Time](time.md)). `complete: false` with
@@ -90,7 +90,9 @@ JSON Schema 2020-12.
   answer. Neither one means another page exists: that is `page.has_more`. `ranking` says what a hosted model did to
   the order of a search's hits: `{ applied, reason_id?, provider, model, endpoint, sent, cost_usd, usage?, ms }`, with
   `reason_id` (such as `harder.timeout`) when its order was not used and `cost_usd: null` for a model with no known
-  price. `query` says what a search made of its query before it searched: `{ chat?, respelled? }`, with
+  price. `model_run` says what a model a command calls on its own did in the run, such as mail's `inbox` sorting new
+  threads: `{ provider, model, endpoint, sent, done, left, usage?, cost_usd, ms }`, with `sent` items sent, `done`
+  handled, `left` waiting for the next run. `query` says what a search made of its query before it searched: `{ chat?, respelled? }`, with
   `chat: { word, chat_id, title }` when a word named one chat and the search ran there, and
   `respelled: [{ word, tried }]` for each unknown word and the known spellings tried in its place. A program reads
   these instead of parsing a sentence.
