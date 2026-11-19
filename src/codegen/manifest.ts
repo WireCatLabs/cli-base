@@ -18,6 +18,8 @@ import { SchemaTree } from "./tree.js"
 export interface ManifestOperation {
   id: string
   command: string
+  /** Mounted as `api <group> <command>`, the command without its `<group>-` prefix; none is `api <command>`. */
+  group?: string
   binding: Binding
   effect: Effect
   summary?: string
@@ -46,6 +48,7 @@ const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperatio
   withoutUndefined({
     id: operation.id,
     command: operation.command ?? kebab(operation.id),
+    group: operation.group,
     binding: operation.binding,
     effect: operation.effect as Effect,
     summary: operation.summary,

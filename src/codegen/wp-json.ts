@@ -216,6 +216,8 @@ export const wpJsonToOpenApi = (index: unknown, options: WpJsonOptions): WpJsonR
       continue
     }
     const item: Json = {}
+    // The resource after the namespace, `posts` in `/wp/v2/posts/(?P<id>…)`, so `names.groups` can group by it.
+    const resource = route.slice(namespace.length + 2).split("/")[0] ?? ""
     const endpoints = Array.isArray(raw.endpoints) ? raw.endpoints.filter(object) : []
     try {
       for (const endpoint of endpoints) {
@@ -238,6 +240,7 @@ export const wpJsonToOpenApi = (index: unknown, options: WpJsonOptions): WpJsonR
           }))
           const rest = Object.entries(args).filter(([name]) => patterns[name] === undefined)
           const operation: Json = { parameters: pathParameters }
+          if (/^[A-Za-z][\w-]*$/.test(resource)) operation.tags = [resource]
           if (method === write) {
             if (rest.length > 0)
               operation.requestBody = {

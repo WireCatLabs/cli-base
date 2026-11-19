@@ -126,6 +126,8 @@ export interface ApiOperation {
   id: string
   /** Set by `generate`'s `names`; otherwise the command is the kebab-case id. */
   command?: string
+  /** The subgroup of `api` it sits in, set by `generate`'s `names.groups`; none keeps it directly under `api`. */
+  group?: string
   binding: Binding
   summary?: string
   description?: string

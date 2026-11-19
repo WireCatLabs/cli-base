@@ -106,7 +106,10 @@ per profile, and only `defaults` is filled.
 - **Enforced by:** review only.
 - **Example:** the release notes give the old and the new path under "Changed — may break callers". Help, completion,
   generated pages, the skill, MCP names and permission keys move in the same change.
-- **Exceptions:** none.
+- **Exceptions:** the old flat permission key of a generated `api` command that moved into a subgroup stays an alias
+  that only tightens
+  ([WC-CMD-33](#wc-cmd-33--group-a-generated-api-by-resource-api-group-command)); the old command path still stops
+  working.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-417.
 
 ### WC-CMD-9 · Answer the naming questions in the pull request before you build a new command
@@ -494,6 +497,34 @@ the machine and checks every redirect.
   global fetch as a value and the missing-hosts warning since the release after 0.93.0; the shared hosts, and URLs
   inside a sentence left out of `undeclared-host`, since the release after 0.98.0.
   **Rulings:** none.
+
+## The generated `api` group
+
+### WC-CMD-33 · Group a generated `api` by resource: `api <group> <command>`
+
+A CLI whose `api` group cli-core builds from a generated manifest (`serviceApiCommand`, `generatedApiCommand`) sets
+`names.groups` in `generate`: `"tags"` puts each operation under its first tag (a Postman folder is one), and
+`"first-word"` under the first word of its command, for a spec whose tags name no resource (HubSpot's `Basic` and
+`Batch`). `names.groupNames` renames a group, or keeps a tag's operations flat with `""`. The command drops the
+repeated group word: `contacts-list` in `contacts` is `api contacts list`. An operation without a tag, and a group of
+one operation, stay directly under `api`.
+
+- **Why:** a flat list of a hundred operations is hard to read in help and hard for an agent to search; a group per
+  resource is how the service's own reference is laid out, and one permission key can then cover a resource.
+- **Enforced by:** `src/codegen/groups.test.ts` · `cli-core: src/cli/service-api-groups.test.ts`. The generator
+  refuses a group that would shadow the group's own commands, a group named like a command, and two operations on one
+  path.
+- **Example:** `api.contacts: deny` stops every `api contacts` command; `api.contacts.delete` is the delete's own key.
+  A profile that still names the old flat key `api.contacts-list` keeps that hold: cli-core checks it beside
+  `api.contacts.list` on every call, from the command line and over MCP, and warns to rename it. Its `deny`, `ask` or
+  `readonly` (on a write) applies; its `allow` lifts nothing. The old path `api contacts-list` is gone
+  ([WC-CMD-8](#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)): the release
+  that groups a CLI's `api` lists the move under "Changed — may break callers" and raises the minor version.
+  `api show` takes the new path, the old name or the operation id; `api list` prints the path and the group.
+- **Exceptions:** a manifest generated without `names.groups` stays flat. gcal and drive keep their own
+  `api.<service>.<resource>.<method>` keys, and the messenger CLIs' `bot api` stays flat, until each is moved.
+- **Applies to:** every CLI with a generated `api` group, from its next regeneration. **Since:** the release after
+  cli-base 0.120.0, with the cli-core release that mounts groups. **Rulings:** NEED-2754.
 
 ## Sources
 
