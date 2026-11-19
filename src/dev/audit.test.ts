@@ -774,6 +774,7 @@ describe("audit --family", () => {
       ["amo", "@wirecat/amo-cli"],
       ["drive", "@wirecat/drive-cli"],
       ["gcal", "@wirecat/gcal-cli"],
+      ["linear", "@wirecat/linear-cli"],
       ["mail", "@wirecat/mail-cli"],
       ["max", "@wirecat/max-cli"],
       ["memo", "@wirecat/cli-memo"],
