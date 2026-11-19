@@ -260,7 +260,7 @@ describe("cli-dev ready", () => {
       "src/content.test.ts": "contentSourceContract(make)\ncontentWriteContract(make)\n",
     })
     expect(row(noSync, shell(noSync, { "src/content.test.ts": ["passed"] }).run, "contracts")).toMatchObject({
-      status: "not verified",
+      status: "partially",
       fix:
         "run cli-core's contentSyncContract in a test (testing.md), or except it in lint/contract-exceptions.json " +
         "with its reason, then run cli-dev ready again",
