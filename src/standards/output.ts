@@ -132,6 +132,25 @@ export const rankingSchema = v.strictObject({
   ms: v.pipe(v.number(), v.integer(), v.minValue(0)),
 })
 
+const count = v.pipe(v.number(), v.integer(), v.minValue(0))
+
+/**
+ * What a model a command calls on its own did in this run (mail's `inbox` sorting new threads): how many items it was
+ * sent, how many it handled, how many wait for the next run, and what that cost. `usage` is absent when the provider
+ * counted nothing; `cost_usd` is null when no price is known.
+ */
+export const modelRunSchema = v.strictObject({
+  provider: text,
+  model: text,
+  endpoint: text,
+  sent: count,
+  done: count,
+  left: count,
+  usage: v.optional(v.strictObject({ input: count, output: count })),
+  cost_usd: v.nullable(v.pipe(v.number(), v.minValue(0))),
+  ms: count,
+})
+
 /**
  * What a search made of its query before it searched: `chat` when a word of it named one chat and the search ran
  * there, `respelled` for each unknown word and the known spellings tried in its place. A program reads it instead of
@@ -155,6 +174,7 @@ export const metaSchema = v.strictObject({
   now_local: v.optional(localTime),
   window: v.optional(v.strictObject({ since: v.optional(isoTime), until: v.optional(isoTime) })),
   ranking: v.optional(rankingSchema),
+  model_run: v.optional(modelRunSchema),
   query: v.optional(querySchema),
 })
 
@@ -203,6 +223,7 @@ export type Page = v.InferOutput<typeof pageSchema>
 export type Issue = v.InferOutput<typeof issueSchema>
 export type Meta = v.InferOutput<typeof metaSchema>
 export type Ranking = v.InferOutput<typeof rankingSchema>
+export type ModelRun = v.InferOutput<typeof modelRunSchema>
 export type Query = v.InferOutput<typeof querySchema>
 export interface ListEnvelope<T> {
   items: T[]
