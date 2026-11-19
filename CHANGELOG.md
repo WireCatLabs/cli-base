@@ -12,6 +12,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Added
 
+- **`cli-dev ready` knows the content category.** A CLI whose `docs/dev/DESIGN.md` names `content` (or `new`'s label,
+  "blog or site content (posts, pages, tags)") is asked for cli-core's `contentSourceContract`, `contentSyncContract`
+  and `contentWriteContract`. Before, its contracts row said the category was unknown.
+- **wordpress-cli joins the `shared-roots` parity group**, and its monthly run holds 03:17 UTC in WC-CI-9's table.
+
+## 0.123.0 â€” 19.11.2026
+
+### Added
+
 - **The generator puts operations in subgroups of `api`: `names.groups`.** With `"tags"` each operation gets its first
   tag as its `group` in the manifest (a Postman folder is one), with `"first-word"` the first word of its command, for
   a spec whose tags name no resource. `names.groupNames` renames a group or keeps it flat. cli-core then mounts
