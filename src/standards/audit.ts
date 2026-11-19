@@ -200,7 +200,8 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   },
   // bitrix24-cli's search is cli-core's CRM `search all`, and beeline-cli's and asterisk-cli's meetings take call
   // recordings, not zoom-cli's: they are compared on the root commands every CLI shares, the way gcal and mail are.
-  // amo-cli, hubspot-cli, attio-cli and wordpress-cli share them too, and their CRM commands are compared with b24 in `crm` below.
+  // amo-cli, hubspot-cli and attio-cli share them too, and their CRM commands are compared with b24 in `crm` below.
+  // wordpress-cli shares only these roots: it is the first content CLI, so its posts commands have no group yet.
   // notion-cli joins here until its documents commands ship; then it moves next to drive. ydisk joins here too: in "all"
   // its search and notes differ from the messengers' and memo's as drive's do, and a documents group of drive, notion
   // and ydisk differs in 39 paths (session, folders browse, summaries; measured on the published CLIs 2026-11-17).

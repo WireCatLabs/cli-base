@@ -255,6 +255,16 @@ describe("cli-dev ready", () => {
       })
       expect(row(cwd, shell(cwd, { "src/content.test.ts": ["passed"] }).run, "contracts")?.status).toBe("verified")
     }
+    const noSync = cli({
+      "docs/dev/DESIGN.md": "- **Category:** content\n",
+      "src/content.test.ts": "contentSourceContract(make)\ncontentWriteContract(make)\n",
+    })
+    expect(row(noSync, shell(noSync, { "src/content.test.ts": ["passed"] }).run, "contracts")).toMatchObject({
+      status: "not verified",
+      fix:
+        "run cli-core's contentSyncContract in a test (testing.md), or except it in lint/contract-exceptions.json " +
+        "with its reason, then run cli-dev ready again",
+    })
   })
 
   it("does not verify the live check from another version's record or from code changed since", () => {
