@@ -189,6 +189,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
   | 03:09 | beeline-cli |
   | 03:11 | hubspot-cli |
   | 03:13 | zoom-cli |
+  | 03:16 | linear-cli |
   | 03:17 | wordpress-cli |
   | 03:20 | cli-docs |
 
