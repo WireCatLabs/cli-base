@@ -227,8 +227,8 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
     covers: ["commands", "doctor", "skill", "mcp", "upgrade"],
     differences: [...MEMO_HAS_NO_PROFILES, ...MEMO_MCP_SUMMARIES, MEMO_DOCTOR_DEEP],
   },
-  // The CRM CLIs on cli-core's shared CRM commands. amo-cli (amoCRM and Kommo) is not on npm yet and hubspot-cli is
-  // not in the family packages, so `audit --family` skips them, as beeline. Only b24 and hubspot have `leads` (amoCRM
+  // The CRM CLIs on cli-core's shared CRM commands. hubspot-cli is not in the family packages, so `audit --family`
+  // skips it, as beeline. Only b24 and hubspot have `leads` (amoCRM
   // has no lead apart from a deal), only b24 has `products` (amo leaves them for later) and `deals delete` (amoCRM's
   // API v4 cannot delete a lead, https://www.amocrm.ru/developers/content/crm_platform/leads-api), and hubspot writes
   // no deals yet; a list of roots does not compare presence, so these need no difference. `people`, `organizations`,
