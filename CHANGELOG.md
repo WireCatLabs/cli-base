@@ -10,6 +10,13 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ## Unreleased
 
+### Changed â€” may break callers
+
+- **WC-CMD-33 keeps no alias for an old flat `api` key.** A config that still names `api.contacts-list` after the
+  command moved to `api contacts list` is refused, with a message that names the new key, instead of being checked
+  beside it. WC-CMD-8 has no exception again. cli-core makes the refusal; a CLI that grouped its `api` lists the moved
+  keys in its release notes.
+
 ### Fixed
 
 - **`cli-dev audit --family` compares a CLI with hubspot-cli and attio-cli too.** Both are on npm, but the family's
