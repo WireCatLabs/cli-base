@@ -12,6 +12,7 @@ const PACKAGES = new Map<string, string>([
   ["b24", "@wirecat/bitrix24-cli"],
   ["amo", "@wirecat/amo-cli"],
   ["ydisk", "@wirecat/yandex-disk-cli"],
+  ["wordpress", "@wirecat/wordpress-cli"],
 ])
 
 /** Every other CLI of the parity groups that npm has, by name. */
