@@ -8,9 +8,18 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.123.0 — 19.11.2026
 
 ### Added
+
+- **The generator puts operations in subgroups of `api`: `names.groups`.** With `"tags"` each operation gets its first
+  tag as its `group` in the manifest (a Postman folder is one), with `"first-word"` the first word of its command, for
+  a spec whose tags name no resource. `names.groupNames` renames a group or keeps it flat. cli-core then mounts
+  `contacts-list` in the group `contacts` as `api contacts list`, with the key `api.contacts.list`. Generation stops
+  on a group named `list`, `show` or `help`, a group named like a command, or two operations on one path. Without
+  `names.groups` the manifest is as before. `apiCommandPath` gives an operation's words after `api`. WordPress
+  routes get their resource as a tag (`posts`), so a wp-json CLI can group too. The rule is
+  [WC-CMD-33](docs/standards/commands.md#wc-cmd-33--group-a-generated-api-by-resource-api-group-command).
 
 - **The words of a content CLI (posts on a site or blog).** `posts` and `channels` are resources, `stats` is a view
   as well as the root command (`posts stats <post>`), and `--slug <slug>`, `--tags <ids>` and `--replace-body` have
@@ -27,17 +36,6 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   names its own `scheduled` group now passes.
 
 ## 0.121.0 — 19.11.2026
-
-### Added
-
-- **The generator puts operations in subgroups of `api`: `names.groups`.** With `"tags"` each operation gets its first
-  tag as its `group` in the manifest (a Postman folder is one), with `"first-word"` the first word of its command, for
-  a spec whose tags name no resource. `names.groupNames` renames a group or keeps it flat. cli-core then mounts
-  `contacts-list` in the group `contacts` as `api contacts list`, with the key `api.contacts.list`. Generation stops
-  on a group named `list`, `show` or `help`, a group named like a command, or two operations on one path. Without
-  `names.groups` the manifest is as before. `apiCommandPath` gives an operation's words after `api`. WordPress
-  routes get their resource as a tag (`posts`), so a wp-json CLI can group too. The rule is
-  [WC-CMD-33](docs/standards/commands.md#wc-cmd-33--group-a-generated-api-by-resource-api-group-command).
 
 ### Fixed
 
