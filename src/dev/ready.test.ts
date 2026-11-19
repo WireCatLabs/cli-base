@@ -247,6 +247,16 @@ describe("cli-dev ready", () => {
     }
   })
 
+  it("asks a content CLI for cli-core's content contracts, by the category's value or its label", () => {
+    for (const category of ["content", "blog or site content (posts, pages, tags)"]) {
+      const cwd = cli({
+        "docs/dev/DESIGN.md": `- **Category:** ${category}\n`,
+        "src/content.test.ts": "contentSourceContract(make)\ncontentSyncContract(make)\ncontentWriteContract(make)\n",
+      })
+      expect(row(cwd, shell(cwd, { "src/content.test.ts": ["passed"] }).run, "contracts")?.status).toBe("verified")
+    }
+  })
+
   it("does not verify the live check from another version's record or from code changed since", () => {
     const other = cli({ "docs/dev/live-checks.txt": "0.2.0 abc123 2026-11-10 bin/acme-live\n" })
     expect(row(other, shell(other).run, "live")).toMatchObject({
