@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
+import { parseDocument } from "yaml"
 
 /** The prefixes of the owner's journal ids; a project adds its own (`CLI`, `MAX`, …). */
 export const JOURNAL_IDS = ["NEED", "FIND", "BUG", "SEC", "PERF", "UX", "IDEA", "RISK", "DEBT", "ASK", "TASK"] as const
@@ -181,6 +182,21 @@ export type DocsRules = {
   skipLink?: (target: string, destination: string) => boolean
 }
 
+const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/
+
+/**
+ * A page header YAML refuses: an agent that parses a skill's header refuses the skill, and wirecat.dev's sync stops on
+ * it. wordpress-cli 0.1.0 shipped `description: … site: posts …` unquoted, and every other check passed (BUG-789).
+ */
+export const frontmatterProblems = (name: string, text: string): string[] => {
+  const header = FRONTMATTER.exec(text)?.[1]
+  if (header === undefined) return []
+  return parseDocument(header).errors.map(
+    (error) =>
+      `${name}:${(error.linePos?.[0].line ?? 0) + 1}: the header is not valid YAML: ${error.message.split("\n")[0]}`,
+  )
+}
+
 export const docsProblems = (
   root: string,
   { files, ids, userPage = () => false, correction = /correction \d{4}/i, skipLink = () => false }: DocsRules,
@@ -200,6 +216,7 @@ export const docsProblems = (
   for (const path of files.filter((file) => existsSync(file))) {
     const name = relative(root, path)
     const user = userPage(name)
+    problems.push(...frontmatterProblems(name, readFileSync(path, "utf8")))
     withoutCode(readFileSync(path, "utf8"))
       .split("\n")
       .forEach((line, index) => {

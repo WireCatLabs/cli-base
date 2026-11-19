@@ -290,6 +290,16 @@ describe("docsProblems", () => {
     ])
   })
 
+  it("names a header YAML cannot read, and passes a quoted value and a URL", () => {
+    fixture(
+      '---\nname: x\ndescription: Read the site: posts\nother: "a: b"\nlink: https://x.example\n---\n# Использование\n',
+    )
+    expect(check()).toEqual([
+      "README.md:3: link to docs/usage.md#вход — no such heading",
+      expect.stringMatching(/^docs\/usage\.md:3: the header is not valid YAML: /),
+    ])
+  })
+
   it("refuses a correction mark, struck-out text and an id on a user page", () => {
     fixture("# Использование\n\n## Вход\n\n**Поправка:** ~~было~~ стало (MAX-4).\n")
     expect(check()).toEqual([
