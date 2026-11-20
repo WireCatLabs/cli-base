@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`packContents` reads npm's JSON from stdout only.** It parsed stdout and stderr together, so a warning npm prints
+  after the JSON broke the check with `Unexpected non-whitespace character after JSON`. pnpm 11 passes `npm_config_*`
+  variables to scripts, npm warns `Unknown env config "manage-package-manager-versions"`, and notion-cli's
+  `pnpm smoke` failed in `bin/release`. A failing `npm pack` still shows both streams. `run` now also returns
+  `stdout`.
+
 ## 0.125.0 — 19.11.2026
 
 ### Added

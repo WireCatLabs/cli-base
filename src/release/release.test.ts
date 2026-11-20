@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process"
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { dirname, join } from "node:path"
+import { delimiter, dirname, join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import {
   changelogProblems,
@@ -213,6 +213,26 @@ describe("packContents", () => {
         "npm pack: stray.txt would ship — only package.json may",
       ])
     } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it.skipIf(process.platform === "win32")("reads the JSON when npm warns after it", () => {
+    const root = mkdtempSync(join(tmpdir(), "pack-"))
+    const npm = join(root, "npm")
+    writeFileSync(
+      npm,
+      `#!/bin/sh\necho '[{"files":[{"path":"stray.txt"}]}]'\necho 'npm warn Unknown env config "manage-package-manager-versions"' >&2\n`,
+      { mode: 0o755 },
+    )
+    const path = process.env.PATH
+    process.env.PATH = `${root}${delimiter}${path}`
+    try {
+      expect(packContents(root, ["package.json"], "package.json")()).toEqual([
+        "npm pack: stray.txt would ship — only package.json may",
+      ])
+    } finally {
+      process.env.PATH = path
       rmSync(root, { recursive: true, force: true })
     }
   })
