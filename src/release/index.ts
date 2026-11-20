@@ -53,7 +53,7 @@ export const releaseCheck = (
 export const run = (root: string, command: string, args: readonly string[]) => {
   const done = spawnSync(command, args, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
   const output = `${done.stdout ?? ""}${done.stderr ?? ""}${done.error ? String(done.error) : ""}`
-  return { ok: done.status === 0, output }
+  return { ok: done.status === 0, output, stdout: done.stdout ?? "" }
 }
 
 /** A check that passes when the command exits 0, and otherwise shows the last 15 lines it printed. */
@@ -81,9 +81,10 @@ export const packProblems = (paths: readonly string[], allowed: readonly string[
     .map((path) => `npm pack: ${path} would ship — only ${said} may`)
 
 export const packContents = (root: string, allowed: readonly string[], said: string) => (): string[] => {
-  const { ok, output } = run(root, "npm", ["pack", "--dry-run", "--json", "--ignore-scripts"])
+  const { ok, output, stdout } = run(root, "npm", ["pack", "--dry-run", "--json", "--ignore-scripts"])
   if (!ok) return [output.trim()]
-  const [packed] = JSON.parse(output.slice(output.indexOf("["))) as { files: { path: string }[] }[]
+  // npm warns on stderr, after the JSON too: `Unknown env config` for the npm_config_* that pnpm 11 passes on.
+  const [packed] = JSON.parse(stdout) as { files: { path: string }[] }[]
   return packProblems(
     (packed?.files ?? []).map(({ path }) => path),
     allowed,
