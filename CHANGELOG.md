@@ -8,6 +8,19 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **The shared test setup waits for a machine-wide test slot.** Several agents ran suites on one machine at once, each
+  with its own workers, and together they took every core and all the memory until the computer froze. Now a test
+  file from `@wirecat/cli-base/testing/setup` starts only when it holds one of 8 slots for the whole machine
+  (files in `~/.cache/wirecat-test-slots`) and at least 4 GB of memory is available. It gives the slot back when it
+  ends; a run killed before that loses its slot to the next one that looks. After 10 minutes of waiting a file runs
+  without a slot, and a wait over 30 seconds prints who holds the slots. CI skips this. Settings:
+  `WIRECAT_TEST_SLOTS` (`0` turns it off), `WIRECAT_TEST_MIN_FREE_GB`, `WIRECAT_TEST_MAX_WAIT_S`,
+  `WIRECAT_TEST_SLOT_DIR`. A CLI gets it with its next cli-base bump; `maxWorkers` still caps each run.
+
 ## 0.125.3 — 21.11.2026
 
 ### Fixed
