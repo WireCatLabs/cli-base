@@ -10,7 +10,7 @@ import { AUDIT_RULES, PARITY_GROUPS, type ParityGroup, REQUIRED_ROOTS } from "..
 import { listEnvelopeSchema } from "../standards/output.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, type AuditOptions, auditClis, scorecardTable, snakeKeys } from "./audit.js"
-import { familyPackages } from "./family.js"
+import { familyPackages, installFamily } from "./family.js"
 import { type DevIo, main } from "./main.js"
 
 const READS = { remote: "read", local: "none" } as const
@@ -784,6 +784,56 @@ describe("audit --family", () => {
       ["ydisk", "@wirecat/yandex-disk-cli"],
       ["zm", "@wirecat/zoom-cli"],
     ])
+  })
+
+  it("installs again when the registry drops the connection, and not when a package is missing", () => {
+    const answer = (status: number, stderr: string) => ({
+      pid: 1,
+      output: [],
+      stdout: "",
+      stderr,
+      status,
+      signal: null,
+    })
+    const packages = new Map([["tg", "@wirecat/tg-cli"]])
+    const dropped = [answer(1, "npm error code ECONNRESET\nnpm error network read ECONNRESET"), answer(0, "")]
+    const tries: string[][] = []
+    const family = installFamily(
+      packages,
+      (args) => {
+        tries.push(args)
+        return dropped.shift() ?? answer(0, "")
+      },
+      0,
+    )
+    family.close()
+    expect(tries).toHaveLength(2)
+
+    let missing = 0
+    expect(() =>
+      installFamily(
+        packages,
+        () => {
+          missing++
+          return answer(1, "npm error code E404")
+        },
+        0,
+      ),
+    ).toThrow(/E404/)
+    expect(missing).toBe(1)
+
+    let down = 0
+    expect(() =>
+      installFamily(
+        packages,
+        () => {
+          down++
+          return answer(1, "npm error network read ECONNRESET")
+        },
+        0,
+      ),
+    ).toThrow(/ECONNRESET/)
+    expect(down).toBe(3)
   })
 
   it("takes exactly one --cli, this CLI's own", async () => {

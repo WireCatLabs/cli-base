@@ -1,3 +1,4 @@
+import type { SpawnSyncReturns } from "node:child_process"
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -31,28 +32,40 @@ export interface Family {
   close: () => void
 }
 
+// `--fetch-retries` covers a refused request, not a connection the registry drops mid-download: about half the
+// installs of eight CLIs failed that way on 2026-11-19 and 2026-11-21 (`read ECONNRESET`).
+const NETWORK = /^npm error network |\b(ECONNRESET|ETIMEDOUT|EAI_AGAIN|ECONNREFUSED|EPIPE|ENETUNREACH)\b/m
+const ATTEMPTS = 3
+
 /** Installs the latest published `packages` into a folder of their own, without their install scripts. */
-export const installFamily = (packages: ReadonlyMap<string, string>): Family => {
+export const installFamily = (
+  packages: ReadonlyMap<string, string>,
+  install: (args: string[]) => SpawnSyncReturns<string> = (args) =>
+    spawn.sync("npm", args, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }),
+  wait = 3000,
+): Family => {
   const prefix = mkdtempSync(join(tmpdir(), "cli-dev-family-"))
   const close = () => rmSync(prefix, { recursive: true, force: true })
-  const run = spawn.sync(
-    "npm",
-    [
-      "install",
-      "--global",
-      "--prefix",
-      prefix,
-      "--ignore-scripts",
-      "--no-audit",
-      "--no-fund",
-      "--loglevel",
-      "error",
-      "--fetch-retries",
-      "6",
-      ...packages.values(),
-    ],
-    { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
-  )
+  const args = [
+    "install",
+    "--global",
+    "--prefix",
+    prefix,
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund",
+    "--loglevel",
+    "error",
+    "--fetch-retries",
+    "6",
+    ...packages.values(),
+  ]
+  let run = install(args)
+  for (let attempt = 1; attempt < ATTEMPTS && run.status !== 0 && NETWORK.test(String(run.stderr)); attempt++) {
+    // A connection the registry dropped under load is often dropped again at once.
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, wait)
+    run = install(args)
+  }
   if (run.error || run.status !== 0) {
     close()
     throw new Error(`npm install of the family failed: ${run.error?.message ?? String(run.stderr).trim()}`)
