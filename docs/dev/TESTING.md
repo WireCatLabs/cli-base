@@ -55,6 +55,15 @@ from one line in its `vitest.config.ts`: `setupFiles: ["@wirecat/cli-base/testin
   ([WC-TEST-3](../standards/testing.md#wc-test-3--no-test-contacts-a-provider-or-the-network)). A test about the
   network itself calls `onTestFinished(allowNetwork())`. `src/testing/network.test.ts` covers each path.
 
+- **A test file waits for one of the machine's test slots.** Several agents running suites at once took every core
+  and all the memory. [`src/testing/machine-slot.ts`](../../src/testing/machine-slot.ts) lets a file start when it
+  holds one of `WIRECAT_TEST_SLOTS` (8) slot files in `~/.cache/wirecat-test-slots` and `os.freemem()` is at least
+  `WIRECAT_TEST_MIN_FREE_GB` (4). On Linux `os.freemem()` is MemAvailable, not MemFree. A slot whose process is dead
+  is taken back. After `WIRECAT_TEST_MAX_WAIT_S` (600) the file runs without one. `CI` skips it, `0` slots turns it
+  off, and a child vitest started by a test inherits `WIRECAT_TEST_SLOT_HELD` and does not wait on its parent's
+  slot. Checked on 2026-11-21: three suites of 25 files each, run at once with 3 slots, never held more than 3 and
+  left none behind.
+
 - **The owner's home refuses a test even without this setup.** A run that skips `setupFiles` — `vitest run --root`
   at a folder outside the repository reads no `vitest.config.ts` — keeps the real `HOME`. Under vitest (`VITEST` in
   the `env` passed), `resolvePaths` and the skill commands throw while `HOME` or `USERPROFILE` is the account's own
