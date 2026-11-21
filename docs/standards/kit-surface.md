@@ -52,6 +52,10 @@ what it cannot do yet.
 | WordPress's REST index | `adaptOpenApi(wpJsonToOpenApi(readWpJson(dir), { namespaces: ["wp/v2"] }).document)`, the index written by `syncWpJson` |
 | A Postman collection v2.0 or v2.1 (Braze) | `adaptOpenApi(postmanToOpenApi(collection, { variables }).document)`, the collection committed in `spec/<service>/` with its provenance; a POST that only reads gets an `effect` override |
 
+A string with `format: password` (not `writeOnly`) is a credential: a call whose answer holds one anywhere gets
+`response.sensitive` in the manifest, and cli-core offers no `api` command for it. `wpJsonToOpenApi` gives a read-only
+`password`, `secret` or `token` field that format, as WordPress's index marks nothing secret.
+
 `upgradeToOpenApi3` converts with [swagger-converter](https://github.com/apigee-127/swagger-converter) (1.2 → 2.0) and
 [@scalar/openapi-upgrader](https://github.com/scalar/scalar/tree/main/packages/openapi-upgrader) (2.0 → 3.0). They are
 optional peer dependencies of cli-base: a CLI that converts adds them to its `devDependencies`. Commit the source as the
@@ -108,8 +112,8 @@ From the source the generator reads:
   `deals-batch-archive`), leaving out path parameters and versions (`v3`, `2026-03`), which `segments` cannot rename.
   A path that ends in a parameter yet holds items one parameter deeper lists by that parameter
   (`block-types-list-namespace` beside `block-types-get`); a DELETE on a collection beside one on its item is
-  `…-delete-all`; a PUT there is `…-upsert`. A name that comes out
-  empty or not in kebab case stops generation; map that operation in `commands`. `segments` renames a path segment
+  `…-delete-all`; a PUT there is `…-upsert`. A name that comes out empty or not in kebab case stops generation; map
+  that operation in `commands`. `segments` renames a path segment
   or, with `""`, leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. Without `names` the command is the operation
   id in kebab case, as before.
 - **`permissions`**: `{ group, deletingFlags, forceFlags, shares, valueKeys }`. `group` is a name (`files`) or a function of the operation, for

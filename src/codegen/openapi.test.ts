@@ -954,4 +954,38 @@ describe("a spec a config-built CLI reads its answers from", () => {
     expect(examples?.content).toContain('"big": "9007199254740993"')
     expect(examples?.content).not.toContain("synthetic-credential-sample")
   })
+
+  it("marks an answer that holds a format: password field anywhere, and not one whose password is writeOnly", () => {
+    const answer = (schema: unknown) => ({
+      responses: { "200": { content: { "application/json": { schema } } } },
+    })
+    const model = adaptOpenApi({
+      openapi: "3.1.0",
+      info: { version: "v1" },
+      paths: {
+        "/keys": { post: { operationId: "createKey", ...answer({ $ref: "#/components/schemas/Key" }) } },
+        "/users": {
+          get: { operationId: "listUsers", ...answer({ type: "array", items: { $ref: "#/components/schemas/User" } }) },
+        },
+      },
+      components: {
+        schemas: {
+          Key: {
+            type: "object",
+            properties: { name: { type: "string" }, secret: { type: "string", format: "password" } },
+          },
+          User: { type: "object", properties: { password: { type: "string", format: "password", writeOnly: true } } },
+        },
+      },
+    })
+    const [manifest] = generate(model, [manifestGenerator({ path: "manifest.ts" })], { banner: [] })
+    const operations = JSON.parse((manifest?.content ?? "").split("= ")[1]?.split("\n\nexport ")[0] ?? "[]") as {
+      id: string
+      response?: { sensitive?: boolean }
+    }[]
+    expect(Object.fromEntries(operations.map((one) => [one.id, one.response?.sensitive]))).toEqual({
+      createKey: true,
+      listUsers: undefined,
+    })
+  })
 })

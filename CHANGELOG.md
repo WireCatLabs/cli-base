@@ -16,7 +16,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `response.sensitive` was set only when the answer itself was marked, so a credential one field deep (an object's
   `password`) was printed. It now holds when any field of the answer, behind references too, is marked, and cli-core
   leaves those calls out of `api` with "it returns a credential". `adaptOpenApi` marks a string with
-  `format: password`, OpenAPI's word for a value to hide. Regenerate and review the coverage diff: a call whose answer
+  `format: password`, OpenAPI's word for a value to hide, unless it is `writeOnly` and so never in an answer. Regenerate and review the coverage diff: a call whose answer
   holds such a field leaves the `api` group.
 - **The WordPress converter marks an application password secret.** WordPress answers a new application password in
   clear and its index marks no field secret, so the `api` group of a WordPress CLI offered
