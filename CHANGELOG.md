@@ -8,6 +8,31 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Security
+
+- **A generated `api` group never offers a call whose answer may hold a credential deep inside.** The manifest's
+  `response.sensitive` was set only when the answer itself was marked, so a credential one field deep (an object's
+  `password`) was printed. It now holds when any field of the answer, behind references too, is marked, and cli-core
+  leaves those calls out of `api` with "it returns a credential". `adaptOpenApi` marks a string with
+  `format: password`, OpenAPI's word for a value to hide. Regenerate and review the coverage diff: a call whose answer
+  holds such a field leaves the `api` group.
+- **The WordPress converter marks an application password secret.** WordPress answers a new application password in
+  clear and its index marks no field secret, so the `api` group of a WordPress CLI offered
+  `users-application-passwords-create`. `wpJsonToOpenApi` now gives every read-only `password`, `secret` or `token`
+  field `format: password`. The application password routes' create, list, get, update and introspect leave `api`,
+  as their answers share the schema; both deletes stay. A post's or a user's `password`, which the caller sets, is not
+  marked. A CLI that left the route out with `exclude` may drop that exclusion.
+
+### Fixed
+
+- **Command names from paths no longer clash on WordPress's whole index.** A GET on a path that ends in a parameter,
+  with a GET one parameter deeper, is a list by that parameter: `block-types-list-namespace` beside
+  `block-types-get`. A DELETE on a collection beside a DELETE on its item is `…-delete-all`. Both pairs took one name
+  and stopped generation, so a CLI mapped one of them in `names.commands`. Mapped the list or the delete-all: nothing
+  changes. Mapped the item instead: the other one of the pair takes the new name, and its `api` key with it.
+
 ## 0.125.1 — 21.11.2026
 
 ### Fixed

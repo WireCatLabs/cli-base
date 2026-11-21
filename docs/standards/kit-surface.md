@@ -105,7 +105,10 @@ From the source the generator reads:
   runs any SQL). An override still wins.
 - **`names`**: `{ commands, fromPath, segments }`. `commands` maps an operation id to its command. With `fromPath`,
   the rest are named from the path and the method (`deals-list`, `deals-get`, `deals-create`, `deals-delete`,
-  `deals-batch-archive`), leaving out path parameters and versions (`v3`, `2026-03`), which `segments` cannot rename. A name that comes out
+  `deals-batch-archive`), leaving out path parameters and versions (`v3`, `2026-03`), which `segments` cannot rename.
+  A path that ends in a parameter yet holds items one parameter deeper lists by that parameter
+  (`block-types-list-namespace` beside `block-types-get`); a DELETE on a collection beside one on its item is
+  `…-delete-all`; a PUT there is `…-upsert`. A name that comes out
   empty or not in kebab case stops generation; map that operation in `commands`. `segments` renames a path segment
   or, with `""`, leaves it out: `{ "0-3": "deals", crm: "", objects: "" }`. Without `names` the command is the operation
   id in kebab case, as before.

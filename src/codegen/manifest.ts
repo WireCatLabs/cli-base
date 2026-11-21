@@ -71,7 +71,8 @@ const toManifest = (operation: ApiOperation, tree: SchemaTree): ManifestOperatio
       ? withoutUndefined({
           confidence: operation.response.confidence,
           schema: tree.responseName(operation.id),
-          sensitive: operation.response.schema?.sensitive,
+          // A credential one field deep is printed as surely as one at the top.
+          sensitive: holdsSecret(operation.response.schema, tree) || undefined,
         })
       : undefined,
   })

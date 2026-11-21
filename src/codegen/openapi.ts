@@ -329,6 +329,8 @@ class Adapter {
         const node: Node<"string"> = { ...common, type: "string" }
         if (values) node.enum = values.map(String)
         if (source.format === "binary") node.format = "binary"
+        // OpenAPI's own word for a value to hide; an answer that holds one is never printed.
+        if (source.format === "password") node.sensitive = true
         if (typeof source.minLength === "number") node.minLength = source.minLength
         if (typeof source.maxLength === "number") node.maxLength = source.maxLength
         if (typeof source.pattern === "string") node.pattern = source.pattern
