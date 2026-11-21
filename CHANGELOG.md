@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.125.3 — 21.11.2026
+
+### Fixed
+
+- **`cli-dev audit --family` installs again when the registry drops the connection.** npm's `--fetch-retries` does
+  not cover a download cut off midway (`read ECONNRESET`), and about half the family installs failed that way. A
+  network error now tries the install up to three times; any other error, such as a package npm does not have,
+  fails at once as before.
+
 ## 0.125.2 — 21.11.2026
 
 ### Security
