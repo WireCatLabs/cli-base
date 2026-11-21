@@ -53,8 +53,9 @@ const lastWords = v.pipe(v.array(v.union([plainWord, v.pipe(v.string(), v.regex(
 const line = (max: number) => v.pipe(v.string(), v.regex(/^\S(?:[^\n\r]*\S)?$/, "one line of text"), v.maxLength(max))
 
 /**
- * A sign-in Desktop runs in its own window. Only the parts Desktop accepts from a tool it did not build: the words, and
- * whether the secret the person types is the command's whole stdin.
+ * A sign-in Desktop runs in its own window. Only the parts Desktop accepts from a tool it did not build: the words,
+ * whether the secret the person types is the command's whole stdin, and for cli-core's application password sign-in
+ * the flags that take the site and the user name Desktop asks for.
  */
 const signInMethodSchema = v.strictObject({
   id: v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{0,31}$/, "a lower-case method id")),
@@ -63,6 +64,8 @@ const signInMethodSchema = v.strictObject({
   /** `{profile}` first, then the command: `["{profile}", "session", "start", "--json"]`. */
   words,
   stdin: v.optional(v.boolean()),
+  site: v.optional(v.literal("--site")),
+  login: v.optional(v.literal("--login")),
 })
 
 const signInSchema = v.strictObject({
@@ -374,8 +377,17 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       const command = at.get(rest.slice(0, end + 1).join(" "))
       return command !== undefined && (command.commands.length === 0 || command.runnable === true)
     }
-    if (!rest.some((_, end) => runsAt(end)))
+    const end = rest.findIndex((_, index) => runsAt(index))
+    if (end < 0)
       throw new ManifestError([`signIn method ${method.id}: \`${rest.join(" ")}\` names no command of this CLI`])
+    if (method.site || method.login) {
+      if (!method.site || !method.login || method.stdin !== true)
+        throw new ManifestError([`signIn method ${method.id}: site and login go together, with the password on stdin`])
+      const path = rest.slice(0, end + 1).join(" ")
+      const lacks = [method.site, method.login].filter((flag) => !takes(path, flag))
+      if (lacks.length > 0)
+        throw new ManifestError([`signIn method ${method.id}: \`${path}\` takes no ${lacks.join(" or ")}`])
+    }
     if (rest.some((word) => word.includes("{")))
       throw new ManifestError([`signIn method ${method.id}: {profile} is the only slot Desktop fills in a sign-in`])
   }

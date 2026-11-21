@@ -233,6 +233,30 @@ describe("buildManifest", () => {
     ).toThrow(/password/)
   })
 
+  it("passes an application password sign-in's site and login flags, only when its command takes both", () => {
+    const appPassword = {
+      id: "app-password",
+      label: "Acme application password",
+      words: ["{profile}", "session", "start", "--json"],
+      stdin: true,
+      site: "--site",
+      login: "--login",
+    } as const
+    const signIn = (method: object) => ({ ...identity.signIn, methods: [method] }) as ManifestIdentity["signIn"]
+    const tree = program()
+    const start = tree.commands
+      .find((command) => command.name() === "session")
+      ?.commands.find((c) => c.name() === "start")
+    start?.option("--site <address>", "the site").option("--login <user>", "the user name")
+    const commands = describeProgram(tree)
+
+    expect(build({ signIn: signIn(appPassword) }, commands).desktop.signIn?.methods).toEqual([appPassword])
+    expect(() => build({ signIn: signIn(appPassword) })).toThrow("`session start` takes no --site or --login")
+    expect(() => build({ signIn: signIn({ ...appPassword, login: undefined }) }, commands)).toThrow("go together")
+    expect(() => build({ signIn: signIn({ ...appPassword, stdin: false }) }, commands)).toThrow("password on stdin")
+    expect(() => build({ signIn: signIn({ ...appPassword, site: "--url" }) }, commands)).toThrow("cannot be built")
+  })
+
   it("matches runs list's query: command:sync status:success are two exact terms", () => {
     const ast = parseLucene(["command:sync", "status:success"].join(" "), { defaultField: "none" })
     expect(JSON.stringify(ast)).toMatch(/"field":"command","operator":"term","value":"sync"/)
