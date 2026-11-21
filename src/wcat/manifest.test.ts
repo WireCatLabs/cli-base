@@ -247,14 +247,17 @@ describe("buildManifest", () => {
     const start = tree.commands
       .find((command) => command.name() === "session")
       ?.commands.find((c) => c.name() === "start")
-    start?.option("--site <address>", "the site").option("--login <user>", "the user name")
+    start
+      ?.option("--site <address>", "the site")
+      .option("--login <user>", "the user name")
+      .option("--url <url>", "a URL")
     const commands = describeProgram(tree)
 
     expect(build({ signIn: signIn(appPassword) }, commands).desktop.signIn?.methods).toEqual([appPassword])
     expect(() => build({ signIn: signIn(appPassword) })).toThrow("`session start` takes no --site or --login")
     expect(() => build({ signIn: signIn({ ...appPassword, login: undefined }) }, commands)).toThrow("go together")
     expect(() => build({ signIn: signIn({ ...appPassword, stdin: false }) }, commands)).toThrow("password on stdin")
-    expect(() => build({ signIn: signIn({ ...appPassword, site: "--url" }) }, commands)).toThrow("cannot be built")
+    expect(() => build({ signIn: signIn({ ...appPassword, site: "--url" }) }, commands)).toThrow('Expected "--site"')
   })
 
   it("matches runs list's query: command:sync status:success are two exact terms", () => {

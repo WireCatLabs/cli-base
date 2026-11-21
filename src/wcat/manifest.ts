@@ -377,7 +377,7 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       const command = at.get(rest.slice(0, end + 1).join(" "))
       return command !== undefined && (command.commands.length === 0 || command.runnable === true)
     }
-    const end = rest.findIndex((_, index) => runsAt(index))
+    const end = rest.findLastIndex((_, index) => runsAt(index))
     if (end < 0)
       throw new ManifestError([`signIn method ${method.id}: \`${rest.join(" ")}\` names no command of this CLI`])
     if (method.site || method.login) {
