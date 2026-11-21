@@ -8,6 +8,16 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.126.1 — 21.11.2026
+
+### Fixed
+
+- **A CLI on cli-core 0.717.0 or later passes `cli-dev audit --family` again.** cli-core 0.715 and 0.716 named an
+  unknown profile twice, `account-remove.unknown-profile` and `account-rename.unknown-profile`, and the CLIs published
+  on them still do. The audit blamed every CLI that has the first name, including the one being released, so each
+  release needed its own exception. It is now a shared difference, reviewed after 2026-12-10, when the family has
+  moved to `profile.unknown`.
+
 ## 0.126.0 — 21.11.2026
 
 ### Added
