@@ -8,7 +8,7 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.126.0 — 21.11.2026
 
 ### Added
 
@@ -20,6 +20,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   without a slot, and a wait over 30 seconds prints who holds the slots. CI skips this. Settings:
   `WIRECAT_TEST_SLOTS` (`0` turns it off), `WIRECAT_TEST_MIN_FREE_GB`, `WIRECAT_TEST_MAX_WAIT_S`,
   `WIRECAT_TEST_SLOT_DIR`. A CLI gets it with its next cli-base bump; `maxWorkers` still caps each run.
+- **A sign-in method in `--wcat-describe` can name `site: "--site"` and `login: "--login"`.** WireCat Desktop
+  (wirecat-desktop #459) signs in a CLI that uses cli-core's application password sign-in in its own window: it asks
+  for the site, the user name and the password, passes the first two as those flags and the password on stdin. Until
+  now `buildManifest` refused both keys, so a tool added from its describe signed in at a terminal only. Both go
+  together, only with `stdin: true`, and only when the method's command takes both flags; any other flag is refused,
+  as Desktop refuses it. See [the reference](docs/REFERENCE.md).
 
 ## 0.125.3 — 21.11.2026
 
