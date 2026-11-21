@@ -171,6 +171,12 @@ const FAMILY_SINCE_0_98 = [
     "reason profile.unknown: code",
     "b24 gives it not_found, drive validation_error (measured 2026-11-13)",
   ),
+  {
+    rule: REASON,
+    target: "reason account-remove.unknown-profile=account-rename.unknown-profile",
+    reason: "one failure under two names in cli-core 0.715–0.716; 0.717.0 gives account rename profile.unknown",
+    review_after: "2026-12-10",
+  },
 ]
 
 export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([

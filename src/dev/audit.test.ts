@@ -6,7 +6,7 @@ import * as v from "valibot"
 import { beforeEach, describe, expect, it } from "vitest"
 import { commandsDocument } from "../commands/document.js"
 import { annotate } from "../commands/index.js"
-import { AUDIT_RULES, PARITY_GROUPS, type ParityGroup, REQUIRED_ROOTS } from "../standards/audit.js"
+import { AUDIT_RULES, PARITY_GROUPS, type ParityGroup, REQUIRED_ROOTS, SHARED_DIFFERENCES } from "../standards/audit.js"
 import { listEnvelopeSchema } from "../standards/output.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { type AuditInput, type AuditOptions, auditClis, scorecardTable, snakeKeys } from "./audit.js"
@@ -326,6 +326,19 @@ describe("audit rules", () => {
       'a reason item.not-found=note.missing: one failure under 2 names: "nothing found by that name"',
       "a+c reason sync.failed: code: a: provider_error, c: network_error",
     ])
+  })
+
+  // A CLI on cli-core 0.717.0 or later gives account rename profile.unknown; the published CLIs on an older one still
+  // name the failure twice, which is theirs to fix with their next bump, not the released CLI's.
+  it("lets a CLI release while older CLIs still name an unknown profile twice", () => {
+    const message = "no profile by this name on this computer"
+    const remove = { reason: "account-remove.unknown-profile", code: "not_found" as const, message, details: [] }
+    const rename = { reason: "account-rename.unknown-profile", code: "not_found" as const, message, details: [] }
+    const inputs = [inputOf(tool("a"), { reasons: [remove] }), inputOf(tool("b"), { reasons: [remove, rename] })]
+    const blocking = (shared: AuditOptions["shared"]) =>
+      auditClis(inputs, options({ only: "a", family: true, shared })).blocking.map((one) => one.target)
+    expect(blocking([])).toContain("a+b reason account-remove.unknown-profile=account-rename.unknown-profile")
+    expect(blocking(SHARED_DIFFERENCES)).toEqual([])
   })
 })
 
