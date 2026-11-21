@@ -1,5 +1,6 @@
 The routes, arguments and schemas in wp-json-excerpt.json are cut from the REST index of WordPress 6.9.4
-(GET /wp-json/?context=help on a plain install, no plugins), taken on 2026-11-18.
+(GET /wp-json/?context=help on a plain install, no plugins), taken on 2026-11-18. wp-json-6.9.4.json is the whole
+index of the same version, as syncWpJson wrote it on 2026-11-19 (wordpress-cli's spec/wordpress), formatted by Biome.
 
 WordPress - Web publishing software
 Copyright 2011-2026 by the contributors

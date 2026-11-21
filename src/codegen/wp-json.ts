@@ -50,6 +50,13 @@ const typeName = (type: unknown): unknown =>
   type === "bool" ? "boolean" : Array.isArray(type) ? type.map(typeName) : type
 
 /**
+ * A secret WordPress makes and answers, as an application password's `password`: read-only, so no caller sets it. The
+ * index marks nothing secret, and a post's or a user's `password` is the caller's own input, never answered.
+ */
+const credential = (name: string, field: unknown): field is Json =>
+  object(field) && field.readonly === true && /(^|_)(password|secret|token)$/i.test(name)
+
+/**
  * One JSON Schema draft 4 node, as WordPress writes it, → its OpenAPI 3.1 form: a field's `required: true` joins its
  * object's `required` list, a node with `properties` and no type is an object, and a draft 4 `exclusiveMinimum: true`
  * goes, keeping `minimum`, which accepts one value more and refuses nothing valid. `patternProperties` (block names to their hooks) becomes the object's
@@ -64,7 +71,10 @@ const schemaOf = (value: unknown, where: string): Json => {
     if (key === "type") out.type = typeName(field)
     else if (key === "properties" && object(field))
       out.properties = Object.fromEntries(
-        Object.entries(field).map(([name, inner]) => [name, schemaOf(inner, `${where}/properties/${name}`)]),
+        Object.entries(field).map(([name, inner]) => [
+          name,
+          schemaOf(credential(name, inner) ? { ...inner, format: "password" } : inner, `${where}/properties/${name}`),
+        ]),
       )
     else if (key === "items") out.items = schemaOf(field, `${where}/items`)
     else if ((key === "oneOf" || key === "anyOf") && Array.isArray(field))
@@ -161,7 +171,8 @@ const isList = (args: Json) => "per_page" in args && "page" in args
  * The OpenAPI document of the routes under `namespaces`. A route offers GET as a read, DELETE as a delete with its
  * arguments in the query (`force=true`), and one write: POST where the route takes it, as WordPress takes the same
  * call by POST, PUT and PATCH. A write's arguments are its JSON body. An array argument in the query travels as one
- * comma-separated value, which WordPress splits, as PHP keeps only the last of a repeated name.
+ * comma-separated value, which WordPress splits, as PHP keeps only the last of a repeated name. A read-only credential
+ * field becomes `format: password`, so no generated command prints an answer that may hold it.
  */
 export const wpJsonToOpenApi = (index: unknown, options: WpJsonOptions): WpJsonResult => {
   if (!object(index) || !object(index.routes)) throw new CodegenError(["not a WordPress REST index: no routes"])

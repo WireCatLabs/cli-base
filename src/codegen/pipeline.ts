@@ -85,20 +85,24 @@ const commandFromPath = (operation: ApiOperation, all: readonly ApiOperation[], 
       ((other.binding.method === "GET" && other.binding.path === path) ||
         (other.binding.path.startsWith(`${path}/{`) && !other.binding.path.slice(path.length + 1).includes("/"))),
   )
-  // A PUT on the collection beside a PUT on its item is the "create or update by a unique value" (Attio's assert).
-  const itemPut = all.some(
+  // The same method one parameter deeper: this path holds items, though it may end in a parameter itself.
+  const holdsItems = all.some(
     (other) =>
       other.binding.kind === "http" &&
-      other.binding.method === "PUT" &&
+      other.binding.method === method &&
       other.binding.path.startsWith(`${path}/{`) &&
       !other.binding.path.slice(path.length + 1).includes("/"),
   )
+  const last = parts.at(-1) ?? ""
   const verb = {
-    GET: onItem || parts.at(-1) === "me" ? "get" : "list",
+    // WordPress's block-types/{namespace} beside block-types/{namespace}/{name}, and beside block-types' own list.
+    GET: onItem && holdsItems ? `list-${kebab(last.slice(1, -1))}` : onItem || last === "me" ? "get" : "list",
     HEAD: "head",
-    DELETE: "delete",
+    // A DELETE on the collection beside one on its item deletes them all (WordPress's application passwords).
+    DELETE: !onItem && holdsItems ? "delete-all" : "delete",
     PATCH: "update",
-    PUT: onItem ? "replace" : collection ? (itemPut ? "upsert" : "replace") : "",
+    // A PUT on the collection beside a PUT on its item is the "create or update by a unique value" (Attio's assert).
+    PUT: onItem ? "replace" : collection ? (holdsItems ? "upsert" : "replace") : "",
     POST: onItem ? "update" : collection ? "create" : "",
   }[method]
   return [...words, verb].filter(Boolean).join("-")

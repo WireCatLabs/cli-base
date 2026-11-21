@@ -324,6 +324,40 @@ describe("the api group of a WordPress CLI from its snapshot", () => {
   })
 })
 
+describe("the whole index of WordPress 6.9.4", () => {
+  const whole = JSON.parse(
+    readFileSync(join(import.meta.dirname, "../../test/fixtures/wp-json/wp-json-6.9.4.json"), "utf8"),
+  ) as unknown
+  const converted = wpJsonToOpenApi(whole, { namespaces: ["wp/v2"] })
+  const [manifest] = generate(adaptOpenApi(converted.document), [manifestGenerator({ path: "manifest.ts" })], {
+    banner: [],
+    overrides: converted.overrides,
+    names: { fromPath: true, segments: { wp: "", v2: "" } },
+  })
+  const operations = exported(manifest?.content, "operations") as ManifestOperation[]
+  const byId = (id: string) => operations.find((one) => one.id === id)
+
+  it("names a list under a parameter and a delete of a whole collection apart from their items", () => {
+    expect(operations).toHaveLength(150)
+    expect(byId("getWpV2BlockTypes")?.command).toBe("block-types-list")
+    expect(byId("getWpV2BlockTypesByNamespace")?.command).toBe("block-types-list-namespace")
+    expect(byId("getWpV2BlockTypesByNamespaceByName")?.command).toBe("block-types-get")
+    expect(byId("deleteWpV2UsersByUserIdApplicationPasswords")?.command).toBe("users-application-passwords-delete-all")
+    expect(byId("deleteWpV2UsersByUserIdApplicationPasswordsByUuid")?.command).toBe(
+      "users-application-passwords-delete",
+    )
+    expect(byId("getWpV2UsersById")?.command).toBe("users-get")
+  })
+
+  it("marks an answer that may hold a new application password, and no post's or user's own password", () => {
+    const sensitive = operations.filter((one) => one.response?.sensitive).map((one) => one.id)
+    expect(sensitive).toContain("postWpV2UsersByUserIdApplicationPasswords")
+    expect(sensitive.every((id) => id.includes("ApplicationPasswords"))).toBe(true)
+    for (const id of ["getWpV2Posts", "postWpV2Posts", "postWpV2Users", "getWpV2UsersMe", "postWpV2Pages"])
+      expect(byId(id)?.response?.sensitive).toBeUndefined()
+  })
+})
+
 describe("syncWpJson and readWpJson", () => {
   it("keeps only the API, not the site or a password in its address, and refuses a snapshot changed by hand", async () => {
     const dir = mkdtempSync(join(tmpdir(), "wp-json-"))
