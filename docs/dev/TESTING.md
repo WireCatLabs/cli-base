@@ -61,8 +61,10 @@ from one line in its `vitest.config.ts`: `setupFiles: ["@wirecat/cli-base/testin
   `WIRECAT_TEST_MIN_FREE_GB` (4). On Linux `os.freemem()` is MemAvailable, not MemFree. A slot whose process is dead
   is taken back. After `WIRECAT_TEST_MAX_WAIT_S` (600) the file runs without one. `CI` skips it, `0` slots turns it
   off, and a child vitest started by a test inherits `WIRECAT_TEST_SLOT_HELD` and does not wait on its parent's
-  slot. Checked on 2026-11-21: three suites of 25 files each, run at once with 3 slots, never held more than 3 and
-  left none behind.
+  slot. A slot file appears with its owner already in it (written to a temporary file, then linked), so an empty
+  file is never taken for a dead run's, and a run gives back only a slot that still names it. Checked on 2026-11-21:
+  four suites of 25 files each, run at once with 2 slots, never held more than 2 and left none behind; a file whose
+  only slot was held waited 90 s, ran without one and passed.
 
 - **The owner's home refuses a test even without this setup.** A run that skips `setupFiles` — `vitest run --root`
   at a folder outside the repository reads no `vitest.config.ts` — keeps the real `HOME`. Under vitest (`VITEST` in

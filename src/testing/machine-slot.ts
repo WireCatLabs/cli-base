@@ -1,4 +1,4 @@
-import { closeSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, writeSync } from "node:fs"
+import { linkSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { freemem, homedir } from "node:os"
 import { join } from "node:path"
 import { threadId } from "node:worker_threads"
@@ -60,6 +60,7 @@ export const slotOptions = (env: NodeJS.ProcessEnv = process.env): SlotOptions |
 const holders = (options: SlotOptions): number[] => {
   const pids: number[] = []
   for (const name of readdirSync(options.dir)) {
+    if (!name.startsWith("slot-") || name.endsWith(".tmp")) continue
     const path = join(options.dir, name)
     let pid: number
     try {
@@ -74,20 +75,32 @@ const holders = (options: SlotOptions): number[] => {
   return pids
 }
 
+const OWNER = `${process.pid} ${threadId}\n`
+
 const take = (options: SlotOptions): string | undefined => {
-  for (let index = 0; index < options.slots; index++) {
-    const path = join(options.dir, `slot-${index}`)
-    let fd: number
-    try {
-      fd = openSync(path, "wx")
-    } catch {
-      continue
+  // A slot appears with its owner already written: an empty file read in between would look dead and be taken twice.
+  const draft = join(options.dir, `slot-${process.pid}-${threadId}.tmp`)
+  writeFileSync(draft, OWNER)
+  try {
+    for (let index = 0; index < options.slots; index++) {
+      const path = join(options.dir, `slot-${index}`)
+      try {
+        linkSync(draft, path)
+        return path
+      } catch {}
     }
-    writeSync(fd, `${process.pid} ${threadId}\n`)
-    closeSync(fd)
-    return path
+    return undefined
+  } finally {
+    rmSync(draft, { force: true })
   }
-  return undefined
+}
+
+const giveBack = (path: string) => {
+  let owner: string | undefined
+  try {
+    owner = readFileSync(path, "utf8")
+  } catch {}
+  if (owner === OWNER) rmSync(path, { force: true })
 }
 
 /** Waits for a slot and enough free memory; the result gives the slot back. Past maxWaitMs it goes ahead without one. */
@@ -105,7 +118,7 @@ export const acquireSlot = async (options: SlotOptions): Promise<() => void> => 
         process.env[SLOT_HELD] = "1"
         return () => {
           delete process.env[SLOT_HELD]
-          rmSync(path, { force: true })
+          giveBack(path)
         }
       }
     }

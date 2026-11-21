@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
@@ -73,6 +73,15 @@ describe("machine test slots", () => {
     const release = await acquireSlot(options)
     expect(existsSync(join(options.dir, "slot-0"))).toBe(true)
     release()
+  })
+
+  it("leaves a slot alone at release once another run holds it", async () => {
+    const { options } = optionsWith({ slots: 1 })
+    const release = await acquireSlot(options)
+    writeFileSync(join(options.dir, "slot-0"), "424242 0\n")
+    release()
+    expect(readFileSync(join(options.dir, "slot-0"), "utf8")).toBe("424242 0\n")
+    expect(readdirSync(options.dir)).toEqual(["slot-0"])
   })
 
   it("marks the run while it holds a slot, so a vitest it starts does not wait on it", async () => {
