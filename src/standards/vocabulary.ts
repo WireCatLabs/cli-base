@@ -406,6 +406,7 @@ const views: [string, string][] = [
   ["stats", "a thing's own numbers, such as a post's views, as read at each sync"],
   ["logs", "the log of a running process"],
   ["events", "what happened in a thing over time"],
+  ["changes", "what a sync changed in the local copy since a time: added, changed, deleted or no longer visible"],
   ["scheduled", "what is scheduled to happen"],
   ["context", "what surrounds one thing"],
   ["path", "where a thing is on this machine"],

@@ -57,4 +57,18 @@ export const KNOWLEDGE_FLAGS: VocabularyFlag[] = [
     type: "string",
     meaning: "every stored thing a search with this query finds, in its query language; the command acts on each",
   },
+  {
+    name: "--since",
+    value: "<time>",
+    role: "target",
+    type: "time",
+    meaning: "from this time on: a time, or a duration ago such as 1d",
+  },
+  {
+    name: "--event",
+    value: "<events>",
+    role: "target",
+    type: "list",
+    meaning: "only these kinds of event, comma separated; the command lists them",
+  },
 ]
