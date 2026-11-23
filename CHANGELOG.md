@@ -8,7 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
-## Unreleased
+## 0.129.0 — 23.11.2026
+
+### Added
+
+- **A change log's words in the vocabulary.** The view `changes` (what a sync changed in the local copy since a time),
+  and the flags `--since <time>` (from this time on, a time or a duration ago) and `--event <events>` (only these kinds
+  of event). cli-core's shared `changes` command, which every documents CLI mounts with `documents history`, then
+  passes `cli-dev lint` with no override.
 
 ### Fixed
 
