@@ -32,6 +32,17 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `/codegen`, which still exports them too, is experimental. Watch for: import them from `/codegen/runtime` in code
   that runs, so a change to the generator cannot reach it.
 - **`@wirecat/cli-base/package.json` can be imported or resolved.** `exports` blocked it, and some tools read it.
+- **`cli-dev api-report`: the stable API as a committed text file.** A package lists its stable entry points in
+  `package.json` (`"wirecat": { "stable": [".", "./http"] }`), and the command writes `api/<entry>.api.txt` from the
+  built `.d.ts`, one line per declaration line, without the names whose TSDoc says `@experimental`. `--check` fails
+  when the committed report differs from the build. The shared `node-ci.yml` runs the check for every package that
+  lists `wirecat.stable` and skips the others. See [WC-REL-7](docs/standards/releases.md).
+- **The changelog guard reads the API report.** A pull request that removes or changes a stable line needs an entry
+  under "Changed — may break callers" or "Removed", and one that only adds lines needs "Added". From 1.0.0 on, an
+  entry under either break heading also needs the `major` label. Watch for: a caller's own `changelog-guard.yml`
+  needs `labeled` and `unlabeled` in its `pull_request` types for a new label to re-run the guard.
+- **`release-start.yml` collects the `changes/` fragments and takes the level they need**, as `bin/release` does, and
+  stops a version that raises the major unless the release starts with the new `major: true` input.
 
 ### Changed — may break callers
 

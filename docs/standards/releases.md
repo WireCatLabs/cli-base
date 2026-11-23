@@ -90,7 +90,9 @@ on the [CI](ci.md) page.
   what the package promises to keep. A library promises only its stable API; what it marks experimental may change in
   a minor, so majors stay rare and work does not wait for them (NEED-2893).
 - **Enforced by:** `<app>: bin/release`, which also stops a version that raises the major unless it runs with
-  --major.
+  --major; `release-start.yml:prepare`, which collects the changes/ fragments, takes the level they need and stops a
+  major unless the release starts with major allowed; `node-ci.yml:check`, which runs cli-dev api-report --check;
+  `changelog-guard.yml:guard`, which asks for the heading a change to the API report needs and for the major label.
 - **Example:**
   - A break of the stable API goes under "Changed — may break callers" or "Removed". Before 1.0.0 it raises the
     minor (`0.40.4` to `0.41.0`); from 1.0.0 on, the major (`1.4.0` to `2.0.0`).
@@ -102,6 +104,21 @@ on the [CI](ci.md) page.
   - Raise the patch (`1.4.0` to `1.4.1`) only when every entry is a fix or a change to the documents.
   - A stable break waits for a major the owner chose. Until then it lands as an addition beside the old API, which is
     deprecated, never as a change in place.
+  - **How a library marks its stable API.** `package.json` lists the stable entry points, the `exports` keys:
+    `"wirecat": { "stable": [".", "./paths"] }`. An entry point not listed is experimental as a whole. Inside a stable
+    entry point, a declaration whose TSDoc says `@experimental` is experimental; `@deprecated` keeps its usual meaning.
+    A package with no `wirecat.stable` list has no API check.
+  - **The API report.** `cli-dev api-report` builds the package and writes `api/<entry>.api.txt` for each stable entry
+    point: one line per line of each stable declaration, as `<name> · <kind> · <declaration text>`, sorted by name and
+    without comments. Commit it with the change. In CI, `cli-dev api-report --check` fails when it differs from the
+    build.
+  - **The changelog guard reads the report's diff.** A pull request that removes or changes a line needs an entry under
+    "Changed — may break callers" or "Removed"; one that only adds lines needs one under "Added". From 1.0.0 on, a pull
+    request with an entry under either break heading also needs the `major` label, and waits for the next major. A
+    report the base did not have is a first one and needs nothing.
+  - **What the report does not see:** a change in behaviour, in JSON output or in a type the stable declarations import
+    from a file the entry point does not export; adding a required field to an options type shows as an addition. Pick
+    the heading for those by hand.
 - **Exceptions:** a pre-release version (`1.0.0-rc.1`) is chosen by hand and published under npm's `next` tag; the
   version check reads the last plain release as the one below it.
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0; the 1.0.0 rules since the next release.
