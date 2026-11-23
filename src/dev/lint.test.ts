@@ -791,6 +791,42 @@ describe("lint rules", () => {
     expect(lintOf(root).filter((found) => words.includes(found.rule))).toEqual([])
   })
 
+  it("knows a workspace's words: databases, rows, comments reply, --from-template, --cover", () => {
+    const root = clean()
+    const databases = root.command("databases").description("a workspace's databases")
+    ran(databases.command("show").description("show one database").argument("<id>", "database id"), {
+      examples: ["tool work databases show tasks"],
+    })
+    const rows = root.command("rows").description("a database's rows")
+    ran(rows.command("show").description("show one row").argument("<id>", "row id"), {
+      examples: ["tool work rows show r1"],
+    })
+    const documents = root.command("documents").description("pages")
+    ran(
+      documents
+        .command("create")
+        .description("create a page")
+        .option("--from-template <template>", "a page template")
+        .option("--cover <link>", "an https link"),
+      { examples: ["tool work documents create --from-template default"] },
+    )
+    ran(
+      documents
+        .command("update")
+        .description("change a page")
+        .argument("<id>", "page id")
+        .option("--cover <link>", "an https link")
+        .option("--allow-deleting-content", "child pages may go"),
+      { examples: ["tool work documents update p1 --cover none"] },
+    )
+    const comments = root.command("comments").description("comments on pages")
+    ran(comments.command("reply").description("answer in a thread").argument("<id>", "thread id"), {
+      examples: ["tool work comments reply d1"],
+    })
+    const words = ["unknown-verb", "unknown-resource", "option-role", "flag-two-meanings", "flag-synonym"]
+    expect(lintOf(root).filter((found) => words.includes(found.rule))).toEqual([])
+  })
+
   it("knows --compact as an output switch", () => {
     const root = clean()
     chatsOf(root).command("search").description("search chats").option(COMPACT_FLAG, "one line per chat")
