@@ -153,6 +153,19 @@ describe("vocabulary registry", () => {
     expect(flag("--source")?.replaces).toEqual(["--target-accounts"])
   })
 
+  it("names a file mirror and its conflicts as collections, and the guard's limits as counts", () => {
+    const noun = (word: string) => VOCABULARY.nouns.find((entry) => entry.word === word)
+    const flag = (name: string) => VOCABULARY.flags.find((entry) => entry.name === name)
+    expect(noun("mirrors")).toMatchObject({ kind: "collection" })
+    expect(noun("conflicts")).toMatchObject({ kind: "collection" })
+    expect(flag("--keep")).toMatchObject({ value: "<side>", role: "mode", type: "choice" })
+    expect(flag("--allow-deletions")).toMatchObject({ value: "<count>", role: "mode", type: "count" })
+    expect(flag("--allow-replacements")).toMatchObject({ value: "<count>", role: "mode", type: "count" })
+    expect(flag("--repin")).toMatchObject({ role: "mode", type: "switch" })
+    // --replace stays a switch: a count under the same name is flag-two-meanings.
+    expect(flag("--replace")).toMatchObject({ type: "switch" })
+  })
+
   it("knows --like <text> as a second query, searched by meaning beside the first", () => {
     expect(VOCABULARY.flags.find((entry) => entry.name === "--like")).toMatchObject({
       value: "<text>",

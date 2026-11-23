@@ -761,6 +761,36 @@ describe("lint rules", () => {
     )
   })
 
+  // cli-core mounts these under ydisk's and drive's mirrors; a list of a mirror's conflicts still needs its query.
+  it("knows a file mirror's words: mirrors, conflicts, --keep <side> and the guard's counts", () => {
+    const root = clean()
+    const mirrors = root.command("mirrors").description("saved folder pairs")
+    ran(
+      mirrors
+        .command("sync")
+        .description("sync one mirror")
+        .argument("<id>", "mirror id")
+        .option("--keep <side>", "local, disk or both")
+        .option("--allow-deletions <count>", "deletions allowed")
+        .option("--allow-replacements <count>", "replacements allowed")
+        .option("--repin", "the replaced folder is right"),
+      { examples: ["tool work mirrors sync notes --keep local"] },
+    )
+    const conflicts = mirrors.command("conflicts").description("files sync could not merge")
+    ran(
+      conflicts
+        .command("resolve")
+        .description("settle one conflict")
+        .argument("<id>", "mirror id")
+        .argument("<path>", "file path")
+        .option("--keep <side>", "local, disk or both")
+        .option("--file <file>", "the final content"),
+      { examples: ["tool work mirrors conflicts resolve notes a.md --keep both"] },
+    )
+    const words = ["unknown-resource", "option-role", "flag-two-meanings", "flag-synonym"]
+    expect(lintOf(root).filter((found) => words.includes(found.rule))).toEqual([])
+  })
+
   it("knows --compact as an output switch", () => {
     const root = clean()
     chatsOf(root).command("search").description("search chats").option(COMPACT_FLAG, "one line per chat")

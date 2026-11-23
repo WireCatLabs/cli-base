@@ -6,6 +6,7 @@ import { CRM_FLAGS } from "./flags-crm.js"
 import { HOW_FLAGS } from "./flags-how.js"
 import { KNOWLEDGE_FLAGS } from "./flags-knowledge.js"
 import { MAIL_FLAGS } from "./flags-mail.js"
+import { MIRROR_FLAGS } from "./flags-mirror.js"
 import { PRIVACY_FLAGS } from "./flags-privacy.js"
 import { SCHEDULE_FLAGS } from "./flags-schedule.js"
 import { SEARCH_FLAGS } from "./flags-search.js"
@@ -323,6 +324,11 @@ const collections: [string, string][] = [
   ["roles", "the parts a person plays in a relationship, built in or the owner's own"],
   ["sheets", "remote spreadsheets and their cell ranges, read or changed through a provider"],
   ["files", "files in the source, such as Google Drive, read and changed there"],
+  ["mirrors", "saved pairings of a local folder and a folder in the source, which sync keeps the same both ways"],
+  [
+    "conflicts",
+    "files a mirror's sync found changed on both sides and could not merge, each waiting for a side or a final file",
+  ],
   ["comments", "comments people left on a thing in the source: a channel post or a file"],
   ["meetings", "stored meetings, from Zoom or another provider"],
   ["calls", "phone calls a phone system recorded, stored as meetings with their transcripts"],
@@ -470,5 +476,6 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
     ...SCHEDULE_FLAGS,
     ...CONTENT_FLAGS,
     ...SEARCH_FLAGS,
+    ...MIRROR_FLAGS,
   ],
 })
