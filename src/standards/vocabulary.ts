@@ -11,6 +11,7 @@ import { PRIVACY_FLAGS } from "./flags-privacy.js"
 import { SCHEDULE_FLAGS } from "./flags-schedule.js"
 import { SEARCH_FLAGS } from "./flags-search.js"
 import { WHAT_FLAGS } from "./flags-what.js"
+import { WORK_FLAGS } from "./flags-work.js"
 import { duplicates, parseRegistry, text, word } from "./registry.js"
 
 export const FLAG_TYPES = [
@@ -336,7 +337,7 @@ const collections: [string, string][] = [
     "files a mirror's sync found changed on both sides and could not merge, each waiting for a side or a final file",
   ],
   ["versions", "earlier contents of a file that a write replaced or deleted, kept on this computer to be put back"],
-  ["comments", "comments people left on a thing in the source: a channel post or a file"],
+  ["comments", "comments people left on a thing in the source: a channel post, a file or an issue"],
   ["meetings", "stored meetings, from Zoom or another provider"],
   ["calls", "phone calls a phone system recorded, stored as meetings with their transcripts"],
   ["calendars", "calendars of an account, each synced or not"],
@@ -487,5 +488,6 @@ export const VOCABULARY: Vocabulary = defineVocabulary({
     ...CONTENT_FLAGS,
     ...SEARCH_FLAGS,
     ...MIRROR_FLAGS,
+    ...WORK_FLAGS,
   ],
 })

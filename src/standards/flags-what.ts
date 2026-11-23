@@ -414,7 +414,7 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     type: "string",
     meaning: "an organization: its id or organization:<id>",
   },
-  { name: "--parent", value: "<id>", role: "target", type: "id", meaning: "the folder or task it sits under, by id" },
+  { name: "--parent", value: "<id>", role: "target", type: "id", meaning: "the folder, task or issue it sits under" },
   {
     name: "--participant-id",
     value: "<id>",
@@ -692,7 +692,6 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     type: "choice",
     meaning: "how it is closed: done, or dismissed when it needs no answer",
   },
-  { name: "--assignee", value: "<person...>", role: "value", type: "list", meaning: "who does it, by UID" },
   { name: "--at", value: "<hh:mm>", role: "value", type: "string", meaning: "every day at this local time" },
   { name: "--body", value: "<json>", role: "value", type: "string", meaning: "the request body, as JSON" },
   {
@@ -850,7 +849,6 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
     type: "id",
     meaning: "pin this chat at the top of it; repeat it for more",
   },
-  { name: "--priority", value: "<n>", role: "value", type: "count", meaning: "0 urgent … 4 low" },
   { name: "--quiz", role: "value", type: "switch", meaning: "a quiz: one answer is right, and a vote is final" },
   {
     name: "--reason",
