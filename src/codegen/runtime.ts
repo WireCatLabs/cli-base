@@ -1,6 +1,8 @@
 /**
  * What generated Valibot schemas call at run time. Kept apart from the generator so a CLI loads
- * these few functions, not the code that writes code.
+ * these few functions, not the code that writes code. Also the stable part of the model a CLI reads the generated
+ * manifest with (the operation and schema types, `identifier`, `apiCommandPath`, the sign-in and GraphQL helpers):
+ * `/codegen` itself is experimental.
  *
  * Numbers arrive from a lossless JSON parser (`lossless-json` or anything shaped like its
  * `LosslessNumber`), because a 64-bit id read as a JS number is silently a different id.
@@ -71,3 +73,20 @@ export const number = (range: Range = {}) =>
 
 export const unique = (items: readonly unknown[]): boolean =>
   new Set(items.map((item) => JSON.stringify(item))).size === items.length
+
+export type { ManifestOperation } from "./manifest.js"
+export type {
+  ApiServer,
+  Effect,
+  GraphqlBinding,
+  OAuthFlow,
+  OperationPermission,
+  PageParameter,
+  Pagination,
+  SchemaNode,
+  SecurityRequirement,
+  SecurityScheme,
+} from "./model.js"
+export { apiCommandPath, identifier } from "./names.js"
+export { graphqlDocument, parseSelection, type Selection } from "./selection.js"
+export { type SignInPlace, signInPlace, signInRequirements } from "./sign-in.js"

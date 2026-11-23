@@ -21,6 +21,12 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   list: `.`, `/http`, `/commands`, `/completion`, `/update`, `/codegen/runtime`, `/skill`, `/mcp`, `/query`,
   `/standards`, `/standards/tables` (only the vocabulary), `/wcat/start` and `/wcat/manifest`. The
   [README](README.md#install) says what that means for a caller.
+- **`/codegen/runtime` also exports what a CLI reads the generated manifest with**: the types `ManifestOperation`,
+  `SchemaNode`, `ApiServer`, `SecurityScheme`, `SecurityRequirement`, `OAuthFlow`, `Pagination`, `PageParameter`,
+  `GraphqlBinding`, `OperationPermission`, `Effect`, `Selection` and `SignInPlace`, and `identifier`,
+  `apiCommandPath`, `graphqlDocument`, `parseSelection`, `signInPlace` and `signInRequirements`. They are stable there;
+  `/codegen`, which still exports them too, is experimental. Watch for: import them from `/codegen/runtime` in code
+  that runs, so a change to the generator cannot reach it.
 
 ### Changed â€” may break callers
 
