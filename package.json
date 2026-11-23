@@ -110,6 +110,23 @@
     "./lefthook.yml": "./config/lefthook.yml",
     "./cspell": "./config/cspell.json"
   },
+  "wirecat": {
+    "stable": [
+      ".",
+      "./http",
+      "./commands",
+      "./completion",
+      "./update",
+      "./codegen/runtime",
+      "./skill",
+      "./mcp",
+      "./query",
+      "./standards",
+      "./standards/tables",
+      "./wcat/start",
+      "./wcat/manifest"
+    ]
+  },
   "scripts": {
     "build": "tsc --build --force",
     "typecheck": "tsc --build --force --emitDeclarationOnly && tsc -p tsconfig.test.json && tsc -p tsconfig.scripts.json",

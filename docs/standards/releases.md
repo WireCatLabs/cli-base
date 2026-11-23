@@ -96,6 +96,9 @@ on the [CI](ci.md) page.
     minor (`0.40.4` to `0.41.0`); from 1.0.0 on, the major (`1.4.0` to `2.0.0`).
   - A change to what the library marks experimental goes under "Changed — experimental". A stable API that a later
     major removes is marked deprecated and listed under "Deprecated". Both raise the minor, as "Added" does.
+  - A library lists its stable entry points in `package.json` under `"wirecat": { "stable": [".", "./http"] }`. An
+    entry point missing from the list is experimental as a whole; inside a stable one, the TSDoc tag
+    `@experimental` marks a name the promise does not cover.
   - Raise the patch (`1.4.0` to `1.4.1`) only when every entry is a fix or a change to the documents.
   - A stable break waits for a major the owner chose. Until then it lands as an addition beside the old API, which is
     deprecated, never as a change in place.

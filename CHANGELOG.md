@@ -16,6 +16,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   a minor release. "Changed — may break callers" and "Removed" stay for the stable API and, from 1.0.0 on, need a
   major. See [WC-REL-7](docs/standards/releases.md).
 - **`bin/release --major`.** A version that raises the major over npm's latest now stops unless this flag is given.
+- **`wirecat.stable` in `package.json` lists the stable entry points.** Semver covers them from 1.0.0 on. An entry
+  point not in the list is experimental as a whole, and so is a name tagged `@experimental` inside a stable one. The
+  list: `.`, `/http`, `/commands`, `/completion`, `/update`, `/codegen/runtime`, `/skill`, `/mcp`, `/query`,
+  `/standards`, `/standards/tables` (only the vocabulary), `/wcat/start` and `/wcat/manifest`. The
+  [README](README.md#install) says what that means for a caller.
 
 ### Changed — may break callers
 

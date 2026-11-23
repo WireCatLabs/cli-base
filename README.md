@@ -38,6 +38,12 @@ npm install @wirecat/cli-base
 It is ESM only, for Node 22 and later, and runs on Bun. `import` it (`require()` works from Node 22.12). Add
 `commander` if you use `/skill`, and `vitest` if you use `/testing/setup`.
 
+**What semver covers.** The entry points listed under `wirecat.stable` in `package.json` are the stable API: from
+1.0.0 on, a break there waits for a major and is deprecated first. A name inside one of them that carries the TSDoc
+tag `@experimental` is not covered, and neither is any entry point missing from the list (`/codegen`, `/release`,
+`/testing`, `/testing/setup`, the config files) or the `cli-dev` commands. Those may change in a minor, under the
+changelog heading "Changed — experimental" ([WC-REL-7](docs/standards/releases.md)).
+
 [API reference](docs/REFERENCE.md) · [Architecture](docs/dev/ARCHITECTURE.md) · [Shared tooling](docs/TOOLING.md) ·
 [Standards handbook](docs/standards/README.md) · [Changelog](CHANGELOG.md) · [wirecat.dev](https://wirecat.dev)
 
