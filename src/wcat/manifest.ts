@@ -79,6 +79,15 @@ const signInSchema = v.strictObject({
 
 export type SignIn = v.InferOutput<typeof signInSchema>
 
+const desktopSignInSchema = v.strictObject({
+  ...signInSchema.entries,
+  /**
+   * Desktop asks `setup show` only from this version on. The manifest ships inside the version it describes, so that
+   * version always has the flow.
+   */
+  setupFrom: v.optional(v.literal("0.0.0")),
+})
+
 /** Exactly the keys of a Desktop catalog entry that the tool itself knows; `null` when unused. */
 const desktopSchema = v.strictObject({
   tagline: line(55),
@@ -87,7 +96,7 @@ const desktopSchema = v.strictObject({
   runs: v.nullable(v.strictObject({ list: words, show: words })),
   search: v.null(),
   setup: v.nullable(words),
-  signIn: v.nullable(signInSchema),
+  signIn: v.nullable(desktopSignInSchema),
   skill: v.nullable(v.strictObject({ status: words, install: words, show: words })),
   /** Desktop gives an own tool a free port of its own and fills `{port}`. */
   mcpServer: v.nullable(
@@ -448,7 +457,12 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       search: null,
       setup: setupPath ? [...profile, ...setupPath.split(" ")] : null,
       signIn: identity.signIn
-        ? { gives: identity.signIn.gives, asks: identity.signIn.asks, ...(methods ? { methods } : {}) }
+        ? {
+            gives: identity.signIn.gives,
+            asks: identity.signIn.asks,
+            ...(methods ? { methods } : {}),
+            ...(has("setup show", "setup apply", "setup run") ? { setupFrom: "0.0.0" } : {}),
+          }
         : null,
       skill:
         skills && has("skill status", "skill install", "skill show")
