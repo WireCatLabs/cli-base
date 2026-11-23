@@ -16,6 +16,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   package list did not name them, so a CRM CLI's audit skipped them. The monthly table in
   [CI](docs/standards/ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing)
   also lists attio-cli's minute, 02:36 UTC, so `new` no longer offers it to another CLI.
+- **The monthly table lists slack-cli's minute, 03:19 UTC.** `new` gave slack-cli linear-cli's 03:16, which
+  `cli-dev repo-check` refused.
 
 ## 0.126.1 â€” 21.11.2026
 
