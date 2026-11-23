@@ -16,6 +16,16 @@ describe("the wcat lint warnings", () => {
     expect(binNameWarnings({})).toEqual([])
   })
 
+  it("accept a short name beside a wcat-<name> that runs the same file, and warn when the file differs", () => {
+    expect(binNameWarnings({ name: "@wirecat/ydisk-cli", bin: { ydisk: "a.js", "wcat-ydisk": "a.js" } })).toEqual([])
+    expect(binNameWarnings({ name: "@wirecat/ydisk-cli", bin: { ydisk: "a.js", "wcat-ydisk": "b.js" } })).toMatchObject(
+      [{ rule: "wcat-bin-name", target: 'package.json "bin" ydisk' }],
+    )
+    expect(binNameWarnings({ name: "@wirecat/ydisk-cli", bin: { ydisk: "a.js" } })).toMatchObject([
+      { rule: "wcat-bin-name", target: 'package.json "bin" ydisk' },
+    ])
+  })
+
   it("want a --wcat-describe answer in the format wcat reads", () => {
     expect(describeWarnings({ status: 0, stdout: '{"wcat_describe":1,"version":"1","description":"d"}' })).toEqual([])
     expect(describeWarnings({ status: 0, stdout: "usage: tool" })).toHaveLength(1)

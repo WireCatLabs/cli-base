@@ -412,10 +412,11 @@ does not take a reserved one.
   answer `--wcat-describe`. `cli-dev manifest --program dist/program.js --identity dist/wcat.js --check` fails when
   `contracts/wirecat.json` is stale. `cli-dev release-pr` fails the pull request that raises the version from `0.0.0`,
   the version `new` writes, when `package.json` has no `wcat-` `"bin"` key.
-- **Exceptions:** `cli-dev lint` warns about every `"bin"` key without the prefix, the short name beside `wcat-<name>`
-  included. A CLI that keeps the short name says why in `lint/overrides.json` (`"rule": "wcat-bin-name"`, the target
-  as the warning prints it), which silences the warning and counts against the budget; gcal, pbx and beeline do,
-  and the other CLIs carry the warning. Either is allowed: the warning is not a failure.
+- **Exceptions:** a short `"bin"` key beside a `wcat-<name>` key that runs the same file is allowed, and `cli-dev lint`
+  says nothing about it: the template installs both while users move to the long name. A short key alone, or one that
+  runs another file, gets the warning. A CLI that keeps such a key says why in `lint/overrides.json`
+  (`"rule": "wcat-bin-name"`, the target as the warning prints it), which silences the warning and counts against the
+  budget. Either is allowed: the warning is not a failure.
   An override covers the short name only, never a CLI with no `wcat-<name>`: `cli-dev release-pr` does not read
   `lint/overrides.json`.
   A WireCat CLI listed in Desktop's own catalog needs no manifest until Desktop reads one for it.

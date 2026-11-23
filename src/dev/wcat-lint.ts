@@ -24,11 +24,16 @@ export const binNames = (pkg: { name?: unknown; bin?: unknown }): string[] => {
   return typeof pkg.bin === "object" && pkg.bin !== null ? Object.keys(pkg.bin) : []
 }
 
-/** Each command is `wcat-<name>`, and a package outside `@wirecat/` takes no reserved name. */
+/**
+ * Each command is `wcat-<name>`, and a package outside `@wirecat/` takes no reserved name. A short name is fine beside
+ * a `wcat-<name>` that runs the same file: the template installs both while users move to the long one.
+ */
 export const binNameWarnings = (pkg: { name?: unknown; bin?: unknown }): WcatWarning[] =>
   binNames(pkg).flatMap((command): WcatWarning[] => {
     const target = `package.json "bin" ${command}`
-    if (!command.startsWith(PROGRAM_PREFIX))
+    if (!command.startsWith(PROGRAM_PREFIX)) {
+      const bins = typeof pkg.bin === "object" && pkg.bin !== null ? (pkg.bin as Record<string, unknown>) : {}
+      if (bins[command] !== undefined && bins[`${PROGRAM_PREFIX}${command}`] === bins[command]) return []
       return [
         {
           rule: "wcat-bin-name",
@@ -36,6 +41,7 @@ export const binNameWarnings = (pkg: { name?: unknown; bin?: unknown }): WcatWar
           message: `install the command as ${PROGRAM_PREFIX}${command}, so no other program on PATH has its name`,
         },
       ]
+    }
     const name = command.slice(PROGRAM_PREFIX.length)
     if (!TOOL_NAME.test(name))
       return [{ rule: "wcat-bin-name", target, message: "the name after wcat- is lower-case letters, digits and -" }]

@@ -1235,7 +1235,7 @@ else process.stdout.write(${JSON.stringify(tree)})\n`,
     document(clean())
     const bin = (bin: Record<string, string>) =>
       writeFileSync(join(root, "package.json"), JSON.stringify({ name: "@wirecat/tool-cli", bin }))
-    bin({ tool: "bin.mjs", "wcat-tool": "bin.mjs" })
+    bin({ tool: "bin.mjs", "wcat-tool": "other.mjs" })
     mkdirSync(join(root, "contracts"))
     writeFileSync(join(root, "contracts/wirecat.json"), JSON.stringify({ network: { hosts: [] } }))
     writeFileSync(
