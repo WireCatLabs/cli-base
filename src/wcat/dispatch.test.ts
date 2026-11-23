@@ -69,7 +69,7 @@ describe.skipIf(process.platform === "win32")("wcat's own commands", () => {
 
   it("prints its version and who runs it, then the list", async () => {
     expect(await wcat(["--version"])).toBe(0)
-    expect(out).toMatch(/^wcat \d+\.\d+\.\d+ \(@wirecat\/cli-base, run by wcat-alpha 1\.0\.0\)\n/)
+    expect(out).toMatch(/^wcat \d+\.\d+\.\d+(-[\w.]+)? \(@wirecat\/cli-base, run by wcat-alpha 1\.0\.0\)\n/)
     expect(out).toContain("Installed:")
   })
 
