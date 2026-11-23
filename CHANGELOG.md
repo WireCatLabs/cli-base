@@ -1540,7 +1540,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   fails as stale once the warning is gone. A CLI that keeps its short command name says why this way.
 - **`docs:check` refuses an entry under no `###` heading in the top changelog section.** It passed one, so a release
   could ship notes with an entry outside the five headings
-  ([the changelog rule](docs/standards/docs.md#wc-doc-15--changelog-entries-go-under-seven-fixed-headings-each-at-most-once-per-section)).
+  ([the changelog rule](docs/standards/docs.md#wc-doc-15--changelog-entries-go-under-five-fixed-headings-each-at-most-once-per-section)).
   Older sections are not checked: they are frozen, and several CLIs have such entries in them.
 - **The handbook's lines about gcal match gcal again:** `store status` (not `status`), a calendar sync's 15-minute
   terminal deadline, all-day events matched by local date, `mcp serve --profiles` built, gcal's own Node 22 job and
@@ -2191,7 +2191,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `<job> / ci / coverage` to its required checks. With `cli: true`, `test:matrix:check` moves from `check` to
   `coverage` and reads the shards' argv logs joined. Default 1: the tests stay in `check`, as before.
 - **Before 1.0.0, a release with a breaking change raises the minor version**
-  ([Releases](docs/standards/releases.md#wc-rel-7--versions-are-xyz-a-break-of-the-stable-api-raises-the-major-from-100-on-and-the-minor-before-it)).
+  ([Releases](docs/standards/releases.md#wc-rel-7--versions-are-xyz-before-100-a-breaking-change-raises-the-minor)).
   A section with an entry under "Changed â€” may break callers" or "Removed", or a new feature, raises the minor; only
   fixes and document changes raise the patch. npm's `^0.x.y` takes every patch of that minor, so a patch must not
   break anyone. The rule used to allow a breaking change in a patch release.

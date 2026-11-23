@@ -82,6 +82,8 @@ on the [CI](ci.md) page.
 - **Exceptions:** a shared library that prints no version has no `src/version.ts`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
+<a id="wc-rel-7--versions-are-xyz-before-100-a-breaking-change-raises-the-minor"></a>
+
 ### WC-REL-7 · Versions are `x.y.z`; a break of the stable API raises the major from 1.0.0 on, and the minor before it
 
 - **Why:** npm's `^1.4.0` takes every `1.x`, so a minor reaches callers who never read its changelog: it must not break

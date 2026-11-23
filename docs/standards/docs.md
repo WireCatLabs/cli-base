@@ -157,6 +157,8 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0; the empty-section check since the
   release after 0.93.0. **Rulings:** none.
 
+<a id="wc-doc-15--changelog-entries-go-under-five-fixed-headings-each-at-most-once-per-section"></a>
+
 ### WC-DOC-15 · Changelog entries go under seven fixed headings, each at most once per section
 
 - **Why:** one heading set lets a reader, an agent and one guard read every repository the same way.
