@@ -15,7 +15,7 @@ export const typesIn = (value: unknown, key?: string): string[] => {
   return []
 }
 
-const RELATIVE_MODULE = /(?:\bfrom\s*|\bimport\s*\(\s*)["'](\.{1,2}\/[^"']+)["']/g
+export const RELATIVE_MODULE = /(?:\bfrom\s*|\bimport\s*\(\s*)["'](\.{1,2}\/[^"']+)["']/g
 
 export const declarationOf = (dir: string, specifier: string): string | undefined => {
   const base = join(dir, specifier)

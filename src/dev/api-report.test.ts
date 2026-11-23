@@ -98,7 +98,7 @@ describe("api-report", () => {
         "Options · interface · }",
         "Options · interface · declare const schema: Inner;",
         "Options · interface · type Inner = { size: number };",
-        'Shape · re-export · export { Shape } from "valibot"',
+        'Shape · re-export · Shape from "valibot"',
         "alias · const · export declare const renamed: string;",
         "open · function · export declare function open(path: string): void;",
         "open · function · export declare function open(path: string, options: Options): void;",
@@ -127,9 +127,51 @@ describe("api-report", () => {
       'package.json: "wirecat.stable" lists "./missing", which is not an "exports" key',
     ])
     pkg(["./extra"])
-    write("dist/extra.d.ts", 'export * as ns from "./open.js";\n')
+    write("dist/extra.d.ts", "declare const x: 1;\nexport = x;\n")
     expect(apiReports(root).problems).toEqual([
-      expect.stringMatching(/extra\.d\.ts: cli-dev api-report cannot read "export \* as ns/),
+      expect.stringMatching(/extra\.d\.ts: cli-dev api-report cannot read "export = x;"/),
+    ])
+  })
+
+  it("follows an import exported again, export type *, a namespace, and a module augmentation the entry loads", () => {
+    pkg(["./extra"])
+    write(
+      "dist/extra.d.ts",
+      [
+        'import type { Options as Settings } from "./open.js";',
+        'import * as tools from "./tools.js";',
+        "export { Settings, tools };",
+        'export type * from "./tools.js";',
+        'export * as more from "./tools.js";',
+      ].join("\n"),
+    )
+    write(
+      "dist/tools.d.ts",
+      [
+        'declare module "@acme/base" {',
+        "    interface Meta {",
+        "        flag?: boolean;",
+        "    }",
+        "}",
+        "export declare const tool: () => void;",
+      ].join("\n"),
+    )
+    expect(apiReports(root)).toEqual({ problems: [], files: expect.any(Map) })
+    expect(apiReports(root).files.get("api/extra.api.txt")?.split("\n").slice(1, -1)).toEqual([
+      "Settings · interface · export interface Options {",
+      "Settings · interface · timeout?: number;",
+      "Settings · interface · shape: typeof schema;",
+      "Settings · interface · }",
+      "Settings · interface · declare const schema: Inner;",
+      "Settings · interface · type Inner = { size: number };",
+      'module "@acme/base" · augmentation · declare module "@acme/base" {',
+      'module "@acme/base" · augmentation · interface Meta {',
+      'module "@acme/base" · augmentation · flag?: boolean;',
+      'module "@acme/base" · augmentation · }',
+      'module "@acme/base" · augmentation · }',
+      "more · namespace · tool · const · export declare const tool: () => void;",
+      "tool · const · export declare const tool: () => void;",
+      "tools · namespace · tool · const · export declare const tool: () => void;",
     ])
   })
 

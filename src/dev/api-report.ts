@@ -8,7 +8,7 @@ import { dirname, join } from "node:path"
 import { parseArgs } from "node:util"
 import spawn from "cross-spawn"
 import type { DevIo } from "./main.js"
-import { declarationOf, STRINGS_AND_COMMENTS, typesIn } from "./result-shape.js"
+import { declarationOf, RELATIVE_MODULE, STRINGS_AND_COMMENTS, typesIn } from "./result-shape.js"
 
 export const API_REPORT_USAGE = `  api-report [--check] [--skip-build]
                                        builds the package, then writes api/<entry>.api.txt for each
@@ -32,6 +32,10 @@ interface Name {
 
 interface Module {
   exports: Map<string, Name>
+  /** `declare module "x"` and `declare global` blocks: they apply wherever the file is loaded. */
+  ambient: Map<string, Name>
+  /** The declaration files this one imports or re-exports from. */
+  reaches: string[]
 }
 
 const skipLiteral = (source: string, at: number): number => {
@@ -53,7 +57,7 @@ const skipLiteral = (source: string, at: number): number => {
 }
 
 const BLOCK =
-  /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(?:interface|class|enum|const\s+enum|namespace)\b/
+  /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(?:interface|class|enum|const\s+enum|namespace|module|global)\b/
 
 /** Top-level statements with the `/** … *\/` comment right before each. */
 export const statementsOf = (source: string): Statement[] => {
@@ -110,8 +114,12 @@ const linesOf = (text: string): string[] =>
 const EXPERIMENTAL = /@experimental\b/
 const DECLARATION =
   /^(export\s+)?(?:declare\s+)?(?:abstract\s+)?(const\s+enum|const|let|var|function|class|interface|type|enum|namespace)\s+([\w$]+)/
-const STAR = /^export\s+\*\s+from\s*["']([^"']+)["']/
+const STAR = /^export\s+(?:type\s+)?\*\s+(?:as\s+([\w$]+)\s+)?from\s*["']([^"']+)["']/
 const LIST = /^export\s+(?:type\s+)?\{([^}]*)\}(?:\s*from\s*["']([^"']+)["'])?/
+const IMPORT_LIST = /^import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*["']([^"']+)["']/
+const IMPORT_ALL = /^import\s+(?:type\s+)?\*\s+as\s+([\w$]+)\s+from\s*["']([^"']+)["']/
+/** `declare module "x" { … }` changes another package's types for every caller, so it is API too. */
+const AMBIENT = /^declare\s+(module\s+["'][^"']+["']|global)/
 
 const merge = (into: Name | undefined, add: Name): Name =>
   into === undefined
@@ -122,27 +130,65 @@ const merge = (into: Name | undefined, add: Name): Name =>
         experimental: into.experimental || add.experimental,
       }
 
+const byName = <T>([a]: [string, T], [b]: [string, T]) => (a < b ? -1 : a > b ? 1 : 0)
+
+const namespaceOf = (exports: Map<string, Name>): Name => ({
+  kinds: ["namespace"],
+  lines: [...exports]
+    .filter(([, name]) => !name.experimental)
+    .sort(byName)
+    .flatMap(([member, { kinds, lines }]) => lines.map((line) => `${member} · ${kinds.join("+")} · ${line}`)),
+  experimental: false,
+})
+
+const itemsOf = (list: string) =>
+  list
+    .split(",")
+    .map((item) => item.trim().replace(/^type\s+/, ""))
+    .filter(Boolean)
+    .map((item) => {
+      const [original = "", alias = original] = item.split(/\s+as\s+/)
+      return { original, alias }
+    })
+
 /** The exports of one `.d.ts` file; a non-exported local a declaration names is reported with it. */
 const moduleOf = (file: string, cache: Map<string, Module>, problems: string[]): Module => {
   const cached = cache.get(file)
   if (cached) return cached
-  const module: Module = { exports: new Map() }
+  const text = readFileSync(file, "utf8")
+  const reaches = [...text.matchAll(RELATIVE_MODULE)].flatMap(
+    ([, from]) => declarationOf(dirname(file), from as string) ?? [],
+  )
+  const module: Module = { exports: new Map(), ambient: new Map(), reaches: [...new Set(reaches)].sort() }
   cache.set(file, module)
   const locals = new Map<string, Name>()
   const exported = new Set<string>()
-  const lists: { statement: Statement; flat: string }[] = []
-  for (const statement of statementsOf(readFileSync(file, "utf8"))) {
+  const imports = new Map<string, { from: string; original: string }>()
+  const lists: { marked: boolean; flat: string }[] = []
+  for (const statement of statementsOf(text)) {
     const lines = linesOf(statement.text)
     const flat = lines.join(" ")
-    if (flat === "" || /^import\b/.test(flat) || /^export\s*\{\s*\}\s*;?$/.test(flat)) continue
+    const experimental = EXPERIMENTAL.test(statement.doc)
+    if (flat === "" || /^export\s*\{\s*\}\s*;?$/.test(flat)) continue
     const declared = DECLARATION.exec(flat)
+    const imported = IMPORT_LIST.exec(flat)
+    const all = IMPORT_ALL.exec(flat)
+    const ambient = AMBIENT.exec(flat)
     if (declared) {
       const [, isExported, kind = "", name = ""] = declared
-      const add = { kinds: [kind.replace(/\s+/g, " ")], lines, experimental: EXPERIMENTAL.test(statement.doc) }
-      locals.set(name, merge(locals.get(name), add))
+      locals.set(name, merge(locals.get(name), { kinds: [kind.replace(/\s+/g, " ")], lines, experimental }))
       if (isExported) exported.add(name)
-    } else if (STAR.test(flat) || LIST.test(flat)) lists.push({ statement, flat })
-    else problems.push(`${file}: cli-dev api-report cannot read "${flat.slice(0, 80)}"`)
+    } else if (imported)
+      for (const { original, alias } of itemsOf(imported[1] ?? ""))
+        imports.set(alias, { from: imported[2] ?? "", original })
+    else if (all) imports.set(all[1] ?? "", { from: all[2] ?? "", original: "*" })
+    else if (ambient) {
+      const key = ambient[1] ?? ""
+      module.ambient.set(key, merge(module.ambient.get(key), { kinds: ["augmentation"], lines, experimental }))
+    } else if (/^export\s+default\b/.test(flat))
+      module.exports.set("default", { kinds: ["default"], lines, experimental })
+    else if (STAR.test(flat) || LIST.test(flat)) lists.push({ marked: experimental, flat })
+    else if (!/^import\b/.test(flat)) problems.push(`${file}: cli-dev api-report cannot read "${flat.slice(0, 80)}"`)
   }
   const withLocals = (name: string): Name => {
     const own = locals.get(name) as Name
@@ -157,46 +203,63 @@ const moduleOf = (file: string, cache: Map<string, Module>, problems: string[]):
       }
     return { ...own, lines }
   }
-  for (const name of exported) module.exports.set(name, withLocals(name))
-  for (const { statement, flat } of lists) {
-    const marked = EXPERIMENTAL.test(statement.doc)
-    const star = STAR.exec(flat)?.[1]
-    const [, items = "", from = star] = LIST.exec(flat) ?? []
-    const target = from?.startsWith(".") ? declarationOf(dirname(file), from) : undefined
-    if (from?.startsWith(".") && target === undefined) {
+  /** Another package's name is reported by where it comes from: its types are that package's API. */
+  const resolve = (from: string, original: string): Name | undefined => {
+    const outside = { kinds: ["re-export"], lines: [`${original} from "${from}"`], experimental: false }
+    if (!from.startsWith(".")) return outside
+    const target = declarationOf(dirname(file), from)
+    if (target === undefined) {
       problems.push(`${file}: no declaration file for "${from}"`)
+      return undefined
+    }
+    const exports = moduleOf(target, cache, problems).exports
+    const found = original === "*" ? namespaceOf(exports) : exports.get(original)
+    if (found === undefined) problems.push(`${file}: exports "${original}", which ${from} does not declare`)
+    return found
+  }
+  for (const name of exported) module.exports.set(name, withLocals(name))
+  for (const { marked, flat } of lists) {
+    const add = (alias: string, found: Name | undefined) => {
+      if (found) module.exports.set(alias, { ...found, experimental: found.experimental || marked })
+    }
+    const star = STAR.exec(flat)
+    if (star) {
+      const [, namespace, from = ""] = star
+      if (namespace) add(namespace, resolve(from, "*"))
+      else if (!from.startsWith(".")) problems.push(`${file}: cli-dev api-report cannot follow "export * from ${from}"`)
+      else {
+        const target = declarationOf(dirname(file), from)
+        if (target === undefined) problems.push(`${file}: no declaration file for "${from}"`)
+        else for (const [name, found] of moduleOf(target, cache, problems).exports) add(name, found)
+      }
       continue
     }
-    const source = target ? moduleOf(target, cache, problems).exports : undefined
-    if (star !== undefined) {
-      if (!source) problems.push(`${file}: cli-dev api-report cannot follow "export * from ${star}"`)
-      for (const [name, found] of source ?? [])
-        module.exports.set(name, { ...found, experimental: found.experimental || marked })
-      continue
-    }
-    for (const item of items
-      .split(",")
-      .map((one) => one.trim().replace(/^type\s+/, ""))
-      .filter(Boolean)) {
-      const [original = "", alias = original] = item.split(/\s+as\s+/)
-      const found =
-        from === undefined ? (locals.has(original) ? withLocals(original) : undefined) : source?.get(original)
-      if (from !== undefined && !source) {
-        module.exports.set(alias, {
-          kinds: ["re-export"],
-          lines: [`export { ${item} } from "${from}"`],
-          experimental: marked,
-        })
-        continue
-      }
-      if (found === undefined) {
-        problems.push(`${file}: exports "${original}", which ${from ?? "the file"} does not declare`)
-        continue
-      }
-      module.exports.set(alias, { ...found, experimental: found.experimental || marked })
+    const [, list = "", from] = LIST.exec(flat) ?? []
+    for (const { original, alias } of itemsOf(list)) {
+      const via = imports.get(original)
+      if (from !== undefined) add(alias, resolve(from, original))
+      else if (locals.has(original)) add(alias, withLocals(original))
+      else if (via) add(alias, resolve(via.from, via.original))
+      else problems.push(`${file}: exports "${original}", which the file does not declare`)
     }
   }
   return module
+}
+
+/** The augmentations of every declaration file the entry point loads, in file order. */
+const ambientFrom = (entry: string, cache: Map<string, Module>, problems: string[]): Map<string, Name> => {
+  const found = new Map<string, Name>()
+  const seen = new Set([entry])
+  const queue = [entry]
+  for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
+    const { ambient, reaches } = moduleOf(file, cache, problems)
+    for (const [key, name] of ambient) found.set(key, merge(found.get(key), name))
+    for (const next of reaches.filter((one) => !seen.has(one))) {
+      seen.add(next)
+      queue.push(next)
+    }
+  }
+  return found
 }
 
 export const reportFileOf = (entry: string): string =>
@@ -242,9 +305,9 @@ export const apiReports = (cwd: string): { files: Map<string, string>; problems:
       problems.push(`${types} is not built: build the package before cli-dev api-report`)
       continue
     }
-    const names = [...moduleOf(file, cache, problems).exports]
+    const names = [...moduleOf(file, cache, problems).exports, ...ambientFrom(file, cache, problems)]
       .filter(([, name]) => !name.experimental)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .sort(byName)
     const lines = names.flatMap(([name, { kinds, lines }]) =>
       lines.map((line) => `${name} · ${kinds.join("+")} · ${line}`),
     )
