@@ -144,6 +144,16 @@ jobs:
           cat "$RUNNER_TEMP/slow.txt"
           text=$(awk '{ gsub(/%/, "%25"); printf "%s%s", (NR > 1 ? "%0A" : ""), $0 }' "$RUNNER_TEMP/slow.txt")
           echo "::warning title=Tests over 3 s (WC-TEST-20)::$text"
+      # WC-REL-7: a package that lists its stable entry points in package.json ("wirecat": { "stable": [...] }) keeps
+      # their API report in api/ current; the changelog guard then asks for the heading a change to it needs.
+      - name: api report
+        run: |
+          stable=$(node -p 'Boolean(require("./package.json").wirecat?.stable)')
+          [ "$stable" = "true" ] || { echo "::notice::package.json lists no wirecat.stable, so no API report check"; exit 0; }
+          if [ -x node_modules/.bin/cli-dev ]; then dev=node_modules/.bin/cli-dev
+          elif [ -f dist/dev/bin.js ]; then dev="node dist/dev/bin.js"
+          else echo "::error::package.json lists wirecat.stable, but there is no cli-dev to check api/"; exit 1; fi
+          $dev api-report --check --skip-build
       # One step per script, after test:coverage: test:matrix:check reads that run's argv log, so with shards it runs
       # in `coverage` instead.
       - name: cli steps to skip

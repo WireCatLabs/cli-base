@@ -23,12 +23,10 @@ import {
   docsProblems,
   fragmentProblems,
   JOURNAL_IDS,
-  levelledVersion,
   markdownFiles,
   packageVersion,
   readFragments,
   structureProblems,
-  versionLevelProblem,
   versionScript,
 } from "../release/index.js"
 import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
@@ -51,6 +49,7 @@ import { issuesOf, RegistryError } from "../standards/registry.js"
 import { VOCABULARY } from "../standards/vocabulary.js"
 import { buildManifest, MANIFEST_FILE, ManifestError, type ManifestIdentity, manifestText } from "../wcat/manifest.js"
 import { adopt } from "./adopt.js"
+import { API_REPORT_USAGE, apiReportCommand } from "./api-report.js"
 import { type AuditInput, auditClis, scorecardTable, sharedDifferences, sharedReviews, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
@@ -58,7 +57,7 @@ import { familyPackages, installFamily } from "./family.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
 import { baselineOf, judge, lintCommands, misfiled, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
 import { type NetworkContext, readSources } from "./network.js"
-import { nextVersion } from "./next-version.js"
+import { levelCommand, nextVersion } from "./next-version.js"
 import { READY_USAGE, ready } from "./ready.js"
 import { readDeclarations } from "./result-shape.js"
 import type { ContractEdit } from "./shared-contracts.js"
@@ -149,7 +148,8 @@ const USAGE = `usage: cli-dev <command> [options]
                                        __dirname was read and found harmless. Fails when a bundled
                                        module would look for a file or package in the wrong place
 ${CONFORMANCE_USAGE}
-${READY_USAGE}`
+${READY_USAGE}
+${API_REPORT_USAGE}`
 
 const load = async (cwd: string, path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(isAbsolute(path) ? path : join(cwd, path)).href)) as Record<string, unknown>
@@ -219,25 +219,10 @@ const fragments = (args: string[], io: DevIo) => {
   return 0
 }
 
-/** The top section's version level: with `--next <x.y.z>`, the version it needs; without, whether it has it. */
-const level = (args: string[], io: DevIo) => {
-  const { values } = parseArgs({
-    args,
-    options: { next: { type: "string" }, file: { type: "string", default: "CHANGELOG.md" } },
-  })
-  const text = readFileSync(isAbsolute(values.file) ? values.file : join(io.cwd, values.file), "utf8")
-  if (values.next) {
-    io.out(levelledVersion(text, values.next))
-    return 0
-  }
-  const problem = versionLevelProblem(text)
-  return report(io, problem ? [problem] : [], `${values.file}: the top section's version fits its headings`)
-}
-
 const changelog = (args: string[], io: DevIo) => {
   const [action, ...rest] = args
   if (action === "fragments") return fragments(rest, io)
-  if (action === "level") return level(rest, io)
+  if (action === "level") return levelCommand(rest, io)
   if (action !== "fold" && action !== "restore") {
     io.err(`cli-dev changelog: no action "${action ?? ""}" — the ones there are: fold, restore, fragments, level`)
     return 2
@@ -1045,6 +1030,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
     }
     case "changelog":
       return changelog(args, io)
+    case "api-report":
+      return apiReportCommand(args, io)
     case "docs-check":
       return docsCheck(args, io)
     case "test-matrix":

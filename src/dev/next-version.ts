@@ -1,3 +1,9 @@
+import { readFileSync } from "node:fs"
+import { isAbsolute, join } from "node:path"
+import { parseArgs } from "node:util"
+import { levelledVersion, versionLevelProblem } from "../release/level.js"
+import type { DevIo } from "./main.js"
+
 /**
  * The version `bin/release` publishes: the one in package.json when npm has not taken it and it is
  * above npm's latest, else the next free one at the same bump level (x.0.0 → major from 1.0.0 on, x.y.0 → minor,
@@ -42,4 +48,21 @@ export const nextVersion = (
   let next = step(top)
   while (taken.has(next.join("."))) next = step(next)
   return { version: next.join(".") }
+}
+
+/** The top section's version level: with `--next <x.y.z>`, the version it needs; without, whether it has it. */
+export const levelCommand = (args: string[], io: DevIo): number => {
+  const { values } = parseArgs({
+    args,
+    options: { next: { type: "string" }, file: { type: "string", default: "CHANGELOG.md" } },
+  })
+  const text = readFileSync(isAbsolute(values.file) ? values.file : join(io.cwd, values.file), "utf8")
+  if (values.next) {
+    io.out(levelledVersion(text, values.next))
+    return 0
+  }
+  const problem = versionLevelProblem(text)
+  if (problem) io.err(problem)
+  else io.out(`${values.file}: the top section's version fits its headings`)
+  return problem ? 1 : 0
 }
