@@ -8,6 +8,21 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.132.0 — 23.11.2026
+
+### Added
+
+- **A tracker's write words in the vocabulary.** `--team <team>` sets the tracker team that owns an issue, and
+  `--assignee` also takes `<user>`, one tracker user by id, name or e-mail, beside `<person...>`, people by UID.
+  `comments` now include an issue's, and `--parent` an issue it sits under. cli-core's `issues create|update` and
+  `issues comments create` then pass `cli-dev lint` and the family audit with no baseline in linear-cli
+  (cli-core #3237).
+
+### Fixed
+
+- **`--priority <n>` says what it takes.** Its meaning named only the old 0 urgent … 4 low; it is the family's
+  priority: low, medium, high, critical or none, a score from 0.0 to 1.0, or those old numbers.
+
 ## 0.131.0 — 23.11.2026
 
 ### Added
