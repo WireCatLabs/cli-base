@@ -8,6 +8,23 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.128.0 — 23.11.2026
+
+### Added
+
+- **The manifest names `signIn.setupFrom` when the CLI has cli-core's setup flow.** WireCat Desktop draws a tool's own
+  guided sign-in (`setup show`) only when the tool's catalog entry names `signIn.setupFrom`. A tool added from its
+  manifest could not name it, so Desktop showed its plain form instead of the flow. `cli-dev manifest` now writes
+  `setupFrom: "0.0.0"` when the CLI has `setup show`, `setup apply` and `setup run` and declares `signIn`. Run
+  `pnpm generate` after the bump; nothing else changes. See [the reference](docs/REFERENCE.md).
+- **A workspace's words in the vocabulary** ([#693](https://github.com/WireCatLabs/cli-base/issues/693)). The nouns
+  `databases` (a source's databases, each a set of rows with typed properties) and `rows` (the records of such a
+  database). The verb `reply` (answer in a comment thread at the source). The flags `--from-template <template>` (start
+  a new page from one of the source's page templates), `--cover <link>` (a page's cover image, by an https link) and
+  `--allow-deleting-content` (let an update delete the child pages its new text leaves out). notion-cli no longer needs
+  an override for these words. drive-cli's `comments reply` override goes stale at its next bump and comes out then.
+  `get` stays an old name for `show`, and a list without a query is still `list-without-query`.
+
 ## 0.127.0 — 23.11.2026
 
 ### Added
