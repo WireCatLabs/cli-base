@@ -63,6 +63,62 @@ describe("collectFragments", () => {
     )
   })
 
+  it("keeps one blank line around each heading and none between entries", () => {
+    const dated = [
+      "# Changelog",
+      "",
+      "## 0.3.0 — 19.11.2026",
+      "",
+      "### Fixed",
+      "",
+      "- Own.",
+      "",
+      "### Fixed",
+      "",
+      "- Applied under the dated heading by git.",
+      "",
+      "## 0.2.0 — 18.11.2026",
+      "",
+      "### Added",
+      "",
+      "- Shipped.",
+      "",
+    ].join("\n")
+    const fragments = [
+      { name: "a.md", text: "### Added\n\n- A.\n\n\n- B,\n\n  in two paragraphs.\n\n" },
+      { name: "b.md", text: "\n### Fixed\n\n- One.\n- Two.\n\n- The blank line above was ydisk 0.3.0's.\n" },
+    ]
+    expect(collectFragments(dated, "0.3.0", fragments, rules)).toBe(
+      [
+        "# Changelog",
+        "",
+        "## 0.3.0 — 19.11.2026",
+        "",
+        "### Added",
+        "",
+        "- A.",
+        "- B,",
+        "",
+        "  in two paragraphs.",
+        "",
+        "### Fixed",
+        "",
+        "- Own.",
+        "- Applied under the dated heading by git.",
+        "- One.",
+        "- Two.",
+        "- The blank line above was ydisk 0.3.0's.",
+        "",
+        "## 0.2.0 — 18.11.2026",
+        "",
+        "### Added",
+        "",
+        "- Shipped.",
+        "",
+      ].join("\n"),
+    )
+  })
+
   it("refuses a version without a dated section", () => {
     expect(() => collectFragments(changelog, "1.4.0", [{ name: "a.md", text: "### Fixed\n\n- a\n" }], rules)).toThrow(
       /no "## 1\.4\.0 — " section/,

@@ -5,6 +5,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
+import { joinBodies } from "./fold.js"
 import { idPattern } from "./markdown.js"
 
 export type Fragment = { name: string; text: string }
@@ -62,26 +63,18 @@ export const fragmentProblems = ({ name, text }: Fragment, { headings, ids }: Fr
   return problems
 }
 
-const trimBlank = (lines: string[]) => {
-  let start = 0
-  let end = lines.length
-  while (start < end && !lines[start]?.trim()) start++
-  while (end > start && !lines[end - 1]?.trim()) end--
-  return lines.slice(start, end)
-}
-
 const byHeading = (lines: string[], where: string) => {
-  const found = new Map<string, string[]>()
+  const found = new Map<string, string[][]>()
   let current: string[] | undefined
   for (const line of lines) {
     if (line.startsWith("### ")) {
       const heading = line.slice(4).trim()
-      current = found.get(heading) ?? []
-      found.set(heading, current)
+      current = []
+      found.set(heading, [...(found.get(heading) ?? []), current])
     } else if (current) current.push(line)
     else if (line.trim()) throw new Error(`${where} has text before its first ### heading: "${line}"`)
   }
-  return new Map([...found].map(([heading, body]) => [heading, trimBlank(body)]))
+  return new Map([...found].map(([heading, bodies]) => [heading, joinBodies(bodies)]))
 }
 
 /**
@@ -103,7 +96,7 @@ export const collectFragments = (
   for (const fragment of fragments) {
     const text = fragment.text.replace(/\]\(\.\.\//g, "](")
     for (const [heading, body] of byHeading(text.split("\n"), `changes/${fragment.name}`))
-      merged.set(heading, [...(merged.get(heading) ?? []), ...body])
+      merged.set(heading, joinBodies([merged.get(heading) ?? [], body]))
   }
   const rank = (heading: string) => (headings.includes(heading) ? headings.indexOf(heading) : headings.length)
   const body = [...merged]

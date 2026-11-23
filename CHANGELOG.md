@@ -29,6 +29,10 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 - **`next-version` keeps a taken major a major**: with 2.0.0 on npm, `2.0.0` gives `3.0.0`, not `2.1.0`.
 - **A pre-release is published under npm's `next` tag**, from `bin/release` and from the release workflow. npm refuses
   a pre-release without a tag, and `latest` must stay a release.
+- **A release that collects `changes/` fragments or folds Unreleased no longer leaves a blank line between entries.**
+  A blank line inside a fragment, or a `###` heading that appears twice in the dated section, used to split the list
+  in two (ydisk 0.3.0's Fixed) or leave two blank lines in a row. Each heading now gets one list, with one blank line
+  around the heading. A blank line inside an entry, before its indented second paragraph, stays.
 
 ## 0.132.0 â€” 23.11.2026
 
