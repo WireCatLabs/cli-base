@@ -452,10 +452,11 @@ the same. `session start` takes such a token, and the CLI keeps it the way it ke
 - **Example:** `ydisk personal session start` asks `Yandex Disk OAuth token:` without echo, or reads
   `ydisk personal session start < token.txt`, asks the Disk whose token it is, and answers
   `{ "profile": "personal", "state": "saved", "stored_in": "keyring", "verified": true, "user": { … } }`.
+  `ydisk personal session end` forgets the token; its help, like ydisk's docs, says the token stays valid until the
+  owner removes the app in Yandex ID's Data access (<https://id.yandex.ru/personal/data-access>).
 - **Exceptions:** a sign-in the CLI runs itself follows
   [WC-SECR-22](#wc-secr-22--sign-in-with-oauth-through-cli-cores-sign-in-module). A bot token keeps its own entry,
-  `bot:<profile>` (WC-SECR-4). Known gap, as of 2026-11-17: ydisk's `session end` forgets the token and says it stays
-  valid at Yandex, but its docs do not yet say where to revoke it.
+  `bot:<profile>` (WC-SECR-4).
 - **Applies to:** every CLI whose sign-in takes a token the owner pastes (ydisk today). **Since:** cli-base 0.117.0.
   **Rulings:** none.
 
