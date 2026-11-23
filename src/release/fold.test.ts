@@ -87,6 +87,14 @@ Intro.
     )
   })
 
+  it("leaves no blank line between entries when the dated section ends the file", () => {
+    const loose =
+      "# Changelog\n\n## Unreleased\n\n### Fixed\n\n- A.\n\n- B.\n\n\n## 0.9.0 — 14.10.2026\n\n### Fixed\n\n- C.\n"
+    expect(foldUnreleased(loose, "0.9.0")).toBe(
+      "# Changelog\n\n## 0.9.0 — 14.10.2026\n\n### Fixed\n\n- A.\n- B.\n- C.\n",
+    )
+  })
+
   it("merges headings that differ only by trailing spaces", () => {
     expect(foldUnreleased(changelog.replace("### Fixed\n\n- Older", "### Fixed  \n\n- Older"), "0.9.0")).toBe(
       foldUnreleased(changelog, "0.9.0"),

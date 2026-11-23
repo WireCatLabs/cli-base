@@ -8,6 +8,20 @@ const trimBlank = (lines: string[]) => {
   return lines.slice(start, end)
 }
 
+/**
+ * The entries under one `###` heading, from each place it appears: one list, a blank line only inside an entry.
+ * A blank line before `- ` would split it into a loose list, as ydisk 0.3.0's Fixed shows.
+ */
+export const joinBodies = (bodies: string[][]) =>
+  bodies.flatMap(trimBlank).filter(
+    (line, index, lines) =>
+      line.trim() ||
+      !lines
+        .slice(index + 1)
+        .find((next) => next.trim())
+        ?.startsWith("- "),
+  )
+
 const parseSection = (block: string): Section => {
   const [title = "", ...lines] = block.split("\n")
   const chunks = new Map<string, string[][]>()
@@ -20,7 +34,7 @@ const parseSection = (block: string): Section => {
     } else if (current) current.push(line)
     else if (line.trim()) throw new Error(`"${title}" has text before its first ### heading: "${line}"`)
   }
-  const headings = new Map([...chunks].map(([heading, bodies]) => [heading, bodies.flatMap(trimBlank)]))
+  const headings = new Map([...chunks].map(([heading, bodies]) => [heading, joinBodies(bodies)]))
   return { title, headings, repeated: [...chunks.values()].some((bodies) => bodies.length > 1) }
 }
 
