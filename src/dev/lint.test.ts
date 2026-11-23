@@ -808,6 +808,23 @@ describe("lint rules", () => {
     expect(lintOf(root).filter((found) => found.rule === "unknown-resource")).toEqual([])
   })
 
+  // cli-core's issues create|update, mounted by linear-cli: without these words both fail its lint.
+  it("knows a tracker's write words: --team and one --assignee <user>", () => {
+    const root = clean()
+    ran(
+      root
+        .command("issues")
+        .description("a tracker's issues")
+        .command("create")
+        .description("make an issue")
+        .option("--team <team>", "the team")
+        .option("--assignee <user>", "the user"),
+      { examples: ["tool work issues create --team ENG --assignee ada@example.com"] },
+    )
+    const words = ["option-role", "flag-two-meanings"]
+    expect(lintOf(root).filter((found) => words.includes(found.rule))).toEqual([])
+  })
+
   it("knows a workspace's words: databases, rows, comments reply, --from-template, --cover", () => {
     const root = clean()
     const databases = root.command("databases").description("a workspace's databases")
