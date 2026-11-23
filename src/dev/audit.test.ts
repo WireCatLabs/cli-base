@@ -785,8 +785,10 @@ describe("audit --family", () => {
   it("installs every other published CLI of the parity groups", () => {
     expect([...familyPackages(PARITY_GROUPS, "b24")]).toEqual([
       ["amo", "@wirecat/amo-cli"],
+      ["attio", "@wirecat/attio-cli"],
       ["drive", "@wirecat/drive-cli"],
       ["gcal", "@wirecat/gcal-cli"],
+      ["hubspot", "@wirecat/hubspot-cli"],
       ["linear", "@wirecat/linear-cli"],
       ["mail", "@wirecat/mail-cli"],
       ["max", "@wirecat/max-cli"],

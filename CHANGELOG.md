@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **`cli-dev audit --family` compares a CLI with hubspot-cli and attio-cli too.** Both are on npm, but the family's
+  package list did not name them, so a CRM CLI's audit skipped them. The monthly table in
+  [CI](docs/standards/ci.md#wc-ci-9--run-full-validation-and-release-security-on-the-first-day-of-each-month-without-publishing)
+  also lists attio-cli's minute, 02:36 UTC, so `new` no longer offers it to another CLI.
+
 ## 0.126.1 — 21.11.2026
 
 ### Fixed
