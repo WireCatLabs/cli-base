@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.131.0 — 23.11.2026
+
+### Added
+
+- **`versions` in the vocabulary.** The earlier contents of a file that a write replaced or deleted, kept on this
+  computer to be put back. cli-core's shared file mirror commands name them `mirrors versions list|restore`, and the
+  command lint no longer needs an override for the word in ydisk, notion-cli or cli-core.
+
 ## 0.130.0 — 23.11.2026
 
 ### Added
