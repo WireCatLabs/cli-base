@@ -106,11 +106,8 @@ per profile, and only `defaults` is filled.
 - **Enforced by:** review only.
 - **Example:** the release notes give the old and the new path under "Changed — may break callers". Help, completion,
   generated pages, the skill, MCP names and permission keys move in the same change.
-- **Exceptions:** the old flat permission key of a generated `api` command that moved into a subgroup stays an alias
-  that only tightens
-  ([WC-CMD-33](#wc-cmd-33--group-a-generated-api-by-resource-api-group-command)); the old command path still stops
-  working.
-- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-417.
+- **Exceptions:** none.
+- **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-417, NEED-2759.
 
 ### WC-CMD-9 · Answer the naming questions in the pull request before you build a new command
 
@@ -515,16 +512,17 @@ one operation, stay directly under `api`.
   refuses a group that would shadow the group's own commands, a group named like a command, and two operations on one
   path.
 - **Example:** `api.contacts: deny` stops every `api contacts` command; `api.contacts.delete` is the delete's own key.
-  A profile that still names the old flat key `api.contacts-list` keeps that hold: cli-core checks it beside
-  `api.contacts.list` on every call, from the command line and over MCP, and warns to rename it. Its `deny`, `ask` or
-  `readonly` (on a write) applies; its `allow` lifts nothing. The old path `api contacts-list` is gone
-  ([WC-CMD-8](#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)): the release
-  that groups a CLI's `api` lists the move under "Changed — may break callers" and raises the minor version.
-  `api show` takes the new path, the old name or the operation id; `api list` prints the path and the group.
+  The old path `api contacts-list` and its key are gone
+  ([WC-CMD-8](#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)). A config that
+  still names `api.contacts-list` is refused like any unknown key, every command and `mcp serve` alike, and the
+  refusal names the key to rename it to: "its command moved, so rename it to permissions.api.contacts.list". The
+  release that groups a CLI's `api` lists the moved paths and keys under "Changed — may break callers" and raises the
+  minor version. `api show` takes the quoted path (`api show "contacts list"`), the old name or the operation id;
+  `api list` prints the path and the group.
 - **Exceptions:** a manifest generated without `names.groups` stays flat. gcal and drive keep their own
   `api.<service>.<resource>.<method>` keys, and the messenger CLIs' `bot api` stays flat, until each is moved.
 - **Applies to:** every CLI with a generated `api` group, from its next regeneration. **Since:** the release after
-  cli-base 0.120.0, with the cli-core release that mounts groups. **Rulings:** NEED-2754.
+  cli-base 0.120.0, with the cli-core release that mounts groups. **Rulings:** NEED-2754, NEED-2759.
 
 ## Sources
 
