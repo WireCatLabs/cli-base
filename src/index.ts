@@ -37,7 +37,6 @@ export {
   mcpErrorResult,
   type RenderErrorOptions,
   renderError,
-  retryOf,
 } from "./failure.js"
 export { brokenKeyring, type KeyringStore, memoryKeyring, systemKeyring } from "./keyring.js"
 export type { Logger } from "./logger.js"
@@ -64,7 +63,6 @@ export { backoffMs, DEFAULT_RETRY, type RetryConfig } from "./retry.js"
 export { singleLine, visibleControls } from "./sanitize.js"
 export { captureStreams, processStreams, type Streams } from "./streams.js"
 export {
-  abortError,
   type MonotonicClock,
   monotonic,
   realSleep,

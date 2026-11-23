@@ -6,6 +6,8 @@ import { isContentKey, LOG_ATTRIBUTE_KEYS, type LogRecord, type LogSeverity } fr
  * Field names whose value must never reach a log file. This is the **second** line of defence, not
  * the first: a secret should not be handed to a logger at all. Redaction catches the one that
  * slipped into a nested object nobody thought about.
+ *
+ * @experimental
  */
 export const REDACTED_FIELDS = [
   "authorization",
@@ -43,6 +45,7 @@ export interface RecordLogOptions {
   now?: () => Date
 }
 
+/** @experimental */
 export const NOT_ALLOWED = "[not allowed]"
 
 export interface RecordInput {

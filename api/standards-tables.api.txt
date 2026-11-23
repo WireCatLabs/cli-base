@@ -1,0 +1,52 @@
+# @wirecat/cli-base "./standards/tables": the stable API, written by cli-dev api-report. Do not edit.
+FLAG_ROLES · const · export declare const FLAG_ROLES: {
+FLAG_ROLES · const · readonly paging: "which part of a long answer: how many, which page, where to continue";
+FLAG_ROLES · const · readonly output: "how the answer is shaped or shown";
+FLAG_ROLES · const · readonly sort: "the order of the answer";
+FLAG_ROLES · const · readonly mode: "how the command runs, not what it reads";
+FLAG_ROLES · const · readonly action: "does something extra besides the answer";
+FLAG_ROLES · const · readonly budget: "how much time or work the command may spend";
+FLAG_ROLES · const · readonly scope: "which accounts, providers or sources are read; never picked for you, so a flag and not a query field";
+FLAG_ROLES · const · readonly target: "which thing or time window the command acts on, when that is not a list's filter";
+FLAG_ROLES · const · readonly value: "sets a field on a write";
+FLAG_ROLES · const · readonly query: "a query in the query language, beside a search's own words";
+FLAG_ROLES · const · };
+FLAG_TYPES · const · export declare const FLAG_TYPES: readonly ["switch", "count", "number", "string", "id", "time", "duration", "choice", "list", "path", "cursor"];
+FlagRole · type · export type FlagRole = keyof typeof FLAG_ROLES;
+FlagType · type · export type FlagType = (typeof FLAG_TYPES)[number];
+VOCABULARY · const · export declare const VOCABULARY: Vocabulary;
+Vocabulary · type · export type Vocabulary = v.InferOutput<typeof vocabularySchema>;
+VocabularyFlag · type · export type VocabularyFlag = Vocabulary["flags"][number];
+VocabularyNoun · type · export type VocabularyNoun = Vocabulary["nouns"][number];
+VocabularyVerb · type · export type VocabularyVerb = Vocabulary["verbs"][number];
+vocabularySchema · const · export declare const vocabularySchema: v.StrictObjectSchema<{
+vocabularySchema · const · readonly verbs: v.ArraySchema<v.StrictObjectSchema<{
+vocabularySchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case word, words joined by -">]>;
+vocabularySchema · const · readonly meaning: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+vocabularySchema · const · readonly replaces: v.OptionalSchema<v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case word, words joined by -">]>, undefined>, undefined>;
+vocabularySchema · const · }, undefined>, undefined>;
+vocabularySchema · const · readonly nouns: v.ArraySchema<v.StrictObjectSchema<{
+vocabularySchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case word, words joined by -">]>;
+vocabularySchema · const · readonly meaning: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+vocabularySchema · const · readonly kind: v.PicklistSchema<["collection", "singular"], undefined>;
+vocabularySchema · const · readonly replaces: v.OptionalSchema<v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case word, words joined by -">]>, undefined>, undefined>;
+vocabularySchema · const · }, undefined>, undefined>;
+vocabularySchema · const · readonly views: v.ArraySchema<v.StrictObjectSchema<{
+vocabularySchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case word, words joined by -">]>;
+vocabularySchema · const · readonly meaning: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+vocabularySchema · const · }, undefined>, undefined>;
+vocabularySchema · const · readonly roots: v.ArraySchema<v.StrictObjectSchema<{
+vocabularySchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case word, words joined by -">]>;
+vocabularySchema · const · readonly meaning: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+vocabularySchema · const · }, undefined>, undefined>;
+vocabularySchema · const · readonly flags: v.ArraySchema<v.StrictObjectSchema<{
+vocabularySchema · const · readonly name: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a long flag: --lower-case-words">]>;
+vocabularySchema · const · readonly value: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a value name such as <n>">]>, undefined>;
+vocabularySchema · const · readonly type: v.PicklistSchema<readonly ["switch", "count", "number", "string", "id", "time", "duration", "choice", "list", "path", "cursor"], undefined>;
+vocabularySchema · const · readonly role: v.PicklistSchema<["action" | "budget" | "mode" | "output" | "paging" | "query" | "scope" | "sort" | "target" | "value", ...("action" | "budget" | "mode" | "output" | "paging" | "query" | "scope" | "sort" | "target" | "value")[]], undefined>;
+vocabularySchema · const · readonly meaning: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+vocabularySchema · const · readonly otherValues: v.OptionalSchema<v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a value name such as address">]>, undefined>, undefined>;
+vocabularySchema · const · readonly unit: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+vocabularySchema · const · readonly replaces: v.OptionalSchema<v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a long flag">]>, undefined>, undefined>;
+vocabularySchema · const · }, undefined>, undefined>;
+vocabularySchema · const · }, undefined>;

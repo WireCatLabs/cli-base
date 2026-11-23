@@ -1,0 +1,125 @@
+# @wirecat/cli-base "./query": the stable API, written by cli-dev api-report. Do not edit.
+DateRange · interface · export interface DateRange {
+DateRange · interface · lower?: number;
+DateRange · interface · upper?: number;
+DateRange · interface · lower_inclusive: boolean;
+DateRange · interface · upper_inclusive: boolean;
+DateRange · interface · }
+EvaluateOptions · interface · export interface EvaluateOptions {
+EvaluateOptions · interface · zone?: string;
+EvaluateOptions · interface · now?: number;
+EvaluateOptions · interface · relation?: (node: Predicate, item: Readonly<Record<string, unknown>>) => boolean;
+EvaluateOptions · interface · }
+FIELD_TYPES · const · export declare const FIELD_TYPES: readonly ["kw", "txt", "enum", "num", "time", "bool", "ref"];
+FieldAnnotations · interface · export interface FieldAnnotations {
+FieldAnnotations · interface · exclude?: readonly string[];
+FieldAnnotations · interface · text?: readonly string[];
+FieldAnnotations · interface · relations?: Readonly<Record<string, Pick<FieldSpec, "type" | "example" | "relation"> & Partial<Pick<FieldSpec, "values" | "placement">>>>;
+FieldAnnotations · interface · states?: Readonly<Record<string, string>>;
+FieldAnnotations · interface · examples?: Readonly<Record<string, string>>;
+FieldAnnotations · interface · native?: readonly string[];
+FieldAnnotations · interface · negatable?: readonly string[];
+FieldAnnotations · interface · validate?: Readonly<Record<string, (node: Predicate) => void>>;
+FieldAnnotations · interface · }
+FieldInfo · type · export type FieldInfo = Omit<FieldSpec, "validate">;
+FieldSpec · interface · export interface FieldSpec {
+FieldSpec · interface · name: string;
+FieldSpec · interface · type: FieldType;
+FieldSpec · interface · operators: readonly Operator[];
+FieldSpec · interface · values?: readonly string[];
+FieldSpec · interface · example: string;
+FieldSpec · interface · relation?: string;
+FieldSpec · interface · native?: boolean;
+FieldSpec · interface · placement?: "and";
+FieldSpec · interface · negatable?: boolean;
+FieldSpec · interface · validate?: (node: Predicate) => void;
+FieldSpec · interface · }
+FieldType · type · export type FieldType = (typeof FIELD_TYPES)[number];
+OPERATORS_BY_TYPE · const · export declare const OPERATORS_BY_TYPE: Readonly<Record<FieldType, readonly Operator[]>>;
+Occur · type · export type Occur = "must" | "should" | "must_not";
+Operator · type · export type Operator = "term" | "phrase" | "wildcard" | "regex" | "range";
+ParseOptions · interface · export interface ParseOptions extends QueryContext {
+ParseOptions · interface · defaultField?: string;
+ParseOptions · interface · proximity?: boolean;
+ParseOptions · interface · }
+Predicate · interface · export interface Predicate {
+Predicate · interface · kind: "predicate";
+Predicate · interface · field: string;
+Predicate · interface · operator: Operator;
+Predicate · interface · value: string;
+Predicate · interface · upper?: string;
+Predicate · interface · lower_inclusive?: boolean;
+Predicate · interface · upper_inclusive?: boolean;
+Predicate · interface · span: Span;
+Predicate · interface · implicit?: true;
+Predicate · interface · slop?: number;
+Predicate · interface · }
+QUERY_BACKENDS · const · export declare const QUERY_BACKENDS: readonly ["sql", "native"];
+QUERY_LIMITS · const · export declare const QUERY_LIMITS: {
+QUERY_LIMITS · const · readonly bytes: 8192;
+QUERY_LIMITS · const · readonly depth: 32;
+QUERY_LIMITS · const · readonly nodes: 256;
+QUERY_LIMITS · const · };
+QUERY_REASONS · const · export declare const QUERY_REASONS: {
+QUERY_REASONS · const · reason: string;
+QUERY_REASONS · const · code: "authentication_error" | "cancelled" | "configuration_error" | "confirmation_required" | "conflict" | "internal_error" | "invalid_response" | "network_error" | "not_found" | "outcome_unknown" | "permission_error" | "provider_error" | "provider_unavailable" | "rate_limited" | "timeout" | "validation_error";
+QUERY_REASONS · const · message: string;
+QUERY_REASONS · const · details: string[];
+QUERY_REASONS · const · step?: string | undefined;
+QUERY_REASONS · const · }[];
+QueryAst · interface · export interface QueryAst {
+QueryAst · interface · version: 1;
+QueryAst · interface · language: "lucene-v1";
+QueryAst · interface · root: QueryNode;
+QueryAst · interface · }
+QueryBackend · type · export type QueryBackend = (typeof QUERY_BACKENDS)[number];
+QueryContext · interface · export interface QueryContext {
+QueryContext · interface · command?: string;
+QueryContext · interface · guide?: string;
+QueryContext · interface · }
+QueryInfo · interface · export interface QueryInfo extends Omit<QueryRegistry, "fields"> {
+QueryInfo · interface · fields: FieldInfo[];
+QueryInfo · interface · }
+QueryNode · type · export type QueryNode = Predicate | {
+QueryNode · type · kind: "boolean";
+QueryNode · type · clauses: {
+QueryNode · type · occur: Occur;
+QueryNode · type · node: QueryNode;
+QueryNode · type · }[];
+QueryNode · type · span: Span;
+QueryNode · type · };
+QueryRegistry · interface · export interface QueryRegistry {
+QueryRegistry · interface · entity: string;
+QueryRegistry · interface · backend: QueryBackend;
+QueryRegistry · interface · fields: readonly FieldSpec[];
+QueryRegistry · interface · defaults?: readonly string[];
+QueryRegistry · interface · }
+Span · type · export type Span = {
+Span · type · start: number;
+Span · type · end: number;
+Span · type · };
+ValidateOptions · interface · export interface ValidateOptions extends QueryContext {
+ValidateOptions · interface · zone?: string;
+ValidateOptions · interface · }
+dateRange · const · export declare const dateRange: (lower: string, upper: string, lowerInclusive: boolean, upperInclusive: boolean, zone: string, span: Span, now?: number) => DateRange;
+dayBoundary · const · export declare const dayBoundary: (value: string, zone: string, next: boolean, span: Span) => number;
+defineQuery · const · export declare const defineQuery: (registry: QueryRegistry) => QueryRegistry;
+evaluate · const · export declare const evaluate: (ast: QueryAst, fields: readonly FieldSpec[], item: Readonly<Record<string, unknown>>, options?: EvaluateOptions) => boolean;
+fieldsHelp · const · export declare const fieldsHelp: (registry: Pick<QueryRegistry, "fields" | "defaults"> & Partial<Pick<QueryRegistry, "backend">>, guide?: string) => string;
+fieldsNamed · const · export declare const fieldsNamed: (ast: QueryAst) => Set<string>;
+implicitTextTerms · const · export declare const implicitTextTerms: (text: string) => Set<number>;
+parseLucene · const · export declare const parseLucene: (text: string, { defaultField, proximity, ...context }?: ParseOptions) => QueryAst;
+queryAstSchema · const · export declare const queryAstSchema: v.ObjectSchema<{
+queryAstSchema · const · readonly version: v.LiteralSchema<1, undefined>;
+queryAstSchema · const · readonly language: v.LiteralSchema<"lucene-v1", undefined>;
+queryAstSchema · const · readonly root: v.GenericSchema<QueryNode>;
+queryAstSchema · const · }, undefined>;
+queryDescription · const · export declare const queryDescription: (registry: Pick<QueryRegistry, "fields"> & Partial<Pick<QueryRegistry, "backend" | "defaults">>) => string;
+queryError · function · export declare function queryError(reason: string, span: Span, alternative?: string, context?: QueryContext, details?: Record<string, unknown>): never;
+queryFieldsOf · const · export declare const queryFieldsOf: (schema: v.GenericSchema, annotations?: FieldAnnotations) => FieldSpec[];
+timezoneOf · const · export declare const timezoneOf: (given?: string) => string;
+validateQuery · const · export declare const validateQuery: (ast: QueryAst, registry: QueryRegistry, options?: ValidateOptions) => QueryAst;
+walkQuery · const · export declare const walkQuery: (node: QueryNode) => Predicate[];
+zonedMoment · const · export declare const zonedMoment: (value: string, zone: string, span: Span, { end }?: {
+zonedMoment · const · end?: boolean | undefined;
+zonedMoment · const · }) => number;

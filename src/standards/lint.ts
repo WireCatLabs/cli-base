@@ -1,6 +1,7 @@
 import * as v from "valibot"
 import { duplicates, parseRegistry, text, word } from "./registry.js"
 
+/** @experimental */
 export const LINT_SEVERITIES = ["high", "medium", "low"] as const
 
 const lintRuleSchema = v.strictObject({
@@ -11,15 +12,22 @@ const lintRuleSchema = v.strictObject({
   summary: text,
 })
 
+/** @experimental */
 export type LintRule = v.InferOutput<typeof lintRuleSchema>
+/** @experimental */
 export type LintSeverity = (typeof LINT_SEVERITIES)[number]
 
+/** @experimental */
 export const defineLintRules = (input: unknown): LintRule[] =>
   parseRegistry("lint rules", v.array(lintRuleSchema), input, (rules) =>
     duplicates(rules.map((rule) => rule.id)).map((id) => `"${id}" is listed twice`),
   )
 
-/** Ids and severities follow the Azure CLI linter (`azdev linter`): a rule is named after what it finds. */
+/**
+ * Ids and severities follow the Azure CLI linter (`azdev linter`): a rule is named after what it finds.
+ *
+ * @experimental
+ */
 export const LINT_RULES: LintRule[] = defineLintRules([
   {
     id: "unknown-verb",
@@ -150,7 +158,11 @@ export const LINT_RULES: LintRule[] = defineLintRules([
   },
 ])
 
-/** `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink. */
+/**
+ * `lint/baseline/<rule-id>.json`: today's violations of one rule, by target. It may only shrink.
+ *
+ * @experimental
+ */
 export const baselineSchema = v.array(text)
 
 /** One `lint/overrides.json` entry: the exception, its reason, who keeps it and when to look again. */
@@ -163,18 +175,29 @@ export const overrideSchema = v.strictObject({
   review_after: v.pipe(v.string(), v.isoDate("a date, YYYY-MM-DD")),
 })
 
-/** `lint/overrides.json`: exceptions, each with its reason, who keeps it and when to look again; counted against a budget. */
+/**
+ * `lint/overrides.json`: exceptions, each with its reason, who keeps it and when to look again; counted against a budget.
+ *
+ * @experimental
+ */
 export const overridesSchema = v.array(overrideSchema)
 
+/** @experimental */
 export type Override = v.InferOutput<typeof overridesSchema>[number]
 
-/** What the schemas cannot say, so they stay convertible to JSON Schema: no entry twice. */
+/**
+ * What the schemas cannot say, so they stay convertible to JSON Schema: no entry twice.
+ *
+ * @experimental
+ */
 export const baselineProblems = (targets: readonly string[]): string[] =>
   duplicates(targets).map((target) => `"${target}" is listed twice`)
 
 /**
  * Days around an override's `review_after` that only warn: a review comes due without turning every CI run of the CLI
  * red on one morning, and a shared word due in several CLIs at once gets two weeks to land its fix.
+ *
+ * @experimental
  */
 export const REVIEW_GRACE_DAYS = 14
 
@@ -197,13 +220,21 @@ export const overdue = (entries: readonly Dated[], today: string): string[] =>
     .filter((entry) => entry.review_after !== undefined && shiftDays(entry.review_after, REVIEW_GRACE_DAYS) < today)
     .map((entry) => `"${entry.rule} ${entry.target}" was due for review on ${entry.review_after}${ask(entry)}`)
 
-/** No entry twice, and none overdue. */
+/**
+ * No entry twice, and none overdue.
+ *
+ * @experimental
+ */
 export const overridesProblems = (entries: readonly Override[], today: string): string[] => [
   ...duplicates(entries.map((entry) => `${entry.rule} ${entry.target}`)).map((both) => `"${both}" is listed twice`),
   ...overdue(entries, today),
 ]
 
-/** Entries whose `review_after` is at most `REVIEW_GRACE_DAYS` away on either side: due soon, or due and not failing yet. */
+/**
+ * Entries whose `review_after` is at most `REVIEW_GRACE_DAYS` away on either side: due soon, or due and not failing yet.
+ *
+ * @experimental
+ */
 export const overridesDueSoon = (entries: readonly Dated[], today: string, check = "lint"): string[] =>
   entries.flatMap((entry) =>
     entry.review_after !== undefined &&
@@ -215,12 +246,21 @@ export const overridesDueSoon = (entries: readonly Dated[], today: string, check
       : [],
   )
 
+/** @experimental */
 export const OVERRIDE_BUDGET = 10
 
-/** More overrides of one rule than this, across every CLI, and the rule itself is due for review. */
+/**
+ * More overrides of one rule than this, across every CLI, and the rule itself is due for review.
+ *
+ * @experimental
+ */
 export const OVERRIDE_RULE_REVIEW = 3
 
-/** Rules overridden more than `OVERRIDE_RULE_REVIEW` times across the CLIs given, most first. */
+/**
+ * Rules overridden more than `OVERRIDE_RULE_REVIEW` times across the CLIs given, most first.
+ *
+ * @experimental
+ */
 export const rulesForReview = (lists: readonly (readonly Override[])[]): { rule: string; overrides: number }[] => {
   const counts = new Map<string, number>()
   for (const entry of lists.flat()) counts.set(entry.rule, (counts.get(entry.rule) ?? 0) + 1)

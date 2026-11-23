@@ -8,16 +8,16 @@ export interface Declarations {
   missing: readonly string[]
 }
 
-const typesIn = (value: unknown, key?: string): string[] => {
+export const typesIn = (value: unknown, key?: string): string[] => {
   if (typeof value === "string") return key === "types" || key === "typings" ? [value] : []
   if (Array.isArray(value)) return value.flatMap((one) => typesIn(one))
   if (typeof value === "object" && value !== null) return Object.entries(value).flatMap(([at, one]) => typesIn(one, at))
   return []
 }
 
-const RELATIVE_MODULE = /(?:\bfrom\s*|\bimport\s*\(\s*)["'](\.{1,2}\/[^"']+)["']/g
+export const RELATIVE_MODULE = /(?:\bfrom\s*|\bimport\s*\(\s*)["'](\.{1,2}\/[^"']+)["']/g
 
-const declarationOf = (dir: string, specifier: string): string | undefined => {
+export const declarationOf = (dir: string, specifier: string): string | undefined => {
   const base = join(dir, specifier)
   const candidates = /\.[cm]?js$/.test(base)
     ? [base.replace(/\.(c|m)?js$/, ".d.$1ts")]
@@ -53,7 +53,8 @@ export const readDeclarations = (cwd: string): Declarations => {
   return { files, missing }
 }
 
-const STRINGS_AND_COMMENTS = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g
+export const STRINGS_AND_COMMENTS =
+  /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g
 const OPEN = "([{<"
 const CLOSE = ")]}>"
 

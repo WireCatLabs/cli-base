@@ -2,11 +2,13 @@ import { CliError, isCliError } from "./errors.js"
 import type { RenderFormat } from "./renderer.js"
 import { fieldsOf, projectFields } from "./result-fields.js"
 
+/** @experimental */
 export interface OutputBufferOptions {
   maxOutputBytes?: number
   fields?: string
   format?: RenderFormat
 }
+/** @experimental */
 export interface OutputBuffer {
   readonly bytes: number
   /** Raw output chunks, including any delimiters. Projection requires complete JSON values/JSONL lines. */
@@ -16,6 +18,7 @@ export interface OutputBuffer {
   discard(): void
 }
 
+/** @experimental */
 export const createOutputBuffer = ({
   maxOutputBytes = 4 * 1024 * 1024,
   fields,

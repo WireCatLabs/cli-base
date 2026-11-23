@@ -5,18 +5,26 @@ import { duplicates, parseRegistry, text, word } from "./registry.js"
 /**
  * Whether a new cross-CLI divergence fails `cli-dev audit`, as a new lint violation does (`"new"`), or only shows in
  * the scorecard (`"never"`). Lint rules always block on a new violation.
+ *
+ * @experimental
  */
 export const AUDIT_BLOCKS: "new" | "never" = "new"
 
 const auditRuleSchema = v.strictObject({ id: word, severity: v.picklist(LINT_SEVERITIES), summary: text })
+/** @experimental */
 export type AuditRule = v.InferOutput<typeof auditRuleSchema>
 
+/** @experimental */
 export const defineAuditRules = (input: unknown): AuditRule[] =>
   parseRegistry("audit rules", v.array(auditRuleSchema), input, (rules) =>
     duplicates(rules.map((rule) => rule.id)).map((id) => `"${id}" is listed twice`),
   )
 
-/** The rules that compare CLIs; each CLI is also judged alone by every lint rule. */
+/**
+ * The rules that compare CLIs; each CLI is also judged alone by every lint rule.
+ *
+ * @experimental
+ */
 export const AUDIT_RULES: AuditRule[] = defineAuditRules([
   {
     id: "shared-command-contract",
@@ -82,12 +90,14 @@ const parityGroupSchema = v.strictObject({
   ),
 })
 
+/** @experimental */
 export type ParityGroup = v.InferOutput<typeof parityGroupSchema>
 
 /** Which of `absent`, `only` and `differs` a difference names: the CLI it measures by name. */
 const kindOf = (entry: ParityGroup["differences"][number]) =>
   (["absent", "only", "differs"] as const).filter((one) => entry[one] !== undefined)
 
+/** @experimental */
 export const defineParityGroups = (input: unknown): ParityGroup[] =>
   parseRegistry("parity groups", v.array(parityGroupSchema), input, (groups) => [
     ...duplicates(groups.map((group) => group.name)).map((name) => `"${name}" is listed twice`),
@@ -179,6 +189,7 @@ const FAMILY_SINCE_0_98 = [
   },
 ]
 
+/** @experimental */
 export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   { name: "messengers", members: ["tg", "max"], covers: "tree", differences: MESSENGERS_SINCE_0_98 },
   {
@@ -273,13 +284,16 @@ export const SHARED_DIFFERENCES = [
 ]
 
 const requiredRootSchema = v.strictObject({ path: v.pipe(v.array(segment), v.minLength(1)), meaning: text })
+/** @experimental */
 export type RequiredRoot = v.InferOutput<typeof requiredRootSchema>
 
+/** @experimental */
 export const defineRequiredRoots = (input: unknown): RequiredRoot[] =>
   parseRegistry("required roots", v.array(requiredRootSchema), input, (roots) =>
     duplicates(roots.map((root) => root.path.join(" "))).map((path) => `"${path}" is listed twice`),
   )
 
+/** @experimental */
 export const REQUIRED_ROOTS: RequiredRoot[] = defineRequiredRoots([
   { path: ["commands"], meaning: "the command tree as JSON, what agents and this audit read" },
   { path: ["doctor"], meaning: "checks this machine and the profile, and says what to fix" },

@@ -1,0 +1,121 @@
+# @wirecat/cli-base "./commands": the stable API, written by cli-dev api-report. Do not edit.
+ArgumentInfo · interface · export interface ArgumentInfo {
+ArgumentInfo · interface · name: string;
+ArgumentInfo · interface · required: boolean;
+ArgumentInfo · interface · variadic: boolean;
+ArgumentInfo · interface · description: string;
+ArgumentInfo · interface · choices?: readonly string[];
+ArgumentInfo · interface · default?: unknown;
+ArgumentInfo · interface · }
+CommandInfo · interface · export interface CommandInfo {
+CommandInfo · interface · path: readonly string[];
+CommandInfo · interface · name: string;
+CommandInfo · interface · summary?: string;
+CommandInfo · interface · description: string;
+CommandInfo · interface · usage: string;
+CommandInfo · interface · origin: Origin;
+CommandInfo · interface · api_operation?: string;
+CommandInfo · interface · effects?: Effects;
+CommandInfo · interface · state?: CommandState;
+CommandInfo · interface · partial?: boolean;
+CommandInfo · interface · lifetime?: CommandLifetime;
+CommandInfo · interface · reaches?: CommandReach;
+CommandInfo · interface · mcp?: false;
+CommandInfo · interface · offline?: false;
+CommandInfo · interface · cooperative?: boolean;
+CommandInfo · interface · examples?: readonly string[];
+CommandInfo · interface · output?: CommandOutput;
+CommandInfo · interface · query?: QueryInfo;
+CommandInfo · interface · runnable?: true;
+CommandInfo · interface · arguments: readonly ArgumentInfo[];
+CommandInfo · interface · options: readonly OptionInfo[];
+CommandInfo · interface · commands: readonly CommandInfo[];
+CommandInfo · interface · }
+CommandLifetime · type · export type CommandLifetime = "persistent" | "interactive";
+CommandMeta · interface · export interface CommandMeta {
+CommandMeta · interface · origin?: Origin;
+CommandMeta · interface · api_operation?: string;
+CommandMeta · interface · effects?: Effects;
+CommandMeta · interface · state?: CommandState;
+CommandMeta · interface · partial?: boolean;
+CommandMeta · interface · lifetime?: CommandLifetime;
+CommandMeta · interface · reaches?: CommandReach;
+CommandMeta · interface · mcp?: boolean;
+CommandMeta · interface · offline?: boolean;
+CommandMeta · interface · cooperative?: boolean;
+CommandMeta · interface · examples?: readonly string[];
+CommandMeta · interface · output?: CommandOutput;
+CommandMeta · interface · query?: QueryRegistry;
+CommandMeta · interface · }
+CommandOutput · interface · export interface CommandOutput {
+CommandOutput · interface · entity: string;
+CommandOutput · interface · view?: string;
+CommandOutput · interface · }
+CommandReach · type · export type CommandReach = "other_service";
+CommandState · type · export type CommandState = "beta" | "deprecated";
+CommandsDocument · interface · export interface CommandsDocument {
+CommandsDocument · interface · cli: string;
+CommandsDocument · interface · version: string;
+CommandsDocument · interface · contract: number;
+CommandsDocument · interface · description: string;
+CommandsDocument · interface · global_options: OptionInfo[];
+CommandsDocument · interface · scope?: string[];
+CommandsDocument · interface · inherited_options?: {
+CommandsDocument · interface · path: string[];
+CommandsDocument · interface · options: OptionInfo[];
+CommandsDocument · interface · }[];
+CommandsDocument · interface · commands: CommandInfo[];
+CommandsDocument · interface · exit_codes: Record<string, number>;
+CommandsDocument · interface · }
+CommandsDocumentAbout · interface · export interface CommandsDocumentAbout {
+CommandsDocumentAbout · interface · cli: string;
+CommandsDocumentAbout · interface · version: string;
+CommandsDocumentAbout · interface · contract: number;
+CommandsDocumentAbout · interface · }
+OptionInfo · interface · export interface OptionInfo {
+OptionInfo · interface · flags: string;
+OptionInfo · interface · description: string;
+OptionInfo · interface · takes_value: boolean;
+OptionInfo · interface · mandatory: boolean;
+OptionInfo · interface · choices?: readonly string[];
+OptionInfo · interface · default?: unknown;
+OptionInfo · interface · env?: string;
+OptionInfo · interface · conflicts?: readonly string[];
+OptionInfo · interface · implies?: Readonly<Record<string, unknown>>;
+OptionInfo · interface · mcp?: false;
+OptionInfo · interface · }
+OptionMeta · interface · export interface OptionMeta {
+OptionMeta · interface · mcp?: boolean;
+OptionMeta · interface · }
+Origin · type · export type Origin = "handwritten" | "generated" | "cli-core";
+SharedContractOverride · interface · export interface SharedContractOverride {
+SharedContractOverride · interface · command: readonly string[];
+SharedContractOverride · interface · field: string;
+SharedContractOverride · interface · before: unknown;
+SharedContractOverride · interface · after: unknown;
+SharedContractOverride · interface · reason: string;
+SharedContractOverride · interface · }
+annotate · const · export declare const annotate: <T extends Command>(command: T, meta: CommandMeta) => T;
+annotateOption · const · export declare const annotateOption: <T extends Option>(option: T, meta: OptionMeta) => T;
+assertSharedContracts · const · export declare const assertSharedContracts: (root: Command) => void;
+commandsDocument · const · export declare const commandsDocument: (root: Command, about: CommandsDocumentAbout) => CommandsDocument;
+customizeSharedCommand · const · export declare const customizeSharedCommand: (reference: Command, reason: string, build: () => Command, expectedOverrides: readonly SharedContractOverride[]) => Command;
+describeOptions · const · export declare const describeOptions: (command: Command) => OptionInfo[];
+describeProgram · const · export declare const describeProgram: (root: Command) => CommandInfo[];
+flatten · const · export declare const flatten: (commands: readonly CommandInfo[]) => CommandInfo[];
+hasSharedContract · const · export declare const hasSharedContract: (command: Command) => boolean;
+metaOf · const · export declare const metaOf: (command: Command) => CommandMeta;
+optionMetaOf · const · export declare const optionMetaOf: (option: Option) => OptionMeta;
+overrideSharedContract · const · export declare const overrideSharedContract: <T extends Command>(command: T, reason: string, change: (command: T) => void) => T;
+parseCommandsDocument · const · export declare const parseCommandsDocument: (value: unknown) => {
+parseCommandsDocument · const · document: CommandsDocument;
+parseCommandsDocument · const · problems?: undefined;
+parseCommandsDocument · const · } | {
+parseCommandsDocument · const · document?: undefined;
+parseCommandsDocument · const · problems: string[];
+parseCommandsDocument · const · };
+refuseJoinedPath · const · export declare const refuseJoinedPath: (root: Command, args: readonly string[], prefix?: readonly string[]) => void;
+sharedCommand · const · export declare const sharedCommand: <Args extends unknown[], Result>(factory: (...args: Args) => Result) => (...args: Args) => Result;
+sharedContractOverrides · const · export declare const sharedContractOverrides: (root: Command) => SharedContractOverride[];
+sharedContracts · const · export declare const sharedContracts: (root: Command) => Record<string, unknown>;
+stepTargets · const · export declare const stepTargets: (root: Command) => ((command: string) => StepTarget | undefined);

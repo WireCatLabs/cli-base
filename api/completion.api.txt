@@ -1,0 +1,19 @@
+# @wirecat/cli-base "./completion": the stable API, written by cli-dev api-report. Do not edit.
+CompletionRequest · interface · export interface CompletionRequest {
+CompletionRequest · interface · commands: readonly CommandInfo[];
+CompletionRequest · interface · globalOptions?: readonly OptionInfo[];
+CompletionRequest · interface · words: readonly string[];
+CompletionRequest · interface · sources?: CompletionSources;
+CompletionRequest · interface · }
+CompletionSources · interface · export interface CompletionSources {
+CompletionSources · interface · arguments?: Readonly<Record<string, Values>>;
+CompletionSources · interface · options?: Readonly<Record<string, Values>>;
+CompletionSources · interface · firstWord?: Values;
+CompletionSources · interface · }
+Suggestion · interface · export interface Suggestion {
+Suggestion · interface · value: string;
+Suggestion · interface · description: string;
+Suggestion · interface · }
+Values · type · export type Values = () => readonly (string | Suggestion)[];
+formatSuggestions · const · export declare const formatSuggestions: (suggestions: readonly Suggestion[]) => string;
+suggest · const · export declare const suggest: ({ commands, globalOptions, words, sources }: CompletionRequest) => Suggestion[];

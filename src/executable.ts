@@ -4,6 +4,7 @@ import { win32 } from "node:path"
 const variable = (env: NodeJS.ProcessEnv, name: string) =>
   Object.entries(env).find(([key]) => key.toUpperCase() === name)?.[1]
 
+/** @experimental */
 export const executableOnPath = (
   command: string,
   env: NodeJS.ProcessEnv,
@@ -25,6 +26,7 @@ export const executableOnPath = (
   return command
 }
 
+/** @experimental */
 export const executableEnvironment = (
   env: NodeJS.ProcessEnv,
   platform: NodeJS.Platform = process.platform,

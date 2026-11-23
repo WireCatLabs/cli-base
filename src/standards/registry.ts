@@ -11,6 +11,7 @@ export const dottedId = v.pipe(
   v.regex(/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/, "dotted lower-case words, such as `page.next`"),
 )
 
+/** @experimental */
 export class RegistryError extends Error {
   constructor(
     readonly registry: string,
@@ -52,7 +53,11 @@ const PLACEHOLDER = /\{([a-z][a-z0-9]*(?:_[a-z0-9]+)*)\}/g
 export const placeholders = (template: string): string[] =>
   [...template.matchAll(PLACEHOLDER)].map((match) => match[1] ?? "")
 
-/** Fills `{name}` from `values`; a placeholder with no value throws, so a half-filled sentence never ships. */
+/**
+ * Fills `{name}` from `values`; a placeholder with no value throws, so a half-filled sentence never ships.
+ *
+ * @experimental
+ */
 export const fill = (template: string, values: Readonly<Record<string, string | number>>): string =>
   template.replace(PLACEHOLDER, (_, name: string) => {
     const value = values[name]

@@ -18,7 +18,8 @@ import { parse } from "yaml"
 import { metaOf } from "../commands/index.js"
 import { CliError } from "../errors.js"
 import { createRenderer } from "../renderer.js"
-import { captureStreams, fakeClock } from "../testing/index.js"
+import { captureStreams } from "../streams.js"
+import { fakeClock } from "../testing/index.js"
 import { readUpdateState, writeUpdateState } from "../update/index.js"
 import {
   hermesCopyPath,

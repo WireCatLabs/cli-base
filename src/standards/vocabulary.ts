@@ -86,7 +86,11 @@ export type VocabularyNoun = Vocabulary["nouns"][number]
 export type VocabularyFlag = Vocabulary["flags"][number]
 export type FlagType = (typeof FLAG_TYPES)[number]
 
-/** One word, one meaning within its kind: a second entry for the same verb, noun, view, root or flag is refused. */
+/**
+ * One word, one meaning within its kind: a second entry for the same verb, noun, view, root or flag is refused.
+ *
+ * @experimental
+ */
 export const defineVocabulary = (input: unknown): Vocabulary =>
   parseRegistry("vocabulary", vocabularySchema, input, (vocabulary) => {
     const problems: string[] = []

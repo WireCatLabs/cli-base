@@ -47,6 +47,8 @@ export const keyringService = (service: string, _configDir?: string, _isolated?:
 /**
  * The temporary keyring service a moved run writes instead of the owner's entry: `<app>:<absolute config folder>`, the
  * shape `bin/keyring-dedupe` already finds and removes.
+ *
+ * @experimental
  */
 export const movedRunService = (service: string, configDir: string): string => `${service}:${resolve(configDir)}`
 

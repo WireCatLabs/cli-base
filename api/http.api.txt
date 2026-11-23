@@ -1,0 +1,32 @@
+# @wirecat/cli-base "./http": the stable API, written by cli-dev api-report. Do not edit.
+FetchLike · type · export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+HostFetchOptions · interface · export interface HostFetchOptions {
+HostFetchOptions · interface · hosts: readonly string[];
+HostFetchOptions · interface · fetch?: FetchLike;
+HostFetchOptions · interface · timeoutMs?: number;
+HostFetchOptions · interface · redirects?: number;
+HostFetchOptions · interface · credentialScope?: string;
+HostFetchOptions · interface · }
+JsonResponseOptions · interface · export interface JsonResponseOptions {
+JsonResponseOptions · interface · maxBytes: number;
+JsonResponseOptions · interface · signal?: AbortSignal;
+JsonResponseOptions · interface · }
+PacerLike · interface · export interface PacerLike {
+PacerLike · interface · reserve(): Promise<number>;
+PacerLike · interface · holdFor(ms: number): Promise<void>;
+PacerLike · interface · }
+RetryingOptions · interface · export interface RetryingOptions {
+RetryingOptions · interface · retry?: RetryConfig;
+RetryingOptions · interface · reads?: (method: string, url: URL) => boolean;
+RetryingOptions · interface · pacer?: PacerLike;
+RetryingOptions · interface · budget?: number;
+RetryingOptions · interface · sleep?: SleepLike;
+RetryingOptions · interface · now?: WallClock;
+RetryingOptions · interface · random?: () => number;
+RetryingOptions · interface · }
+hostFetch · const · export declare const hostFetch: (options: HostFetchOptions) => FetchLike;
+providerWaitMs · const · export declare const providerWaitMs: (headers: Headers, now: WallClock) => number | undefined;
+readJsonResponse · const · export declare const readJsonResponse: (response: Response, options: JsonResponseOptions) => Promise<unknown>;
+retryableStatus · const · export declare const retryableStatus: (status: number) => boolean;
+retrying · const · export declare const retrying: (send: FetchLike, options?: RetryingOptions) => FetchLike;
+statusToCode · const · export declare const statusToCode: (status: number) => ErrorCode;

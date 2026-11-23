@@ -1,7 +1,11 @@
 import { EXIT_CODES } from "../exit-codes.js"
 import type { ArgumentInfo, CommandInfo, OptionInfo } from "./registry.js"
 
-/** The labels of the tables; the same for every CLI writing in one language. */
+/**
+ * The labels of the tables; the same for every CLI writing in one language.
+ *
+ * @experimental
+ */
 export type CommandsPageLabels = {
   option: string
   does: string
@@ -23,6 +27,7 @@ export type CommandsPageLabels = {
   readsOutside?: string
 }
 
+/** @experimental */
 export const COMMANDS_PAGE_LABELS = {
   en: {
     option: "Option",
@@ -58,7 +63,11 @@ export const COMMANDS_PAGE_LABELS = {
   },
 } as const satisfies Record<string, CommandsPageLabels>
 
-/** The CLI's own words: everything on the page that is not read out of the program. */
+/**
+ * The CLI's own words: everything on the page that is not read out of the program.
+ *
+ * @experimental
+ */
 export type CommandsPageText = {
   /** The first line, an HTML comment saying the page is generated and by what. */
   banner: string
@@ -77,6 +86,7 @@ export type CommandsPageText = {
   outro: string
 }
 
+/** @experimental */
 export type CommandsPage = {
   cli: string
   commands: readonly CommandInfo[]
@@ -100,6 +110,8 @@ const sentence = (text: string | undefined): string => {
  * The whole `docs/commands.md`: every command at any depth, every option and argument, the exit
  * codes. Descriptions are quoted as `--help` prints them, untranslated — a translation here would
  * give the sentence a second home, and the one on screen is the one that gets corrected.
+ *
+ * @experimental
  */
 export const commandsPage = ({ cli, commands, options, labels, text, details }: CommandsPage): string => {
   // What a value may be and what it is when left out: Commander keeps both out of the description.

@@ -1,5 +1,6 @@
 import * as v from "valibot"
 
+/** @experimental */
 export const EFFECT_LEVELS = ["none", "read", "write"] as const
 
 /** What running a command touches: the service it talks to, and this machine (files, the keyring, the store). */
@@ -9,6 +10,7 @@ export const effectsSchema = v.strictObject({
 })
 
 export type Effects = v.InferOutput<typeof effectsSchema>
+/** @experimental */
 export type EffectLevel = (typeof EFFECT_LEVELS)[number]
 
 /** Unknown effects count as a write: a command nobody described is never retried or run on its own. */

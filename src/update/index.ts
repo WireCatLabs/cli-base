@@ -71,6 +71,7 @@ export const latestVersion = async (
   }
 }
 
+/** @experimental */
 export const CHECK_EVERY_MS = 24 * 60 * 60 * 1000
 
 export interface NotifyContext {
@@ -86,7 +87,11 @@ export interface NotifyContext {
   offVariables?: readonly string[]
 }
 
-/** Whether a person is at a terminal who could be told — the only case a check is worth making. */
+/**
+ * Whether a person is at a terminal who could be told — the only case a check is worth making.
+ *
+ * @experimental
+ */
 export const mayNotify = ({
   format,
   stderrIsTTY,
@@ -111,9 +116,14 @@ const updateState = v.object({
   /** When the skill hint (`cli-base/skill`) was last shown — the other daily notice kept in this file. */
   skillHintAt: v.optional(v.number()),
 })
+/** @experimental */
 export type UpdateState = v.InferOutput<typeof updateState>
 
-/** The file as it is, `checkedAt: 0` when it is missing or unreadable. */
+/**
+ * The file as it is, `checkedAt: 0` when it is missing or unreadable.
+ *
+ * @experimental
+ */
 export const readNoticeState = (path: string): UpdateState => {
   try {
     return loadConfigFile(path, updateState, () => ({ checkedAt: 0 }))
@@ -122,7 +132,11 @@ export const readNoticeState = (path: string): UpdateState => {
   }
 }
 
-/** What the last check found. A missing or unreadable file is "never checked", not an error. */
+/**
+ * What the last check found. A missing or unreadable file is "never checked", not an error.
+ *
+ * @experimental
+ */
 export const readUpdateState = (path: string): UpdateState | undefined => {
   const state = readNoticeState(path)
   return state.checkedAt > 0 ? state : undefined
@@ -131,6 +145,8 @@ export const readUpdateState = (path: string): UpdateState | undefined => {
 /**
  * Merged into the file as it is at the moment of writing: the update notice reads before it asks
  * npm and writes after, and the skill hint may have written in between.
+ *
+ * @experimental
  */
 export const writeUpdateState = (path: string, state: Partial<UpdateState>): void => {
   try {
@@ -140,10 +156,15 @@ export const writeUpdateState = (path: string, state: Partial<UpdateState>): voi
   }
 }
 
+/** @experimental */
 export const checkIsDue = (state: UpdateState | undefined, now: number): boolean =>
   state === undefined || now - state.checkedAt >= CHECK_EVERY_MS
 
-/** Resolve Windows shims from explicit PATH entries; cross-spawn quotes them through the trusted shell. */
+/**
+ * Resolve Windows shims from explicit PATH entries; cross-spawn quotes them through the trusted shell.
+ *
+ * @experimental
+ */
 export const spawnPlan = (
   [command, ...args]: readonly string[],
   platform: NodeJS.Platform = process.platform,

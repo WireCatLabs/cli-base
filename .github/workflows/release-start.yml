@@ -38,6 +38,10 @@ on:
       node-version:
         type: string
         default: "24"
+      major:
+        description: "Allow a version that raises the major over npm's latest; without it, such a release stops (WC-REL-7)"
+        type: boolean
+        default: false
     secrets:
       app-private-key:
         required: true
@@ -98,6 +102,7 @@ jobs:
           UNRELEASED: ${{ inputs.unreleased }}
           AFTER_RAISE: ${{ inputs.after-raise }}
           CHECK: ${{ inputs.check }}
+          MAJOR: ${{ inputs.major }}
         run: |
           set -eu
           package=$(node -p 'require("./package.json").name')
@@ -113,26 +118,47 @@ jobs:
 
           latest=$(npm view "$package" version --prefer-online 2>/dev/null || true)
           versions=$(npm view "$package" versions --json --prefer-online 2>/dev/null || true)
+          renumber() {
+            node -e 'const fs = require("fs"); const [o, n, taken, unreleased] = process.argv.slice(1)
+                const swap = (file, from, to, optional) => {
+                  if (optional && !fs.existsSync(file)) return
+                  const text = fs.readFileSync(file, "utf8")
+                  if (!text.includes(from)) throw new Error(`${file} has no ${JSON.stringify(from.trim())} to raise ${o} to ${n}`)
+                  fs.writeFileSync(file, text.replace(from, to))
+                }
+                swap("package.json", `"version": "${o}"`, `"version": "${n}"`)
+                swap("src/version.ts", `VERSION = "${o}"`, `VERSION = "${n}"`, true)
+                const today = new Date().toLocaleDateString("en-GB").replaceAll("/", ".")
+                if (taken) swap("CHANGELOG.md", `\n## ${unreleased}\n`, `\n## ${n} — ${today}\n`)
+                else swap("CHANGELOG.md", `\n## ${o} — `, `\n## ${n} — `)' "$1" "$2" "$3" "$UNRELEASED"
+            if [ -n "$AFTER_RAISE" ]; then VERSION=$2 sh -c "$AFTER_RAISE"; fi
+          }
+          # The changes/ fragments go into the version's section, which may then need a higher level (an Added is a
+          # minor, a stable break a major from 1.0.0 on).
+          fragments() {
+            [ -n "$(find changes -maxdepth 1 -type f -name '*.md' ! -name README.md 2>/dev/null)" ] || return 0
+            $CLI_DEV changelog fragments --collect "$version"
+            levelled=$($CLI_DEV changelog level --next "$version")
+            [ "$levelled" != "$version" ] || return 0
+            levelled=$($CLI_DEV next-version "$levelled" "$latest" "$versions")
+            echo "the changelog needs $levelled — releasing it instead of $version"
+            renumber "$version" "$levelled" ""
+            why="${why:+$why; }the changelog needs $levelled"
+            version=$levelled
+          }
           next=$($CLI_DEV next-version "$version" "$latest" "$versions")
           why=""
           if [ "$next" != "$version" ]; then
             taken=""
             if published "$version"; then taken=1; why="$version is already on npm"; else why="$version is not above npm's latest $latest"; fi
             echo "$why — releasing $next instead"
-            node -e 'const fs = require("fs"); const [o, n, taken, unreleased] = process.argv.slice(1)
-              const swap = (file, from, to, optional) => {
-                if (optional && !fs.existsSync(file)) return
-                const text = fs.readFileSync(file, "utf8")
-                if (!text.includes(from)) throw new Error(`${file} has no ${JSON.stringify(from.trim())} to raise ${o} to ${n}`)
-                fs.writeFileSync(file, text.replace(from, to))
-              }
-              swap("package.json", `"version": "${o}"`, `"version": "${n}"`)
-              swap("src/version.ts", `VERSION = "${o}"`, `VERSION = "${n}"`, true)
-              const today = new Date().toLocaleDateString("en-GB").replaceAll("/", ".")
-              if (taken) swap("CHANGELOG.md", `\n## ${unreleased}\n`, `\n## ${n} — ${today}\n`)
-              else swap("CHANGELOG.md", `\n## ${o} — `, `\n## ${n} — `)' "$version" "$next" "$taken" "$UNRELEASED"
+            renumber "$version" "$next" "$taken"
             version=$next
-            if [ -n "$AFTER_RAISE" ]; then VERSION=$version sh -c "$AFTER_RAISE"; fi
+          fi
+          fragments
+          if [ -n "$latest" ] && [ "${version%%.*}" != "${latest%%.*}" ] && [ "$MAJOR" != "true" ]; then
+            echo "::error::$version raises the major version over npm's $latest — start the release with major allowed if that is meant"
+            exit 1
           fi
 
           top=$(sed -n '/^## /{p;q;}' CHANGELOG.md)

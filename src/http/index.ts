@@ -12,7 +12,11 @@ import { realSleep, type SleepLike, type WallClock, wallClock } from "../time.js
 /** The one function an HTTP client needs from its environment. A Worker, a browser, a test and Node all satisfy it. */
 export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
 
-/** `Retry-After` is either a number of seconds or an HTTP date. Both forms occur in the wild. */
+/**
+ * `Retry-After` is either a number of seconds or an HTTP date. Both forms occur in the wild.
+ *
+ * @experimental
+ */
 export const parseRetryAfter = (header: string | null | undefined, now: WallClock): number | undefined => {
   if (!header) return undefined
 
@@ -28,7 +32,11 @@ export const parseRetryAfter = (header: string | null | undefined, now: WallCloc
   return delta > 0 ? delta : undefined
 }
 
-/** A Unix timestamp in seconds, the shape several providers use for `X-RateLimit-Reset`. */
+/**
+ * A Unix timestamp in seconds, the shape several providers use for `X-RateLimit-Reset`.
+ *
+ * @experimental
+ */
 export const parseRateLimitReset = (header: string | null | undefined, now: WallClock): number | undefined => {
   if (!header) return undefined
 

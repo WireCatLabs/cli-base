@@ -1,0 +1,309 @@
+# @wirecat/cli-base ".": the stable API, written by cli-dev api-report. Do not edit.
+BASE_CONSTANTS · const · export declare const BASE_CONSTANTS: import("url").URL;
+BATCH_LIMITS · const · export declare const BATCH_LIMITS: Readonly<{
+BATCH_LIMITS · const · requests: 32;
+BATCH_LIMITS · const · input_bytes: 262144;
+BATCH_LIMITS · const · read_bytes: 67108864;
+BATCH_LIMITS · const · output_bytes: 4194304;
+BATCH_LIMITS · const · }>;
+BatchContext · interface · export interface BatchContext {
+BatchContext · interface · signal?: AbortSignal;
+BatchContext · interface · reserveReadBytes: (bytes: number) => void;
+BatchContext · interface · }
+BatchHandler · interface · export interface BatchHandler {
+BatchHandler · interface · command: readonly string[];
+BatchHandler · interface · prepare: (args: readonly string[]) => BatchOperation;
+BatchHandler · interface · }
+BatchOperation · interface · export interface BatchOperation {
+BatchOperation · interface · run: (context: BatchContext) => Promise<{
+BatchOperation · interface · answer: unknown;
+BatchOperation · interface · complete: boolean;
+BatchOperation · interface · }>;
+BatchOperation · interface · }
+BatchReport · interface · export interface BatchReport {
+BatchReport · interface · items: BatchResult[];
+BatchReport · interface · complete: boolean;
+BatchReport · interface · read_bytes_reserved: number;
+BatchReport · interface · read_bytes_limit: number;
+BatchReport · interface · output_limited: boolean;
+BatchReport · interface · }
+BatchResult · type · export type BatchResult = {
+BatchResult · type · id: string;
+BatchResult · type · command: string[];
+BatchResult · type · } & ({
+BatchResult · type · status: "ok";
+BatchResult · type · answer: unknown;
+BatchResult · type · complete: boolean;
+BatchResult · type · } | {
+BatchResult · type · status: "error" | "not_run";
+BatchResult · type · error: ReturnType<typeof errorObjectOf>["error"];
+BatchResult · type · complete: false;
+BatchResult · type · });
+CREDENTIAL_STORAGE · const · export declare const CREDENTIAL_STORAGE: readonly ["auto", "keyring", "file"];
+CatchCrashesOptions · interface · export interface CatchCrashesOptions extends FailureContext {
+CatchCrashesOptions · interface · cli: string;
+CatchCrashesOptions · interface · interactive: boolean;
+CatchCrashesOptions · interface · write?: (text: string) => void;
+CatchCrashesOptions · interface · exit?: (code: number) => void;
+CatchCrashesOptions · interface · target?: Pick<NodeJS.Process, "on" | "off">;
+CatchCrashesOptions · interface · }
+CliError · class · export declare class CliError extends Error {
+CliError · class · readonly code: ErrorCode;
+CliError · class · readonly details: CliErrorDetails;
+CliError · class · constructor(code: ErrorCode, message: string, details?: CliErrorDetails);
+CliError · class · }
+CliErrorDetails · interface · export interface CliErrorDetails {
+CliErrorDetails · interface · readonly status?: number;
+CliErrorDetails · interface · readonly retryable?: boolean;
+CliErrorDetails · interface · readonly attempts?: number;
+CliErrorDetails · interface · readonly request_id?: string;
+CliErrorDetails · interface · readonly operation_id?: string;
+CliErrorDetails · interface · readonly run_id?: string;
+CliErrorDetails · interface · readonly retry_after_ms?: number;
+CliErrorDetails · interface · readonly sent?: boolean;
+CliErrorDetails · interface · readonly operation?: string;
+CliErrorDetails · interface · readonly reason?: string;
+CliErrorDetails · interface · readonly param?: string;
+CliErrorDetails · interface · readonly [key: string]: unknown;
+CliErrorDetails · interface · }
+CredentialSource · type · export type CredentialSource = "environment" | "keyring" | "file";
+CredentialStorage · type · export type CredentialStorage = (typeof CREDENTIAL_STORAGE)[number];
+Credentials · class · export declare class Credentials {
+Credentials · class · constructor(options: CredentialsOptions);
+Credentials · class · read(account: string): StoredCredential | undefined;
+Credentials · class · write(account: string, secret: string, options?: WriteOptions): CredentialSource;
+Credentials · class · remove(account: string): CredentialSource[];
+Credentials · class · }
+CredentialsOptions · interface · export interface CredentialsOptions {
+CredentialsOptions · interface · configDir: string;
+CredentialsOptions · interface · service: string;
+CredentialsOptions · interface · isolated?: boolean;
+CredentialsOptions · interface · envVar?: string;
+CredentialsOptions · interface · storage?: CredentialStorage;
+CredentialsOptions · interface · keyring?: KeyringStore;
+CredentialsOptions · interface · env?: NodeJS.ProcessEnv;
+CredentialsOptions · interface · fileName?: string;
+CredentialsOptions · interface · warn?: (message: string) => void;
+CredentialsOptions · interface · }
+DEFAULT_RETRY · const · export declare const DEFAULT_RETRY: RetryConfig;
+Deadline · interface · export interface Deadline {
+Deadline · interface · readonly signal: AbortSignal;
+Deadline · interface · race<T>(body: (signal: AbortSignal) => Promise<T>): Promise<T>;
+Deadline · interface · dispose(): void;
+Deadline · interface · }
+DeadlineOptions · interface · export interface DeadlineOptions {
+DeadlineOptions · interface · timeoutMs?: number;
+DeadlineOptions · interface · signal?: AbortSignal;
+DeadlineOptions · interface · sleep?: SleepLike;
+DeadlineOptions · interface · }
+EXIT_CODES · const · export declare const EXIT_CODES: Record<ErrorCode, number>;
+ErrorCode · type · export type ErrorCode = (typeof errorCodes)[number];
+ErrorRecord · type · export type ErrorRecord = Omit<LogRecord, "run_id"> & {
+ErrorRecord · type · run_id?: string;
+ErrorRecord · type · };
+ErrorRecordOptions · interface · export interface ErrorRecordOptions {
+ErrorRecordOptions · interface · command: string;
+ErrorRecordOptions · interface · service: string;
+ErrorRecordOptions · interface · version: string;
+ErrorRecordOptions · interface · time?: Date;
+ErrorRecordOptions · interface · }
+FailureContext · interface · export interface FailureContext {
+FailureContext · interface · reasons?: readonly ErrorReason[];
+FailureContext · interface · details?: readonly string[];
+FailureContext · interface · steps?: readonly StepDefinition[];
+FailureContext · interface · runId?: string;
+FailureContext · interface · effects?: Effects;
+FailureContext · interface · targets?: StepInput["targets"];
+FailureContext · interface · }
+GENERIC_FAILURE · const · export declare const GENERIC_FAILURE = 1;
+KeyringStore · interface · export interface KeyringStore {
+KeyringStore · interface · get(service: string, account: string): string | null;
+KeyringStore · interface · set(service: string, account: string, secret: string): void;
+KeyringStore · interface · delete(service: string, account: string): boolean;
+KeyringStore · interface · }
+Logger · interface · export interface Logger {
+Logger · interface · debug(event: object, message?: string): void;
+Logger · interface · info(event: object, message?: string): void;
+Logger · interface · warn(event: object, message?: string): void;
+Logger · interface · error(event: object, message?: string): void;
+Logger · interface · }
+MonotonicClock · type · export type MonotonicClock = () => number;
+Paths · interface · export interface Paths {
+Paths · interface · config: string;
+Paths · interface · state: string;
+Paths · interface · cache: string;
+Paths · interface · }
+PathsOptions · interface · export interface PathsOptions {
+PathsOptions · interface · appName: string;
+PathsOptions · interface · prefix?: string;
+PathsOptions · interface · env?: NodeJS.ProcessEnv;
+PathsOptions · interface · platform?: NodeJS.Platform;
+PathsOptions · interface · }
+PreparedBatchRequest · interface · export interface PreparedBatchRequest {
+PreparedBatchRequest · interface · id: string;
+PreparedBatchRequest · interface · command: string[];
+PreparedBatchRequest · interface · operation: BatchOperation;
+PreparedBatchRequest · interface · }
+PrettyOptions · interface · export interface PrettyOptions {
+PrettyOptions · interface · color: boolean;
+PrettyOptions · interface · }
+RENDER_FORMATS · const · export declare const RENDER_FORMATS: readonly ["pretty", "json", "jsonl"];
+RecordInput · interface · export interface RecordInput {
+RecordInput · interface · severity: LogSeverity;
+RecordInput · interface · event: object;
+RecordInput · interface · time: string;
+RecordInput · interface · runId: string;
+RecordInput · interface · traceId?: string;
+RecordInput · interface · command: string;
+RecordInput · interface · resource: LogRecord["resource"];
+RecordInput · interface · allow?: readonly string[];
+RecordInput · interface · redact?: readonly string[];
+RecordInput · interface · }
+RecordLogOptions · interface · export interface RecordLogOptions {
+RecordLogOptions · interface · to?: string | ((line: string) => void);
+RecordLogOptions · interface · runId: string;
+RecordLogOptions · interface · command: string;
+RecordLogOptions · interface · resource: LogRecord["resource"];
+RecordLogOptions · interface · traceId?: string;
+RecordLogOptions · interface · redact?: string[];
+RecordLogOptions · interface · allow?: readonly string[];
+RecordLogOptions · interface · onError?: (error: Error) => void;
+RecordLogOptions · interface · now?: () => Date;
+RecordLogOptions · interface · }
+RenderErrorOptions · interface · export interface RenderErrorOptions {
+RenderErrorOptions · interface · cli: string;
+RenderErrorOptions · interface · interactive: boolean;
+RenderErrorOptions · interface · record?: ErrorRecord;
+RenderErrorOptions · interface · }
+RenderFormat · type · export type RenderFormat = (typeof RENDER_FORMATS)[number];
+Renderer · interface · export interface Renderer {
+Renderer · interface · result(value: unknown): void;
+Renderer · interface · stream(items: Iterable<unknown>): void;
+Renderer · interface · note(message: string): void;
+Renderer · interface · success(message: string): void;
+Renderer · interface · warn(message: string): void;
+Renderer · interface · failure(message: string): void;
+Renderer · interface · }
+RendererOptions · interface · export interface RendererOptions {
+RendererOptions · interface · format: RenderFormat;
+RendererOptions · interface · color: boolean;
+RendererOptions · interface · streams?: Streams;
+RendererOptions · interface · quiet?: boolean;
+RendererOptions · interface · }
+RetryConfig · interface · export interface RetryConfig {
+RetryConfig · interface · retries: number;
+RetryConfig · interface · baseDelayMs: number;
+RetryConfig · interface · maxDelayMs: number;
+RetryConfig · interface · maxRetryAfterMs: number;
+RetryConfig · interface · }
+SleepLike · type · export type SleepLike = (ms: number, signal?: AbortSignal, reason?: SleepReason) => Promise<void>;
+SleepReason · type · export type SleepReason = "timeout" | "retry";
+StoredCredential · interface · export interface StoredCredential {
+StoredCredential · interface · secret: string;
+StoredCredential · interface · source: CredentialSource;
+StoredCredential · interface · }
+Streams · interface · export interface Streams {
+Streams · interface · data: (text: string) => void;
+Streams · interface · diagnostic: (text: string) => void;
+Streams · interface · drain?: (signal?: AbortSignal) => Promise<void>;
+Streams · interface · progress?: (text: string) => void;
+Streams · interface · }
+WallClock · type · export type WallClock = () => Date;
+WriteOptions · interface · export interface WriteOptions {
+WriteOptions · interface · signIn?: boolean;
+WriteOptions · interface · }
+backoffMs · const · export declare const backoffMs: (attempt: number, config: RetryConfig, random: () => number) => number;
+baseConstantsSchema · const · export declare const baseConstantsSchema: v.ObjectSchema<{}, undefined>;
+brokenKeyring · const · export declare const brokenKeyring: (message?: string) => KeyringStore;
+captureStreams · const · export declare const captureStreams: () => Streams & {
+captureStreams · const · stdout: string[];
+captureStreams · const · stderr: string[];
+captureStreams · const · };
+catchCrashes · const · export declare const catchCrashes: (options: CatchCrashesOptions) => (() => void);
+configFilePath · const · export declare const configFilePath: (configDir: string, fileName?: string) => string;
+createDeadline · const · export declare const createDeadline: ({ timeoutMs, signal, sleep }?: DeadlineOptions) => Deadline;
+createRecordLog · const · export declare const createRecordLog: ({ to, runId, command, resource, traceId, redact, allow, onError, now, }: RecordLogOptions) => Logger;
+createRenderer · const · export declare const createRenderer: ({ format, color, streams, quiet, }: RendererOptions) => Renderer;
+errorCodes · const · export declare const errorCodes: readonly ["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled"];
+errorObjectOf · const · export declare const errorObjectOf: (failure: unknown, context?: FailureContext) => ErrorObject;
+errorRecordOf · const · export declare const errorRecordOf: (failure: unknown, object: ErrorObject, options: ErrorRecordOptions) => ErrorRecord;
+exitCodeFor · const · export declare const exitCodeFor: (code: ErrorCode) => number;
+exitCodeOfAnswer · const · export declare const exitCodeOfAnswer: (meta: Pick<Meta, "complete" | "issues">, partial?: boolean) => number;
+exitCodeOfError · const · export declare const exitCodeOfError: ({ error }: ErrorObject) => number;
+fieldsOf · const · export declare const fieldsOf: (value: string) => string[];
+indent · const · export declare const indent: (text: string, spaces: number) => string;
+isCliError · const · export declare const isCliError: (value: unknown) => value is CliError;
+isMovedRun · const · export declare const isMovedRun: (options: PathsOptions & {
+isMovedRun · const · home?: string | undefined;
+isMovedRun · const · }) => boolean;
+keyringService · const · export declare const keyringService: (service: string, _configDir?: string, _isolated?: boolean) => string;
+loadConfigFile · const · export declare const loadConfigFile: <TSchema extends v.GenericSchema>(path: string, schema: TSchema, fallback: () => v.InferOutput<TSchema>) => v.InferOutput<TSchema>;
+loadConstants · const · export declare const loadConstants: <TSchema extends v.GenericSchema>(layers: readonly URL[], schema: TSchema) => v.InferOutput<TSchema>;
+logRecordOf · const · export declare const logRecordOf: ({ severity, event, time, runId, traceId, command, resource, allow, redact, }: RecordInput) => LogRecord;
+mcpErrorResult · const · export declare const mcpErrorResult: (object: ErrorObject) => {
+mcpErrorResult · const · content: {
+mcpErrorResult · const · type: "text";
+mcpErrorResult · const · text: string;
+mcpErrorResult · const · }[];
+mcpErrorResult · const · structuredContent: {
+mcpErrorResult · const · error: {
+mcpErrorResult · const · code: "authentication_error" | "cancelled" | "configuration_error" | "confirmation_required" | "conflict" | "internal_error" | "invalid_response" | "network_error" | "not_found" | "outcome_unknown" | "permission_error" | "provider_error" | "provider_unavailable" | "rate_limited" | "timeout" | "validation_error";
+mcpErrorResult · const · reason: string;
+mcpErrorResult · const · message: string;
+mcpErrorResult · const · param?: string | undefined;
+mcpErrorResult · const · details?: {
+mcpErrorResult · const · [x: string]: unknown;
+mcpErrorResult · const · } | undefined;
+mcpErrorResult · const · next?: ({
+mcpErrorResult · const · kind: "command";
+mcpErrorResult · const · step: string;
+mcpErrorResult · const · command: string;
+mcpErrorResult · const · args: {
+mcpErrorResult · const · [x: string]: unknown;
+mcpErrorResult · const · };
+mcpErrorResult · const · line?: string | undefined;
+mcpErrorResult · const · why: string;
+mcpErrorResult · const · safe_to_auto_execute: boolean;
+mcpErrorResult · const · } | {
+mcpErrorResult · const · kind: "user_action";
+mcpErrorResult · const · step: string;
+mcpErrorResult · const · why: string;
+mcpErrorResult · const · safe_to_auto_execute: false;
+mcpErrorResult · const · })[] | undefined;
+mcpErrorResult · const · retry: {
+mcpErrorResult · const · safe: boolean;
+mcpErrorResult · const · after_ms?: number | undefined;
+mcpErrorResult · const · };
+mcpErrorResult · const · run_id?: string | undefined;
+mcpErrorResult · const · };
+mcpErrorResult · const · };
+mcpErrorResult · const · isError: true;
+mcpErrorResult · const · };
+memoryKeyring · const · export declare const memoryKeyring: (initial?: Record<string, string>) => KeyringStore & {
+memoryKeyring · const · entries: Map<string, string>;
+memoryKeyring · const · };
+monotonic · const · export declare const monotonic: MonotonicClock;
+pathsAreOverridden · const · export declare const pathsAreOverridden: ({ appName, prefix, env }: PathsOptions) => boolean;
+prepareBatch · const · export declare const prepareBatch: (input: string, handlers: readonly BatchHandler[]) => PreparedBatchRequest[];
+processStreams · const · export declare const processStreams: Streams;
+projectFields · const · export declare const projectFields: (value: unknown, fields: readonly string[]) => unknown;
+readBatchInput · const · export declare const readBatchInput: (source: AsyncIterable<string | Uint8Array>, options?: {
+readBatchInput · const · signal?: AbortSignal;
+readBatchInput · const · }) => Promise<string>;
+realSleep · const · export declare const realSleep: SleepLike;
+renderError · const · export declare const renderError: (object: ErrorObject, options: RenderErrorOptions) => string;
+renderPretty · const · export declare const renderPretty: (value: unknown, options: PrettyOptions) => string;
+resolvePaths · const · export declare const resolvePaths: (options: PathsOptions) => Paths;
+runBatch · const · export declare const runBatch: (requests: readonly PreparedBatchRequest[], options?: {
+runBatch · const · signal?: AbortSignal;
+runBatch · const · maxReadBytes?: number;
+runBatch · const · maxOutputBytes?: number;
+runBatch · const · failureContext?: FailureContext;
+runBatch · const · fields?: readonly string[];
+runBatch · const · }) => Promise<BatchReport>;
+saveConfigFile · const · export declare const saveConfigFile: (path: string, config: unknown) => void;
+singleLine · const · export declare const singleLine: (text: string) => string;
+systemKeyring · const · export declare const systemKeyring: KeyringStore;
+visibleControls · const · export declare const visibleControls: (text: string) => string;
+wallClock · const · export declare const wallClock: WallClock;
+writeSecurely · const · export declare const writeSecurely: (path: string, contents: string | Uint8Array, mode: number) => void;

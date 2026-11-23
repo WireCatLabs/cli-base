@@ -2,13 +2,16 @@ import * as v from "valibot"
 import { duplicates, parseRegistry, text, word } from "./registry.js"
 
 const fieldRuleSchema = v.strictObject({ id: word, rule: text })
+/** @experimental */
 export type FieldRule = v.InferOutput<typeof fieldRuleSchema>
 
+/** @experimental */
 export const defineFieldRules = (input: unknown): FieldRule[] =>
   parseRegistry("output field rules", v.array(fieldRuleSchema), input, (rules) =>
     duplicates(rules.map((rule) => rule.id)).map((id) => `"${id}" is listed twice`),
   )
 
+/** @experimental */
 export const FIELD_RULES: FieldRule[] = defineFieldRules([
   { id: "envelope", rule: "every JSON answer is one object: a list `{items, page, …}`, one thing `{item, …}`" },
   { id: "time", rule: "a time is an ISO 8601 string in UTC, ending in `Z`, never epoch milliseconds" },

@@ -6,10 +6,10 @@
  */
 
 import { sampleOf, schemaProblems } from "./fake.js"
-import { graphqlDocument, parseSelection, type Selection } from "./graphql.js"
 import type { ManifestOperation } from "./manifest.js"
 import type { GraphqlBinding, SchemaNode } from "./model.js"
 import { identifier } from "./names.js"
+import { graphqlDocument, parseSelection, type Selection } from "./selection.js"
 
 type Definitions = Readonly<Record<string, SchemaNode>>
 

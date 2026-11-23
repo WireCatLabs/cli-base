@@ -1,0 +1,60 @@
+# @wirecat/cli-base "./skill": the stable API, written by cli-dev api-report. Do not edit.
+SKILL_TARGETS · const · export declare const SKILL_TARGETS: readonly ["claude", "agents"];
+SkillApp · interface · export interface SkillApp {
+SkillApp · interface · command: string;
+SkillApp · interface · appName: string;
+SkillApp · interface · version: string;
+SkillApp · interface · }
+SkillEnvironment · type · export type SkillEnvironment = (command: Command) => {
+SkillEnvironment · type · renderer: Renderer;
+SkillEnvironment · type · streams: Streams;
+SkillEnvironment · type · env?: Env;
+SkillEnvironment · type · };
+SkillEnvironment · type · type Env = Readonly<Record<string, string | undefined>>;
+SkillHintRequest · interface · export interface SkillHintRequest {
+SkillHintRequest · interface · app: SkillApp;
+SkillHintRequest · interface · argv: readonly string[];
+SkillHintRequest · interface · env: Env;
+SkillHintRequest · interface · statePath: string;
+SkillHintRequest · interface · enabled?: boolean;
+SkillHintRequest · interface · now?: () => number;
+SkillHintRequest · interface · }
+SkillHintRequest · interface · type Env = Readonly<Record<string, string | undefined>>;
+SkillResource · interface · export interface SkillResource {
+SkillResource · interface · uri: string;
+SkillResource · interface · name: string;
+SkillResource · interface · title: string;
+SkillResource · interface · description: string;
+SkillResource · interface · mimeType: "text/markdown";
+SkillResource · interface · read: () => {
+SkillResource · interface · contents: {
+SkillResource · interface · uri: string;
+SkillResource · interface · mimeType: "text/markdown";
+SkillResource · interface · text: string;
+SkillResource · interface · }[];
+SkillResource · interface · };
+SkillResource · interface · instruction: string;
+SkillResource · interface · }
+SkillState · type · export type SkillState = "current" | "stale" | "missing" | "unversioned";
+SkillTarget · type · export type SkillTarget = (typeof SKILL_TARGETS)[number];
+SkillTargetStatus · interface · export interface SkillTargetStatus {
+SkillTargetStatus · interface · target: SkillTarget;
+SkillTargetStatus · interface · path: string;
+SkillTargetStatus · interface · installed: string | null;
+SkillTargetStatus · interface · state: SkillState;
+SkillTargetStatus · interface · }
+hermesCopyPath · const · export declare const hermesCopyPath: (appName: string, env: Env) => string;
+hermesCopyPath · const · type Env = Readonly<Record<string, string | undefined>>;
+installSkill · const · export declare const installSkill: (app: SkillApp, skill: URL, { targets, env }?: {
+installSkill · const · targets?: readonly SkillTarget[];
+installSkill · const · env?: Env;
+installSkill · const · }) => string[];
+installSkill · const · type Env = Readonly<Record<string, string | undefined>>;
+skillCommand · const · export declare const skillCommand: (app: SkillApp, skill: URL, environment: SkillEnvironment, more?: Readonly<Record<string, URL>>) => Command;
+skillHint · const · export declare const skillHint: ({ app, argv, env, statePath, enabled, now }: SkillHintRequest) => string | undefined;
+skillResource · const · export declare const skillResource: (app: SkillApp, skill: URL) => SkillResource;
+skillResources · const · export declare const skillResources: (app: SkillApp, skill: URL) => SkillResource[];
+skillStatus · const · export declare const skillStatus: (app: SkillApp, env?: Env) => SkillTargetStatus[];
+skillStatus · const · type Env = Readonly<Record<string, string | undefined>>;
+skillVersion · const · export declare const skillVersion: (content: string) => string | undefined;
+writeSkillFolder · const · export declare const writeSkillFolder: (app: SkillApp, skill: URL, folder: string) => string;

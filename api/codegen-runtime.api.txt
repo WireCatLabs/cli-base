@@ -1,0 +1,202 @@
+# @wirecat/cli-base "./codegen/runtime": the stable API, written by cli-dev api-report. Do not edit.
+ApiServer · interface · export interface ApiServer {
+ApiServer · interface · url: string;
+ApiServer · interface · description?: string;
+ApiServer · interface · variables?: Readonly<Record<string, {
+ApiServer · interface · default: string;
+ApiServer · interface · enum?: readonly string[];
+ApiServer · interface · description?: string;
+ApiServer · interface · }>>;
+ApiServer · interface · }
+Effect · type · export type Effect = "read" | "write" | "destructive";
+GraphqlBinding · interface · export interface GraphqlBinding {
+GraphqlBinding · interface · kind: "graphql";
+GraphqlBinding · interface · operation: "query" | "mutation";
+GraphqlBinding · interface · field: string;
+GraphqlBinding · interface · variables: Readonly<Record<string, string>>;
+GraphqlBinding · interface · selection: string;
+GraphqlBinding · interface · }
+ManifestOperation · interface · export interface ManifestOperation {
+ManifestOperation · interface · id: string;
+ManifestOperation · interface · command: string;
+ManifestOperation · interface · group?: string;
+ManifestOperation · interface · binding: Binding;
+ManifestOperation · interface · effect: Effect;
+ManifestOperation · interface · summary?: string;
+ManifestOperation · interface · description?: string;
+ManifestOperation · interface · tags: readonly string[];
+ManifestOperation · interface · deprecated?: boolean;
+ManifestOperation · interface · parameters: readonly {
+ManifestOperation · interface · name: string;
+ManifestOperation · interface · in: "path" | "query" | "header" | "body";
+ManifestOperation · interface · sensitive?: boolean;
+ManifestOperation · interface · required: boolean;
+ManifestOperation · interface · description?: string;
+ManifestOperation · interface · schema: SchemaNode;
+ManifestOperation · interface · }[];
+ManifestOperation · interface · request?: {
+ManifestOperation · interface · required: boolean;
+ManifestOperation · interface · confidence: Confidence;
+ManifestOperation · interface · schema?: string;
+ManifestOperation · interface · contentType?: string;
+ManifestOperation · interface · };
+ManifestOperation · interface · response?: {
+ManifestOperation · interface · confidence: Confidence;
+ManifestOperation · interface · schema?: string;
+ManifestOperation · interface · sensitive?: boolean;
+ManifestOperation · interface · };
+ManifestOperation · interface · security?: readonly SecurityRequirement[];
+ManifestOperation · interface · permissions?: readonly OperationPermission[];
+ManifestOperation · interface · pagination?: Pagination;
+ManifestOperation · interface · }
+OAuthFlow · interface · export interface OAuthFlow {
+OAuthFlow · interface · authorizationUrl?: string;
+OAuthFlow · interface · tokenUrl?: string;
+OAuthFlow · interface · refreshUrl?: string;
+OAuthFlow · interface · scopes: Readonly<Record<string, string>>;
+OAuthFlow · interface · }
+OperationPermission · interface · export interface OperationPermission {
+OperationPermission · interface · key: string;
+OperationPermission · interface · body?: readonly string[];
+OperationPermission · interface · query?: readonly string[];
+OperationPermission · interface · values?: Readonly<Record<string, readonly string[]>>;
+OperationPermission · interface · unless?: Readonly<Record<string, readonly string[]>>;
+OperationPermission · interface · }
+PageParameter · interface · export interface PageParameter {
+PageParameter · interface · in: "query" | "body";
+PageParameter · interface · name: string;
+PageParameter · interface · }
+Pagination · type · export type Pagination = {
+Pagination · type · style: "cursor";
+Pagination · type · cursor: PageParameter;
+Pagination · type · next: string;
+Pagination · type · items?: string;
+Pagination · type · hasMore?: string;
+Pagination · type · limit?: PageParameter;
+Pagination · type · } | {
+Pagination · type · style: "offset";
+Pagination · type · offset: PageParameter;
+Pagination · type · limit?: PageParameter;
+Pagination · type · items: string;
+Pagination · type · total?: string;
+Pagination · type · } | {
+Pagination · type · style: "page";
+Pagination · type · page: PageParameter;
+Pagination · type · limit?: PageParameter;
+Pagination · type · items: string;
+Pagination · type · total?: string;
+Pagination · type · start?: number;
+Pagination · type · pagesHeader?: string;
+Pagination · type · }
+Pagination · type · | {
+Pagination · type · style: "link";
+Pagination · type · next: string;
+Pagination · type · items?: string;
+Pagination · type · };
+SchemaNode · type · export type SchemaNode = SchemaCommon & ({
+SchemaNode · type · type: "ref";
+SchemaNode · type · ref: string;
+SchemaNode · type · } | {
+SchemaNode · type · type: "string";
+SchemaNode · type · format?: "binary" | "file-reference";
+SchemaNode · type · enum?: readonly string[];
+SchemaNode · type · minLength?: number;
+SchemaNode · type · maxLength?: number;
+SchemaNode · type · pattern?: string;
+SchemaNode · type · } | {
+SchemaNode · type · type: "integer";
+SchemaNode · type · format?: "int32" | "int64";
+SchemaNode · type · minimum?: number;
+SchemaNode · type · maximum?: number;
+SchemaNode · type · enum?: readonly number[];
+SchemaNode · type · } | {
+SchemaNode · type · type: "number";
+SchemaNode · type · minimum?: number;
+SchemaNode · type · maximum?: number;
+SchemaNode · type · } | {
+SchemaNode · type · type: "boolean";
+SchemaNode · type · enum?: readonly boolean[];
+SchemaNode · type · } | {
+SchemaNode · type · type: "array";
+SchemaNode · type · items: SchemaNode;
+SchemaNode · type · minItems?: number;
+SchemaNode · type · maxItems?: number;
+SchemaNode · type · uniqueItems?: boolean;
+SchemaNode · type · } | {
+SchemaNode · type · type: "object";
+SchemaNode · type · properties: Readonly<Record<string, SchemaNode>>;
+SchemaNode · type · required: readonly string[];
+SchemaNode · type · additionalProperties?: SchemaNode;
+SchemaNode · type · } | {
+SchemaNode · type · type: "union";
+SchemaNode · type · of: readonly SchemaNode[];
+SchemaNode · type · }
+SchemaNode · type · | {
+SchemaNode · type · type: "allOf";
+SchemaNode · type · of: readonly SchemaNode[];
+SchemaNode · type · }
+SchemaNode · type · | {
+SchemaNode · type · type: "unknown";
+SchemaNode · type · });
+SchemaNode · type · interface SchemaCommon {
+SchemaNode · type · sensitive?: boolean;
+SchemaNode · type · description?: string;
+SchemaNode · type · nullable?: boolean;
+SchemaNode · type · deprecated?: boolean;
+SchemaNode · type · default?: unknown;
+SchemaNode · type · }
+SecurityRequirement · type · export type SecurityRequirement = Readonly<Record<string, readonly string[]>>;
+SecurityScheme · interface · export interface SecurityScheme {
+SecurityScheme · interface · type: "apiKey" | "http" | "oauth2" | "openIdConnect" | "mutualTLS";
+SecurityScheme · interface · description?: string;
+SecurityScheme · interface · name?: string;
+SecurityScheme · interface · in?: "query" | "header" | "cookie";
+SecurityScheme · interface · scheme?: string;
+SecurityScheme · interface · bearerFormat?: string;
+SecurityScheme · interface · flows?: Readonly<Partial<Record<"implicit" | "password" | "clientCredentials" | "authorizationCode", OAuthFlow>>>;
+SecurityScheme · interface · openIdConnectUrl?: string;
+SecurityScheme · interface · }
+Selection · interface · export interface Selection {
+Selection · interface · readonly [field: string]: Selection | true;
+Selection · interface · }
+SignInPlace · interface · export interface SignInPlace {
+SignInPlace · interface · in: "header" | "query";
+SignInPlace · interface · name: string;
+SignInPlace · interface · value: (token: string) => string;
+SignInPlace · interface · basic?: true;
+SignInPlace · interface · }
+graphqlDocument · const · export declare const graphqlDocument: (binding: GraphqlBinding, selection?: string) => string;
+identifier · const · export declare const identifier: (id: string) => string;
+int64 · const · export declare const int64: (range?: Range) => v.SchemaWithPipe<readonly [v.CustomSchema<number | bigint | LosslessLike, v.ErrorMessage<v.CustomIssue> | undefined>, v.TransformAction<number | bigint | LosslessLike, string>, v.CheckAction<string, "integer out of range">]>;
+int64 · const · interface Range {
+int64 · const · minimum?: number;
+int64 · const · maximum?: number;
+int64 · const · }
+int64 · const · interface LosslessLike {
+int64 · const · isLosslessNumber: true;
+int64 · const · value: string;
+int64 · const · }
+integer · const · export declare const integer: (range?: Range) => v.SchemaWithPipe<readonly [v.CustomSchema<number | bigint | LosslessLike, v.ErrorMessage<v.CustomIssue> | undefined>, v.TransformAction<number | bigint | LosslessLike, number>, v.CheckAction<number, "integer out of range">]>;
+integer · const · interface Range {
+integer · const · minimum?: number;
+integer · const · maximum?: number;
+integer · const · }
+integer · const · interface LosslessLike {
+integer · const · isLosslessNumber: true;
+integer · const · value: string;
+integer · const · }
+number · const · export declare const number: (range?: Range) => v.SchemaWithPipe<readonly [v.CustomSchema<number | LosslessLike, v.ErrorMessage<v.CustomIssue> | undefined>, v.TransformAction<number | LosslessLike, number>, v.CheckAction<number, "number out of range">]>;
+number · const · interface Range {
+number · const · minimum?: number;
+number · const · maximum?: number;
+number · const · }
+number · const · interface LosslessLike {
+number · const · isLosslessNumber: true;
+number · const · value: string;
+number · const · }
+parseSelection · const · export declare const parseSelection: (text: string) => Selection;
+signInPlace · const · export declare const signInPlace: (scheme: SecurityScheme) => SignInPlace | undefined;
+signInRequirements · const · export declare const signInRequirements: (operation: {
+signInRequirements · const · security?: readonly SecurityRequirement[];
+signInRequirements · const · }, document: readonly SecurityRequirement[] | undefined) => readonly SecurityRequirement[] | undefined;
+unique · const · export declare const unique: (items: readonly unknown[]) => boolean;

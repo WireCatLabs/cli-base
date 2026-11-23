@@ -1,0 +1,156 @@
+# @wirecat/cli-base "./wcat/manifest": the stable API, written by cli-dev api-report. Do not edit.
+MANIFEST_FILE · const · export declare const MANIFEST_FILE = "contracts/wirecat.json";
+Manifest · type · export type Manifest = v.InferOutput<typeof manifestSchema>;
+ManifestIdentity · interface · export interface ManifestIdentity extends WcatTool {
+ManifestIdentity · interface · appName: string;
+ManifestIdentity · interface · envPrefix: string;
+ManifestIdentity · interface · tagline?: string;
+ManifestIdentity · interface · signIn?: SignIn;
+ManifestIdentity · interface · syncs?: string;
+ManifestIdentity · interface · meetingsProvider?: string;
+ManifestIdentity · interface · hosts?: readonly string[];
+ManifestIdentity · interface · userHosts?: string;
+ManifestIdentity · interface · permissionOf?: (path: readonly string[]) => string | null;
+ManifestIdentity · interface · }
+ManifestInput · interface · export interface ManifestInput {
+ManifestInput · interface · identity: ManifestIdentity;
+ManifestInput · interface · commands: readonly CommandInfo[];
+ManifestInput · interface · pkg: ManifestPackage;
+ManifestInput · interface · skills: boolean;
+ManifestInput · interface · }
+ManifestPackage · interface · export interface ManifestPackage {
+ManifestPackage · interface · name?: unknown;
+ManifestPackage · interface · bin?: unknown;
+ManifestPackage · interface · }
+SHARED_HOSTS · const · export declare const SHARED_HOSTS: readonly string[];
+SignIn · type · export type SignIn = v.InferOutput<typeof signInSchema>;
+SignIn · type · declare const signInSchema: v.StrictObjectSchema<{
+SignIn · type · readonly gives: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+SignIn · type · readonly asks: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+SignIn · type · readonly methods: v.OptionalSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.StrictObjectSchema<{
+SignIn · type · readonly id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case method id">]>;
+SignIn · type · readonly label: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+SignIn · type · readonly words: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+SignIn · type · readonly stdin: v.OptionalSchema<v.BooleanSchema<undefined>, undefined>;
+SignIn · type · readonly site: v.OptionalSchema<v.LiteralSchema<"--site", undefined>, undefined>;
+SignIn · type · readonly login: v.OptionalSchema<v.LiteralSchema<"--login", undefined>, undefined>;
+SignIn · type · }, undefined>, undefined>, v.MinLengthAction<{
+SignIn · type · id: string;
+SignIn · type · label: string;
+SignIn · type · words: string[];
+SignIn · type · stdin?: boolean | undefined;
+SignIn · type · site?: "--site" | undefined;
+SignIn · type · login?: "--login" | undefined;
+SignIn · type · }[], 1, undefined>]>, undefined>;
+SignIn · type · }, undefined>;
+buildManifest · const · export declare const buildManifest: ({ identity, commands, pkg, skills }: ManifestInput) => Manifest;
+manifestSchema · const · export declare const manifestSchema: v.StrictObjectSchema<{
+manifestSchema · const · readonly wcat_manifest: v.LiteralSchema<2, undefined>;
+manifestSchema · const · readonly name: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "lower-case letters, digits and -">]>;
+manifestSchema · const · readonly description: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+manifestSchema · const · readonly docs_url: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.UrlAction<string, undefined>, v.StartsWithAction<string, "https://", "an https link">]>, undefined>;
+manifestSchema · const · readonly package: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a scoped npm package name">]>;
+manifestSchema · const · readonly bin: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "lower-case letters, digits and -">]>;
+manifestSchema · const · readonly commands: v.ArraySchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly path: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly summary: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>, undefined>;
+manifestSchema · const · readonly effects: v.StrictObjectSchema<{
+manifestSchema · const · readonly remote: v.PicklistSchema<readonly ["none", "read", "write"], undefined>;
+manifestSchema · const · readonly local: v.PicklistSchema<readonly ["none", "read", "write"], undefined>;
+manifestSchema · const · }, undefined>;
+manifestSchema · const · readonly permission: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.NonEmptyAction<string, undefined>]>, undefined>;
+manifestSchema · const · readonly entity: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a snake_case entity name">]>, undefined>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly entities: v.OptionalSchema<v.RecordSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a snake_case entity name">]>, v.StrictObjectSchema<{
+manifestSchema · const · readonly fields: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a snake_case entity name">]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · }, undefined>, undefined>, undefined>;
+manifestSchema · const · readonly network: v.OptionalSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly hosts: v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 253, undefined>, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>;
+manifestSchema · const · readonly user_hosts: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>, undefined>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly desktop: v.StrictObjectSchema<{
+manifestSchema · const · readonly tagline: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+manifestSchema · const · readonly profiles: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly args: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly shape: v.LiteralSchema<"items", undefined>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly doctor: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly runs: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly list: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly show: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly search: v.NullSchema<undefined>;
+manifestSchema · const · readonly setup: v.NullableSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>, undefined>;
+manifestSchema · const · readonly signIn: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly gives: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+manifestSchema · const · readonly asks: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+manifestSchema · const · readonly methods: v.OptionalSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a lower-case method id">]>;
+manifestSchema · const · readonly label: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+manifestSchema · const · readonly words: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly stdin: v.OptionalSchema<v.BooleanSchema<undefined>, undefined>;
+manifestSchema · const · readonly site: v.OptionalSchema<v.LiteralSchema<"--site", undefined>, undefined>;
+manifestSchema · const · readonly login: v.OptionalSchema<v.LiteralSchema<"--login", undefined>, undefined>;
+manifestSchema · const · }, undefined>, undefined>, v.MinLengthAction<{
+manifestSchema · const · id: string;
+manifestSchema · const · label: string;
+manifestSchema · const · words: string[];
+manifestSchema · const · stdin?: boolean | undefined;
+manifestSchema · const · site?: "--site" | undefined;
+manifestSchema · const · login?: "--login" | undefined;
+manifestSchema · const · }[], 1, undefined>]>, undefined>;
+manifestSchema · const · readonly setupFrom: v.OptionalSchema<v.LiteralSchema<"0.0.0", undefined>, undefined>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly skill: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly status: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly install: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly show: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly mcpServer: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly start: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly stop: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly status: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly revoke: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly config: v.NullableSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>, undefined>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly tasks: v.NullSchema<undefined>;
+manifestSchema · const · readonly sync: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly run: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly last: v.NullableSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.UnionSchema<[v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, undefined>]>], undefined>, undefined>, v.MinLengthAction<string[], 1, undefined>]>, undefined>;
+manifestSchema · const · readonly lastShape: v.LiteralSchema<"runs", undefined>;
+manifestSchema · const · readonly what: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
+manifestSchema · const · readonly note: v.NullSchema<undefined>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly storeInfo: v.NullSchema<undefined>;
+manifestSchema · const · readonly storeTables: v.NullSchema<undefined>;
+manifestSchema · const · readonly storeTableSizes: v.NullSchema<undefined>;
+manifestSchema · const · readonly storeCheck: v.NullSchema<undefined>;
+manifestSchema · const · readonly storeBackup: v.NullSchema<undefined>;
+manifestSchema · const · readonly storeBackupEncrypted: v.NullSchema<undefined>;
+manifestSchema · const · readonly storeResetPreview: v.NullSchema<undefined>;
+manifestSchema · const · readonly storeReset: v.NullSchema<undefined>;
+manifestSchema · const · readonly storage: v.StrictObjectSchema<{
+manifestSchema · const · readonly app: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a folder name">]>;
+manifestSchema · const · readonly env: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "an upper-case environment prefix">]>;
+manifestSchema · const · }, undefined>;
+manifestSchema · const · readonly settings: v.NullSchema<undefined>;
+manifestSchema · const · readonly accountRemove: v.OptionalSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly signOut: v.NullableSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>, undefined>;
+manifestSchema · const · readonly remove: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly minVersion: v.LiteralSchema<"0.0.0", undefined>;
+manifestSchema · const · readonly keepData: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly deleteData: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly dryRun: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>;
+manifestSchema · const · readonly confirm: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly removes: v.ArraySchema<v.LiteralSchema<"signIn", undefined>, undefined>;
+manifestSchema · const · readonly keeps: v.ArraySchema<v.PicklistSchema<["settings", "data", "listed"], undefined>, undefined>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · readonly meetings: v.OptionalSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a provider name">]>;
+manifestSchema · const · readonly show: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly transcript: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · }, undefined>, undefined>;
+manifestSchema · const · }, undefined>;
+manifestSchema · const · }, undefined>;
+manifestText · const · export declare const manifestText: (manifest: Manifest) => string;

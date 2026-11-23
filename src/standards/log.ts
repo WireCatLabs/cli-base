@@ -41,12 +41,20 @@ export const defineLogEvents = (input: unknown): LogEvent[] =>
     ...events.flatMap((event) => duplicates(event.keys).map((key) => `${event.id}: key "${key}" is listed twice`)),
   ])
 
-/** The events cli-base logs itself. */
+/**
+ * The events cli-base logs itself.
+ *
+ * @experimental
+ */
 export const LOG_EVENTS: LogEvent[] = defineLogEvents([
   { id: "command.failed", meaning: "a command ended with an error", keys: ["code", "reason"] },
 ])
 
-/** Why a record is not one of `events` (cli-base's are always known): an unknown `body`, or a required key missing. */
+/**
+ * Why a record is not one of `events` (cli-base's are always known): an unknown `body`, or a required key missing.
+ *
+ * @experimental
+ */
 export const logEventProblems = (record: Pick<LogRecord, "body" | "attributes">, events: readonly LogEvent[]) => {
   const event = [...LOG_EVENTS, ...events].find((one) => one.id === record.body)
   if (!event) return [`"${record.body}" is not a registered log event`]
@@ -56,7 +64,11 @@ export const logEventProblems = (record: Pick<LogRecord, "body" | "attributes">,
 }
 export type LogSeverity = (typeof LOG_SEVERITIES)[number]
 
-/** Attribute keys every program may log; a program adds its own with `allow`. Keys are camelCase until §3.9 reaches logs. */
+/**
+ * Attribute keys every program may log; a program adds its own with `allow`. Keys are camelCase until §3.9 reaches logs.
+ *
+ * @experimental
+ */
 export const LOG_ATTRIBUTE_KEYS = [
   "code",
   "count",

@@ -44,6 +44,7 @@ const predicateSchema = v.object({
   implicit: v.optional(v.literal(true)),
   slop: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
 })
+/** @experimental */
 export const queryNodeSchema: v.GenericSchema<QueryNode> = v.variant("kind", [
   predicateSchema,
   v.object({

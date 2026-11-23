@@ -1,0 +1,527 @@
+# @wirecat/cli-base "./standards": the stable API, written by cli-dev api-report. Do not edit.
+BASE_REASONS · const · export declare const BASE_REASONS: ErrorReason[];
+COMPACT_FLAG · const · export declare const COMPACT_FLAG = "--compact";
+CRASH_CODE · const · export declare const CRASH_CODE = "internal_error";
+CRASH_REASON · const · export declare const CRASH_REASON = "command.crashed";
+Effects · type · export type Effects = v.InferOutput<typeof effectsSchema>;
+ErrorObject · type · export type ErrorObject = v.InferOutput<typeof errorObjectSchema>;
+ErrorReason · type · export type ErrorReason = v.InferOutput<typeof reasonSchema>;
+ErrorReason · type · declare const reasonSchema: v.StrictObjectSchema<{
+ErrorReason · type · readonly reason: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+ErrorReason · type · readonly code: v.PicklistSchema<["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled", "internal_error"], undefined>;
+ErrorReason · type · readonly message: v.SchemaWithPipe<readonly [v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, v.MaxLengthAction<string, 120, undefined>]>;
+ErrorReason · type · readonly details: v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a snake_case key">]>, undefined>;
+ErrorReason · type · readonly step: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+ErrorReason · type · }, undefined>;
+Issue · type · export type Issue = v.InferOutput<typeof issueSchema>;
+ItemEnvelope · interface · export interface ItemEnvelope<T> {
+ItemEnvelope · interface · item: T;
+ItemEnvelope · interface · next?: NextStep[];
+ItemEnvelope · interface · missing?: Missing[];
+ItemEnvelope · interface · meta: Meta;
+ItemEnvelope · interface · }
+LOG_SEVERITIES · const · export declare const LOG_SEVERITIES: readonly ["trace", "debug", "info", "warn", "error", "fatal"];
+ListEnvelope · interface · export interface ListEnvelope<T> {
+ListEnvelope · interface · items: T[];
+ListEnvelope · interface · page: Page;
+ListEnvelope · interface · next?: NextStep[];
+ListEnvelope · interface · missing?: Missing[];
+ListEnvelope · interface · meta: Meta;
+ListEnvelope · interface · }
+ListResult · interface · export interface ListResult<T> {
+ListResult · interface · items: T[];
+ListResult · interface · hasMore: boolean;
+ListResult · interface · nextOffset?: number;
+ListResult · interface · nextCursor?: string;
+ListResult · interface · total?: Total;
+ListResult · interface · }
+LogEvent · type · export type LogEvent = v.InferOutput<typeof logEventSchema>;
+LogEvent · type · declare const logEventSchema: v.StrictObjectSchema<{
+LogEvent · type · readonly id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+LogEvent · type · readonly meaning: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+LogEvent · type · readonly keys: v.ArraySchema<v.StringSchema<undefined>, undefined>;
+LogEvent · type · }, undefined>;
+LogRecord · type · export type LogRecord = v.InferOutput<typeof logRecordSchema>;
+LogSeverity · type · export type LogSeverity = (typeof LOG_SEVERITIES)[number];
+MAX_NEXT_STEPS · const · export declare const MAX_NEXT_STEPS = 2;
+Meta · type · export type Meta = v.InferOutput<typeof metaSchema>;
+Missing · type · export type Missing = v.InferOutput<typeof missingSchema>;
+NextStep · type · export type NextStep = v.InferOutput<typeof nextStepSchema>;
+Page · type · export type Page = v.InferOutput<typeof pageSchema>;
+Query · type · export type Query = v.InferOutput<typeof querySchema>;
+Ranking · type · export type Ranking = v.InferOutput<typeof rankingSchema>;
+STEPS · const · export declare const STEPS: StepDefinition[];
+StepDefinition · type · export type StepDefinition = v.InferOutput<typeof stepSchema>;
+StepDefinition · type · declare const stepSchema: v.UnionSchema<[v.StrictObjectSchema<{
+StepDefinition · type · readonly id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+StepDefinition · type · readonly kind: v.OptionalSchema<v.LiteralSchema<"command", undefined>, "command">;
+StepDefinition · type · readonly command: v.UnionSchema<[v.LiteralSchema<"*", undefined>, v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a command path such as `messages sync`">]>], undefined>;
+StepDefinition · type · readonly args: v.ArraySchema<v.StrictObjectSchema<{
+StepDefinition · type · readonly name: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "an argument or option name in snake_case">]>;
+StepDefinition · type · readonly required: v.BooleanSchema<undefined>;
+StepDefinition · type · }, undefined>, undefined>;
+StepDefinition · type · readonly why: v.SchemaWithPipe<readonly [v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, v.MaxLengthAction<string, 120, undefined>]>;
+StepDefinition · type · }, undefined>, v.StrictObjectSchema<{
+StepDefinition · type · readonly id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+StepDefinition · type · readonly kind: v.LiteralSchema<"user_action", undefined>;
+StepDefinition · type · readonly why: v.SchemaWithPipe<readonly [v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, v.MaxLengthAction<string, 120, undefined>]>;
+StepDefinition · type · }, undefined>], undefined>;
+StepInput · interface · export interface StepInput {
+StepInput · interface · args?: Readonly<Record<string, unknown>>;
+StepInput · interface · values?: Readonly<Record<string, string | number>>;
+StepInput · interface · command?: string;
+StepInput · interface · targets?: (command: string) => StepTarget | undefined;
+StepInput · interface · }
+StepTarget · interface · export interface StepTarget {
+StepTarget · interface · effects?: Effects;
+StepTarget · interface · names: readonly string[];
+StepTarget · interface · }
+Total · type · export type Total = v.InferOutput<typeof totalSchema>;
+clockMeta · const · export declare const clockMeta: (at: number, zone: string) => {
+clockMeta · const · now: string;
+clockMeta · const · now_local: string;
+clockMeta · const · timezone: string;
+clockMeta · const · };
+defineLogEvents · const · export declare const defineLogEvents: (input: unknown) => LogEvent[];
+defineReasons · const · export declare const defineReasons: (input: unknown) => ErrorReason[];
+defineSteps · const · export declare const defineSteps: (input: unknown) => StepDefinition[];
+effectsSchema · const · export declare const effectsSchema: v.StrictObjectSchema<{
+effectsSchema · const · readonly remote: v.PicklistSchema<readonly ["none", "read", "write"], undefined>;
+effectsSchema · const · readonly local: v.PicklistSchema<readonly ["none", "read", "write"], undefined>;
+effectsSchema · const · }, undefined>;
+errorObjectSchema · const · export declare const errorObjectSchema: v.StrictObjectSchema<{
+errorObjectSchema · const · readonly error: v.StrictObjectSchema<{
+errorObjectSchema · const · readonly code: v.PicklistSchema<["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled", "internal_error"], undefined>;
+errorObjectSchema · const · readonly reason: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+errorObjectSchema · const · readonly message: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+errorObjectSchema · const · readonly param: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+errorObjectSchema · const · readonly details: v.OptionalSchema<v.RecordSchema<v.StringSchema<undefined>, v.UnknownSchema, undefined>, undefined>;
+errorObjectSchema · const · readonly next: v.OptionalSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.VariantSchema<"kind", [v.StrictObjectSchema<{
+errorObjectSchema · const · readonly kind: v.LiteralSchema<"command", undefined>;
+errorObjectSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+errorObjectSchema · const · readonly command: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+errorObjectSchema · const · readonly args: v.RecordSchema<v.StringSchema<undefined>, v.UnknownSchema, undefined>;
+errorObjectSchema · const · readonly line: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+errorObjectSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+errorObjectSchema · const · readonly safe_to_auto_execute: v.BooleanSchema<undefined>;
+errorObjectSchema · const · }, undefined>, v.StrictObjectSchema<{
+errorObjectSchema · const · readonly kind: v.LiteralSchema<"user_action", undefined>;
+errorObjectSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+errorObjectSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+errorObjectSchema · const · readonly safe_to_auto_execute: v.LiteralSchema<false, undefined>;
+errorObjectSchema · const · }, undefined>], undefined>, undefined>, v.MaxLengthAction<({
+errorObjectSchema · const · kind: "command";
+errorObjectSchema · const · step: string;
+errorObjectSchema · const · command: string;
+errorObjectSchema · const · args: {
+errorObjectSchema · const · [x: string]: unknown;
+errorObjectSchema · const · };
+errorObjectSchema · const · line?: string | undefined;
+errorObjectSchema · const · why: string;
+errorObjectSchema · const · safe_to_auto_execute: boolean;
+errorObjectSchema · const · } | {
+errorObjectSchema · const · kind: "user_action";
+errorObjectSchema · const · step: string;
+errorObjectSchema · const · why: string;
+errorObjectSchema · const · safe_to_auto_execute: false;
+errorObjectSchema · const · })[], 2, undefined>]>, undefined>;
+errorObjectSchema · const · readonly retry: v.StrictObjectSchema<{
+errorObjectSchema · const · readonly safe: v.BooleanSchema<undefined>;
+errorObjectSchema · const · readonly after_ms: v.OptionalSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+errorObjectSchema · const · }, undefined>;
+errorObjectSchema · const · readonly run_id: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+errorObjectSchema · const · }, undefined>;
+errorObjectSchema · const · }, undefined>;
+isContentKey · const · export declare const isContentKey: (key: string) => boolean;
+isoTime · const · export declare const isoTime: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>;
+issueSchema · const · export declare const issueSchema: v.StrictObjectSchema<{
+issueSchema · const · readonly code: v.PicklistSchema<readonly ["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled"], undefined>;
+issueSchema · const · readonly reason: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+issueSchema · const · readonly source: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+issueSchema · const · }, undefined>;
+itemEnvelopeSchema · const · export declare const itemEnvelopeSchema: <T extends v.GenericSchema>(item: T) => v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly item: T;
+itemEnvelopeSchema · const · readonly next: v.OptionalSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.VariantSchema<"kind", [v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly kind: v.LiteralSchema<"command", undefined>;
+itemEnvelopeSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+itemEnvelopeSchema · const · readonly command: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly args: v.RecordSchema<v.StringSchema<undefined>, v.UnknownSchema, undefined>;
+itemEnvelopeSchema · const · readonly line: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+itemEnvelopeSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly safe_to_auto_execute: v.BooleanSchema<undefined>;
+itemEnvelopeSchema · const · }, undefined>, v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly kind: v.LiteralSchema<"user_action", undefined>;
+itemEnvelopeSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+itemEnvelopeSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly safe_to_auto_execute: v.LiteralSchema<false, undefined>;
+itemEnvelopeSchema · const · }, undefined>], undefined>, undefined>, v.MaxLengthAction<({
+itemEnvelopeSchema · const · kind: "command";
+itemEnvelopeSchema · const · step: string;
+itemEnvelopeSchema · const · command: string;
+itemEnvelopeSchema · const · args: {
+itemEnvelopeSchema · const · [x: string]: unknown;
+itemEnvelopeSchema · const · };
+itemEnvelopeSchema · const · line?: string | undefined;
+itemEnvelopeSchema · const · why: string;
+itemEnvelopeSchema · const · safe_to_auto_execute: boolean;
+itemEnvelopeSchema · const · } | {
+itemEnvelopeSchema · const · kind: "user_action";
+itemEnvelopeSchema · const · step: string;
+itemEnvelopeSchema · const · why: string;
+itemEnvelopeSchema · const · safe_to_auto_execute: false;
+itemEnvelopeSchema · const · })[], 2, undefined>]>, undefined>;
+itemEnvelopeSchema · const · readonly missing: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly field: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly step: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+itemEnvelopeSchema · const · }, undefined>, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly meta: v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly run_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly duration_ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · readonly accounts: v.OptionalSchema<v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly complete: v.BooleanSchema<undefined>;
+itemEnvelopeSchema · const · readonly issues: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly code: v.PicklistSchema<readonly ["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled"], undefined>;
+itemEnvelopeSchema · const · readonly reason: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+itemEnvelopeSchema · const · readonly source: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · }, undefined>, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly truncated: v.OptionalSchema<v.BooleanSchema<undefined>, undefined>;
+itemEnvelopeSchema · const · readonly timezone: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+itemEnvelopeSchema · const · readonly now: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+itemEnvelopeSchema · const · readonly now_local: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "an ISO 8601 time with its offset">]>, undefined>;
+itemEnvelopeSchema · const · readonly window: v.OptionalSchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly since: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+itemEnvelopeSchema · const · readonly until: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+itemEnvelopeSchema · const · }, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly ranking: v.OptionalSchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly applied: v.BooleanSchema<undefined>;
+itemEnvelopeSchema · const · readonly reason_id: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+itemEnvelopeSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly model: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly endpoint: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly sent: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · readonly cost_usd: v.NullableSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+itemEnvelopeSchema · const · readonly usage: v.OptionalSchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly input: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · readonly output: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · }, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · }, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly model_run: v.OptionalSchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly model: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly endpoint: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly sent: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · readonly done: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · readonly left: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · readonly usage: v.OptionalSchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly input: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · readonly output: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · }, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly cost_usd: v.NullableSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+itemEnvelopeSchema · const · readonly ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+itemEnvelopeSchema · const · }, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly query: v.OptionalSchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly chat: v.OptionalSchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly chat_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly title: v.NullableSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+itemEnvelopeSchema · const · }, undefined>, undefined>;
+itemEnvelopeSchema · const · readonly respelled: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+itemEnvelopeSchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+itemEnvelopeSchema · const · readonly tried: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+itemEnvelopeSchema · const · }, undefined>, undefined>, undefined>;
+itemEnvelopeSchema · const · }, undefined>, undefined>;
+itemEnvelopeSchema · const · }, undefined>;
+itemEnvelopeSchema · const · }, undefined>;
+jsonSchemaOf · const · export declare const jsonSchemaOf: (schema: v.GenericSchema, definitions?: Record<string, v.GenericSchema>) => import("@valibot/to-json-schema").JsonSchema;
+jsonlEndSchema · const · export declare const jsonlEndSchema: v.StrictObjectSchema<{
+jsonlEndSchema · const · readonly type: v.LiteralSchema<"end", undefined>;
+jsonlEndSchema · const · readonly complete: v.BooleanSchema<undefined>;
+jsonlEndSchema · const · readonly issues: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+jsonlEndSchema · const · readonly code: v.PicklistSchema<readonly ["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled"], undefined>;
+jsonlEndSchema · const · readonly reason: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+jsonlEndSchema · const · readonly source: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+jsonlEndSchema · const · }, undefined>, undefined>, undefined>;
+jsonlEndSchema · const · readonly page: v.VariantSchema<"mode", [v.StrictObjectSchema<{
+jsonlEndSchema · const · readonly mode: v.LiteralSchema<"page", undefined>;
+jsonlEndSchema · const · readonly limit: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 1, undefined>]>;
+jsonlEndSchema · const · readonly has_more: v.BooleanSchema<undefined>;
+jsonlEndSchema · const · readonly next_page: v.OptionalSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 2, undefined>]>, undefined>;
+jsonlEndSchema · const · readonly total: v.OptionalSchema<v.StrictObjectSchema<{
+jsonlEndSchema · const · readonly value: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+jsonlEndSchema · const · readonly relation: v.PicklistSchema<["eq", "gte"], undefined>;
+jsonlEndSchema · const · }, undefined>, undefined>;
+jsonlEndSchema · const · }, undefined>, v.StrictObjectSchema<{
+jsonlEndSchema · const · readonly mode: v.LiteralSchema<"cursor", undefined>;
+jsonlEndSchema · const · readonly limit: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 1, undefined>]>;
+jsonlEndSchema · const · readonly has_more: v.BooleanSchema<undefined>;
+jsonlEndSchema · const · readonly next_cursor: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+jsonlEndSchema · const · readonly total: v.OptionalSchema<v.StrictObjectSchema<{
+jsonlEndSchema · const · readonly value: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+jsonlEndSchema · const · readonly relation: v.PicklistSchema<["eq", "gte"], undefined>;
+jsonlEndSchema · const · }, undefined>, undefined>;
+jsonlEndSchema · const · }, undefined>], undefined>;
+jsonlEndSchema · const · }, undefined>;
+jsonlItemSchema · const · export declare const jsonlItemSchema: <T extends v.GenericSchema>(item: T) => v.StrictObjectSchema<{
+jsonlItemSchema · const · readonly type: v.LiteralSchema<"item", undefined>;
+jsonlItemSchema · const · readonly data: T;
+jsonlItemSchema · const · }, undefined>;
+jsonlOf · const · export declare const jsonlOf: <T>({ items, page, meta }: ListEnvelope<T>) => string;
+listEnvelopeSchema · const · export declare const listEnvelopeSchema: <T extends v.GenericSchema>(item: T) => v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly items: v.ArraySchema<T, undefined>;
+listEnvelopeSchema · const · readonly page: v.VariantSchema<"mode", [v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly mode: v.LiteralSchema<"page", undefined>;
+listEnvelopeSchema · const · readonly limit: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 1, undefined>]>;
+listEnvelopeSchema · const · readonly has_more: v.BooleanSchema<undefined>;
+listEnvelopeSchema · const · readonly next_page: v.OptionalSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 2, undefined>]>, undefined>;
+listEnvelopeSchema · const · readonly total: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly value: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly relation: v.PicklistSchema<["eq", "gte"], undefined>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · }, undefined>, v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly mode: v.LiteralSchema<"cursor", undefined>;
+listEnvelopeSchema · const · readonly limit: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 1, undefined>]>;
+listEnvelopeSchema · const · readonly has_more: v.BooleanSchema<undefined>;
+listEnvelopeSchema · const · readonly next_cursor: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+listEnvelopeSchema · const · readonly total: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly value: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly relation: v.PicklistSchema<["eq", "gte"], undefined>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · }, undefined>], undefined>;
+listEnvelopeSchema · const · readonly next: v.OptionalSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.VariantSchema<"kind", [v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly kind: v.LiteralSchema<"command", undefined>;
+listEnvelopeSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+listEnvelopeSchema · const · readonly command: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly args: v.RecordSchema<v.StringSchema<undefined>, v.UnknownSchema, undefined>;
+listEnvelopeSchema · const · readonly line: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+listEnvelopeSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly safe_to_auto_execute: v.BooleanSchema<undefined>;
+listEnvelopeSchema · const · }, undefined>, v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly kind: v.LiteralSchema<"user_action", undefined>;
+listEnvelopeSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+listEnvelopeSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly safe_to_auto_execute: v.LiteralSchema<false, undefined>;
+listEnvelopeSchema · const · }, undefined>], undefined>, undefined>, v.MaxLengthAction<({
+listEnvelopeSchema · const · kind: "command";
+listEnvelopeSchema · const · step: string;
+listEnvelopeSchema · const · command: string;
+listEnvelopeSchema · const · args: {
+listEnvelopeSchema · const · [x: string]: unknown;
+listEnvelopeSchema · const · };
+listEnvelopeSchema · const · line?: string | undefined;
+listEnvelopeSchema · const · why: string;
+listEnvelopeSchema · const · safe_to_auto_execute: boolean;
+listEnvelopeSchema · const · } | {
+listEnvelopeSchema · const · kind: "user_action";
+listEnvelopeSchema · const · step: string;
+listEnvelopeSchema · const · why: string;
+listEnvelopeSchema · const · safe_to_auto_execute: false;
+listEnvelopeSchema · const · })[], 2, undefined>]>, undefined>;
+listEnvelopeSchema · const · readonly missing: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly field: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly step: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+listEnvelopeSchema · const · }, undefined>, undefined>, undefined>;
+listEnvelopeSchema · const · readonly meta: v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly run_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly duration_ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly accounts: v.OptionalSchema<v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>, undefined>;
+listEnvelopeSchema · const · readonly complete: v.BooleanSchema<undefined>;
+listEnvelopeSchema · const · readonly issues: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly code: v.PicklistSchema<readonly ["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled"], undefined>;
+listEnvelopeSchema · const · readonly reason: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+listEnvelopeSchema · const · readonly source: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · }, undefined>, undefined>, undefined>;
+listEnvelopeSchema · const · readonly truncated: v.OptionalSchema<v.BooleanSchema<undefined>, undefined>;
+listEnvelopeSchema · const · readonly timezone: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+listEnvelopeSchema · const · readonly now: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+listEnvelopeSchema · const · readonly now_local: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "an ISO 8601 time with its offset">]>, undefined>;
+listEnvelopeSchema · const · readonly window: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly since: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+listEnvelopeSchema · const · readonly until: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · readonly ranking: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly applied: v.BooleanSchema<undefined>;
+listEnvelopeSchema · const · readonly reason_id: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+listEnvelopeSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly model: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly endpoint: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly sent: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly cost_usd: v.NullableSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+listEnvelopeSchema · const · readonly usage: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly input: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly output: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · readonly ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · readonly model_run: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly model: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly endpoint: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly sent: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly done: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly left: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly usage: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly input: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · readonly output: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · readonly cost_usd: v.NullableSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+listEnvelopeSchema · const · readonly ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · readonly query: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly chat: v.OptionalSchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly chat_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly title: v.NullableSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · readonly respelled: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+listEnvelopeSchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+listEnvelopeSchema · const · readonly tried: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+listEnvelopeSchema · const · }, undefined>, undefined>, undefined>;
+listEnvelopeSchema · const · }, undefined>, undefined>;
+listEnvelopeSchema · const · }, undefined>;
+listEnvelopeSchema · const · }, undefined>;
+logAttributesJsonSchema · const · export declare const logAttributesJsonSchema: (allow?: readonly string[]) => Record<string, unknown>;
+logRecordSchema · const · export declare const logRecordSchema: v.StrictObjectSchema<{
+logRecordSchema · const · readonly time: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>;
+logRecordSchema · const · readonly severity: v.PicklistSchema<readonly ["trace", "debug", "info", "warn", "error", "fatal"], undefined>;
+logRecordSchema · const · readonly body: v.StringSchema<undefined>;
+logRecordSchema · const · readonly run_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+logRecordSchema · const · readonly trace_id: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "32 lower-case hex digits">]>, undefined>;
+logRecordSchema · const · readonly command: v.StringSchema<undefined>;
+logRecordSchema · const · readonly attributes: v.RecordSchema<v.StringSchema<undefined>, v.UnknownSchema, undefined>;
+logRecordSchema · const · readonly resource: v.StrictObjectSchema<{
+logRecordSchema · const · readonly service: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+logRecordSchema · const · readonly version: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+logRecordSchema · const · }, undefined>;
+logRecordSchema · const · }, undefined>;
+metaSchema · const · export declare const metaSchema: v.StrictObjectSchema<{
+metaSchema · const · readonly run_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly duration_ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · readonly accounts: v.OptionalSchema<v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>, undefined>;
+metaSchema · const · readonly complete: v.BooleanSchema<undefined>;
+metaSchema · const · readonly issues: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+metaSchema · const · readonly code: v.PicklistSchema<readonly ["validation_error", "configuration_error", "authentication_error", "permission_error", "not_found", "confirmation_required", "rate_limited", "timeout", "network_error", "provider_error", "provider_unavailable", "invalid_response", "outcome_unknown", "conflict", "cancelled"], undefined>;
+metaSchema · const · readonly reason: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+metaSchema · const · readonly source: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · }, undefined>, undefined>, undefined>;
+metaSchema · const · readonly truncated: v.OptionalSchema<v.BooleanSchema<undefined>, undefined>;
+metaSchema · const · readonly timezone: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+metaSchema · const · readonly now: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+metaSchema · const · readonly now_local: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "an ISO 8601 time with its offset">]>, undefined>;
+metaSchema · const · readonly window: v.OptionalSchema<v.StrictObjectSchema<{
+metaSchema · const · readonly since: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+metaSchema · const · readonly until: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.IsoTimestampAction<string, "an ISO 8601 time in UTC">, v.EndsWithAction<string, "Z", "an ISO 8601 time in UTC, ending in `Z`">]>, undefined>;
+metaSchema · const · }, undefined>, undefined>;
+metaSchema · const · readonly ranking: v.OptionalSchema<v.StrictObjectSchema<{
+metaSchema · const · readonly applied: v.BooleanSchema<undefined>;
+metaSchema · const · readonly reason_id: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+metaSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly model: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly endpoint: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly sent: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · readonly cost_usd: v.NullableSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+metaSchema · const · readonly usage: v.OptionalSchema<v.StrictObjectSchema<{
+metaSchema · const · readonly input: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · readonly output: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · }, undefined>, undefined>;
+metaSchema · const · readonly ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · }, undefined>, undefined>;
+metaSchema · const · readonly model_run: v.OptionalSchema<v.StrictObjectSchema<{
+metaSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly model: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly endpoint: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly sent: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · readonly done: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · readonly left: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · readonly usage: v.OptionalSchema<v.StrictObjectSchema<{
+metaSchema · const · readonly input: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · readonly output: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · }, undefined>, undefined>;
+metaSchema · const · readonly cost_usd: v.NullableSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+metaSchema · const · readonly ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+metaSchema · const · }, undefined>, undefined>;
+metaSchema · const · readonly query: v.OptionalSchema<v.StrictObjectSchema<{
+metaSchema · const · readonly chat: v.OptionalSchema<v.StrictObjectSchema<{
+metaSchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly chat_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly title: v.NullableSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+metaSchema · const · }, undefined>, undefined>;
+metaSchema · const · readonly respelled: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+metaSchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+metaSchema · const · readonly tried: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+metaSchema · const · }, undefined>, undefined>, undefined>;
+metaSchema · const · }, undefined>, undefined>;
+metaSchema · const · }, undefined>;
+missingSchema · const · export declare const missingSchema: v.StrictObjectSchema<{
+missingSchema · const · readonly field: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+missingSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+missingSchema · const · readonly step: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+missingSchema · const · }, undefined>;
+nextStepSchema · const · export declare const nextStepSchema: v.VariantSchema<"kind", [v.StrictObjectSchema<{
+nextStepSchema · const · readonly kind: v.LiteralSchema<"command", undefined>;
+nextStepSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+nextStepSchema · const · readonly command: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+nextStepSchema · const · readonly args: v.RecordSchema<v.StringSchema<undefined>, v.UnknownSchema, undefined>;
+nextStepSchema · const · readonly line: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+nextStepSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+nextStepSchema · const · readonly safe_to_auto_execute: v.BooleanSchema<undefined>;
+nextStepSchema · const · }, undefined>, v.StrictObjectSchema<{
+nextStepSchema · const · readonly kind: v.LiteralSchema<"user_action", undefined>;
+nextStepSchema · const · readonly step: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>;
+nextStepSchema · const · readonly why: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+nextStepSchema · const · readonly safe_to_auto_execute: v.LiteralSchema<false, undefined>;
+nextStepSchema · const · }, undefined>], undefined>;
+pageSchema · const · export declare const pageSchema: v.VariantSchema<"mode", [v.StrictObjectSchema<{
+pageSchema · const · readonly mode: v.LiteralSchema<"page", undefined>;
+pageSchema · const · readonly limit: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 1, undefined>]>;
+pageSchema · const · readonly has_more: v.BooleanSchema<undefined>;
+pageSchema · const · readonly next_page: v.OptionalSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 2, undefined>]>, undefined>;
+pageSchema · const · readonly total: v.OptionalSchema<v.StrictObjectSchema<{
+pageSchema · const · readonly value: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+pageSchema · const · readonly relation: v.PicklistSchema<["eq", "gte"], undefined>;
+pageSchema · const · }, undefined>, undefined>;
+pageSchema · const · }, undefined>, v.StrictObjectSchema<{
+pageSchema · const · readonly mode: v.LiteralSchema<"cursor", undefined>;
+pageSchema · const · readonly limit: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 1, undefined>]>;
+pageSchema · const · readonly has_more: v.BooleanSchema<undefined>;
+pageSchema · const · readonly next_cursor: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+pageSchema · const · readonly total: v.OptionalSchema<v.StrictObjectSchema<{
+pageSchema · const · readonly value: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+pageSchema · const · readonly relation: v.PicklistSchema<["eq", "gte"], undefined>;
+pageSchema · const · }, undefined>, undefined>;
+pageSchema · const · }, undefined>], undefined>;
+querySchema · const · export declare const querySchema: v.StrictObjectSchema<{
+querySchema · const · readonly chat: v.OptionalSchema<v.StrictObjectSchema<{
+querySchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+querySchema · const · readonly chat_id: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+querySchema · const · readonly title: v.NullableSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>;
+querySchema · const · }, undefined>, undefined>;
+querySchema · const · readonly respelled: v.OptionalSchema<v.ArraySchema<v.StrictObjectSchema<{
+querySchema · const · readonly word: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+querySchema · const · readonly tried: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+querySchema · const · }, undefined>, undefined>, undefined>;
+querySchema · const · }, undefined>;
+rankingSchema · const · export declare const rankingSchema: v.StrictObjectSchema<{
+rankingSchema · const · readonly applied: v.BooleanSchema<undefined>;
+rankingSchema · const · readonly reason_id: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "dotted lower-case words, such as `page.next`">]>, undefined>;
+rankingSchema · const · readonly provider: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+rankingSchema · const · readonly model: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+rankingSchema · const · readonly endpoint: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "must not be empty">]>;
+rankingSchema · const · readonly sent: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+rankingSchema · const · readonly cost_usd: v.NullableSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.MinValueAction<number, 0, undefined>]>, undefined>;
+rankingSchema · const · readonly usage: v.OptionalSchema<v.StrictObjectSchema<{
+rankingSchema · const · readonly input: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+rankingSchema · const · readonly output: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+rankingSchema · const · }, undefined>, undefined>;
+rankingSchema · const · readonly ms: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+rankingSchema · const · }, undefined>;
+reference · const · export declare const reference: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a reference such as `note:42`">]>;
+stepOf · const · export declare const stepOf: (definition: StepDefinition, input?: StepInput) => NextStep;
+totalSchema · const · export declare const totalSchema: v.StrictObjectSchema<{
+totalSchema · const · readonly value: v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 0, undefined>]>;
+totalSchema · const · readonly relation: v.PicklistSchema<["eq", "gte"], undefined>;
+totalSchema · const · }, undefined>;
+traceIdOf · const · export declare const traceIdOf: (traceparent: unknown) => string | undefined;
+writes · const · export declare const writes: (effects: Effects | undefined) => boolean;

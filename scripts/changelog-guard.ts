@@ -12,6 +12,11 @@
 //    into the dated version only if it still publishes this commit.
 // 3. No `###` heading repeats inside a section the pull request leaves untagged: an entry belongs under the
 //    section's existing heading. Only a repeat the base did not have fails, so an old one does not block others.
+// 4. A change to a stable API report, `api/<entry>.api.txt` (`cli-dev api-report`), has its changelog heading among the
+//    entries the pull request adds: a removed or changed line needs "Changed — may break callers" or "Removed", an
+//    added one "Added". A report the base did not have is a first one and needs nothing.
+// 5. From 1.0.0 on, a pull request that adds a stable break ("Changed — may break callers", "Removed") carries the
+//    `major` label: it waits for a major the owner chose (WC-REL-7).
 import { execFileSync } from "node:child_process"
 
 type Sections = Map<string, string[]>
@@ -21,6 +26,51 @@ const CHANGELOG_TITLE = /^\w+\((release|changelog)\)!?:/
 const UNRELEASED = /^## (Unreleased|Не выпущено)\s*$/i
 const DATED = /^## v?(\d+\.\d+\.\d+\S*) [—–-] \S/
 export const FRAGMENTS = /^changes\/(?!README\.md$)[^/]+\.md$/
+export const API_REPORTS = /^api\/[^/]+\.api\.txt$/
+const BREAKS = ["Changed — may break callers", "Removed"]
+
+export type ApiReport = { path: string; base?: string; head: string }
+
+/** The `###` headings with an entry the pull request adds, in a fragment or under the unreleased heading. */
+function addedHeadings(base: Sections, head: Sections, fragments: readonly string[]): Set<string> {
+  const found = new Set<string>()
+  const scan = (lines: readonly string[], fresh: (line: string) => boolean) => {
+    let heading: string | undefined
+    for (const line of lines) {
+      if (line.startsWith("### ")) heading = line.slice(4).trim()
+      else if (heading && line.trim() !== "" && !line.startsWith("#") && fresh(line)) found.add(heading)
+    }
+  }
+  for (const text of fragments) scan(text.split("\n"), () => true)
+  const unreleased = (all: Sections) => [...all].find(([heading]) => UNRELEASED.test(heading))?.[1] ?? []
+  const old = new Set(unreleased(base))
+  scan(unreleased(head), (line) => !old.has(line))
+  return found
+}
+
+/** Lines of `from` that `to` has fewer of; a report's lines repeat (`}`), so they are counted, not just looked up. */
+function missingLines(from: string, to: string): string[] {
+  const left = new Map<string, number>()
+  for (const line of to.split("\n")) left.set(line, (left.get(line) ?? 0) + 1)
+  return from.split("\n").filter((line) => {
+    if (line.trim() === "" || line.startsWith("#")) return false
+    const count = left.get(line) ?? 0
+    left.set(line, count - 1)
+    return count <= 0
+  })
+}
+
+function apiProblem(reports: readonly ApiReport[], added: Set<string>): string | undefined {
+  for (const { path, base, head } of reports) {
+    if (base === undefined) continue
+    const removed = missingLines(base, head)
+    if (removed.length > 0 && !BREAKS.some((heading) => added.has(heading)))
+      return `${path}: the stable API lost or changed "${removed[0]}"; add an entry under "Changed — may break callers" or "Removed" (WC-REL-7)`
+    if (removed.length === 0 && missingLines(head, base).length > 0 && !added.has("Added"))
+      return `${path}: the stable API gained names; add an entry under "Added" (WC-REL-7)`
+  }
+  return undefined
+}
 
 function duplicateHeading(text: string): string | undefined {
   const seen = new Set<string>()
@@ -67,6 +117,11 @@ export function checkChangelog(input: {
   releasedText?: (version: string) => string | undefined
   /** The text of each `changes/*.md` fragment the pull request adds or edits. */
   fragments?: string[]
+  /** Each `api/<entry>.api.txt` the pull request changes; `base` is absent for a new one. */
+  api?: ApiReport[]
+  /** The head's package.json version and the pull request's labels, for the `major` label rule. */
+  version?: string
+  labels?: string[]
 }): string | undefined {
   const repeated = duplicateHeading(input.head)
   if (repeated) return `CHANGELOG.md: duplicate heading for ${repeated}; keep one section per version`
@@ -103,6 +158,13 @@ export function checkChangelog(input: {
   const repeat = [...repeatedSubheadings(head, tagged)].find((found) => !before.has(found))
   if (repeat) return `CHANGELOG.md: ${repeat}; put the entry under the heading that is already there`
 
+  const added = addedHeadings(base, head, input.fragments ?? [])
+  const api = apiProblem(input.api ?? [], added)
+  if (api) return api
+  const major = Number((input.version ?? "0").split(".")[0])
+  if (major >= 1 && BREAKS.some((heading) => added.has(heading)) && !input.labels?.includes("major"))
+    return `a stable break ("Changed — may break callers" or "Removed") needs a major: add the \`major\` label, and the pull request waits for the next major (WC-REL-7)`
+
   if (!BREAKING_TITLE.test(input.title)) return undefined
   const entry = (line: string) => line.trim() !== "" && !line.startsWith("#")
   if (input.fragments?.some((text) => text.split("\n").some(entry))) return undefined
@@ -124,30 +186,36 @@ function main() {
     process.exit(2)
   }
   const mergeBase = git("merge-base", baseSha, headSha).trim()
-  const show = (sha: string) => {
+  const shown = (sha: string, path: string) => {
     try {
-      return git("show", `${sha}:CHANGELOG.md`)
+      return git("show", `${sha}:${path}`)
     } catch {
-      return ""
+      return undefined
     }
   }
+  const show = (sha: string) => shown(sha, "CHANGELOG.md") ?? ""
   const fragments = git("diff", "--name-only", "--diff-filter=AM", mergeBase, headSha, "--", "changes")
     .split("\n")
     .filter((path) => FRAGMENTS.test(path))
     .map((path) => git("show", `${headSha}:${path}`))
+  const api = git("diff", "--name-only", mergeBase, headSha, "--", "api")
+    .split("\n")
+    .filter((path) => API_REPORTS.test(path))
+    .map((path) => ({ path, base: shown(mergeBase, path), head: shown(headSha, path) ?? "" }))
+  let labels: string[] = []
+  try {
+    labels = JSON.parse(process.env.LABELS || "[]")
+  } catch {}
   const message = checkChangelog({
     title,
     fragments,
+    api,
+    labels,
+    version: JSON.parse(shown(headSha, "package.json") ?? "{}").version,
     base: show(mergeBase),
     head: show(headSha),
     tags: git("tag", "--list", "v*").split("\n").filter(Boolean),
-    releasedText: (version) => {
-      try {
-        return git("show", `v${version}:CHANGELOG.md`)
-      } catch {
-        return undefined
-      }
-    },
+    releasedText: (version) => shown(`v${version}`, "CHANGELOG.md"),
   })
   if (message) {
     console.error(message)

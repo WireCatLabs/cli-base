@@ -33,11 +33,8 @@ export {
   GRAPHQL_DELETE_REASON,
   type GraphqlOptions,
   type GraphqlProvenance,
-  graphqlDocument,
   INTROSPECTION_QUERY,
-  parseSelection,
   readGraphql,
-  type Selection,
   syncGraphql,
 } from "./graphql.js"
 export {
@@ -74,6 +71,7 @@ export type {
   GraphqlBinding,
   HttpBinding,
   HttpMethod,
+  ModelOverride,
   OAuthFlow,
   OperationPermission,
   Override,
@@ -97,16 +95,17 @@ export {
   applyPagination,
   applyPermissionRule,
   CodegenError,
+  type CodegenWriteOptions,
   type CommandNames,
   type GenerateOptions,
   generate,
   type PermissionRule,
   READING_POST_REASON,
   validateModel,
-  type WriteOptions,
   writeArtifacts,
 } from "./pipeline.js"
 export { type PostmanOptions, type PostmanResult, postmanToOpenApi } from "./postman.js"
+export { graphqlDocument, parseSelection, type Selection } from "./selection.js"
 export { type SignInPlace, signInPlace, signInRequirements } from "./sign-in.js"
 export { API_SKILL_GROUPS, API_SKILL_INDEX, type ApiSkillOptions, apiSkillFiles } from "./skill.js"
 export { upgradeToOpenApi3 } from "./swagger.js"
