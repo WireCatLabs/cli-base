@@ -19,7 +19,7 @@ review guidelines for module size. The entry-point map below applies it to this 
 | `/completion` | shell completion over that tree | `/commands` types |
 | `/update` | which installer put the CLI there, the daily notice, running the update | `config` (the state file), `/http`'s `FetchLike` |
 | `/codegen` | build time: an OpenAPI document → `ApiModel` → types, Valibot schemas, manifest, coverage page | nothing at run time |
-| `/codegen/runtime` | the number helpers generated schemas import | `valibot` |
+| `/codegen/runtime` | the number helpers generated schemas import, and the manifest types, `identifier` and the sign-in and GraphQL helpers code that runs reads the manifest with | `valibot`; type-only imports of the codegen model |
 | `/release` | release checks a CLI runs before it publishes: `releaseCheck` and the checks it runs (changelog shape, document links, versions in step, package contents) | Node built-ins only |
 | `/skill` | the CLI's SKILL.md for agents: the `skill` command, the daily hint, the MCP resource | Commander at runtime, `/update`'s state file, the root's `Renderer` and `Streams` types |
 | `/mcp` | local stdio MCP entry setup and a handshake probe | Node child processes; no messenger or MCP SDK dependency |
@@ -27,7 +27,7 @@ review guidelines for module size. The entry-point map below applies it to this 
 | `/wcat` | the `wcat` umbrella: dispatching to `wcat-<name>` programs, `--wcat-describe`, the launcher and the shortcuts | Node built-ins, `cross-spawn`; the root's errors and failure rendering, loaded only when `wcat` itself runs |
 | `/wcat/start` | `wcatStart`, a CLI's first call: describe, dispatch mode, the launcher check | Node built-ins; the dispatcher only in dispatch mode |
 | `/wcat/manifest` | `contracts/wirecat.json` for WireCat Desktop: `buildManifest`, `manifestSchema`, the plain-word rule | `valibot`; `/commands` and `/standards` |
-| `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock`, `allowNetwork` | the root |
+| `/testing` | `memoryKeyring`, `fakeClock`, `allowNetwork`, `expectRegisteredEvents` | the root |
 | `/testing/setup` | a vitest `setupFiles` entry: per-file sandbox, a keyring that throws, no network | `vitest` (optional peer) |
 
 Each is a separate `exports` entry in [`package.json`](../../package.json), built from

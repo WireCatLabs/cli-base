@@ -313,7 +313,11 @@ OpenAPI equivalent (digest, AWS) stop generation, unless `exclude` names the req
 The effect follows the method, so a POST that only reads, as Braze's exports, needs an `effect` override.
 
 The generated schemas import `@wirecat/cli-base/codegen/runtime` at run time — a few number
-helpers, not the generator. Numbers are expected from a lossless JSON parser (`lossless-json`): a
+helpers, not the generator. Code that reads the manifest at run time takes its types (`ManifestOperation`,
+`SchemaNode`, …), `identifier`, `graphqlDocument`, `parseSelection`, `signInPlace` and `signInRequirements` from there
+too: they are stable there, while `/codegen` is experimental.
+
+Numbers are expected from a lossless JSON parser (`lossless-json`): a
 64-bit integer comes out as its exact decimal string, and any other integer that does not fit a JS
 number fails instead of rounding. Objects are loose, so a field the API added later passes through.
 Unions retain every alternative, including recursive references and Boolean literals.
