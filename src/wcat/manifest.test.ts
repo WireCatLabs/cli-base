@@ -260,6 +260,23 @@ describe("buildManifest", () => {
     expect(() => build({ signIn: signIn({ ...appPassword, site: "--url" }) }, commands)).toThrow('Expected "--site"')
   })
 
+  it("names setupFrom when the CLI has cli-core's setup flow commands, so Desktop asks for the flow", () => {
+    const flow = (names: string[]) => {
+      const tree = program()
+      const setup = new Command("setup").action(() => {})
+      for (const name of names) setup.addCommand(new Command(name).action(() => {}))
+      return describeProgram(tree.addCommand(setup))
+    }
+
+    expect(build({}, flow(["show", "apply", "run"])).desktop.signIn).toEqual({
+      ...identity.signIn,
+      setupFrom: "0.0.0",
+    })
+    expect(build({}, flow(["show", "apply"])).desktop.signIn).not.toHaveProperty("setupFrom")
+    expect(build().desktop.signIn).not.toHaveProperty("setupFrom")
+    expect(build({ signIn: undefined }, flow(["show", "apply", "run"])).desktop.signIn).toBeNull()
+  })
+
   it("matches runs list's query: command:sync status:success are two exact terms", () => {
     const ast = parseLucene(["command:sync", "status:success"].join(" "), { defaultField: "none" })
     expect(JSON.stringify(ast)).toMatch(/"field":"command","operator":"term","value":"sync"/)
