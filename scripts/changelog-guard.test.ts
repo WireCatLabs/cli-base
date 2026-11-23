@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { checkChangelog, FRAGMENTS } from "./changelog-guard.ts"
+import { type ApiReport, checkChangelog, FRAGMENTS } from "./changelog-guard.ts"
 
 const entry = "- **Changed.** The thing, because of the reason."
 const base = (unreleasedHeading: string) =>
@@ -244,5 +244,49 @@ describe("restoring immutable release notes", () => {
         releasedText: tagged,
       }),
     ).toBeUndefined()
+  })
+})
+
+describe("the stable API report and the major label", () => {
+  const report = [
+    '# @acme/lib "."',
+    "open · function · export declare function open(): void;",
+    "Options · interface · }",
+  ]
+  const api = (head: string[], before = report): ApiReport[] => [
+    { path: "api/index.api.txt", base: before?.join("\n"), head: head.join("\n") },
+  ]
+  const guard = (options: {
+    api?: ReturnType<typeof api>
+    fragments?: string[]
+    version?: string
+    labels?: string[]
+  }) =>
+    checkChangelog({ title: "feat: thing", base: base("Unreleased"), head: base("Unreleased"), tags: [], ...options })
+
+  it("needs a break heading for a removed or changed stable line, and Added for a new one", () => {
+    const changed = api([report[0] as string, "open · function · export declare function open(path: string): void;"])
+    expect(guard({ api: changed })).toMatch(/lost or changed "open · function · export declare function open\(\)/)
+    expect(guard({ api: changed, fragments: ["### Added\n\n- **Added.** It.\n"] })).toMatch(/lost or changed/)
+    expect(guard({ api: changed, fragments: [`### Removed\n\n${entry}\n`] })).toBeUndefined()
+    const grown = api([...report, "close · function · export declare function close(): void;"])
+    expect(guard({ api: grown })).toMatch(/gained names; add an entry under "Added"/)
+    expect(guard({ api: grown, fragments: ["### Added\n\n- **Added.** close.\n"] })).toBeUndefined()
+  })
+
+  it("counts repeated lines, reads new Unreleased entries, and skips a first report", () => {
+    expect(guard({ api: api(report.slice(0, 2), [...report, "Options · interface · }"]) })).toMatch(/lost or changed/)
+    const head = base("Unreleased").replace("### Fixed", `### Changed — may break callers\n\n${entry}\n\n### Fixed`)
+    const changed = api([report[0] as string])
+    expect(checkChangelog({ title: "feat: x", base: base("Unreleased"), head, tags: [], api: changed })).toBeUndefined()
+    expect(guard({ api: [{ path: "api/index.api.txt", head: report.join("\n") }] })).toBeUndefined()
+  })
+
+  it("needs the major label for a stable break from 1.0.0 on, and not before", () => {
+    const fragments = [`### Changed — may break callers\n\n${entry}\n`]
+    expect(guard({ fragments, version: "0.132.0" })).toBeUndefined()
+    expect(guard({ fragments, version: "1.2.0" })).toMatch(/needs a major: add the `major` label/)
+    expect(guard({ fragments, version: "1.2.0", labels: ["major"] })).toBeUndefined()
+    expect(guard({ fragments: ["### Added\n\n- **Added.** It.\n"], version: "1.2.0" })).toBeUndefined()
   })
 })
