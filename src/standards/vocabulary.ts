@@ -417,6 +417,8 @@ const views: [string, string][] = [
   ["transcript", "the text of speech: a voice message or a meeting recording"],
   ["evidence", "the stored messages or lines a result or a reference rests on"],
   ["passage", "a cited transcript line with bounded surrounding lines from the same revision"],
+  ["summary", "the summary a service wrote of a meeting, with its sections and next steps"],
+  ["people", "the people found across stored meetings by name or email, with the meetings they were in"],
   ["invitation", "the text that invites people to a meeting: how to join it and when"],
   ["agenda", "what needs a look today"],
   ["busy", "when calendars or people are taken, without what takes them"],

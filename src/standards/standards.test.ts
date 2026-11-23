@@ -180,6 +180,8 @@ describe("vocabulary registry", () => {
   it("names a change log: the changes view, --since and --event", () => {
     const flag = (name: string) => VOCABULARY.flags.find((entry) => entry.name === name)
     expect(VOCABULARY.views.find((entry) => entry.word === "changes")).toBeDefined()
+    for (const word of ["summary", "people"])
+      expect(VOCABULARY.views.find((entry) => entry.word === word)).toBeDefined()
     expect(flag("--since")).toMatchObject({ value: "<time>", role: "target", type: "time" })
     expect(flag("--event")).toMatchObject({ value: "<events>", role: "target", type: "list" })
   })
