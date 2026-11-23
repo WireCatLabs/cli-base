@@ -34,6 +34,12 @@ describe("next-version", () => {
     expect((await next("1.2.1", "1.2.3", '["1.2.3","1.2.4"]')).out).toEqual(["1.2.5"])
   })
 
+  it("keeps a taken major a major, and a first 1.0.0 over 0.x as it is", async () => {
+    expect((await next("2.0.0", "2.0.0", '["2.0.0"]')).out).toEqual(["3.0.0"])
+    out.length = 0
+    expect((await next("1.0.0", "0.130.0", '["0.130.0"]')).out).toEqual(["1.0.0"])
+  })
+
   it("passes a pre-release through, and a first publish when npm knows nothing", async () => {
     expect((await next("2.0.0-rc.1", "1.0.0", "")).out).toEqual(["2.0.0-rc.1"])
     out.length = 0

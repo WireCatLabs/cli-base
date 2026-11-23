@@ -7,6 +7,7 @@
 #
 #   bin/release           # publishes from GitHub Actions (.github/workflows/release.yml)
 #   bin/release --local   # publishes from this machine: the keyring entry NPM_KEYRING_ACCOUNT names, else npm's login
+#   bin/release --major   # also allows a new major version; without it, a version that raises the major stops
 #
 # The npm token is never printed — not on success, not in an error.
 set -eu
@@ -24,11 +25,14 @@ rerun_if_changed() {
 }
 
 mode=ci
-case "${1:-}" in
-  "") ;;
-  --local) mode=local ;;
-  *) echo "usage: bin/release [--local]" >&2; exit 2 ;;
-esac
+major=""
+for flag in "$@"; do
+  case "$flag" in
+    --local) mode=local ;;
+    --major) major=1 ;;
+    *) echo "usage: bin/release [--local] [--major]" >&2; exit 2 ;;
+  esac
+done
 
 git fetch -q origin
 [ "$(git branch --show-current)" = "main" ] || { echo "not on main" >&2; exit 1; }
@@ -118,6 +122,11 @@ if published; then
   echo "$version is already on npm — raise the version first" >&2
   exit 1
 fi
+# A major breaks every caller of the stable API, so it ships only when the owner chose to (WC-REL-7).
+if [ "${version%%.*}" != "${latest%%.*}" ] && [ -n "$latest" ] && [ -z "$major" ]; then
+  echo "$version raises the major version over npm's $latest — run bin/release --major if that is meant" >&2
+  exit 1
+fi
 
 if [ "$mode" = ci ]; then
   last_run() {
@@ -154,7 +163,8 @@ if [ -n "${NPM_KEYRING_ACCOUNT:-}" ]; then
 fi
 
 echo "== publishing $version =="
-pnpm publish --access public --no-git-checks
+case "$version" in *-*) tag=next ;; *) tag=latest ;; esac
+pnpm publish --access public --no-git-checks --tag "$tag"
 
 echo "== waiting for npm to show $version (up to three minutes) =="
 seen=""

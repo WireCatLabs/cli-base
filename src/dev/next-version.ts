@@ -1,6 +1,7 @@
 /**
  * The version `bin/release` publishes: the one in package.json when npm has not taken it and it is
- * above npm's latest, else the next free one at the same bump level (x.y.0 → minor, x.y.z → patch).
+ * above npm's latest, else the next free one at the same bump level (x.0.0 → major from 1.0.0 on, x.y.0 → minor,
+ * x.y.z → patch).
  * npm's answers are arguments, not calls, so CI and a test can hand it any registry state.
  */
 export const nextVersion = (
@@ -31,8 +32,13 @@ export const nextVersion = (
 
   if (!taken.has(wanted) && compare(want, top) > 0) return { version: wanted }
 
+  // A taken x.0.0 stays a major: 2.0.0 taken goes to 3.0.0, never to 2.1.0.
   const step = ([major = 0, minor = 0, patch = 0]: number[]) =>
-    want[2] === 0 ? [major, minor + 1, 0] : [major, minor, patch + 1]
+    want[1] === 0 && want[2] === 0 && (want[0] ?? 0) >= 1
+      ? [major + 1, 0, 0]
+      : want[2] === 0
+        ? [major, minor + 1, 0]
+        : [major, minor, patch + 1]
   let next = step(top)
   while (taken.has(next.join("."))) next = step(next)
   return { version: next.join(".") }

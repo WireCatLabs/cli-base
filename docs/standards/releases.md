@@ -82,16 +82,27 @@ on the [CI](ci.md) page.
 - **Exceptions:** a shared library that prints no version has no `src/version.ts`.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
-### WC-REL-7 · Versions are `x.y.z`; before 1.0.0 a breaking change raises the minor
+<a id="wc-rel-7--versions-are-xyz-before-100-a-breaking-change-raises-the-minor"></a>
 
-- **Why:** npm's `^0.40.4` takes every `0.40.x`, so a patch reaches callers who never read its changelog. It must not
-  break them.
-- **Enforced by:** review only.
-- **Example:** raise the minor (`0.40.4` to `0.41.0`) for a release with a new feature or with any entry under
-  "Changed — may break callers" or "Removed". Raise the patch (`0.40.4` to `0.40.5`) only when every entry is a fix
-  or a change to the documents.
-- **Exceptions:** a pre-release version (`0.41.0-rc.1`) is chosen by hand.
-- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0. **Rulings:** none.
+### WC-REL-7 · Versions are `x.y.z`; a break of the stable API raises the major from 1.0.0 on, and the minor before it
+
+- **Why:** npm's `^1.4.0` takes every `1.x`, so a minor reaches callers who never read its changelog: it must not break
+  what the package promises to keep. A library promises only its stable API; what it marks experimental may change in
+  a minor, so majors stay rare and work does not wait for them (NEED-2893).
+- **Enforced by:** `<app>: bin/release`, which also stops a version that raises the major unless it runs with
+  --major.
+- **Example:**
+  - A break of the stable API goes under "Changed — may break callers" or "Removed". Before 1.0.0 it raises the
+    minor (`0.40.4` to `0.41.0`); from 1.0.0 on, the major (`1.4.0` to `2.0.0`).
+  - A change to what the library marks experimental goes under "Changed — experimental". A stable API that a later
+    major removes is marked deprecated and listed under "Deprecated". Both raise the minor, as "Added" does.
+  - Raise the patch (`1.4.0` to `1.4.1`) only when every entry is a fix or a change to the documents.
+  - A stable break waits for a major the owner chose. Until then it lands as an addition beside the old API, which is
+    deprecated, never as a change in place.
+- **Exceptions:** a pre-release version (`1.0.0-rc.1`) is chosen by hand and published under npm's `next` tag; the
+  version check reads the last plain release as the one below it.
+- **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0; the 1.0.0 rules since the next release.
+  **Rulings:** NEED-2893.
 
 ### WC-REL-8 · Any package may release at any time
 

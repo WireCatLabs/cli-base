@@ -157,11 +157,14 @@ Rule ids on this page are `WC-DOC-<n>`. How to read a rule, how ids work and whi
 - **Applies to:** all CLIs and shared libraries. **Since:** cli-base 0.41.0; the empty-section check since the
   release after 0.93.0. **Rulings:** none.
 
-### WC-DOC-15 · Changelog entries go under five fixed headings, each at most once per section
+<a id="wc-doc-15--changelog-entries-go-under-five-fixed-headings-each-at-most-once-per-section"></a>
+
+### WC-DOC-15 · Changelog entries go under seven fixed headings, each at most once per section
 
 - **Why:** one heading set lets a reader, an agent and one guard read every repository the same way.
 - **Enforced by:** `pnpm docs:check` · `changelog-guard.yml`.
-- **Example:** `### Added`, `### Changed — may break callers`, `### Fixed`, `### Security`, `### Removed`. max-cli
+- **Example:** `### Added`, `### Changed — may break callers`, `### Changed — experimental`, `### Deprecated`, `### Fixed`,
+  `### Security`, `### Removed`. max-cli
   uses this fixed Russian rendering: `Что нового`, `Изменено — может сломать скрипты`, `Исправлено`, `Безопасность`,
   `Удалено`. Every entry sits under one of them: `docs:check` refuses an entry under no heading in the top
   section.

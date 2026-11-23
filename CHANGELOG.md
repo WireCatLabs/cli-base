@@ -8,6 +8,28 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Two changelog headings for libraries on their way to 1.0: "Changed — experimental" and "Deprecated".** Both need
+  a minor release. "Changed — may break callers" and "Removed" stay for the stable API and, from 1.0.0 on, need a
+  major. See [WC-REL-7](docs/standards/releases.md).
+- **`bin/release --major`.** A version that raises the major over npm's latest now stops unless this flag is given.
+
+### Changed — may break callers
+
+- **The version-level check reads 1.0.0 rules.** From 1.0.0 on, a stable break needs a major, an experimental change
+  a minor. A release candidate (`1.0.0-rc.1`) counts as its plain version and is never read as the release below.
+- **The optional peers `commander` and `vitest` are now `^15.0.0` and `^5.0.0`** instead of open ranges: `./commands`
+  and `./skill` use commander internals that a new major may change.
+
+### Fixed
+
+- **`next-version` keeps a taken major a major**: with 2.0.0 on npm, `2.0.0` gives `3.0.0`, not `2.1.0`.
+- **A pre-release is published under npm's `next` tag**, from `bin/release` and from the release workflow. npm refuses
+  a pre-release without a tag, and `latest` must stay a release.
+
 ## 0.132.0 — 23.11.2026
 
 ### Added

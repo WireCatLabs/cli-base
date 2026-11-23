@@ -27,7 +27,7 @@ Nothing is published to Homebrew, winget, scoop, apt or skills.sh. skills.sh rea
 
 | Where | Version | Comes from |
 |---|---|---|
-| npm, git tag, GitHub release, MCP Registry | `x.y.z` ([WC-REL-7](standards/releases.md#wc-rel-7--versions-are-xyz-before-100-a-breaking-change-raises-the-minor)) | `package.json` |
+| npm, git tag, GitHub release, MCP Registry | `x.y.z` ([WC-REL-7](standards/releases.md#wc-rel-7--versions-are-xyz-a-break-of-the-stable-api-raises-the-major-from-100-on-and-the-minor-before-it)) | `package.json` |
 | ClawHub | its own `1.0.x`: the next patch after the latest **public** version, or `--version` | the ClawHub CLI |
 | Claude plugin `plugin.json` | the npm version at the skill's last change | claude-plugins `bin/sync-skills` |
 | `metadata.version` in an installed or indexed `SKILL.md` | the installed npm version, or cli-docs' `docsRef` | `withVersion` in [`src/skill`](../src/skill/index.ts) |
