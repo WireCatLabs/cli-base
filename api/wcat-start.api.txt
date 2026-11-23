@@ -1,0 +1,20 @@
+# @wirecat/cli-base "./wcat/start": the stable API, written by cli-dev api-report. Do not edit.
+WcatStart · interface · export interface WcatStart {
+WcatStart · interface · code?: number;
+WcatStart · interface · launcher?: LauncherState;
+WcatStart · interface · }
+WcatStartIo · interface · export interface WcatStartIo {
+WcatStartIo · interface · argv: readonly string[];
+WcatStartIo · interface · env: NodeJS.ProcessEnv;
+WcatStartIo · interface · platform: NodeJS.Platform;
+WcatStartIo · interface · stdout: {
+WcatStartIo · interface · write: (text: string) => unknown;
+WcatStartIo · interface · isTTY?: boolean;
+WcatStartIo · interface · };
+WcatStartIo · interface · stderr: {
+WcatStartIo · interface · write: (text: string) => unknown;
+WcatStartIo · interface · isTTY?: boolean;
+WcatStartIo · interface · };
+WcatStartIo · interface · script: string;
+WcatStartIo · interface · }
+wcatStart · const · export declare const wcatStart: (tool: WcatTool, io?: Partial<WcatStartIo>) => Promise<WcatStart>;

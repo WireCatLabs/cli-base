@@ -1,0 +1,30 @@
+# @wirecat/cli-base "./mcp": the stable API, written by cli-dev api-report. Do not edit.
+CommandResult · interface · export interface CommandResult {
+CommandResult · interface · status: number | null;
+CommandResult · interface · error?: Error;
+CommandResult · interface · stdout: string;
+CommandResult · interface · stderr: string;
+CommandResult · interface · }
+McpClient · type · export type McpClient = "codex" | "claude-code";
+ProbeResult · interface · export interface ProbeResult {
+ProbeResult · interface · tools: string[];
+ProbeResult · interface · potentialWrites: string[];
+ProbeResult · interface · }
+RunCommand · type · export type RunCommand = (file: string, args: string[]) => CommandResult;
+StdioEntry · interface · export interface StdioEntry {
+StdioEntry · interface · type: "stdio";
+StdioEntry · interface · command: string;
+StdioEntry · interface · args: string[];
+StdioEntry · interface · env?: Record<string, string>;
+StdioEntry · interface · }
+installStdioEntry · const · export declare const installStdioEntry: (client: McpClient, name: string, entry: StdioEntry, { run }?: {
+installStdioEntry · const · run?: RunCommand;
+installStdioEntry · const · }) => {
+installStdioEntry · const · client: McpClient;
+installStdioEntry · const · name: string;
+installStdioEntry · const · command: string[];
+installStdioEntry · const · };
+probeStdio · const · export declare const probeStdio: (entry: StdioEntry, { timeoutMs, start, }?: {
+probeStdio · const · timeoutMs?: number;
+probeStdio · const · start?: (file: string, args: string[], env: NodeJS.ProcessEnv) => ChildProcessWithoutNullStreams;
+probeStdio · const · }) => Promise<ProbeResult>;

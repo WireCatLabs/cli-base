@@ -1,0 +1,29 @@
+# @wirecat/cli-base "./update": the stable API, written by cli-dev api-report. Do not edit.
+Installer · type · export type Installer = "pnpm" | "npm" | "bun" | "npx" | "checkout" | "unknown";
+NoticeRequest · interface · export interface NoticeRequest extends NotifyContext {
+NoticeRequest · interface · argv: readonly string[];
+NoticeRequest · interface · packageName: string;
+NoticeRequest · interface · command: string;
+NoticeRequest · interface · upgradeCommand?: string;
+NoticeRequest · interface · version: string;
+NoticeRequest · interface · statePath: string;
+NoticeRequest · interface · fetch: FetchLike;
+NoticeRequest · interface · now?: () => number;
+NoticeRequest · interface · }
+NotifyContext · interface · export interface NotifyContext {
+NotifyContext · interface · format: string;
+NotifyContext · interface · stderrIsTTY: boolean;
+NotifyContext · interface · quiet: boolean;
+NotifyContext · interface · enabled: boolean;
+NotifyContext · interface · installer: Installer;
+NotifyContext · interface · env: Readonly<Record<string, string | undefined>>;
+NotifyContext · interface · offVariables?: readonly string[];
+NotifyContext · interface · }
+installerOf · const · export declare const installerOf: (scriptPath: string) => Installer;
+isNewer · const · export declare const isNewer: (candidate: string, current: string) => boolean;
+latestVersion · const · export declare const latestVersion: (packageName: string, fetch: FetchLike, { timeoutMs }?: {
+latestVersion · const · timeoutMs?: number;
+latestVersion · const · }) => Promise<string | undefined>;
+runUpdate · const · export declare const runUpdate: (argv: readonly string[]) => number;
+updateCommand · const · export declare const updateCommand: (installer: Installer, packageName: string) => string[] | undefined;
+updateNotice · const · export declare const updateNotice: ({ argv, packageName, command, upgradeCommand, version, statePath, fetch, now, ...context }: NoticeRequest) => Promise<string | undefined>;
