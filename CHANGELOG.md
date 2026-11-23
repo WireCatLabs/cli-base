@@ -19,6 +19,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Changed â€” may break callers
 
+- **`cli-dev lint` no longer warns about a short `"bin"` name beside a `wcat-<name>` that runs the same file**, the
+  pair the template writes (`ydisk` and `wcat-ydisk`). A short name alone, or one that runs another file, still warns.
+  Watch for: an override in `lint/overrides.json` for such a pair is now stale, and `cli-dev lint` fails until it is
+  removed. asterisk-cli (`pbx`), beeline-cli and gcal-cli carry one; delete that entry when bumping cli-base. See
+  [WC-CMD-29](docs/standards/commands.md).
 - **The version-level check reads 1.0.0 rules.** From 1.0.0 on, a stable break needs a major, an experimental change
   a minor. A release candidate (`1.0.0-rc.1`) counts as its plain version and is never read as the release below.
 - **The optional peers `commander` and `vitest` are now `^15.0.0` and `^5.0.0`** instead of open ranges: `./commands`
