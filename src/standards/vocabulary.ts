@@ -185,6 +185,7 @@ const verbs: [string, string][] = [
     "look at a source before taking anything from it: a chat link without joining, a mailbox without importing",
   ],
   ["send", "send a message"],
+  ["reply", "answer in a comment thread at the source, under the comment that started it"],
   ["call", "call one provider API method by its own name, generated from the provider's method list"],
   ["edit", "change a sent message"],
   ["forward", "send an existing message on to another chat"],
@@ -323,6 +324,11 @@ const collections: [string, string][] = [
   ["relationships", "confirmed or suggested links between people, organizations and projects"],
   ["roles", "the parts a person plays in a relationship, built in or the owner's own"],
   ["sheets", "remote spreadsheets and their cell ranges, read or changed through a provider"],
+  [
+    "databases",
+    "a source's databases, such as Notion's, each a set of rows with typed properties; the local store's are tables",
+  ],
+  ["rows", "the records of a database at the source, each with typed values; an order's or an invoice's are lines"],
   ["files", "files in the source, such as Google Drive, read and changed there"],
   ["mirrors", "saved pairings of a local folder and a folder in the source, which sync keeps the same both ways"],
   [

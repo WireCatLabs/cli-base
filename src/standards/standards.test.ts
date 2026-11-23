@@ -166,6 +166,17 @@ describe("vocabulary registry", () => {
     expect(flag("--replace")).toMatchObject({ type: "switch" })
   })
 
+  it("names a workspace's databases and rows, a comment reply, and a page's template, cover and child deletion", () => {
+    const noun = (word: string) => VOCABULARY.nouns.find((entry) => entry.word === word)
+    const flag = (name: string) => VOCABULARY.flags.find((entry) => entry.name === name)
+    expect(noun("databases")).toMatchObject({ kind: "collection" })
+    expect(noun("rows")).toMatchObject({ kind: "collection" })
+    expect(VOCABULARY.verbs.find((entry) => entry.word === "reply")).toBeDefined()
+    expect(flag("--from-template")).toMatchObject({ value: "<template>", role: "value", type: "string" })
+    expect(flag("--cover")).toMatchObject({ value: "<link>", role: "value", type: "string" })
+    expect(flag("--allow-deleting-content")).toMatchObject({ role: "mode", type: "switch" })
+  })
+
   it("knows --like <text> as a second query, searched by meaning beside the first", () => {
     expect(VOCABULARY.flags.find((entry) => entry.name === "--like")).toMatchObject({
       value: "<text>",
