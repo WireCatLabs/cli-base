@@ -132,7 +132,7 @@ the config allows.
 - **Why:** an agent that learned a flag in one CLI must not be surprised by it in another.
 - **Enforced by:** `flag-two-meanings` · `flag-synonym` · `option-role` · `same-flag-meaning`.
 - **Example:** `memo search messages "invoice" --source telegram,max`.
-- **Exceptions:** `same-flag-meaning` runs weekly and does not block a pull request.
+- **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
 
 ### WC-ACCT-9 · A read across accounts covers all of them and says which it read
