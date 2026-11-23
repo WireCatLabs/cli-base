@@ -8,6 +8,14 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 0.130.0 — 23.11.2026
+
+### Added
+
+- **`summary` and `people` as views.** cli-core's shared `meetings summary <meeting>` and `meetings people <query>`
+  then pass `cli-dev lint` with no override in every CLI that mounts the meetings commands. notion-cli, which adds
+  Notion AI meeting notes, was the first to hit the finding with cli-base 0.129.0.
+
 ## 0.129.0 — 23.11.2026
 
 ### Added
