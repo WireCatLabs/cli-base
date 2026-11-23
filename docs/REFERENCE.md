@@ -23,7 +23,7 @@ and why it is built this way.
 | `credentials` | environment → keyring → file, warning once and falling through when the keyring refuses |
 | `logging` | `createRecordLog`: one `LogRecord` per JSON line (OpenTelemetry field names, flat), secrets and content-naming keys redacted at any depth, top-level keys off the allow-list (`LOG_ATTRIBUTE_KEYS` + `allow`) written without their value; `logRecordOf` builds the same record for a writer of its own; a file that cannot be written is reported to `onError`, never thrown |
 | `retry` | full-jitter backoff, and the distinction between "no answer came" and "safe to repeat" |
-| `/testing` | `captureStreams`, `memoryKeyring`, `brokenKeyring`, `fakeClock` |
+| `/testing` | `memoryKeyring`, `fakeClock`, `allowNetwork`, `expectRegisteredEvents`; `captureStreams` and `brokenKeyring` come from the root |
 | `/commands` | the command registry: `describeProgram`, `annotate`, `annotateOption`, `flatten`, `refuseJoinedPath`, and `commandsDocument` — the one `commands --json` shape, with its schema — see below |
 | `/completion` | shell completion over the registry: `suggest`, `formatSuggestions` — see below |
 | `/update` | keeping an install current: `installerOf`, `updateCommand`, `latestVersion`, `mayNotify`, `updateNotice`, `runUpdate` — see below |

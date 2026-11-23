@@ -257,13 +257,17 @@ export interface ApiModel {
   securityReason?: string
 }
 
-export interface Override {
+/** A correction to one operation of the model, keyed by its id in `generate`'s `overrides`. */
+export interface ModelOverride {
   effect?: Effect
   /** How the operation pages, where detection misses or misreads it; `null` says it does not page. */
   pagination?: Pagination | null
   /** Required: an override nobody can explain is one nobody dares remove. */
   reason: string
 }
+
+/** @deprecated Use `ModelOverride`; the old name clashed with the lint `Override` of `/standards/tables`. */
+export type Override = ModelOverride
 
 export interface GeneratedArtifact {
   path: string

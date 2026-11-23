@@ -94,7 +94,7 @@ plus community itself. cli-template follows every rule here as a CLI does
   `node-22` job.
 - **Exceptions:** cli-docs and community publish no runtime package. tg needs `^22.19.0`. memo, drive, cli-base and
   the CLIs made from a template before 0.11.0 do not run Node 22 in any workflow yet.
-  cli-base's own `engines` is still `>=22`. The unit suite runs on Windows and macOS for tg, max and drive
+  The unit suite runs on Windows and macOS for tg, max and drive
   (`platforms: true`), and for gcal at release, monthly and on a manual run; zoom and memo still fail tests there,
   so theirs is off.
 - **Applies to:** the CLIs, cli-core and cli-base. **Since:** cli-base 0.41.0. **Rulings:** NEED-11.

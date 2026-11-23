@@ -3,8 +3,7 @@
  * rather than a hope about every test remembering to opt out.
  */
 
-export { brokenKeyring, memoryKeyring } from "../keyring.js"
-export { captureStreams } from "../streams.js"
+export { memoryKeyring } from "../keyring.js"
 export { allowNetwork } from "./network.js"
 
 import { type LogEvent, logEventProblems } from "../standards/log.js"

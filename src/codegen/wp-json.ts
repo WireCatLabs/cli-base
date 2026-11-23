@@ -10,7 +10,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import type { Override } from "./model.js"
+import type { ModelOverride } from "./model.js"
 import { derivedId } from "./openapi.js"
 import { CodegenError } from "./pipeline.js"
 import { sha256, sortKeys } from "./snapshot.js"
@@ -37,7 +37,7 @@ export interface WpJsonResult {
    * For `generate`'s `overrides`: how each collection read pages. WordPress answers the list itself, counts pages from
    * 1 and gives their number in `X-WP-TotalPages`; a page past it is an error, not an empty list.
    */
-  overrides: Record<string, Override>
+  overrides: Record<string, ModelOverride>
   /** What the document leaves out, one line each, for a reviewer. */
   omissions: string[]
 }
@@ -184,7 +184,7 @@ export const wpJsonToOpenApi = (index: unknown, options: WpJsonOptions): WpJsonR
   const problems: string[] = []
   const omissions: string[] = []
   const paths: Record<string, Json> = {}
-  const overrides: Record<string, Override> = {}
+  const overrides: Record<string, ModelOverride> = {}
   const schemas: Record<string, Json> = {}
   const left = new Map<string, number>()
   const schemaRef = (route: string, schema: unknown): Json => {

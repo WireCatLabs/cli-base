@@ -6,8 +6,8 @@ import type {
   ApiSchema,
   CodeGenerator,
   GeneratedArtifact,
+  ModelOverride,
   OperationPermission,
-  Override,
   PageParameter,
   Pagination,
   SchemaNode,
@@ -229,7 +229,7 @@ export const applyPagination = (
   return { ...model, operations }
 }
 
-export const applyOverrides = (model: ApiModel, overrides: Readonly<Record<string, Override>>): ApiModel => {
+export const applyOverrides = (model: ApiModel, overrides: Readonly<Record<string, ModelOverride>>): ApiModel => {
   const known = new Set(model.operations.map((operation) => operation.id))
   const stale = Object.keys(overrides).filter((id) => !known.has(id))
   if (stale.length > 0) {
@@ -608,7 +608,7 @@ export const validateModel = (model: ApiModel): void => {
 }
 
 export interface GenerateOptions {
-  overrides?: Readonly<Record<string, Override>>
+  overrides?: Readonly<Record<string, ModelOverride>>
   /** Treat a POST to a `…/search` or `…/query` path as a read; an override still wins. */
   readingPosts?: boolean
   /** Detect how each read pages; an override's `pagination` wins either way. */
@@ -644,7 +644,7 @@ export const generate = (
   return artifacts.map((artifact) => ({ ...artifact, content: commentFor(artifact.path, banner) + artifact.content }))
 }
 
-export interface WriteOptions {
+export interface CodegenWriteOptions {
   root: string
   /** Compare only: report what is out of date and write nothing. */
   check?: boolean
@@ -658,7 +658,7 @@ export interface WriteOptions {
 }
 
 /** Paths whose committed content differs from what was generated — written, or with `check`, only reported. */
-export const writeArtifacts = (artifacts: readonly GeneratedArtifact[], options: WriteOptions): string[] => {
+export const writeArtifacts = (artifacts: readonly GeneratedArtifact[], options: CodegenWriteOptions): string[] => {
   const stale: string[] = []
   for (const artifact of artifacts) {
     const target = join(options.root, artifact.path)

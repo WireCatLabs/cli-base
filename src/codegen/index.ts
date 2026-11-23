@@ -71,6 +71,7 @@ export type {
   GraphqlBinding,
   HttpBinding,
   HttpMethod,
+  ModelOverride,
   OAuthFlow,
   OperationPermission,
   Override,
@@ -94,13 +95,13 @@ export {
   applyPagination,
   applyPermissionRule,
   CodegenError,
+  type CodegenWriteOptions,
   type CommandNames,
   type GenerateOptions,
   generate,
   type PermissionRule,
   READING_POST_REASON,
   validateModel,
-  type WriteOptions,
   writeArtifacts,
 } from "./pipeline.js"
 export { type PostmanOptions, type PostmanResult, postmanToOpenApi } from "./postman.js"

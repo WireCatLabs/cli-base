@@ -27,6 +27,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   `apiCommandPath`, `graphqlDocument`, `parseSelection`, `signInPlace` and `signInRequirements`. They are stable there;
   `/codegen`, which still exports them too, is experimental. Watch for: import them from `/codegen/runtime` in code
   that runs, so a change to the generator cannot reach it.
+- **`@wirecat/cli-base/package.json` can be imported or resolved.** `exports` blocked it, and some tools read it.
 
 ### Changed â€” may break callers
 
@@ -39,6 +40,21 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   a minor. A release candidate (`1.0.0-rc.1`) counts as its plain version and is never read as the release below.
 - **The optional peers `commander` and `vitest` are now `^15.0.0` and `^5.0.0`** instead of open ranges: `./commands`
   and `./skill` use commander internals that a new major may change.
+- **`engines.node` is `^22.16.0 || >=24`**, as in cli-core and every CLI, instead of `>=22`. Node 22.0 to 22.15 and
+  Node 23 were never tested. See [WC-TOOL-6](docs/standards/toolchain.md).
+
+### Changed â€” experimental
+
+- **`/testing` no longer exports `brokenKeyring` and `captureStreams`.** Nothing imported them from there; import
+  them from the root, which keeps them stable. `memoryKeyring` stays in both.
+- **Two `/codegen` names that clashed with names elsewhere are renamed.** `WriteOptions` (the options of
+  `writeArtifacts`) is `CodegenWriteOptions`, since the root's `WriteOptions` is the credential write. `Override`
+  is `ModelOverride`, since `/standards/tables` has a lint `Override`. An editor's auto-import picked the wrong one.
+
+### Deprecated
+
+- **`Override` from `/codegen`**, now an alias of `ModelOverride`. cli-template's kit and the scripts of max-cli,
+  tg-cli and wordpress-cli use it. It goes in the next major.
 
 ### Fixed
 
@@ -49,6 +65,11 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   A blank line inside a fragment, or a `###` heading that appears twice in the dated section, used to split the list
   in two (ydisk 0.3.0's Fixed) or leave two blank lines in a row. Each heading now gets one list, with one blank line
   around the heading. A blank line inside an entry, before its indented second paragraph, stays.
+
+### Removed
+
+- **`abortError` and `retryOf` from the root export.** No package imports them; `realSleep` and the error record
+  still use them inside.
 
 ## 0.132.0 â€” 23.11.2026
 
