@@ -791,6 +791,23 @@ describe("lint rules", () => {
     expect(lintOf(root).filter((found) => words.includes(found.rule))).toEqual([])
   })
 
+  // cli-core's shared file mirror commands keep what a sync replaced as `mirrors versions list|restore`.
+  it("knows versions, a file's earlier contents kept on this computer", () => {
+    const root = clean()
+    const versions = root.command("mirrors").description("saved folder pairs").command("versions")
+    ran(
+      versions
+        .description("kept versions of mirrored files")
+        .command("restore")
+        .description("put a kept version back")
+        .argument("<id>", "mirror id")
+        .argument("<path>", "file path")
+        .argument("<sha256>", "the version's hash"),
+      { examples: ["tool work mirrors versions restore notes a.md 9f86d081"] },
+    )
+    expect(lintOf(root).filter((found) => found.rule === "unknown-resource")).toEqual([])
+  })
+
   it("knows a workspace's words: databases, rows, comments reply, --from-template, --cover", () => {
     const root = clean()
     const databases = root.command("databases").description("a workspace's databases")

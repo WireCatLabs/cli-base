@@ -335,6 +335,7 @@ const collections: [string, string][] = [
     "conflicts",
     "files a mirror's sync found changed on both sides and could not merge, each waiting for a side or a final file",
   ],
+  ["versions", "earlier contents of a file that a write replaced or deleted, kept on this computer to be put back"],
   ["comments", "comments people left on a thing in the source: a channel post or a file"],
   ["meetings", "stored meetings, from Zoom or another provider"],
   ["calls", "phone calls a phone system recorded, stored as meetings with their transcripts"],
