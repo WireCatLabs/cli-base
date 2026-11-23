@@ -44,3 +44,25 @@ it.each([
 it("raises a 1.x release that may break callers to the next major", () => {
   expect(levelledVersion(unreleased(["Changed — may break callers"], "1.4.2"), "1.4.3")).toBe("2.0.0")
 })
+
+it.each([
+  ["1.5.0", ["Changed — experimental"], "1.4.0"],
+  ["1.5.0", ["Deprecated", "Fixed"], "1.4.0"],
+  ["2.0.0", ["Changed — may break callers"], "1.4.0"],
+  ["1.0.0", ["Removed"], "1.0.0-rc.2\n## 1.0.0-rc.1 — 20.10.2026\n## 0.9.0"],
+])("from 1.0.0 on accepts %s with %j", (version, headings, previous) => {
+  expect(versionLevelProblem(changelog(version, headings, previous))).toBeUndefined()
+})
+
+it("from 1.0.0 on needs a major for a stable break, and only a minor for an experimental one", () => {
+  expect(versionLevelProblem(changelog("1.5.0", ["Changed — may break callers"], "1.4.0"))).toMatch(
+    /needs a major release/,
+  )
+  expect(levelledVersion(unreleased(["Changed — experimental"], "1.4.0"), "1.4.1")).toBe("1.5.0")
+  expect(levelledVersion(unreleased(["Removed"], "1.4.0"), "1.4.1")).toBe("2.0.0")
+})
+
+it("leaves a release candidate as chosen and never reads one as the release below", () => {
+  expect(levelledVersion(unreleased(["Removed"], "0.9.0"), "1.0.0-rc.1")).toBe("1.0.0-rc.1")
+  expect(versionLevelProblem(changelog("1.0.0-rc.2", ["Removed"], "1.0.0-rc.1"))).toBeUndefined()
+})

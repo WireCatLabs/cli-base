@@ -9,8 +9,19 @@ import { idPattern } from "./markdown.js"
 
 export type Fragment = { name: string; text: string }
 
-/** The changelog's `###` headings in the WireCat CLIs, in their order. */
-export const CHANGELOG_HEADINGS = ["Added", "Changed — may break callers", "Fixed", "Security", "Removed"] as const
+/**
+ * The changelog's `###` headings in the WireCat CLIs, in their order. `Changed — experimental` and `Deprecated` are a
+ * library's: a change to what it marks experimental, and a stable API that a later major removes; both need a minor.
+ */
+export const CHANGELOG_HEADINGS = [
+  "Added",
+  "Changed — may break callers",
+  "Changed — experimental",
+  "Deprecated",
+  "Fixed",
+  "Security",
+  "Removed",
+] as const
 export type FragmentRules = { headings: readonly string[]; ids: readonly string[] }
 
 const NAME = /^[a-z0-9][a-z0-9._-]*\.md$/

@@ -163,10 +163,10 @@
   },
   "peerDependencies": {
     "@scalar/openapi-upgrader": "^0.4.6",
-    "commander": ">=15",
+    "commander": "^15.0.0",
     "esbuild": "^0.28.0",
     "swagger-converter": "^2.1.0",
-    "vitest": ">=5"
+    "vitest": "^5.0.0"
   },
   "peerDependenciesMeta": {
     "@scalar/openapi-upgrader": {

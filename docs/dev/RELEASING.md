@@ -3,7 +3,7 @@
 Raise `version` in `package.json` and date the `## Unreleased` section of
 [`CHANGELOG.md`](../../CHANGELOG.md) as that version, through a pull request. Before 1.0.0, a section with an Added,
 "Changed — may break callers" or Removed entry raises the minor; only fixes and document changes raise the patch
-([Releases](../standards/releases.md#wc-rel-7--versions-are-xyz-before-100-a-breaking-change-raises-the-minor)).
+([Releases](../standards/releases.md#wc-rel-7--versions-are-xyz-a-break-of-the-stable-api-raises-the-major-from-100-on-and-the-minor-before-it)).
 Merge it, then on `main`:
 
 ```sh

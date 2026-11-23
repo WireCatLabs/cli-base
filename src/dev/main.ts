@@ -177,7 +177,7 @@ const docsCheck = async (args: string[], io: DevIo) => {
   } else {
     const ids = [...JOURNAL_IDS, ...(values.ids?.split(",").filter(Boolean) ?? [])]
     changelog = {
-      headings: ["Added", "Changed — may break callers", "Fixed", "Security", "Removed"],
+      headings: CHANGELOG_HEADINGS,
       unreleased: "Unreleased",
       ids,
     }

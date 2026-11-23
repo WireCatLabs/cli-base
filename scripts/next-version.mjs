@@ -37,8 +37,13 @@ if (!taken.has(wanted) && compare(want, top) > 0) {
   process.exit(0)
 }
 
+// A taken x.0.0 stays a major: 2.0.0 taken goes to 3.0.0, never to 2.1.0.
 const step =
-  want[2] === 0 ? ([major, minor]) => [major, minor + 1, 0] : ([major, minor, patch]) => [major, minor, patch + 1]
+  want[1] === 0 && want[2] === 0 && want[0] >= 1
+    ? ([major]) => [major + 1, 0, 0]
+    : want[2] === 0
+      ? ([major, minor]) => [major, minor + 1, 0]
+      : ([major, minor, patch]) => [major, minor, patch + 1]
 let next = step(top)
 while (taken.has(next.join("."))) next = step(next)
 console.log(next.join("."))

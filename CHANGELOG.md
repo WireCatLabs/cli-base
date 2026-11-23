@@ -8,6 +8,28 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Added
+
+- **Two changelog headings for libraries on their way to 1.0: "Changed — experimental" and "Deprecated".** Both need
+  a minor release. "Changed — may break callers" and "Removed" stay for the stable API and, from 1.0.0 on, need a
+  major. See [WC-REL-7](docs/standards/releases.md).
+- **`bin/release --major`.** A version that raises the major over npm's latest now stops unless this flag is given.
+
+### Changed — may break callers
+
+- **The version-level check reads 1.0.0 rules.** From 1.0.0 on, a stable break needs a major, an experimental change
+  a minor. A release candidate (`1.0.0-rc.1`) counts as its plain version and is never read as the release below.
+- **The optional peers `commander` and `vitest` are now `^15.0.0` and `^5.0.0`** instead of open ranges: `./commands`
+  and `./skill` use commander internals that a new major may change.
+
+### Fixed
+
+- **`next-version` keeps a taken major a major**: with 2.0.0 on npm, `2.0.0` gives `3.0.0`, not `2.1.0`.
+- **A pre-release is published under npm's `next` tag**, from `bin/release` and from the release workflow. npm refuses
+  a pre-release without a tag, and `latest` must stay a release.
+
 ## 0.132.0 — 23.11.2026
 
 ### Added
@@ -1518,7 +1540,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   fails as stale once the warning is gone. A CLI that keeps its short command name says why this way.
 - **`docs:check` refuses an entry under no `###` heading in the top changelog section.** It passed one, so a release
   could ship notes with an entry outside the five headings
-  ([the changelog rule](docs/standards/docs.md#wc-doc-15--changelog-entries-go-under-five-fixed-headings-each-at-most-once-per-section)).
+  ([the changelog rule](docs/standards/docs.md#wc-doc-15--changelog-entries-go-under-seven-fixed-headings-each-at-most-once-per-section)).
   Older sections are not checked: they are frozen, and several CLIs have such entries in them.
 - **The handbook's lines about gcal match gcal again:** `store status` (not `status`), a calendar sync's 15-minute
   terminal deadline, all-day events matched by local date, `mcp serve --profiles` built, gcal's own Node 22 job and
@@ -2169,7 +2191,7 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
   `<job> / ci / coverage` to its required checks. With `cli: true`, `test:matrix:check` moves from `check` to
   `coverage` and reads the shards' argv logs joined. Default 1: the tests stay in `check`, as before.
 - **Before 1.0.0, a release with a breaking change raises the minor version**
-  ([Releases](docs/standards/releases.md#wc-rel-7--versions-are-xyz-before-100-a-breaking-change-raises-the-minor)).
+  ([Releases](docs/standards/releases.md#wc-rel-7--versions-are-xyz-a-break-of-the-stable-api-raises-the-major-from-100-on-and-the-minor-before-it)).
   A section with an entry under "Changed — may break callers" or "Removed", or a new feature, raises the minor; only
   fixes and document changes raise the patch. npm's `^0.x.y` takes every patch of that minor, so a patch must not
   break anyone. The rule used to allow a breaking change in a patch release.
