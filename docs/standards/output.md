@@ -141,8 +141,8 @@ JSON Schema 2020-12.
 ### WC-OUT-11 · Give a shared command the same answer shape in every CLI of its group
 
 - **Why:** an agent that reads one CLI's answer can read the other's.
-- **Enforced by:** `same-path-contract` (weekly audit; it does not block a pull request yet) · `same-entity-schema`
-  (the family audit, which reads every CLI's schemas).
+- **Enforced by:** `same-path-contract` · `same-entity-schema` (the family audit, which reads
+  every CLI's schemas; a new difference fails the pull request unless the CLI's differences file names it).
 - **Example:** what only one messenger knows goes under `provider_metadata`, never as a top-level field one CLI has and
   the other lacks.
 - **Exceptions:** none.

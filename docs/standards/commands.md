@@ -73,7 +73,8 @@ per profile, and only `defaults` is filled.
 ### WC-CMD-5 · Give every CLI the required root commands
 
 - **Why:** agents and the cross-CLI audit start from the same entry points in every CLI.
-- **Enforced by:** `required-root` (weekly audit; it does not block a pull request yet).
+- **Enforced by:** `required-root` (the family audit: a new difference fails the pull request unless the CLI's
+  differences file names it).
 - **Example:** `commands`, `doctor`, `skill show`, `skill install`, `mcp`, `upgrade`.
 - **Exceptions:** none.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** none.
@@ -124,8 +125,8 @@ per profile, and only `defaults` is filled.
 ### WC-CMD-10 · Use a vocabulary flag for its meaning, and give one flag one kind of value everywhere
 
 - **Why:** `--limit` must mean "how many items" in every command of every CLI.
-- **Enforced by:** `flag-synonym` · `flag-two-meanings` · `same-flag-meaning` (weekly audit; it does not block a pull
-  request yet).
+- **Enforced by:** `flag-synonym` · `flag-two-meanings` · `same-flag-meaning`
+  (the family audit: a new difference fails the pull request unless the CLI's differences file names it).
 - **Example:** `--limit <n>`, never `--max`, `--take` or `--count`. `--cursor <cursor>`, never `--offset`. How big
   the answer is: `--limit`, `--page` and `--page-size`; a count of pages is never a paging option. How much work a
   command may do is a `budget` option: `--max-pages <pages>` caps the pages a sync reads from the source, and
@@ -308,7 +309,8 @@ store or files without reading the service first (`remote: "none"`, `local: "wri
 ### WC-CMD-25 · Give a shared command and a shared option the same sentence in every CLI of its group
 
 - **Why:** they are one command, so they read as one.
-- **Enforced by:** `same-path-contract` (weekly audit; it does not block a pull request yet).
+- **Enforced by:** `same-path-contract` (the family audit: a new difference fails the pull request unless the CLI's
+  differences file names it).
 - **Example:** the shared factory in cli-core writes the description. A CLI changes it only to name its messenger.
 - **Exceptions:** a sentence may differ where it names something the messenger's own way. The option catalogue in
   cli-core says why.

@@ -8,6 +8,15 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## Unreleased
+
+### Fixed
+
+- **The standards say what the family audit does: a new cross-CLI difference fails the pull request.** commands.md,
+  output.md and accounts.md said `same-flag-meaning`, `required-root` and `same-path-contract` run weekly and do not
+  block. `cli-dev audit` has failed a pull request on a new one since it was added (#112, `AUDIT_BLOCKS`), unless the
+  CLI's `--differences` file names it with a reason.
+
 ## 0.128.0 — 23.11.2026
 
 ### Added
