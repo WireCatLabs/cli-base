@@ -15,6 +15,8 @@ const PACKAGES = new Map<string, string>([
   ["ydisk", "@wirecat/yandex-disk-cli"],
   ["wordpress", "@wirecat/wordpress-cli"],
   ["linear", "@wirecat/linear-cli"],
+  ["hubspot", "@wirecat/hubspot-cli"],
+  ["attio", "@wirecat/attio-cli"],
 ])
 
 /** Every other CLI of the parity groups that npm has, by name. */

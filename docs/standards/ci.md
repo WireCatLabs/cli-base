@@ -176,6 +176,7 @@ its prompt in cli-template says so from cli-template 0.8.0. A CLI on an older te
   | 02:27 | gcal-cli |
   | 02:31 | cli-memo |
   | 02:34 | bitrix24-cli |
+  | 02:36 | attio-cli |
   | 02:38 | cli-core |
   | 02:41 | mail-cli |
   | 02:45 | drive-cli |
