@@ -14,7 +14,11 @@ export const isoTime = v.pipe(
   v.endsWith("Z", "an ISO 8601 time in UTC, ending in `Z`"),
 )
 
-/** The same moment on the wall clock of a zone, with its offset: `2026-11-02T16:03:00.000+01:00` (WC-TIME-2). */
+/**
+ * The same moment on the wall clock of a zone, with its offset: `2026-11-02T16:03:00.000+01:00` (WC-TIME-2).
+ *
+ * @experimental
+ */
 export const localTime = v.pipe(
   v.string(),
   v.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/, "an ISO 8601 time with its offset"),
@@ -138,6 +142,8 @@ const count = v.pipe(v.number(), v.integer(), v.minValue(0))
  * What a model a command calls on its own did in this run (mail's `inbox` sorting new threads): how many items it was
  * sent, how many it handled, how many wait for the next run, and what that cost. `usage` is absent when the provider
  * counted nothing; `cost_usd` is null when no price is known.
+ *
+ * @experimental
  */
 export const modelRunSchema = v.strictObject({
   provider: text,
@@ -223,6 +229,7 @@ export type Page = v.InferOutput<typeof pageSchema>
 export type Issue = v.InferOutput<typeof issueSchema>
 export type Meta = v.InferOutput<typeof metaSchema>
 export type Ranking = v.InferOutput<typeof rankingSchema>
+/** @experimental */
 export type ModelRun = v.InferOutput<typeof modelRunSchema>
 export type Query = v.InferOutput<typeof querySchema>
 export interface ListEnvelope<T> {

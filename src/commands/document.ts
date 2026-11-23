@@ -75,6 +75,8 @@ const commandInfoSchema: v.GenericSchema<CommandInfo> = v.object({
 /**
  * What `<cli> commands --json` prints, in every CLI on cli-base. `scope` and `inherited_options` are
  * there only when one command path was asked for. Nothing else at the top: `cli-dev lint` refuses it.
+ *
+ * @experimental
  */
 export const commandsDocumentSchema = v.strictObject({
   cli: v.pipe(v.string(), v.nonEmpty()),
@@ -101,6 +103,7 @@ export interface CommandsDocument {
   exit_codes: Record<string, number>
 }
 
+/** @experimental */
 export const commandsDocumentJsonSchema = () => jsonSchemaOf(commandsDocumentSchema, { command: commandInfoSchema })
 
 export const parseCommandsDocument = (

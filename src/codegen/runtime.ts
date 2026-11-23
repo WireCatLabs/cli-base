@@ -1,7 +1,7 @@
 /**
  * What generated Valibot schemas call at run time. Kept apart from the generator so a CLI loads
  * these few functions, not the code that writes code. Also the stable part of the model a CLI reads the generated
- * manifest with (the operation and schema types, `identifier`, `apiCommandPath`, the sign-in and GraphQL helpers):
+ * manifest with (the operation and schema types, `identifier`, the sign-in and GraphQL helpers):
  * `/codegen` itself is experimental.
  *
  * Numbers arrive from a lossless JSON parser (`lossless-json` or anything shaped like its
@@ -14,6 +14,7 @@ interface LosslessLike {
   value: string
 }
 
+/** @experimental */
 export const isLossless = (input: unknown): input is LosslessLike =>
   typeof input === "object" &&
   input !== null &&
@@ -87,6 +88,6 @@ export type {
   SecurityRequirement,
   SecurityScheme,
 } from "./model.js"
-export { apiCommandPath, identifier } from "./names.js"
+export { identifier } from "./names.js"
 export { graphqlDocument, parseSelection, type Selection } from "./selection.js"
 export { type SignInPlace, signInPlace, signInRequirements } from "./sign-in.js"

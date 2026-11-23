@@ -12,6 +12,7 @@ export interface QueryInfo extends Omit<QueryRegistry, "fields"> {
   fields: FieldInfo[]
 }
 
+/** @experimental */
 export const describeQuery = (registry: QueryRegistry): QueryInfo => ({
   entity: registry.entity,
   backend: registry.backend,
@@ -19,7 +20,11 @@ export const describeQuery = (registry: QueryRegistry): QueryInfo => ({
   ...(registry.defaults && registry.defaults.length > 0 ? { defaults: [...registry.defaults] } : {}),
 })
 
-/** Why an example or default term would not run against these fields, per field name; empty when every one runs. */
+/**
+ * Why an example or default term would not run against these fields, per field name; empty when every one runs.
+ *
+ * @experimental
+ */
 export const exampleProblems = (registry: QueryRegistry): { field: string; problem: string }[] => {
   // An example proves syntax and type; whether a provider filters the field is the list's answer at run time.
   const syntaxOnly: QueryRegistry = { ...registry, backend: "sql" }

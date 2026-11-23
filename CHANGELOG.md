@@ -20,11 +20,15 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
   point not in the list is experimental as a whole, and so is a name tagged `@experimental` inside a stable one. The
   list: `.`, `/http`, `/commands`, `/completion`, `/update`, `/codegen/runtime`, `/skill`, `/mcp`, `/query`,
   `/standards`, `/standards/tables` (only the vocabulary), `/wcat/start` and `/wcat/manifest`. The
-  [README](README.md#install) says what that means for a caller.
+  [README](README.md#install) says what that means for a caller. Inside them, 105 names are tagged `@experimental`:
+  names cli-core does not use and at most one other package imports, and the generated docs text (`commandsPage`,
+  `withVersion`, `skillFiles`). Among them: the lint and audit tables, the update check's internals (`mayNotify`,
+  `readUpdateState`), the Hermes skill helpers, `parseRetryAfter` and `createOutputBuffer`. An editor shows the tag on
+  hover.
 - **`/codegen/runtime` also exports what a CLI reads the generated manifest with**: the types `ManifestOperation`,
   `SchemaNode`, `ApiServer`, `SecurityScheme`, `SecurityRequirement`, `OAuthFlow`, `Pagination`, `PageParameter`,
   `GraphqlBinding`, `OperationPermission`, `Effect`, `Selection` and `SignInPlace`, and `identifier`,
-  `apiCommandPath`, `graphqlDocument`, `parseSelection`, `signInPlace` and `signInRequirements`. They are stable there;
+  `graphqlDocument`, `parseSelection`, `signInPlace` and `signInRequirements`. They are stable there;
   `/codegen`, which still exports them too, is experimental. Watch for: import them from `/codegen/runtime` in code
   that runs, so a change to the generator cannot reach it.
 - **`@wirecat/cli-base/package.json` can be imported or resolved.** `exports` blocked it, and some tools read it.

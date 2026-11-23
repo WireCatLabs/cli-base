@@ -5,8 +5,10 @@ const key = v.pipe(v.string(), v.regex(SNAKE_CASE, "a snake_case key"))
 
 const identifierSchema = v.strictObject({ key, meaning: text, replaces: v.optional(v.array(key)) })
 
+/** @experimental */
 export type Identifier = v.InferOutput<typeof identifierSchema>
 
+/** @experimental */
 export const defineIdentifiers = (input: unknown): Identifier[] =>
   parseRegistry("identifiers", v.array(identifierSchema), input, (identifiers) => {
     const keys = identifiers.map((entry) => entry.key)
@@ -17,7 +19,11 @@ export const defineIdentifiers = (input: unknown): Identifier[] =>
     ]
   })
 
-/** The ids a CLI's answers, errors and logs carry; one name each. */
+/**
+ * The ids a CLI's answers, errors and logs carry; one name each.
+ *
+ * @experimental
+ */
 export const IDENTIFIERS: Identifier[] = defineIdentifiers([
   {
     key: "run_id",

@@ -34,7 +34,11 @@ export interface CompletionRequest {
   sources?: CompletionSources
 }
 
-/** Tells the shell not to fall back to file names when nothing matched. */
+/**
+ * Tells the shell not to fall back to file names when nothing matched.
+ *
+ * @experimental
+ */
 export const NO_FILE_COMPLETION = 4
 
 export const suggest = ({ commands, globalOptions = [], words, sources = {} }: CompletionRequest): Suggestion[] => {

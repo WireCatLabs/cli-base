@@ -12,6 +12,7 @@ import { issuesOf, jsonSchemaOf, SNAKE_CASE } from "../standards/registry.js"
 import type { WcatTool } from "./describe.js"
 import { PROGRAM_PREFIX, TOOL_NAME } from "./names.js"
 
+/** @experimental */
 export const MANIFEST_FORMAT = 2
 export const MANIFEST_FILE = "contracts/wirecat.json"
 
@@ -29,7 +30,11 @@ export const SHARED_HOSTS: readonly string[] = [
   "*.githubusercontent.com",
 ]
 
-/** Desktop's `plain_word`: letters, digits and `._:=,/+@-`, at most two leading dashes, `--` alone, `{name}` slots. */
+/**
+ * Desktop's `plain_word`: letters, digits and `._:=,/+@-`, at most two leading dashes, `--` alone, `{name}` slots.
+ *
+ * @experimental
+ */
 export const PLAIN_WORD = /^(?:--|-{0,2}(?:[A-Za-z0-9]|\{[A-Za-z]+\})(?:[A-Za-z0-9._:=,/+@-]|\{[A-Za-z]+\})*)$/
 
 const plainWord = v.pipe(
@@ -47,6 +52,8 @@ const words = v.pipe(v.array(plainWord), v.minLength(1))
  * The one word that is not plain: `runs list` matches `command:` exactly, so a `<noun> sync` is found only as the
  * quoted phrase, `command:"meetings sync" status:success`. Desktop runs it without a shell and accepts this form in
  * `sync.last` only.
+ *
+ * @experimental
  */
 export const SYNC_QUERY = /^command:"[a-z0-9][a-z0-9-]*(?: [a-z0-9][a-z0-9-]*)+" status:success$/
 const lastWords = v.pipe(v.array(v.union([plainWord, v.pipe(v.string(), v.regex(SYNC_QUERY))])), v.minLength(1))
@@ -164,6 +171,7 @@ const desktopSchema = v.strictObject({
   ),
 })
 
+/** @experimental */
 export type ManifestDesktop = v.InferOutput<typeof desktopSchema>
 
 const hostSchema = v.pipe(
@@ -213,6 +221,7 @@ export const manifestSchema = v.strictObject({
 
 export type Manifest = v.InferOutput<typeof manifestSchema>
 
+/** @experimental */
 export const manifestJsonSchema = () => jsonSchemaOf(manifestSchema)
 
 /**
@@ -260,6 +269,7 @@ export interface ManifestInput {
   skills: boolean
 }
 
+/** @experimental */
 export class ManifestError extends Error {
   constructor(readonly problems: readonly string[]) {
     super(`${MANIFEST_FILE} cannot be built: ${problems.join("; ")}`)

@@ -204,6 +204,7 @@ export const runBatch = async (
   }
 }
 
+/** @experimental */
 export const projectBatchAnswers = (report: BatchReport, fields: readonly string[]): BatchReport => ({
   ...report,
   items: report.items.map((result) =>

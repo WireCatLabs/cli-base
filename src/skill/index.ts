@@ -37,7 +37,11 @@ const homeOf = (env: Env): string => {
   return env.HOME || env.USERPROFILE || homedir()
 }
 
-/** `~/.claude/skills` is Claude Code's; `~/.agents/skills` is read by Codex, Gemini CLI and OpenClaw. */
+/**
+ * `~/.claude/skills` is Claude Code's; `~/.agents/skills` is read by Codex, Gemini CLI and OpenClaw.
+ *
+ * @experimental
+ */
 export const skillPath = (target: SkillTarget, appName: string, env: Env): string =>
   join(homeOf(env), target === "claude" ? ".claude" : ".agents", "skills", appName, "SKILL.md")
 
@@ -76,7 +80,11 @@ const skillName = (content: string): string | undefined => {
   return line === undefined ? undefined : scalar("name", "").exec(line)?.[1]
 }
 
-/** Adds or replaces `metadata.version` as a string; every other byte stays as it was. */
+/**
+ * Adds or replaces `metadata.version` as a string; every other byte stays as it was.
+ *
+ * @experimental
+ */
 export const withVersion = (content: string, version: string): string => {
   const match = FRONTMATTER.exec(content)
   if (!match) return `---\nmetadata:\n  version: "${version}"\n---\n${content}`
@@ -103,6 +111,8 @@ export const withVersion = (content: string, version: string): string => {
  * The files beside SKILL.md that it links to or names (`references/tasks.md`), as `/`-separated paths relative to its
  * folder. A long skill keeps its core in SKILL.md and the rest in these, so an agent loads only what its task needs.
  * Dotfiles and symbolic links are left out: a link could point anywhere on the machine.
+ *
+ * @experimental
  */
 export const skillFiles = (skill: URL): string[] => {
   const root = dirname(fileURLToPath(skill))
@@ -181,13 +191,18 @@ const copyStatus = (app: SkillApp, path: string): Omit<SkillTargetStatus, "targe
   return { path, installed, state: isNewer(app.version, installed) ? "stale" : "current" }
 }
 
+/** @experimental */
 export interface ProgramResult {
   status: number | null
   error?: Error
   stdout: string
 }
 
-/** Runs a program with no shell, found and started with the `env` given, never `process.env`. */
+/**
+ * Runs a program with no shell, found and started with the `env` given, never `process.env`.
+ *
+ * @experimental
+ */
 export type RunProgram = (file: string, args: readonly string[], env: Env) => ProgramResult
 
 const runProgram: RunProgram = (file, args, env) => {
@@ -200,10 +215,18 @@ const runProgram: RunProgram = (file, args, env) => {
   return { status: result.status, ...(result.error ? { error: result.error } : {}), stdout: result.stdout ?? "" }
 }
 
-/** How Hermes reads the skill: the `~/.agents/skills` folder listed in its `skills.external_dirs`, or a copy of its own. */
+/**
+ * How Hermes reads the skill: the `~/.agents/skills` folder listed in its `skills.external_dirs`, or a copy of its own.
+ *
+ * @experimental
+ */
 export type HermesRoute = "external_dirs" | "copy"
 
-/** `HERMES_HOME`, else the folder Hermes itself defaults to. */
+/**
+ * `HERMES_HOME`, else the folder Hermes itself defaults to.
+ *
+ * @experimental
+ */
 export const hermesHome = (env: Env, platform: NodeJS.Platform = process.platform): string => {
   refuseOwnerHomeInTests(env, platform)
   const set = env.HERMES_HOME?.trim()
@@ -246,6 +269,7 @@ const expanded = (entry: string, env: Env): string =>
 const lists = (dirs: readonly string[], folder: string, env: Env): boolean =>
   dirs.some((entry) => expanded(entry, env) === resolve(folder))
 
+/** @experimental */
 export interface HermesInstall {
   via: HermesRoute
   /** The file Hermes reads. */
@@ -288,6 +312,8 @@ const readFolder = (folder: string, env: Env, run: RunProgram): string | undefin
  * with Hermes's own `config set`, keeping every folder already listed. When Hermes is not on PATH, cannot be asked,
  * or does not keep the folder, the skill is copied into `$HERMES_HOME/skills` instead — but only when that home exists:
  * with neither the program nor its home, Hermes is not installed, and nothing is written.
+ *
+ * @experimental
  */
 export const installHermesSkill = (
   app: SkillApp,
@@ -306,6 +332,7 @@ export const installHermesSkill = (
   return { written: [shared, copy], hermes: { via: "copy", path: copy, reason } }
 }
 
+/** @experimental */
 export interface HermesSkillStatus extends Omit<SkillTargetStatus, "target"> {
   /** How Hermes reads the copy reported; `null` when it reads none. */
   via: HermesRoute | null
@@ -315,6 +342,8 @@ export interface HermesSkillStatus extends Omit<SkillTargetStatus, "target"> {
  * The copy Hermes reads: its own `skills/<app>` first, as Hermes scans it first, else the `~/.agents/skills` one when
  * `skills.external_dirs` lists that folder. Asks Hermes through `config get` when its home exists, so a host calls it
  * only when asked.
+ *
+ * @experimental
  */
 export const hermesSkillStatus = (
   app: SkillApp,

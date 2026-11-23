@@ -1,6 +1,7 @@
 import type { QueryRegistry } from "./fields.js"
 import type { FieldInfo } from "./registry.js"
 
+/** @experimental */
 export const QUERY_SYNTAX = 'field:value · "a phrase" · word* · AND OR NOT · ( ) · [a TO b] · > >= < <='
 
 const shownOf = (registry: Pick<QueryRegistry, "fields"> & Partial<Pick<QueryRegistry, "backend">>) =>

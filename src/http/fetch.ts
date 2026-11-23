@@ -16,6 +16,7 @@ export interface HostFetchOptions {
   credentialScope?: string
 }
 
+/** @experimental */
 export const HOST_FETCH_TIMEOUT_MS = 30_000
 const REDIRECTS = 5
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])

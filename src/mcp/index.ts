@@ -38,6 +38,7 @@ const presentIn = (client: McpClient, name: string, run: RunCommand): boolean =>
   return state === "registered"
 }
 
+/** @experimental */
 export const setupArguments = (client: McpClient, name: string, entry: StdioEntry): string[] => {
   const variables = Object.entries(entry.env ?? {}).flatMap(([key, value]) => ["--env", `${key}=${value}`])
   if (client === "codex") return ["mcp", "add", name, ...variables, "--", entry.command, ...entry.args]
@@ -48,7 +49,11 @@ const checkName = (name: string) => {
   if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(name)) throw new Error("the MCP name must be letters, digits, _ or -")
 }
 
-/** `unavailable`: the client is not installed here, or could not be started. */
+/**
+ * `unavailable`: the client is not installed here, or could not be started.
+ *
+ * @experimental
+ */
 export type StdioEntryState = "registered" | "missing" | "unavailable"
 
 const lookUp = (client: McpClient, name: string, run: RunCommand): StdioEntryState => {
@@ -62,7 +67,11 @@ const lookUp = (client: McpClient, name: string, run: RunCommand): StdioEntrySta
   return "missing"
 }
 
-/** Whether the client has a server by this name; reads only, through the client's own `mcp get`. */
+/**
+ * Whether the client has a server by this name; reads only, through the client's own `mcp get`.
+ *
+ * @experimental
+ */
 export const stdioEntryStatus = (
   client: McpClient,
   name: string,
@@ -72,11 +81,16 @@ export const stdioEntryStatus = (
   return { client, name, state: lookUp(client, name, run) }
 }
 
+/** @experimental */
 export const removeArguments = (client: McpClient, name: string): string[] =>
   // Claude Code without a scope removes from whichever scope holds the name, which may be a project's own entry.
   client === "codex" ? ["mcp", "remove", name] : ["mcp", "remove", "--scope", "user", name]
 
-/** Takes out what `installStdioEntry` added; a name the client does not have is left alone and reported. */
+/**
+ * Takes out what `installStdioEntry` added; a name the client does not have is left alone and reported.
+ *
+ * @experimental
+ */
 export const removeStdioEntry = (
   client: McpClient,
   name: string,

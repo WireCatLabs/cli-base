@@ -50,7 +50,11 @@ export const dayBoundary = (value: string, zone: string, next: boolean, span: Sp
   return lo
 }
 const WALL = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/u
-/** A time with no zone, read in `zone`. A local time that daylight saving skips or repeats is refused. */
+/**
+ * A time with no zone, read in `zone`. A local time that daylight saving skips or repeats is refused.
+ *
+ * @experimental
+ */
 export const wallTime = (value: string, zone: string, span: Span): number => {
   const [, year, month, day, hour, minute, second = "0", fraction = "0"] = WALL.exec(value) ?? []
   if (year === undefined) queryError("query.invalid-date", span, "use YYYY-MM-DDTHH:mm, with optional seconds")
@@ -131,6 +135,7 @@ export interface DateRange {
   lower_inclusive: boolean
   upper_inclusive: boolean
 }
+/** @experimental */
 export const dateEndpoint = (
   value: string,
   zone: string,

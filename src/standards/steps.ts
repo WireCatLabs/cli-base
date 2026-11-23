@@ -3,7 +3,11 @@ import { type Effects, writes } from "./effects.js"
 import type { NextStep } from "./output.js"
 import { dottedId, duplicates, fill, parseRegistry, SNAKE_CASE, text } from "./registry.js"
 
-/** A step's command: a path such as `messages sync`, or `*` for the command that gave the answer (`page.next`). */
+/**
+ * A step's command: a path such as `messages sync`, or `*` for the command that gave the answer (`page.next`).
+ *
+ * @experimental
+ */
 export const SAME_COMMAND = "*"
 
 const commandPath = v.pipe(
