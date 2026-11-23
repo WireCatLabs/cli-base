@@ -177,6 +177,13 @@ describe("vocabulary registry", () => {
     expect(flag("--allow-deleting-content")).toMatchObject({ role: "mode", type: "switch" })
   })
 
+  it("names a change log: the changes view, --since and --event", () => {
+    const flag = (name: string) => VOCABULARY.flags.find((entry) => entry.name === name)
+    expect(VOCABULARY.views.find((entry) => entry.word === "changes")).toBeDefined()
+    expect(flag("--since")).toMatchObject({ value: "<time>", role: "target", type: "time" })
+    expect(flag("--event")).toMatchObject({ value: "<events>", role: "target", type: "list" })
+  })
+
   it("knows --like <text> as a second query, searched by meaning beside the first", () => {
     expect(VOCABULARY.flags.find((entry) => entry.name === "--like")).toMatchObject({
       value: "<text>",

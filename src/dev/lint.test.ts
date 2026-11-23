@@ -827,6 +827,25 @@ describe("lint rules", () => {
     expect(lintOf(root).filter((found) => words.includes(found.rule))).toEqual([])
   })
 
+  it("knows a change log's words: changes --since --until --event, documents history", () => {
+    const root = clean()
+    ran(
+      root
+        .command("changes")
+        .description("what the syncs changed")
+        .option("--since <time>", "from this time")
+        .option("--until <time>", "up to this time")
+        .option("--event <events>", "only these"),
+      { examples: ["tool work changes --since 1d --event deleted"] },
+    )
+    const documents = root.command("documents").description("pages")
+    ran(documents.command("history").description("earlier versions").argument("<id>", "page id"), {
+      examples: ["tool work documents history p1"],
+    })
+    const words = ["unknown-verb", "unknown-resource", "option-role", "flag-two-meanings", "flag-synonym"]
+    expect(lintOf(root).filter((found) => words.includes(found.rule))).toEqual([])
+  })
+
   it("knows --compact as an output switch", () => {
     const root = clean()
     chatsOf(root).command("search").description("search chats").option(COMPACT_FLAG, "one line per chat")
