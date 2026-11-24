@@ -73,6 +73,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for â€
 
 ### Fixed
 
+- **WC-SECR-26 no longer lists ydisk's docs as a known gap:** they say where the owner revokes the Yandex token
+  (Yandex ID's Data access), and the rule's example now shows `session end`'s help saying it.
 - **`next-version` keeps a taken major a major**: with 2.0.0 on npm, `2.0.0` gives `3.0.0`, not `2.1.0`.
 - **A pre-release is published under npm's `next` tag**, from `bin/release` and from the release workflow. npm refuses
   a pre-release without a tag, and `latest` must stay a release.
