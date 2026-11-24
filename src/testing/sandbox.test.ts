@@ -44,10 +44,24 @@ describe("enterSandbox", () => {
     sandbox.restore()
   })
 
-  it("elsewhere starts from the temporary folder", () => {
-    const sandbox = enterSandbox({}, "linux")
-    expect(sandbox.dir.startsWith(tmpdir())).toBe(true)
+  it("on Linux starts from the runtime folder, which is in memory, when it is there to write to", () => {
+    const runtime = join(tmpdir(), "runtime")
+    mkdirSync(runtime)
+    const sandbox = enterSandbox({ XDG_RUNTIME_DIR: runtime }, "linux")
+    expect(sandbox.dir.startsWith(join(runtime, "wirecat-test-"))).toBe(true)
     sandbox.restore()
+  })
+
+  it("elsewhere, or with no runtime folder to write to, starts from the temporary folder", () => {
+    for (const [env, platform] of [
+      [{}, "linux"],
+      [{ XDG_RUNTIME_DIR: join(tmpdir(), "missing") }, "linux"],
+      [{ XDG_RUNTIME_DIR: tmpdir() }, "win32"],
+    ] as const) {
+      const sandbox = enterSandbox({ ...env }, platform)
+      expect(sandbox.dir.startsWith(join(tmpdir(), "wirecat-test-"))).toBe(true)
+      sandbox.restore()
+    }
   })
 
   it("removes the folder when a file fails while loading or in its afterAll, and not when one imitates SIGTERM", () => {
@@ -57,7 +71,15 @@ describe("enterSandbox", () => {
     const config = fileURLToPath(new URL("../../test/fixtures/sandbox-left/vitest.config.ts", import.meta.url))
     const run = spawnSync(process.execPath, [vitest, "run", "--reporter=verbose", "--config", config], {
       // CI sets FORCE_COLOR; colour codes would split the reporter's lines this test reads.
-      env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent, NO_COLOR: "1", FORCE_COLOR: "0" },
+      env: {
+        ...process.env,
+        TMPDIR: parent,
+        TMP: parent,
+        TEMP: parent,
+        XDG_RUNTIME_DIR: parent,
+        NO_COLOR: "1",
+        FORCE_COLOR: "0",
+      },
       encoding: "utf8",
     })
 

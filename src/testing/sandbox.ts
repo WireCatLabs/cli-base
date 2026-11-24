@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs"
+import { accessSync, constants, mkdirSync, mkdtempSync, rmSync } from "node:fs"
 import { createRequire } from "node:module"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -11,8 +11,24 @@ export interface Sandbox {
 
 const OVERRIDE = /_(CONFIG|STATE|CACHE)_DIR$/
 
-// macOS keeps a Unix socket path under 104 bytes, and its per-user temporary folder alone takes about 50.
-const baseFor = (platform: NodeJS.Platform): string => (platform === "darwin" ? "/tmp" : tmpdir())
+const writable = (dir: string | undefined): dir is string => {
+  if (!dir) return false
+  try {
+    accessSync(dir, constants.W_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// macOS keeps a Unix socket path under 104 bytes, and its per-user temporary folder alone takes about 50. On Linux the
+// runtime folder is in memory: a store's every commit waits for fsync, and on a disk other jobs keep busy that made a
+// CRM sync in a test take 14 s instead of 1.5 s, past the test timeout (attio 0.5.1's release, 2026-11-24).
+const baseFor = (platform: NodeJS.Platform, env: NodeJS.ProcessEnv): string => {
+  if (platform === "darwin") return "/tmp"
+  if (platform === "linux" && writable(env.XDG_RUNTIME_DIR)) return env.XDG_RUNTIME_DIR
+  return tmpdir()
+}
 
 const LEFT = Symbol.for("@wirecat/cli-base/testing/sandboxes")
 
@@ -58,7 +74,7 @@ export const enterSandbox = (
   env: NodeJS.ProcessEnv = process.env,
   platform: NodeJS.Platform = process.platform,
 ): Sandbox => {
-  const dir = mkdtempSync(join(baseFor(platform), "wirecat-test-"))
+  const dir = mkdtempSync(join(baseFor(platform, env), "wirecat-test-"))
   const forget = removeOnExit(dir)
   const home = join(dir, "home")
   mkdirSync(home)
