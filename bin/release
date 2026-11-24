@@ -1,9 +1,10 @@
 #!/usr/bin/env sh
 # Publishes the version in package.json and tags it. Run on a clean `main`. When npm already has that
-# version, or a higher one, it lands the next free version on `main` through a pull request, with the
-# CHANGELOG heading renamed to match, and publishes that. An Unreleased section left above the dated,
-# unpublished version is folded into it first, through a pull request too, after the last release's section is
-# put back to its tag.
+# version, or a higher one, it lands the next free version on `main` through a pull request and publishes that: an
+# unpublished section is renamed to it, while a published one keeps its heading and the new version gets the
+# Unreleased section, or a new one. The `changes/` fragments are collected into the version's section, which may then
+# need a higher level. An Unreleased section left above the dated, unpublished version is folded into it first,
+# through a pull request too, after the last release's section is put back to its tag.
 #
 #   bin/release           # publishes from GitHub Actions (.github/workflows/release.yml)
 #   bin/release --local   # publishes from this machine: the keyring entry NPM_KEYRING_ACCOUNT names, else npm's login
@@ -52,24 +53,19 @@ version=$(node -p 'require("./package.json").version')
 published() {
   npm view "@wirecat/cli-base@$version" version --prefer-online >/dev/null 2>&1
 }
+dev() { node dist/dev/bin.js "$@"; }
 # A pull request checked before the last release and merged after it put its entry in that release's section;
 # restore moves it to Unreleased, so the fold below brings it into this version.
-restored=$(pnpm build >/dev/null && node dist/dev/bin.js changelog restore --land)
+restored=$(pnpm build >/dev/null && dev changelog restore --land)
 [ -z "$restored" ] || echo "$restored"
 rerun_if_changed "$@"
 # A session that merges after the version was dated, but before it was published, adds Unreleased above it.
 # --land folds on a fresh main through its own pull request, and folds again once if main moves under it.
 if ! published; then
-  folded=$(pnpm build >/dev/null && node dist/dev/bin.js changelog fold --land --version "$version")
+  folded=$(pnpm build >/dev/null && dev changelog fold --land --version "$version")
   [ -z "$folded" ] || echo "$folded"
 fi
 rerun_if_changed "$@"
-# Only the top section: the rename below must never touch one that is already published.
-top=$(grep -m1 '^## ' CHANGELOG.md || true)
-case "$top" in
-  "## $version — "*) ;;
-  *) echo "CHANGELOG.md's top section is \"$top\" — date it as $version first" >&2; exit 1 ;;
-esac
 
 # main takes changes only through a pull request (the repository's ruleset).
 land() {
@@ -99,34 +95,128 @@ land() {
   git merge -q --ff-only origin/main
 }
 
-# Two sessions preparing the same number is normal; the second takes the next free one (2026-09-29).
+# Raises the version from $1 to $2 in package.json and the CHANGELOG heading. With $3 set, npm has $1: its section
+# stays as published, and the unreleased one becomes $2 (#706). Both files are checked before either is written.
+renumber() {
+  node -e 'const fs = require("fs"); const [o, n, taken] = process.argv.slice(1)
+    const swap = (file, text, from, to) => {
+      if (!text.includes(from)) throw new Error(`${file} has no ${JSON.stringify(from.trim())} to raise ${o} to ${n}`)
+      return text.replace(from, to)
+    }
+    const today = new Date().toLocaleDateString("en-GB").replaceAll("/", ".")
+    const pkg = swap("package.json", fs.readFileSync("package.json", "utf8"), `"version": "${o}"`, `"version": "${n}"`)
+    const log = fs.readFileSync("CHANGELOG.md", "utf8")
+    const top = log.match(/^## .*$/m)?.[0] ?? ""
+    const heading = `\n## ${n} — ${today}\n`
+    let next
+    if (taken && log.includes("\n## Unreleased\n")) next = swap("CHANGELOG.md", log, "\n## Unreleased\n", heading)
+    // With only changes/ fragments there is no Unreleased section: the new version gets an empty one they fill.
+    else if (taken) next = swap("CHANGELOG.md", log, "\n## ", `${heading}\n## `)
+    else if (top.startsWith(`## ${o} — `)) next = swap("CHANGELOG.md", log, `\n## ${o} — `, `\n## ${n} — `)
+    else throw new Error(`CHANGELOG.md top section is ${JSON.stringify(top)} — date it as ${o} first`)
+    fs.writeFileSync("package.json", pkg)
+    fs.writeFileSync("CHANGELOG.md", next)' "$1" "$2" "$3"
+}
+
+# A major breaks every caller of the stable API, so it ships only when the owner chose to (WC-REL-7). Checked before
+# a version lands on main, so a refused major leaves main as it was.
+allow_major() {
+  if [ "${1%%.*}" != "${latest%%.*}" ] && [ -n "$latest" ] && [ -z "$major" ]; then
+    echo "$1 raises the major version over npm's $latest — run bin/release --major if that is meant" >&2
+    exit 1
+  fi
+}
+
+# An Unreleased section with at least one line under it, before the next version's heading.
+unreleased() {
+  awk '/^## /{if (u) exit; u = ($0 == "## Unreleased"); next} u && NF {found = 1; exit} END {exit !found}' CHANGELOG.md
+}
+fragments() {
+  find changes -maxdepth 1 -type f -name '*.md' ! -name README.md 2>/dev/null | wc -l
+}
+# The tree was clean at the start; a refusal before a version lands puts it back, so the next run is not refused.
+undo() {
+  git checkout -q HEAD -- .
+}
+# land() pulls main, which may bring fragments merged while its pull request waited: they belong to this version.
+rerun_if_fragments() {
+  [ "$(fragments)" -gt 0 ] || return 0
+  echo "changes/ fragments merged while releasing — running bin/release again to collect them"
+  exec ./bin/release "$@"
+}
+
+# Two sessions preparing the same number is normal; the second takes the next free one (2026-09-29). A version npm
+# has starts again from its patch: the entries after it, not its own section, decide the level below.
 latest=$(npm view @wirecat/cli-base version --prefer-online 2>/dev/null || true)
 versions=$(npm view @wirecat/cli-base versions --json --prefer-online 2>/dev/null || true)
-next=$(node scripts/next-version.mjs "$version" "$latest" "$versions")
+taken=""
+want=$version
+if published; then
+  taken=1
+  case "$version" in
+    *-*) ;;
+    *) want=$(node -p 'const [a, b, c] = process.argv[1].split(".").map(Number); `${a}.${b}.${c + 1}`' "$version") ;;
+  esac
+fi
+next=$(node scripts/next-version.mjs "$want" "$latest" "$versions")
+count=$(fragments)
 if [ "$next" != "$version" ]; then
-  if published; then why="$version is already on npm"; else why="$version is not above npm's latest $latest"; fi
+  if [ -n "$taken" ]; then why="$version is already on npm"; else why="$version is not above npm's latest $latest"; fi
+  if [ -n "$taken" ] && [ "$count" -eq 0 ] && ! unreleased; then
+    echo "$why and nothing is unreleased — add an Unreleased section or a changes/ fragment first" >&2
+    exit 1
+  fi
+  trap undo EXIT
+  renumber "$version" "$next" "$taken"
+  [ "$count" -eq 0 ] || dev changelog fragments --collect "$next"
+  # The section, with the fragments now in it, may need more than the number npm left free: an Added is a minor.
+  levelled=$(dev changelog level --next "$next")
+  if [ "$levelled" != "$next" ]; then
+    levelled=$(node scripts/next-version.mjs "$levelled" "$latest" "$versions")
+    renumber "$next" "$levelled" ""
+    next=$levelled
+  fi
+  allow_major "$next"
+  trap - EXIT
   echo "$why — publishing $next instead"
-  node -e 'const fs = require("fs"); const [o, n] = process.argv.slice(1)
-    const swaps = [["package.json", `"version": "${o}"`, `"version": "${n}"`], ["CHANGELOG.md", `\n## ${o} — `, `\n## ${n} — `]]
-    const texts = swaps.map(([file, from]) => {
-      const text = fs.readFileSync(file, "utf8")
-      if (!text.includes(from)) { console.error(`${file} has no ${from.trim()}`); process.exit(1) }
-      return text
-    })
-    swaps.forEach(([file, from, to], i) => fs.writeFileSync(file, texts[i].replace(from, to)))' "$version" "$next"
-  land "release/$next" "chore(release): $next" "bin/release: $why. Only package.json and the CHANGELOG heading change."
+  land "release/$next" "chore(release): $next" "bin/release: $why. Only the number changes, to the level the changelog
+needs: package.json, the CHANGELOG heading, and the changes/ fragments collected under it."
   rerun_if_changed "$@"
   version=$next
+  rerun_if_fragments "$@"
+elif [ "$count" -gt 0 ] && [ -z "$taken" ]; then
+  # The version was dated by hand; fragments merged since then still belong to it, and may need a higher level.
+  allow_major "$version"
+  trap undo EXIT
+  dev changelog fragments --collect "$version"
+  levelled=$(dev changelog level --next "$version")
+  if [ "$levelled" != "$version" ]; then
+    levelled=$(node scripts/next-version.mjs "$levelled" "$latest" "$versions")
+    renumber "$version" "$levelled" ""
+    allow_major "$levelled"
+    trap - EXIT
+    echo "the changes/ fragments need $levelled — publishing it instead of $version"
+    land "release/$levelled" "chore(release): $levelled" \
+      "bin/release: the changes/ fragments merged since $version was dated need $levelled, collected into its section."
+    version=$levelled
+  else
+    trap - EXIT
+    land "release/$version-changes" "chore(changelog): collect changes/ into $version" \
+      "bin/release: the changes/ fragments merged since $version was dated, collected into its section."
+  fi
+  rerun_if_changed "$@"
+  rerun_if_fragments "$@"
 fi
 if published; then
   echo "$version is already on npm — raise the version first" >&2
   exit 1
 fi
-# A major breaks every caller of the stable API, so it ships only when the owner chose to (WC-REL-7).
-if [ "${version%%.*}" != "${latest%%.*}" ] && [ -n "$latest" ] && [ -z "$major" ]; then
-  echo "$version raises the major version over npm's $latest — run bin/release --major if that is meant" >&2
-  exit 1
-fi
+allow_major "$version"
+top=$(sed -n '/^## /{p;q;}' CHANGELOG.md)
+case "$top" in
+  "## $version — "*) ;;
+  *) echo "CHANGELOG.md's top section is \"$top\" — date it as $version first" >&2; exit 1 ;;
+esac
 
 if [ "$mode" = ci ]; then
   last_run() {
