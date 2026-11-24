@@ -317,6 +317,7 @@ const collections: [string, string][] = [
   ["teams", "groups in a tracker that own issues, states and labels"],
   ["states", "the workflow steps a tracker team moves its issues through, each of a type such as started"],
   ["labels", "a tracker's shared labels on issues, kept by the tracker and not by the owner"],
+  ["sprints", "a tracker team's time-boxed runs of work, such as Linear's cycles, each with a start and an end"],
   ["fields", "a record type's field definitions: code, label, type and options, such as a CRM's custom fields"],
   ["activities", "a CRM's calls, e-mails, meetings, to-dos and comments on its records"],
   ["changes", "what changed in a copied source over a time: records added, moved, closed or reassigned"],
