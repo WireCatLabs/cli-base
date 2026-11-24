@@ -32,8 +32,8 @@ Sparse, and only *why*. The global rule in `~/.claude/CLAUDE.md` applies.
 
 Conventional commits, a branch off `main` in a worktree, a pull request. The pre-commit hook checks staged lint and secrets; no other local checks are required by default.
 
-A change a caller can see gets a `CHANGELOG.md` entry under `## Unreleased`. Releasing is
-`bin/release` on `main` — [README](README.md#releasing).
+A change a caller can see gets a `CHANGELOG.md` entry under `## Unreleased`, or in a `changes/<branch>.md` fragment.
+Releasing is `bin/release` on `main` — [README](README.md#releasing).
 
 ## Development check budget
 

@@ -36,8 +36,9 @@ mark, and git keeps the old text. A finished plan is deleted.
 ## The changelog
 
 `CHANGELOG.md`, newest first. The top section is `## Unreleased` while work is merged; a release
-dates it as `## <version> — DD.MM.YYYY`. Headings, each at most once per version: `Added`,
-`Changed — may break callers`, `Fixed`, `Security`, `Removed`.
+dates it as `## <version> — DD.MM.YYYY`. A pull request may put its entries in `changes/<branch>.md` instead, under
+the same headings; `bin/release` collects them into the version's section. Headings, each at most once per version:
+`Added`, `Changed — may break callers`, `Fixed`, `Security`, `Removed`.
 
 Every entry answers, in this order: **what changed, as a caller sees it** — the bold lead, a whole
 sentence; **why**, unless it is obvious; **what to watch for** — who is affected and what to do. No
