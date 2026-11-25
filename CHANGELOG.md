@@ -8,6 +8,8 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 1.0.0-rc.1 — 25.11.2026
+
 ## 1.0.0-rc.0 — 23.11.2026
 
 ### Added
