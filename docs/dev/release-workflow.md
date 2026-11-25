@@ -14,7 +14,8 @@ Status: proposed. No repository calls it yet; `bin/release` still works and stay
    number. `cli-dev changelog fragments --collect` puts the `changes/` fragments into it, and
    `cli-dev changelog level --next` raises it only when the entries need more (`1.0.0` with a fix gives `1.0.1`,
    with an Added `1.1.0`). With no fragment and no Unreleased entry the run stops. An `after-raise` command runs
-   after each raise (whatsapp-cli syncs its engine packages there).
+   once after the raise, with the version that ships (whatsapp-cli syncs its engine packages there). The `cli-dev`
+   the caller runs must be cli-base 0.98.0 or later, which has `changelog level`.
 5. Requires a dated top section and a version that is not on npm. Runs the `check` command (for example the
    live check, WC-REL-17).
 6. If steps 2 to 4 changed files: one pull request `chore(release): <version>`, merged when GitHub says it can merge

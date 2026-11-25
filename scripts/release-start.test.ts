@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process"
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { build } from "esbuild"
@@ -39,11 +39,27 @@ afterAll(() => {
 const git = (cwd: string, ...args: string[]) =>
   execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], { cwd, encoding: "utf8" })
 
-type Repo = { version: string; published: string[]; changelog: string; fragment?: string; major?: boolean }
+type Repo = {
+  version: string
+  published: string[]
+  changelog: string
+  fragment?: string
+  major?: boolean
+  unreleased?: string
+  versionTs?: boolean
+}
 
 // The published versions are tagged on a first commit, without the Unreleased section, and the changelog under test
 // lands on a second, as on main.
-const start = ({ version, published, changelog, fragment, major = false }: Repo) => {
+const start = ({
+  version,
+  published,
+  changelog,
+  fragment,
+  major = false,
+  unreleased = "Unreleased",
+  versionTs,
+}: Repo) => {
   const work = mkdtempSync(join(tmpdir(), "release-start-"))
   dirs.push(work)
   const origin = join(work, "origin.git")
@@ -54,7 +70,14 @@ const start = ({ version, published, changelog, fragment, major = false }: Repo)
   git(work, "clone", "-q", origin, repo)
   const tagged = published.at(-1) ?? version
   writeFileSync(join(repo, "package.json"), `${JSON.stringify({ name: "@wirecat/x", version: tagged }, null, 2)}\n`)
-  writeFileSync(join(repo, "CHANGELOG.md"), changelog.replace(/^## Unreleased\n[\s\S]*?(?=^## )/m, ""))
+  writeFileSync(
+    join(repo, "CHANGELOG.md"),
+    changelog.replace(new RegExp(`^## ${unreleased}\n[\\s\\S]*?(?=^## )`, "m"), ""),
+  )
+  if (versionTs) {
+    mkdirSync(join(repo, "src"))
+    writeFileSync(join(repo, "src/version.ts"), `export const VERSION = "${version}"\n`)
+  }
   git(repo, "add", "-A")
   git(repo, "commit", "-q", "-m", "init")
   for (const tag of published) git(repo, "tag", `v${tag}`)
@@ -93,14 +116,14 @@ const start = ({ version, published, changelog, fragment, major = false }: Repo)
       ...process.env,
       PATH: `${stubs}:${process.env.PATH}`,
       CLI_DEV: `node ${cliDev}`,
-      UNRELEASED: "Unreleased",
-      AFTER_RAISE: "",
+      UNRELEASED: unreleased,
+      AFTER_RAISE: 'echo "$VERSION" >> raised.log',
       CHECK: "",
       MAJOR: String(major),
       GITHUB_OUTPUT: output,
     },
   })
-  const read = (file: string) => readFileSync(join(repo, file), "utf8")
+  const read = (file: string) => (existsSync(join(repo, file)) ? readFileSync(join(repo, file), "utf8") : "")
   return { run, read, output: readFileSync(output, "utf8") }
 }
 
@@ -127,6 +150,7 @@ describe("release-start.yml settles the version as bin/release does", { timeout:
     expect(log).toMatch(/## 0\.131\.1 — [\d.]+\n\n### Fixed\n\n- \*\*New\.\*\*/)
     expect(log).toContain("## 0.131.0 — 22.11.2026\n\n### Fixed\n\n- **Old.** Shipped in 0.131.0.\n")
     expect(log.split("\n## 0.131.0")[0]).not.toContain("Old")
+    expect(read("changes/feat-x.md")).toBe("")
   })
 
   it("follows a published 1.0.0 with a patch when only a fix is unreleased", () => {
@@ -153,6 +177,21 @@ describe("release-start.yml settles the version as bin/release does", { timeout:
     expect(output).toContain("version=1.1.0\n")
     expect(read("CHANGELOG.md")).toMatch(/## 1\.1\.0 — [\d.]+\n\n### Added\n\n- \*\*Pages\.\*\*/)
     expect(read("CHANGELOG.md")).not.toContain("## 1.0.1")
+  })
+
+  it("raises src/version.ts under a custom title and runs after-raise once, with the version that ships", () => {
+    const { run, read, output } = start({
+      version: "1.0.0",
+      published: ["0.131.0", "1.0.0"],
+      changelog: above("## Next\n\n### Added\n\n- **Two.** B.\n\n## 1.0.0 — 23.11.2026\n\n### Added\n\n- **One.** A."),
+      unreleased: "Next",
+      versionTs: true,
+    })
+    expect(run.status).toBe(0)
+    expect(output).toContain("version=1.1.0\n")
+    expect(read("src/version.ts")).toBe('export const VERSION = "1.1.0"\n')
+    expect(read("raised.log")).toBe("1.1.0\n")
+    expect(read("CHANGELOG.md")).toMatch(/## 1\.1\.0 — [\d.]+\n\n### Added\n\n- \*\*Two\.\*\*/)
   })
 
   it("refuses an empty Unreleased section on a published version", () => {

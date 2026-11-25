@@ -12,7 +12,7 @@ on:
         type: string
         required: true
       cli-dev:
-        description: "How this repository runs cli-dev, e.g. `pnpm exec cli-dev` or `npx -y -p @wirecat/cli-base@x.y.z cli-dev`"
+        description: "How this repository runs cli-dev (cli-base 0.98.0 or later), e.g. `pnpm exec cli-dev` or `npx -y -p @wirecat/cli-base@x.y.z cli-dev`"
         type: string
         default: pnpm exec cli-dev
       unreleased:
@@ -24,7 +24,7 @@ on:
         type: string
         default: ""
       after-raise:
-        description: "Shell run after the version number changes, before it is committed; $VERSION is the new one"
+        description: "Shell run once after the version number changes, before it is committed; $VERSION is the new one"
         type: string
         default: ""
       release-inputs:
@@ -113,8 +113,12 @@ jobs:
             exit 1
           fi
 
+          from=$version
+          # Asked once: a version that reaches npm during the run must not be folded into and then raised as taken.
+          taken=""
+          if published "$version"; then taken=1; fi
           $CLI_DEV changelog restore --unreleased "$UNRELEASED"
-          published "$version" || $CLI_DEV changelog fold --version "$version" --unreleased "$UNRELEASED"
+          [ -n "$taken" ] || $CLI_DEV changelog fold --version "$version" --unreleased "$UNRELEASED"
 
           latest=$(npm view "$package" version --prefer-online 2>/dev/null || true)
           versions=$(npm view "$package" versions --json --prefer-online 2>/dev/null || true)
@@ -143,7 +147,6 @@ jobs:
                 else throw new Error(`CHANGELOG.md top section is ${JSON.stringify(top)} — date it as ${o} first`)
                 writes.push(["CHANGELOG.md", next])
                 for (const [file, text] of writes) fs.writeFileSync(file, text)' "$1" "$2" "$3" "$UNRELEASED"
-            if [ -n "$AFTER_RAISE" ]; then VERSION=$2 sh -c "$AFTER_RAISE"; fi
           }
           unreleased() {
             awk -v title="## $UNRELEASED" '/^## /{if (u) exit; u = ($0 == title); next} u && NF {found = 1; exit} END {exit !found}' CHANGELOG.md
@@ -163,10 +166,8 @@ jobs:
           }
           # A version npm has starts again from its patch: the entries after it, not its own section, decide the
           # level. A taken x.0.0 would otherwise stay a major.
-          taken=""
           want=$version
-          if published "$version"; then
-            taken=1
+          if [ -n "$taken" ]; then
             case "$version" in
               *-*) ;;
               *) want=$(node -p 'const [a, b, c] = process.argv[1].split(".").map(Number); `${a}.${b}.${c + 1}`' "$version") ;;
@@ -191,6 +192,7 @@ jobs:
             echo "::error::$version raises the major version over npm's $latest — start the release with major allowed if that is meant"
             exit 1
           fi
+          if [ "$version" != "$from" ] && [ -n "$AFTER_RAISE" ]; then VERSION=$version sh -c "$AFTER_RAISE"; fi
 
           top=$(sed -n '/^## /{p;q;}' CHANGELOG.md)
           case "$top" in
