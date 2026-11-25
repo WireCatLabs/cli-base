@@ -79,8 +79,8 @@ describe("adaptGraphql", () => {
       issues: ["issue", "query"],
       maybeIssue: ["issue", "query"],
       recentIssues: ["issue", "query"],
-      search: ["search", "query"],
-      viewer: ["viewer", "query"],
+      search: ["query", "query"],
+      viewer: ["query", "query"],
       workflowStates: ["workflow-state", "query"],
     })
     const snake = trackerIntrospection()
@@ -92,7 +92,7 @@ describe("adaptGraphql", () => {
     const named = adaptGraphql(snake, { url: URL_, scalars }).operations
     expect(named.find((one) => one.id === "team_users")?.tags).toEqual(["team", "mutation"])
     // A mutation named like an entity acts on something else: Linear's projectUpdate changes a project.
-    expect(named.find((one) => one.id === "workflowState")?.tags).toEqual(["workflow", "mutation"])
+    expect(named.find((one) => one.id === "workflowState")?.tags).toEqual(["mutation", "mutation"])
   })
 
   it("binds a field with its variables' GraphQL types and a default selection one level deep", () => {

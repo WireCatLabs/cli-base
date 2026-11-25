@@ -268,10 +268,9 @@ answer type are all optional, since a selection asks for some. A query reads; a 
 `Delete` or `Archive` (not `Unarchive`) deletes, so `permissions` gives it `<group>.delete`. Its first tag is the entity
 its name acts on: the earliest, then longest, run of the field name's words that names an object with an `id`, its last
 word read singular (`issueLabels` → `issue-label`, `searchIssues` → `issue`), never a mutation's whole name
-(`projectUpdate` changes a `Project`), else the name's first word; its second tag is `query` or `mutation`. The agent
-skill files one page per entity. A connection with an `after`
-argument pages as `cursor`: `after` and `first` in the variables, `pageInfo.endCursor` and `pageInfo.hasNextPage` in the
-answer, rows under `nodes`. Each scalar the schema defines beyond GraphQL's five is mapped in `scalars`
+(`projectUpdate` changes a `Project`); with none, `query` or `mutation`. Its second tag is always `query` or `mutation`.
+The agent skill files one page per first tag. A connection with an `after` argument pages as `cursor`: `after` and
+`first` in the variables, `pageInfo.endCursor` and `pageInfo.hasNextPage` in the answer, rows under `nodes`. Each scalar the schema defines beyond GraphQL's five is mapped in `scalars`
 (`{ DateTime: { type: "string" } }`), else generation stops; SDL is not read, since that needs graphql-js. `exclude` names a field, or
 `query.<name>` / `mutation.<name>` when both roots have it. Sign-in is
 not in a GraphQL schema: `generate`'s `auth` gives it. `graphqlFake({ operations, definitions, url, auth, answers })`

@@ -239,7 +239,8 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
   /**
    * The earliest, then longest, run of the name's words that names an object with an id, its last word read singular
    * too: `issueLabels` → `issue-label`, `searchIssues` → `issue`. A mutation's whole name is never its entity, as
-   * `projectUpdate` changes a project while the type `ProjectUpdate` is a status post. None: the name's first word.
+   * `projectUpdate` changes a project while the type `ProjectUpdate` is a status post. None: its kind, one page for
+   * the few leftovers rather than a page per verb.
    */
   const entityOf = (name: string, operation: "query" | "mutation"): string => {
     const words = name
@@ -255,7 +256,7 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
           .find(Boolean)
         if (found) return kebab(found)
       }
-    return kebab(name).split("-")[0] ?? name
+    return operation
   }
 
   // An answer that is only a reference is named after its type, which would drop a nullable field's null: such an

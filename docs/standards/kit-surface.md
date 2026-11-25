@@ -178,9 +178,9 @@ source whose subtypes the definitions cannot tell apart.
 `apiSkillFiles({ cli, folder, files, service, skill, operations, commands, banner })` writes the API part of the
 CLI's skill, in the shape of [openapi-to-skills](https://github.com/neutree-ai/openapi-to-skills): `references/api.md`,
 a short index of the groups with their effects, and `references/api/api-<group>.md`, one file per group. An
-operation's group is its `group` (WC-CMD-33), else its first tag (for GraphQL, the entity its field acts on); one without either is in `api-untagged.md`. A tag with no Latin letter or digit
-cannot name a file and stops the generation. An agent reads
-the index, then only the group it needs, with `<cli> skill show api-<group>`. The `skill` command already ships and
+operation's group is its `group` (WC-CMD-33), else its first tag (for GraphQL, the entity its field acts on); one
+without either is in `api-untagged.md`. A tag with no Latin letter or digit cannot name a file and stops the
+generation. An agent reads the index, then only the group it needs, with `<cli> skill show api-<group>`. The `skill` command already ships and
 shows every file beside `SKILL.md`; nothing else is needed.
 
 - `commands` is `describeProgram(createProgram())` from the built program, made with the CLI's own copy of cli-base.
