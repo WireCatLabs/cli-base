@@ -340,6 +340,21 @@ describe("audit rules", () => {
     expect(blocking([])).toContain("a+b reason account-remove.unknown-profile=account-rename.unknown-profile")
     expect(blocking(SHARED_DIFFERENCES)).toEqual([])
   })
+
+  it("lets the CLIs move to cli-core 1.0 one by one while the unreadable config has its older names", () => {
+    const message = "the config file cannot be read"
+    const reason = (id: string) => ({ reason: id, code: "configuration_error" as const, message, details: [] })
+    const blocking = (others: string[]) => {
+      const inputs = [
+        inputOf(tool("a"), { reasons: [reason("config.unreadable")] }),
+        ...others.map((id, at) => inputOf(tool(`b${at}`), { reasons: [reason(id)] })),
+      ]
+      return auditClis(inputs, options({ only: "a", family: true, shared: SHARED_DIFFERENCES })).blocking
+    }
+    expect(blocking(["account-rename.config", "mail.config-unreadable"])).toEqual([])
+    expect(blocking(["account-rename.config"])).toEqual([])
+    expect(blocking(["mail.config-unreadable"])).toEqual([])
+  })
 })
 
 describe("judging an audit", () => {

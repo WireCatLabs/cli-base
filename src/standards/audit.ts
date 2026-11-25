@@ -189,9 +189,28 @@ const FAMILY_SINCE_0_98 = [
   },
 ]
 
+// cli-core 1.0.0 renames the unreadable config failure config.unreadable; a CLI still on 0.x gives account-rename.config,
+// and mail-cli up to 1.0 its own mail.config-unreadable. Which of the three names meet depends on who has published.
+// These sit in the messengers group only for its budget: a reason difference holds in every group.
+const CONFIG_UNREADABLE_RENAME = [
+  "account-rename.config=config.unreadable=mail.config-unreadable",
+  "account-rename.config=config.unreadable",
+  "config.unreadable=mail.config-unreadable",
+].map((ids) => ({
+  rule: REASON,
+  target: `reason ${ids}`,
+  reason: "one failure under several names while the CLIs move to cli-core 1.0, which names it config.unreadable",
+  review_after: "2026-12-09",
+}))
+
 /** @experimental */
 export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
-  { name: "messengers", members: ["tg", "max"], covers: "tree", differences: MESSENGERS_SINCE_0_98 },
+  {
+    name: "messengers",
+    members: ["tg", "max"],
+    covers: "tree",
+    differences: [...MESSENGERS_SINCE_0_98, ...CONFIG_UNREADABLE_RENAME],
+  },
   {
     name: "all",
     members: ["tg", "max", "memo", "drive", "zm", "wa"],
