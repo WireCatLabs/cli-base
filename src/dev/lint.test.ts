@@ -47,7 +47,6 @@ const clean = (): Command => {
   ran(chats.command("show").description("show one chat").argument("<chat>", "chat id or name"), {
     examples: ["tool work chats show 'Kai Sample'"],
   })
-  ran(root.command("doctor").description("check this machine"), { examples: ["tool doctor"] })
   const bot = root.command("bot").description("the bot account")
   ran(bot.command("getMe").description(""), { origin: "generated" })
   return root
@@ -86,6 +85,8 @@ const failing: Record<string, (root: Command) => void> = {
       1,
     )
   },
+  "reserved-shared-command": (root) =>
+    ran(root.command("doctor").description("check this machine"), { examples: ["tool doctor"] }),
   "unknown-verb": (root) =>
     ran(chatsOf(root).command("grab").description("grab a chat"), { examples: ["tool chats grab"] }),
   "unknown-resource": (root) =>
@@ -438,6 +439,36 @@ describe("lint rules", () => {
     expect(lintOf(clean()).filter((found) => found.rule !== "missing-command-help")).toEqual([])
     expect(lintOf(clean())).toEqual([
       { rule: "missing-command-help", target: "bot getMe", message: "no summary or description" },
+    ])
+  })
+
+  it("flags a reserved path cli-core did not mount, once per path, and allows a CLI's own child of a shared group", () => {
+    const root = clean()
+    const session = root.command("session").description("sign in and out")
+    for (const [leaf, origin] of [
+      ["start", "cli-core"],
+      ["status", "handwritten"],
+      ["end", "cli-core"],
+      ["list", "handwritten"],
+    ] as const)
+      ran(session.command(leaf).description(`session ${leaf}`), { examples: [`tool work session ${leaf}`], origin })
+    const mcp = ran(root.command("mcp").description("the MCP server"), { examples: ["tool mcp"], origin: "cli-core" })
+    ran(mcp.command("serve").description("serve over stdio"), { examples: ["tool work mcp serve"] })
+    const account = root.command("account").description("this profile's account")
+    ran(account.command("remove").description("remove this profile"), { examples: ["tool work account remove"] })
+    expect(lintOf(root).filter((one) => one.rule === "reserved-shared-command")).toEqual([
+      {
+        rule: "reserved-shared-command",
+        target: "account remove",
+        message:
+          "account remove built by the CLI. Mount cli-core's `accountRemoveCommand` (or the group from `accountCommand`), or add an override with the reason",
+      },
+      {
+        rule: "reserved-shared-command",
+        target: "session",
+        message:
+          "session status, session list built by the CLI. Mount cli-core's `tokenSessionCommand`, `oauthSessionCommand` or `messengerSessionCommands`, or add an override with the reason",
+      },
     ])
   })
 
@@ -1053,7 +1084,7 @@ describe("cli-dev lint", () => {
 
   it("fails the CLI's own word in the baseline once cli-core marks its commands, and only warns with --allow-stale", async () => {
     const tree = broken()
-    annotate(tree.commands.find((command) => command.name() === "doctor") as Command, { origin: "cli-core" })
+    annotate(tree.commands.find((command) => command.name() === "runs") as Command, { origin: "cli-core" })
     document(tree)
     expect(await lint("--write-baseline")).toBe(1)
     expect(err).toContain(`the CLI's own word in the baseline — move it to the overrides: unknown-verb "chats grab"`)
@@ -1087,6 +1118,47 @@ describe("cli-dev lint", () => {
     expect(await lint()).toBe(before)
     expect(err).toContain("warning  low  command-example-count  review: 0 examples; give 1 to 3")
     expect(err.join("\n")).not.toMatch(/^low {2}command-example-count/m)
+  })
+
+  it("only warns about a reserved path built by hand, and takes its exception from the overrides alone", async () => {
+    document(clean())
+    const before = await lint()
+    const tree = clean()
+    failing["reserved-shared-command"]?.(tree)
+    document(tree)
+    err.length = 0
+    expect(await lint()).toBe(before)
+    expect(err.join("\n")).toMatch(/^warning {2}high {2}reserved-shared-command {2}doctor: doctor built by the CLI/m)
+
+    await lint("--write-baseline")
+    expect(existsSync(join(root, "lint/baseline/reserved-shared-command.json"))).toBe(false)
+    mkdirSync(join(root, "lint/baseline"), { recursive: true })
+    writeFileSync(join(root, "lint/baseline/reserved-shared-command.json"), JSON.stringify(["doctor"]))
+    err.length = 0
+    expect(await lint()).toBe(1)
+    expect(err).toContain(
+      "an exception to reserved-shared-command is in the baseline: move it to the overrides, with its reason and date",
+    )
+
+    writeFileSync(join(root, "lint/baseline/reserved-shared-command.json"), "[]")
+    writeFileSync(
+      join(root, "lint/overrides.json"),
+      JSON.stringify([{ rule: "reserved-shared-command", target: "doctor", owner: "@octocat" }]),
+    )
+    err.length = 0
+    await lint()
+    expect(err.join("\n")).toMatch(/entry 0 \(reserved-shared-command\) does not apply/)
+    expect(err.join("\n")).toMatch(/reserved-shared-command {2}doctor/)
+
+    writeFileSync(
+      join(root, "lint/overrides.json"),
+      JSON.stringify([
+        { rule: "reserved-shared-command", target: "doctor", reason: "the hub has no account to check", ...KEPT },
+      ]),
+    )
+    err.length = 0
+    await lint()
+    expect(err.join("\n")).not.toContain("reserved-shared-command  doctor")
   })
 
   it("warns about an override two weeks either side of its review date, then fails, naming who keeps it", async () => {

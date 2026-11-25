@@ -11,7 +11,17 @@ import { BASE_REASONS, type ErrorReason } from "../standards/errors.js"
 import { LINT_RULES, OVERRIDE_BUDGET, type Override, overdue, overridesDueSoon } from "../standards/lint.js"
 import type { Vocabulary } from "../standards/vocabulary.js"
 import { type Capabilities, capabilityDifference } from "./capabilities.js"
-import { judge, kindOf, lintCommands, longName, registeredKinds, summaryOf, walk } from "./lint.js"
+import {
+  judge,
+  kindOf,
+  lintCommands,
+  longName,
+  OVERRIDE_ONLY_RULES,
+  registeredKinds,
+  summaryOf,
+  WARNING_RULES,
+  walk,
+} from "./lint.js"
 import { type ContractEdit, sharedContractProblems } from "./shared-contracts.js"
 
 export interface AuditInput {
@@ -520,7 +530,8 @@ export const auditClis = (
           fixed: verdict.stale.filter((entry) => entry.in === "baseline").length,
           new_targets: verdict.fresh.map((violation) => `${cli}: ${violation.target}`),
         }
-        blocking.push(...mine.filter((finding) => row.new_targets.includes(finding.target)))
+        if (!WARNING_RULES.has(rule))
+          blocking.push(...mine.filter((finding) => row.new_targets.includes(finding.target)))
       } else {
         const open = mine.filter(
           (finding) =>
@@ -546,7 +557,7 @@ export const auditClis = (
           ).length,
           new_targets: fresh.map((finding) => finding.target),
         }
-        const blocks = lintIds.includes(rule) || options.blocks === "new"
+        const blocks = !WARNING_RULES.has(rule) && (lintIds.includes(rule) || options.blocks === "new")
         if (blocks) blocking.push(...fresh)
       }
       rows.push(row)
@@ -567,6 +578,7 @@ export const auditClis = (
         )
         .filter((finding) => !(lintIds.includes(rule) && selfJudged.has(finding.clis[0] ?? "")))
         .map((finding) => finding.target)
+      if (OVERRIDE_ONLY_RULES.has(rule)) return [rule, []]
       return [rule, STRICT_CONTRACT_RULES.has(rule) ? kept : [...new Set([...kept, ...now])].sort(byText)]
     }),
   )

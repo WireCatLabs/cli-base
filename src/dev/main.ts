@@ -55,7 +55,16 @@ import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
 import { familyPackages, installFamily } from "./family.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
-import { baselineOf, judge, lintCommands, misfiled, RUN_LOG_COMMANDS, type RunLogProbe, walk } from "./lint.js"
+import {
+  baselineOf,
+  judge,
+  lintCommands,
+  misfiled,
+  RUN_LOG_COMMANDS,
+  type RunLogProbe,
+  WARNING_RULES,
+  walk,
+} from "./lint.js"
 import { type NetworkContext, readSources } from "./network.js"
 import { levelCommand, nextVersion } from "./next-version.js"
 import { READY_USAGE, ready } from "./ready.js"
@@ -594,7 +603,7 @@ const lintRun = (args: string[], io: DevIo) => {
 
   const verdict = judge(violations, baseline, ruleOverrides, budget)
   // A low rule is advice: it is printed and never fails, so polishing help text never holds a merge.
-  const advice = (rule: string) => severity.get(rule) === "low"
+  const advice = (rule: string) => severity.get(rule) === "low" || WARNING_RULES.has(rule)
   const advised: string[] = []
   for (const id of verdict.unknownRules)
     problems.push(`no lint rule "${id}" (named in ${values.baseline} or ${values.overrides})`)

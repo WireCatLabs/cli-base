@@ -156,6 +156,13 @@ export const LINT_RULES: LintRule[] = defineLintRules([
     summary:
       "a list or search in the published TypeScript API returns `{ items, hasMore, nextOffset?, total? }`: no bare array, no `hits` or `has_more`",
   },
+  {
+    id: "reserved-shared-command",
+    severity: "high",
+    scope: "command",
+    summary:
+      "`session start|status|end|list`, `doctor`, `mcp`, `account remove`, `mirrors` and `complete` are cli-core's shared commands, never built by the CLI",
+  },
 ])
 
 /**

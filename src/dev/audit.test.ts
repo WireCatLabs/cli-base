@@ -572,25 +572,39 @@ describe("judging an audit", () => {
     )
   })
 
+  it("counts a reserved path built by hand, blocks nothing on it, and baselines none of it", () => {
+    const result = auditClis([inputOf(tool("a")), inputOf(tool("b"))], options())
+    expect(result.findings.filter((one) => one.rule === "reserved-shared-command").map((one) => one.target)).toEqual([
+      "a: doctor",
+      "a: mcp",
+      "b: doctor",
+      "b: mcp",
+    ])
+    expect(result.blocking.filter((one) => one.rule === "reserved-shared-command")).toEqual([])
+    expect(result.nextBaseline["reserved-shared-command"]).toEqual([])
+  })
+
   it("prints the scorecard as a table: lines with findings or not measured, and a total per CLI", () => {
     const result = auditClis(failing["same-path-contract"]?.() ?? [], options())
     expect(
       scorecardTable(result.rows.filter((row) => !row.rule.startsWith("option") && row.rule !== "key-casing")),
     ).toMatchInlineSnapshot(`
       "cli  rule                     found  baseline  overridden  new  fixed
+      a    reserved-shared-command      2         0           0    2      0
       a    shared-command-contract    n/a       n/a         n/a  n/a    n/a
       a    same-path-contract           1         0           0    1      0
       a    same-flag-meaning            1         0           0    1      0
       a    same-entity-schema         n/a       n/a         n/a  n/a    n/a
       a    same-error-reason          n/a       n/a         n/a  n/a    n/a
       b    flag-two-meanings            1         0           0    1      0
+      b    reserved-shared-command      2         0           0    2      0
       b    shared-command-contract    n/a       n/a         n/a  n/a    n/a
       b    same-path-contract           1         0           0    1      0
       b    same-flag-meaning            1         0           0    1      0
       b    same-entity-schema         n/a       n/a         n/a  n/a    n/a
       b    same-error-reason          n/a       n/a         n/a  n/a    n/a
-      a    total                        2         0           0    2      0
-      b    total                        3         0           0    3      0"
+      a    total                        4         0           0    4      0
+      b    total                        5         0           0    5      0"
     `)
   })
 })
