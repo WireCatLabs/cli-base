@@ -12,7 +12,7 @@ on:
         type: string
         required: true
       cli-dev:
-        description: "How this repository runs cli-dev, e.g. `pnpm exec cli-dev` or `npx -y -p @wirecat/cli-base@x.y.z cli-dev`"
+        description: "How this repository runs cli-dev (cli-base 0.98.0 or later), e.g. `pnpm exec cli-dev` or `npx -y -p @wirecat/cli-base@x.y.z cli-dev`"
         type: string
         default: pnpm exec cli-dev
       unreleased:
@@ -24,7 +24,7 @@ on:
         type: string
         default: ""
       after-raise:
-        description: "Shell run after the version number changes, before it is committed; $VERSION is the new one"
+        description: "Shell run once after the version number changes, before it is committed; $VERSION is the new one"
         type: string
         default: ""
       release-inputs:
@@ -113,31 +113,49 @@ jobs:
             exit 1
           fi
 
+          from=$version
+          # Asked once: a version that reaches npm during the run must not be folded into and then raised as taken.
+          taken=""
+          if published "$version"; then taken=1; fi
           $CLI_DEV changelog restore --unreleased "$UNRELEASED"
-          published "$version" || $CLI_DEV changelog fold --version "$version" --unreleased "$UNRELEASED"
+          [ -n "$taken" ] || $CLI_DEV changelog fold --version "$version" --unreleased "$UNRELEASED"
 
           latest=$(npm view "$package" version --prefer-online 2>/dev/null || true)
           versions=$(npm view "$package" versions --json --prefer-online 2>/dev/null || true)
+          # Raises $1 to $2 in package.json, src/version.ts and the CHANGELOG heading. With $3 set, npm has $1: its
+          # section stays as published, and the unreleased one becomes $2, or a new section the fragments fill.
+          # Every file is checked before any is written.
           renumber() {
             node -e 'const fs = require("fs"); const [o, n, taken, unreleased] = process.argv.slice(1)
-                const swap = (file, from, to, optional) => {
-                  if (optional && !fs.existsSync(file)) return
-                  const text = fs.readFileSync(file, "utf8")
+                const swap = (file, text, from, to) => {
                   if (!text.includes(from)) throw new Error(`${file} has no ${JSON.stringify(from.trim())} to raise ${o} to ${n}`)
-                  fs.writeFileSync(file, text.replace(from, to))
+                  return text.replace(from, to)
                 }
-                swap("package.json", `"version": "${o}"`, `"version": "${n}"`)
-                swap("src/version.ts", `VERSION = "${o}"`, `VERSION = "${n}"`, true)
                 const today = new Date().toLocaleDateString("en-GB").replaceAll("/", ".")
-                if (taken) swap("CHANGELOG.md", `\n## ${unreleased}\n`, `\n## ${n} — ${today}\n`)
-                else swap("CHANGELOG.md", `\n## ${o} — `, `\n## ${n} — `)' "$1" "$2" "$3" "$UNRELEASED"
-            if [ -n "$AFTER_RAISE" ]; then VERSION=$2 sh -c "$AFTER_RAISE"; fi
+                const writes = [["package.json", swap("package.json", fs.readFileSync("package.json", "utf8"), `"version": "${o}"`, `"version": "${n}"`)]]
+                if (fs.existsSync("src/version.ts")) {
+                  writes.push(["src/version.ts", swap("src/version.ts", fs.readFileSync("src/version.ts", "utf8"), `VERSION = "${o}"`, `VERSION = "${n}"`)])
+                }
+                const log = fs.readFileSync("CHANGELOG.md", "utf8")
+                const top = log.match(/^## .*$/m)?.[0] ?? ""
+                const heading = `\n## ${n} — ${today}\n`
+                const section = `\n## ${unreleased}\n`
+                let next
+                if (taken && log.includes(section)) next = swap("CHANGELOG.md", log, section, heading)
+                else if (taken) next = swap("CHANGELOG.md", log, "\n## ", `${heading}\n## `)
+                else if (top.startsWith(`## ${o} — `)) next = swap("CHANGELOG.md", log, `\n## ${o} — `, `\n## ${n} — `)
+                else throw new Error(`CHANGELOG.md top section is ${JSON.stringify(top)} — date it as ${o} first`)
+                writes.push(["CHANGELOG.md", next])
+                for (const [file, text] of writes) fs.writeFileSync(file, text)' "$1" "$2" "$3" "$UNRELEASED"
           }
+          unreleased() {
+            awk -v title="## $UNRELEASED" '/^## /{if (u) exit; u = ($0 == title); next} u && NF {found = 1; exit} END {exit !found}' CHANGELOG.md
+          }
+          count=$(find changes -maxdepth 1 -type f -name '*.md' ! -name README.md 2>/dev/null | wc -l)
           # The changes/ fragments go into the version's section, which may then need a higher level (an Added is a
           # minor, a stable break a major from 1.0.0 on).
-          fragments() {
-            [ -n "$(find changes -maxdepth 1 -type f -name '*.md' ! -name README.md 2>/dev/null)" ] || return 0
-            $CLI_DEV changelog fragments --collect "$version"
+          collect() {
+            [ "$count" -eq 0 ] || $CLI_DEV changelog fragments --collect "$version"
             levelled=$($CLI_DEV changelog level --next "$version")
             [ "$levelled" != "$version" ] || return 0
             levelled=$($CLI_DEV next-version "$levelled" "$latest" "$versions")
@@ -146,20 +164,35 @@ jobs:
             why="${why:+$why; }the changelog needs $levelled"
             version=$levelled
           }
-          next=$($CLI_DEV next-version "$version" "$latest" "$versions")
+          # A version npm has starts again from its patch: the entries after it, not its own section, decide the
+          # level. A taken x.0.0 would otherwise stay a major.
+          want=$version
+          if [ -n "$taken" ]; then
+            case "$version" in
+              *-*) ;;
+              *) want=$(node -p 'const [a, b, c] = process.argv[1].split(".").map(Number); `${a}.${b}.${c + 1}`' "$version") ;;
+            esac
+          fi
+          next=$($CLI_DEV next-version "$want" "$latest" "$versions")
           why=""
           if [ "$next" != "$version" ]; then
-            taken=""
-            if published "$version"; then taken=1; why="$version is already on npm"; else why="$version is not above npm's latest $latest"; fi
+            if [ -n "$taken" ]; then why="$version is already on npm"; else why="$version is not above npm's latest $latest"; fi
+            if [ -n "$taken" ] && [ "$count" -eq 0 ] && ! unreleased; then
+              echo "::error::$why and nothing is unreleased — add a $UNRELEASED section or a changes/ fragment first"
+              exit 1
+            fi
             echo "$why — releasing $next instead"
             renumber "$version" "$next" "$taken"
             version=$next
+            collect
+          elif [ "$count" -gt 0 ] && [ -z "$taken" ]; then
+            collect
           fi
-          fragments
           if [ -n "$latest" ] && [ "${version%%.*}" != "${latest%%.*}" ] && [ "$MAJOR" != "true" ]; then
             echo "::error::$version raises the major version over npm's $latest — start the release with major allowed if that is meant"
             exit 1
           fi
+          if [ "$version" != "$from" ] && [ -n "$AFTER_RAISE" ]; then VERSION=$version sh -c "$AFTER_RAISE"; fi
 
           top=$(sed -n '/^## /{p;q;}' CHANGELOG.md)
           case "$top" in
