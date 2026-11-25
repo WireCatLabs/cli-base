@@ -6,11 +6,14 @@
  * One field of `Query` or `Mutation` is one operation. Its arguments are the request body (the variables), each also a
  * flag; its answer is `data.<field>`, typed by the field's type. A query reads; a mutation writes, and one whose name
  * ends in `Delete` or `Archive` deletes. A Relay connection pages as a `cursor`: `after`, `pageInfo.endCursor`.
+ * Its first tag is the entity its name acts on (`issueLabelCreate` → `issue-label`), its second `query` or `mutation`:
+ * the agent skill files one page per first tag, and an agent looking for an issue's writes reads only the issue page.
  * SDL is not read: that needs graphql-js, and codegen adds no runtime dependency.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { ApiModel, ApiOperation, ApiSchema, GraphqlBinding, Pagination, SchemaNode } from "./model.js"
+import { kebab } from "./names.js"
 import { CodegenError } from "./pipeline.js"
 import { sha256, sortKeys } from "./snapshot.js"
 
@@ -222,6 +225,40 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
     return node ? `nodes { ${oneLevel(node)} } pageInfo { hasNextPage endCursor }` : oneLevel(name)
   }
 
+  const entities = new Map(
+    [...types.values()]
+      .filter((type) => fieldsOf(type.name)?.some((one) => one.name === "id"))
+      .map((type) => [type.name.toLowerCase(), type.name]),
+  )
+  const singulars = (word: string) => [
+    word,
+    ...(word.endsWith("ies") ? [`${word.slice(0, -3)}y`] : []),
+    ...(word.endsWith("es") ? [word.slice(0, -2)] : []),
+    ...(word.endsWith("s") ? [word.slice(0, -1)] : []),
+  ]
+  /**
+   * The earliest, then longest, run of the name's words that names an object with an id, its last word read singular
+   * too: `issueLabels` → `issue-label`, `searchIssues` → `issue`. A mutation's whole name is never its entity, as
+   * `projectUpdate` changes a project while the type `ProjectUpdate` is a status post. None: its kind, one page for
+   * the few leftovers rather than a page per verb.
+   */
+  const entityOf = (name: string, operation: "query" | "mutation"): string => {
+    const words = name
+      .split(/_+|(?=[A-Z])/)
+      .filter(Boolean)
+      .map((word) => word.toLowerCase())
+    for (let start = 0; start < words.length; start++)
+      for (let end = words.length; end > start; end--) {
+        if (operation === "mutation" && start === 0 && end === words.length) continue
+        const head = words.slice(start, end - 1).join("")
+        const found = singulars(words[end - 1] ?? "")
+          .map((last) => entities.get(head + last))
+          .find(Boolean)
+        if (found) return kebab(found)
+      }
+    return operation
+  }
+
   // An answer that is only a reference is named after its type, which would drop a nullable field's null: such an
   // answer is wrapped, so it gets a name of its own that keeps it.
   const answerOf = (node: SchemaNode): SchemaNode =>
@@ -288,7 +325,7 @@ export const adaptGraphql = (introspection: unknown, options: GraphqlOptions): A
         binding,
         ...(summary ? { summary } : {}),
         ...described(field.description),
-        tags: [operation],
+        tags: [entityOf(field.name, operation), operation],
         parameters: field.args.map((one) => ({
           name: one.name,
           in: "body" as const,

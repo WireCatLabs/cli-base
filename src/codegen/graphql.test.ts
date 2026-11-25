@@ -71,6 +71,30 @@ describe("adaptGraphql", () => {
     })
   })
 
+  it("tags each operation with the entity its name acts on, then its kind", () => {
+    const tags = Object.fromEntries(model().operations.map((one) => [one.id, one.tags]))
+    expect(tags).toMatchObject({
+      issue: ["issue", "query"],
+      issueDelete: ["issue", "mutation"],
+      issues: ["issue", "query"],
+      maybeIssue: ["issue", "query"],
+      recentIssues: ["issue", "query"],
+      search: ["query", "query"],
+      viewer: ["query", "query"],
+      workflowStates: ["workflow-state", "query"],
+    })
+    const snake = trackerIntrospection()
+    const mutation = snake.data.__schema.types.find((one) => one.name === "Mutation") as unknown as {
+      fields: { name: string }[]
+    }
+    const create = mutation.fields.find((one) => one.name === "issueCreate")
+    mutation.fields.push({ ...create, name: "team_users" }, { ...create, name: "workflowState" })
+    const named = adaptGraphql(snake, { url: URL_, scalars }).operations
+    expect(named.find((one) => one.id === "team_users")?.tags).toEqual(["team", "mutation"])
+    // A mutation named like an entity acts on something else: Linear's projectUpdate changes a project.
+    expect(named.find((one) => one.id === "workflowState")?.tags).toEqual(["mutation", "mutation"])
+  })
+
   it("binds a field with its variables' GraphQL types and a default selection one level deep", () => {
     const issues = operation("issues")
     expect(issues.binding).toEqual({
