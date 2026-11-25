@@ -8,6 +8,12 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 1.0.0 — 25.11.2026
+
+The first stable version: 1.0.0-rc.1 under the `latest` tag, with nothing changed since. Semver covers the entry
+points that `wirecat.stable` in `package.json` lists; the rest stays experimental
+([WC-REL-7](docs/standards/releases.md)).
+
 ## 1.0.0-rc.1 — 25.11.2026
 
 ### Added
