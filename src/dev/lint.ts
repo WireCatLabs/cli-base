@@ -54,6 +54,32 @@ export const registeredKinds = (vocabulary: Vocabulary): Map<string, string[]> =
 
 const label = (command: CommandInfo): string => command.path.join(" ")
 
+/**
+ * WC-CMD-34: root paths only cli-core's shared commands may hold. A group is judged by its own node, so a subcommand a
+ * CLI adds to a shared group stays allowed; `session` is judged by its four leaves, which a CLI may hold in its own group.
+ */
+export const RESERVED_COMMANDS: readonly { path: string; leaves?: readonly string[]; helpers: string }[] = [
+  {
+    path: "session",
+    leaves: ["start", "status", "end", "list"],
+    helpers: "`tokenSessionCommand`, `oauthSessionCommand` or `messengerSessionCommands`",
+  },
+  { path: "doctor", helpers: "`appDoctorCommand` or `doctorCommand`" },
+  { path: "mcp", helpers: "`appMcpCommand` or `mcpCommand`" },
+  { path: "account remove", helpers: "`accountRemoveCommand` (or the group from `accountCommand`)" },
+  { path: "mirrors", helpers: "`fileMirrorsCommand` or `addDocumentMirrorCommands`" },
+  { path: "complete", helpers: "`appCompleteCommand` or `completeCommand`" },
+]
+
+/**
+ * Rules in their warning phase: `cli-dev lint` and the audit print them and never fail on them. The rule's page names
+ * the release that ends the phase.
+ */
+export const WARNING_RULES: ReadonlySet<string> = new Set(["reserved-shared-command"])
+
+/** Rules whose exception must carry a reason and a date: a baseline entry has neither, so it is refused. */
+export const OVERRIDE_ONLY_RULES: ReadonlySet<string> = new Set(["reserved-shared-command"])
+
 export interface LintContext {
   /** The commands document as the CLI printed it; parsing drops keys it does not know, so casing is checked here. */
   raw?: unknown
@@ -516,6 +542,22 @@ const CHECKS: Record<string, Check> = {
         : []),
     ]
   },
+  "reserved-shared-command": (document) => {
+    const at = new Map(walk(document.commands).map((command) => [label(command), command]))
+    return RESERVED_COMMANDS.flatMap(({ path, leaves, helpers }) => {
+      const own = (leaves ? leaves.map((leaf) => `${path} ${leaf}`) : [path]).filter(
+        (one) => at.has(one) && at.get(one)?.origin !== "cli-core",
+      )
+      return own.length === 0
+        ? []
+        : [
+            {
+              target: path,
+              message: `${own.join(", ")} built by the CLI. Mount cli-core's ${helpers}, or add an override with the reason`,
+            },
+          ]
+    })
+  },
   "raw-network": (_document, _vocabulary, context) => (context.network ? rawNetwork(context.network) : []),
   "undeclared-host": (_document, _vocabulary, context) => (context.network ? undeclaredHosts(context.network) : []),
   "result-shape": (_document, _vocabulary, context) => (context.declarations ? resultShape(context.declarations) : []),
@@ -599,10 +641,14 @@ export const baselineOf = (
   return Object.fromEntries(
     rules.map((rule) => [
       rule.id,
-      violations
-        .filter((violation) => violation.rule === rule.id && !overridden.has(`${violation.rule} ${violation.target}`))
-        .map((violation) => violation.target)
-        .sort(),
+      OVERRIDE_ONLY_RULES.has(rule.id)
+        ? []
+        : violations
+            .filter(
+              (violation) => violation.rule === rule.id && !overridden.has(`${violation.rule} ${violation.target}`),
+            )
+            .map((violation) => violation.target)
+            .sort(),
     ]),
   )
 }
@@ -619,14 +665,18 @@ export const misfiled = (
   baseline: Readonly<Record<string, readonly string[]>>,
   overrides: readonly Override[],
 ): string[] => {
+  const reasonless = [...OVERRIDE_ONLY_RULES]
+    .filter((rule) => (baseline[rule] ?? []).length > 0)
+    .map((rule) => `an exception to ${rule} is in the baseline: move it to the overrides, with its reason and date`)
   const commands = walk(document.commands).sort((a, b) => b.path.length - a.path.length)
-  if (!commands.some((command) => command.origin === "cli-core")) return []
+  if (!commands.some((command) => command.origin === "cli-core")) return reasonless
   const ownerOf = (target: string) =>
     commands.find((command) => {
       const path = label(command)
       return target === path || target.startsWith(`${path} `) || target.startsWith(`${path}:`)
     })?.origin
   return [
+    ...reasonless,
     ...Object.entries(baseline)
       .filter(([rule]) => WORD_RULES.has(rule))
       .flatMap(([rule, targets]) =>

@@ -527,6 +527,37 @@ one operation, stay directly under `api`.
 - **Applies to:** every CLI with a generated `api` group, from its next regeneration. **Since:** the release after
   cli-base 0.120.0, with the cli-core release that mounts groups. **Rulings:** NEED-2754, NEED-2759.
 
+### WC-CMD-34 · Mount cli-core's shared command at a reserved path, never one of your own
+
+These root paths belong to cli-core: `session start`, `session status`, `session end`, `session list`, `doctor`,
+`mcp`, `account remove`, `mirrors` and `complete`. A CLI that has one of them mounts it from cli-core. It changes the
+command only through `overrideSharedContract` or `customizeSharedCommand`, which keep cli-core's mark on it. It may add
+a subcommand of its own to a shared group. A CLI does not need every path.
+
+- **Why:** a hand-built `session` or `doctor` looks the same in help, but it misses every later fix in cli-core. The
+  audits of 25.11.2026 found an own `session` in zoom, drive, gcal, ydisk, notion and the CRM CLIs, an own `mirrors`
+  in ydisk, an own `doctor` in memo and an own MCP server in memo. `assertSharedContracts` checks only the commands
+  cli-core marked, so none of these failed a check.
+- **Enforced by:** `reserved-shared-command`.
+- **How it is checked:** the lint and the family audit read the CLI's command tree as JSON, where cli-core marks
+  each shared command with the origin `cli-core`. The rule reports each reserved path whose command has no such mark,
+  once per path (`session` once for its four leaves). For now it is a warning: the lint and the audit print it and
+  pass. It becomes an error in the cli-base release after cli-core marks the helpers in the known gap below, planned
+  for 2027-01-15.
+- **Example:** `tokenSessionCommand({ app, service, resolveSettings, verify })` for a sign-in with one token,
+  `oauthSessionCommand` for a browser sign-in, `messengerSessionCommands` in tg, max and wa. `appDoctorCommand`,
+  `appMcpCommand`, `appCompleteCommand`, `accountRemoveCommand` and `fileMirrorsCommand` for the other paths. max
+  replaces `doctor` and `session` through `customizeSharedCommand`, so they keep the mark and need no exception.
+- **Exceptions:** an entry in the CLI's `lint/overrides.json`, such as
+  `{ "rule": "reserved-shared-command", "target": "session", "reason": "…", "owner": "@…", "review_after": "2027-03-01" }`.
+  An entry without a reason or a date does not apply, and an entry more than 14 days past its date fails. An entry
+  in `lint/baseline/` is refused, because it has neither. The first expected one is mail's `session`: one profile
+  signs in by app password or by Google or Microsoft OAuth, and no shared session command covers that.
+  Known gap, as of 2026-11-25: cli-core 1.0.0 does not mark `tokenSessionCommand`, `oauthSessionCommand`,
+  `fileMirrorsCommand` and the standalone `accountRemoveCommand`. A CLI that mounts one of them is still reported,
+  so the rule stays a warning until cli-core marks them.
+- **Applies to:** all CLIs. **Since:** cli-base 1.1.0, as a warning. **Rulings:** none.
+
 ## Sources
 
 These documents explain the rules on this page in more detail. Where one of them disagrees with this page, this page

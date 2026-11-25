@@ -113,7 +113,8 @@ cli-core's entities, and the adapter behind cli-core's ports. CRM is the first d
 ### WC-ARCH-6 · Replace a use case, not a command
 
 - **Why:** when a CLI replaces the service method, its command and its MCP tool both get the change.
-- **Enforced by:** review only.
+- **Enforced by:** review only. For the paths cli-core reserves, `reserved-shared-command`
+  ([WC-CMD-34](commands.md#wc-cmd-34--mount-cli-cores-shared-command-at-a-reserved-path-never-one-of-your-own)).
 - **Example:** `Messenger.services` receives the shared services and returns only the ones it changes:
   `services: (base) => ({ messages: { ...base.messages, list: maxList } })`. To add a subcommand, a CLI calls
   `addCommand` on the command a factory returns. A calendar CLI changes what the shared calendar commands do through
