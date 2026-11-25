@@ -265,7 +265,11 @@ and `pageInfo`. `graphqlDocument(binding, selection?)` builds the one document a
 declared and passed; a caller that needs more (`state { type }`) passes its own selection. Each argument is a body flag,
 the variables are the request body, and the answer is `data.<field>`, typed by the field's type; the fields of an
 answer type are all optional, since a selection asks for some. A query reads; a mutation writes; one whose name ends in
-`Delete` or `Archive` (not `Unarchive`) deletes, so `permissions` gives it `<group>.delete`. A connection with an `after`
+`Delete` or `Archive` (not `Unarchive`) deletes, so `permissions` gives it `<group>.delete`. Its first tag is the entity
+its name acts on: the earliest, then longest, run of the field name's words that names an object with an `id`, its last
+word read singular (`issueLabels` → `issue-label`, `searchIssues` → `issue`), never a mutation's whole name
+(`projectUpdate` changes a `Project`), else the name's first word; its second tag is `query` or `mutation`. The agent
+skill files one page per entity. A connection with an `after`
 argument pages as `cursor`: `after` and `first` in the variables, `pageInfo.endCursor` and `pageInfo.hasNextPage` in the
 answer, rows under `nodes`. Each scalar the schema defines beyond GraphQL's five is mapped in `scalars`
 (`{ DateTime: { type: "string" } }`), else generation stops; SDL is not read, since that needs graphql-js. `exclude` names a field, or
