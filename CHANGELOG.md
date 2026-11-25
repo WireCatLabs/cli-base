@@ -10,8 +10,8 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ## 1.0.0 — 25.11.2026
 
-The first stable version: 1.0.0-rc.1 under the `latest` tag, with nothing changed since. Semver covers the entry
-points that `wirecat.stable` in `package.json` lists; the rest stays experimental
+The first stable version: 1.0.0-rc.1 under the `latest` tag, plus one fix to the family audit below. Semver covers
+the entry points that `wirecat.stable` in `package.json` lists; the rest stays experimental
 ([WC-REL-7](docs/standards/releases.md)).
 
 ## 1.0.0-rc.1 — 25.11.2026
