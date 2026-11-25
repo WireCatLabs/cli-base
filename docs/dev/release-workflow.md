@@ -9,8 +9,12 @@ Status: proposed. No repository calls it yet; `bin/release` still works and stay
 2. `cli-dev changelog restore`: entries that missed the last release go back to Unreleased.
 3. `cli-dev changelog fold`, when the dated version is not on npm yet: Unreleased joins it.
 4. `cli-dev next-version`: when npm already has the version, or a higher one, it raises `package.json`,
-   `src/version.ts` (if present) and the changelog heading. An `after-raise` command runs next (whatsapp-cli syncs
-   its engine packages there).
+   `src/version.ts` (if present) and the changelog heading, as `bin/release` does. A version npm has keeps its
+   section as published and is followed by its next patch: the Unreleased section, or a new section, takes the new
+   number. `cli-dev changelog fragments --collect` puts the `changes/` fragments into it, and
+   `cli-dev changelog level --next` raises it only when the entries need more (`1.0.0` with a fix gives `1.0.1`,
+   with an Added `1.1.0`). With no fragment and no Unreleased entry the run stops. An `after-raise` command runs
+   after each raise (whatsapp-cli syncs its engine packages there).
 5. Requires a dated top section and a version that is not on npm. Runs the `check` command (for example the
    live check, WC-REL-17).
 6. If steps 2 to 4 changed files: one pull request `chore(release): <version>`, merged when GitHub says it can merge
