@@ -40,7 +40,7 @@ on the computer.
   is refused.
 - **Exceptions:** a command that touches no account runs without a profile, for example `session list`
   ([WC-ACCT-12](#wc-acct-12--sign-in-is-session-start-status-and-end-and-session-list-names-the-profiles)),
-  `config show` and `commands`; tg, max and wa still name their list `account list`. `mcp serve` may name its profiles with `--profiles <names|all>` instead
+  `config show` and `commands`. `mcp serve` may name its profiles with `--profiles <names|all>` instead
   ([WC-MCP-9](mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)); `all` is the owner's explicit choice, never a fallback.
 - **Applies to:** all CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-84, NEED-1881.
 
@@ -185,17 +185,14 @@ Every CLI that signs in has four commands under `session`:
 - **Enforced by:** review only.
 - **Example:** `gcal personal session status` answers whether the `personal` profile holds a Google login;
   `gcal session list` lists `personal` and `work` with no profile named.
-- **Exceptions:** known gaps, as of 2026-11-24 (every other CLI that signs in has all four):
-  - tg, max and wa have `session start` and `session end`, no `session status`, and list their profiles with
-    `account list` instead of `session list`. cli-core 0.746.0 gives them both missing commands
-    (`messengerSessionCommands`), to add under `session`.
-  - drive has `session start`, `session list` and `session end`, and no `session status` until its next release
-    (drive-cli #398 adds it).
-  - memo has no `session` group: it has no profiles and reads the stores of the other CLIs, mail's among them.
+- **Exceptions:** memo has no `session` group: it has no profiles and reads the stores of the other CLIs, mail's
+  among them. Every other CLI that signs in has all four, tg, max and wa included: cli-core's shared `session`
+  contract requires `status` and `list` (`messengerSessionCommands`), and its messenger `account` group has no `list`.
+  `account list` is removed from tg, max and wa with no alias.
 
-  A CLI that adds a missing command adds it under `session`; a renamed path keeps no alias
+  A CLI that adds a missing command adds it under `session`. A renamed path keeps no alias
   ([WC-CMD-8](commands.md#wc-cmd-8--keep-no-aliases-a-renamed-path-stops-working-in-the-release-that-renames-it)).
-- **Applies to:** every CLI that signs in. **Since:** cli-base 0.65.0. **Rulings:** NEED-1884.
+- **Applies to:** every CLI that signs in. **Since:** cli-base 0.65.0. **Rulings:** NEED-1884, NEED-2915, NEED-2936.
 
 ### WC-ACCT-13 · memo's first word is an account group, and the default group `all` holds every account
 
