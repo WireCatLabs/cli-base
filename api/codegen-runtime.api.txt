@@ -8,6 +8,8 @@ ApiServer · interface · enum?: readonly string[];
 ApiServer · interface · description?: string;
 ApiServer · interface · }>>;
 ApiServer · interface · }
+Binding · type · export type Binding = HttpBinding | RpcBinding | GraphqlBinding;
+Confidence · type · export type Confidence = "contract" | "example" | "inferred" | "override";
 Effect · type · export type Effect = "read" | "write" | "destructive";
 GraphqlBinding · interface · export interface GraphqlBinding {
 GraphqlBinding · interface · kind: "graphql";
@@ -16,6 +18,11 @@ GraphqlBinding · interface · field: string;
 GraphqlBinding · interface · variables: Readonly<Record<string, string>>;
 GraphqlBinding · interface · selection: string;
 GraphqlBinding · interface · }
+HttpBinding · interface · export interface HttpBinding {
+HttpBinding · interface · kind: "http";
+HttpBinding · interface · method: HttpMethod;
+HttpBinding · interface · path: string;
+HttpBinding · interface · }
 ManifestOperation · interface · export interface ManifestOperation {
 ManifestOperation · interface · id: string;
 ManifestOperation · interface · command: string;
@@ -93,6 +100,10 @@ Pagination · type · style: "link";
 Pagination · type · next: string;
 Pagination · type · items?: string;
 Pagination · type · };
+RpcBinding · interface · export interface RpcBinding {
+RpcBinding · interface · kind: "rpc";
+RpcBinding · interface · name: string;
+RpcBinding · interface · }
 SchemaNode · type · export type SchemaNode = SchemaCommon & ({
 SchemaNode · type · type: "ref";
 SchemaNode · type · ref: string;

@@ -668,7 +668,7 @@ describe("adaptOpenApi reads what a CLI would otherwise write by hand", () => {
     expect(model.operations.find((candidate) => candidate.id === "open")?.security).toEqual([])
     const [manifest] = generate(model, [manifestGenerator({ path: "manifest.ts" })], { banner: [] })
     expect(manifest?.content).toContain(
-      'import type { ApiServer, ManifestOperation, SecurityRequirement, SecurityScheme } from "@wirecat/cli-base/codegen"',
+      'import type { ApiServer, ManifestOperation, SecurityRequirement, SecurityScheme } from "@wirecat/cli-base/codegen/runtime"',
     )
     expect(manifest?.content).toContain('"security": []')
   })
