@@ -78,12 +78,16 @@ export const unique = (items: readonly unknown[]): boolean =>
 export type { ManifestOperation } from "./manifest.js"
 export type {
   ApiServer,
+  Binding,
+  Confidence,
   Effect,
   GraphqlBinding,
+  HttpBinding,
   OAuthFlow,
   OperationPermission,
   PageParameter,
   Pagination,
+  RpcBinding,
   SchemaNode,
   SecurityRequirement,
   SecurityScheme,

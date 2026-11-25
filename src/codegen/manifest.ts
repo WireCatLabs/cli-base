@@ -92,7 +92,7 @@ export const manifestGenerator =
     ).filter(([, , , value]) => value !== undefined)
     const types = ["ManifestOperation", ...extras.map(([, type]) => type)].sort()
     const content = [
-      `import type { ${types.join(", ")} } from "${options.coreImport ?? "@wirecat/cli-base/codegen"}"`,
+      `import type { ${types.join(", ")} } from "${options.coreImport ?? "@wirecat/cli-base/codegen/runtime"}"`,
       "",
       `export const operations: readonly ManifestOperation[] = ${JSON.stringify(operations, null, 2)}`,
       ...extras.flatMap(([name, , type, value]) => [
@@ -112,7 +112,7 @@ export const definitionsGenerator =
     return [
       {
         path: options.path,
-        content: `import type { SchemaNode } from "${options.coreImport ?? "@wirecat/cli-base/codegen"}"\n\nexport const definitions: Readonly<Record<string, SchemaNode>> = ${JSON.stringify(definitions, null, 2)}\n`,
+        content: `import type { SchemaNode } from "${options.coreImport ?? "@wirecat/cli-base/codegen/runtime"}"\n\nexport const definitions: Readonly<Record<string, SchemaNode>> = ${JSON.stringify(definitions, null, 2)}\n`,
       },
     ]
   }
