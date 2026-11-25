@@ -10,6 +10,44 @@ Every entry says what changed as a caller sees it, why, and what to watch for �
 
 ## 1.0.0-rc.1 — 25.11.2026
 
+### Added
+
+- **`sprints` is a noun of the vocabulary:** a tracker team's time-boxed runs of work, such as Linear's cycles and
+  Jira's sprints. cli-core's tracker copies them and mounts `sprints list`, which the command lint refused as an
+  unknown resource.
+- **`/codegen/runtime` exports `Binding`, `HttpBinding`, `RpcBinding` and `Confidence`.** A CLI that reads an
+  operation's binding or how far it is trusted no longer imports the experimental `/codegen` for the type.
+
+### Changed — experimental
+
+- **The generated manifest and definitions import their types from `@wirecat/cli-base/codegen/runtime`** when
+  `coreImport` is not given, not from `/codegen`. Every type they name is there, and `/codegen/runtime` is part of
+  the stable API, so a CLI no longer passes `coreImport` by hand. Regenerating changes that one import line.
+
+### Fixed
+
+- **WC-ACCT-12 no longer lists zm as a known gap:** zm 0.81.0 has `session list`, so it has all four session
+  commands, as most CLIs that sign in now do. The tg, max and wa gap now names cli-core's `messengerSessionCommands`,
+  which gives them the two commands they lack, and the drive gap says that its next release adds `session status`.
+- **`bin/release` collects the `changes/` fragments and never renames a published section.** When npm already had
+  the version in `package.json` and only fragments had merged, it renamed that version's heading (`## 0.131.0` to
+  `## 0.132.0`), moved the published entries under the new number and left the fragments out (#706). Now a published
+  section keeps its heading: the new version takes the Unreleased section, or a new section the fragments fill, and
+  the release stops when there is neither. The fragments are collected into the version's section, which may raise
+  it to the level they need (an Added is a minor), as the CLIs' `bin/release` does. See
+  [RELEASING.md](docs/dev/RELEASING.md).
+- **The shared Start release workflow agrees with `bin/release` on the `changes/` fragments.** When npm already had
+  the version in `package.json` and every entry was in `changes/` fragments, `release-start.yml` failed with
+  `CHANGELOG.md has no "## Unreleased" to raise …`. Now the new version gets a new section the fragments fill, and
+  the run stops only when there are no fragments and the Unreleased section is missing or empty. A
+  published `x.0.0` is followed by its next patch, raised only when the entries need more, so `1.0.0` with a fix
+  gives `1.0.1` instead of stopping at a major. Every file is checked before any is written, and `after-raise` runs
+  once, with the version that ships. The workflow needs cli-dev from cli-base 0.98.0 or later (#714).
+- **On Linux the test sandbox starts in the runtime folder (`$XDG_RUNTIME_DIR`), which is in memory.** Every commit of
+  a store waits for `fsync`, and on a disk other jobs keep busy a CRM sync in a test took 14 s instead of 1.5 s, past
+  the 15 s test timeout, so a CLI's local release check failed three times in a row. With no runtime folder to write
+  to, the sandbox starts in the temporary folder as before.
+
 ## 1.0.0-rc.0 — 23.11.2026
 
 ### Added
