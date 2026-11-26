@@ -78,6 +78,12 @@ on:
           enforces the coverage floor and, with cli, runs test:matrix:check on the shards' joined argv logs
         type: number
         default: 1
+      secrets:
+        description: >-
+          Run the gitleaks scan of the whole history. A repository whose pull request security checks already scan it
+          (cli-core's `security / secrets`) turns it off, and drops `validation / ci / secrets` from its ruleset first
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -415,6 +421,7 @@ jobs:
         shell: bash
 
   secrets:
+    if: inputs.secrets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
