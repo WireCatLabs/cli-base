@@ -185,8 +185,9 @@ Every CLI that signs in has four commands under `session`:
 - **Enforced by:** review only.
 - **Example:** `gcal personal session status` answers whether the `personal` profile holds a Google login;
   `gcal session list` lists `personal` and `work` with no profile named.
-- **Exceptions:** memo has no `session` group: it has no profiles and reads the stores of the other CLIs, mail's
-  among them. Every other CLI that signs in has all four, tg, max and wa included: cli-core's shared `session`
+- **Exceptions:** none. memo signs in to no account, so the rule does not apply to it: it reads the stores of the
+  other CLIs, and `memo models keys` keeps a model provider's key, not a sign-in. Every CLI that signs in has all
+  four, tg, max and wa included: cli-core's shared `session`
   contract requires `status` and `list` (`messengerSessionCommands`), and its messenger `account` group has no `list`.
   `account list` is removed from tg, max and wa with no alias.
 
