@@ -45,8 +45,13 @@ plus community itself. cli-template follows every rule here as a CLI does
   `pnpm lint`, `pnpm docs:lint`, `pnpm run --if-present ci:quick` and a gitleaks scan of the new commits only. A new
   commit cancels the run it replaces. The job times out after five minutes, a ceiling for a stalled setup, not an
   expected time.
-- **Exceptions:** none. Runner queues and cold downloads are outside the budget.
-- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** none.
+- **Exceptions:** a repository whose pull request validation runs `node-ci.yml` on every pull request and merge
+  (its `check` job lints and checks types) may leave `pnpm lint` and `ci:quick` out of this job, and one whose pull
+  request security checks scan the whole history for secrets may leave out the gitleaks scan. Each check then runs
+  in one place. cli-core does both (2026-11-26): its `standards` keeps the changelog rule, `standards:check` and
+  `docs:lint`. Runner queues and cold downloads are outside the budget.
+- **Applies to:** the WireCat repositories. **Since:** cli-base 0.41.0. **Rulings:** NEED-2 on cli-core#3386
+  (2026-11-26).
 
 ### WC-CI-4 · Keep `ci:quick` to early bug checks that finish within two minutes
 
@@ -56,7 +61,7 @@ plus community itself. cli-template follows every rule here as a CLI does
   - tg, max, memo, wa, b24 and cli-template: `pnpm typecheck && pnpm build && pnpm lint:commands`;
   - drive: `pnpm typecheck && pnpm lint:commands`, which builds first;
   - zoom, cli-base and cli-testing: `pnpm typecheck`;
-  - cli-core: `pnpm typecheck` and its command lint test;
+  - cli-core: none since 2026-11-26, its `ci / check` types every pull request (WC-CI-3 exception);
   - cli-docs: its unit tests, without the one that needs generated pages;
   - community: its script tests.
 - **Exceptions:** never put live-account suites, agent suites or platform jobs here. Full tests and coverage run in
@@ -125,8 +130,9 @@ plus community itself. cli-template follows every rule here as a CLI does
   gitleaks scan of the whole history. The shared workflow owns the CLI steps: the repository's `ci.yml` names a step
   it cannot run yet in `skip`, with the reason beside it, and puts only its extra checks in `checks` (tg and max:
   `pnpm check:agent-docs`).
-- **Exceptions:** platform suites (Windows, macOS, install checks) are skipped here and run at release, monthly or on
-  request. Nothing in this run publishes or tags. cli-docs runs its full validation before each deployment and monthly
+- **Exceptions:** the whole-history secret scan is off (node-ci's `secrets` input) in a repository whose pull
+  request security checks run it, as in cli-core. Platform suites (Windows, macOS, install checks) are skipped here
+  and run at release, monthly or on request. Nothing in this run publishes or tags. cli-docs runs its full validation before each deployment and monthly
   instead; community has no build to validate.
 - **Applies to:** the CLIs, cli-base, cli-core and cli-testing. **Since:** cli-base 0.41.0. **Rulings:** none.
 
