@@ -213,7 +213,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   },
   {
     name: "all",
-    members: ["tg", "max", "memo", "drive", "zm", "wa"],
+    members: ["tg", "max", "memo", "zm", "wa"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "search", "notes", "meetings"],
     differences: [...MEMO_HAS_NO_PROFILES, ...MEMO_MCP_SUMMARIES, MEMO_DOCTOR_DEEP],
   },
@@ -222,7 +222,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   // and moves back into "all" once its search is aligned with the messengers' or renamed.
   {
     name: "mail-shared",
-    members: ["tg", "max", "memo", "drive", "zm", "wa", "mail"],
+    members: ["tg", "max", "memo", "zm", "wa", "mail"],
     covers: ["commands", "doctor", "skill", "mcp", "upgrade", "notes", "meetings"],
     differences: [...MEMO_HAS_NO_PROFILES, ...MEMO_MCP_SUMMARIES, MEMO_DOCTOR_DEEP],
   },
@@ -230,7 +230,7 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   // CLIs agree there (https://github.com/WireCatLabs/cli-base/issues/390), then gcal moves back into "all".
   {
     name: "gcal-shared",
-    members: ["tg", "max", "memo", "drive", "zm", "wa", "gcal"],
+    members: ["tg", "max", "memo", "zm", "wa", "gcal"],
     covers: ["commands", "upgrade", "notes", "meetings"],
     differences: FAMILY_SINCE_0_98,
   },
@@ -239,9 +239,12 @@ export const PARITY_GROUPS: ParityGroup[] = defineParityGroups([
   // amo-cli, hubspot-cli and attio-cli share them too, and their CRM commands are compared with b24 in `crm` below.
   // wordpress-cli shares only these roots: it is the first content CLI, so its posts commands have no group yet.
   // linear-cli shares only these roots too: it is the first tracker CLI, so its issues commands have no group yet.
-  // notion-cli joins here until its documents commands ship; then it moves next to drive. ydisk joins here too: in "all"
-  // its search and notes differ from the messengers' and memo's as drive's do, and a documents group of drive, notion
-  // and ydisk differs in 39 paths (session, folders browse, summaries; measured on the published CLIs 2026-11-17).
+  // drive and ydisk are compared here only, not in "all", "mail-shared" or "gcal-shared": their notes and search are
+  // cli-core's documents commands. A note about one imported document is not memo's note of your own, and a search over
+  // imported documents is not the messengers' archive search, so the two differ on purpose (21 paths for drive against
+  // memo and the messengers, measured on the published CLIs 2026-11-26; one difference each would be over the budget of 10).
+  // notion-cli joins here until its documents commands ship. A documents group of drive, notion and ydisk differs in
+  // 39 paths (session, folders browse, summaries; measured on the published CLIs 2026-11-17).
   {
     name: "shared-roots",
     members: [
