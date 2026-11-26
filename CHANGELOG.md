@@ -8,6 +8,54 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 1.1.0 — 27.11.2026
+
+### Added
+
+- **`node-ci.yml` has a `secrets` input**: false skips its gitleaks scan of the whole history, for a repository whose
+  pull request security checks already scan it. It is on by default. Drop `validation / ci / secrets` from the
+  ruleset before turning it off, or the required check never reports. WC-CI-3 now lets such a repository keep lint,
+  types and secrets in one place ([CI standards](docs/standards/ci.md#wc-ci-3--run-the-fast-standards-job-on-every-pull-request-and-every-push-to-main)).
+- **`cli-dev lint` reports a command at a path cli-core reserves when the CLI built it itself.** The paths are
+  `session start`, `session status`, `session end`, `session list`, `doctor`, `mcp`, `account remove`, `mirrors` and
+  `complete`. The new rule `reserved-shared-command` reads `commands --json` and names each such path that has no
+  `origin: "cli-core"`, with the cli-core helper to mount instead. Audits found own sessions, an own `mirrors`, an own
+  `doctor` and an own MCP server in several CLIs, and no check saw them, because `assertSharedContracts` looks only at
+  commands cli-core marked. For now it is a warning in `cli-dev lint` and in the family audit, so no CI run fails on
+  it. It becomes an error in a later release, planned for 2027-01-15, once cli-core marks `tokenSessionCommand`,
+  `oauthSessionCommand`, `fileMirrorsCommand` and `accountRemoveCommand`. Until then a CLI that mounts one of those is
+  reported too. A deliberate difference goes in `lint/overrides.json` with its reason, owner and `review_after`. An
+  entry for this rule in `lint/baseline/` fails the lint, because it has no reason or date. The rule is
+  [WC-CMD-34](docs/standards/commands.md#wc-cmd-34--mount-cli-cores-shared-command-at-a-reserved-path-never-one-of-your-own).
+
+### Changed — experimental
+
+- **A GraphQL CLI's agent skill has one API page per entity, not one for queries and one for mutations.**
+  `adaptGraphql` now gives each operation two tags. The first is the entity its field name acts on
+  (`issueLabelCreate` → `issue-label`, `searchIssues` → `issue`), or `query` / `mutation` for a name with no entity in
+  it. The second is `query` or `mutation`, as before. `apiSkillFiles` files a page per first tag, so an agent that
+  wants to archive an issue reads `<cli> skill show api-issue` instead of Linear's 4,335-line `api-mutation` page.
+  Regenerating rewrites `references/api/`, and `api show` prints both tags. Commands, their names and permission keys
+  stay the same. `api list tag:mutation` still works, and `tag:issue` now works too. A CLI that groups its `api`
+  commands by tag (`names.groups: "tags"`) would mount them by entity; no GraphQL CLI does today.
+- **drive is compared with the other CLIs on the shared roots only, as ydisk is.** It left the `all`, `mail-shared`
+  and `gcal-shared` parity groups. Its `notes` and `search` are cli-core's documents commands: a note about one
+  imported document is not memo's note of your own, and a search over imported documents is not the messengers'
+  archive search. In `all` they differed from memo's and the messengers' in 21 paths, more than the group's budget
+  of 10 differences. `commands`, `doctor`, `skill`, `mcp` and `upgrade` are still compared in `shared-roots`.
+
+### Fixed
+
+- **A release makes its GitHub release again.** The release workflow pushed only the tag, so GitHub's releases page
+  stopped at the last release made by hand. The `tag` job now creates the release from the version's changelog
+  section, as the CLIs' release workflows do. 1.x was backfilled by hand.
+- **WC-ACCT-12 has no exceptions.** memo was listed as one, but it signs in to no account: it reads the stores of the
+  other CLIs, and `memo models keys` keeps a model provider's key. The rule covers only CLIs that sign in, so memo was
+  never under it.
+- **WC-ACCT-12 has no known gaps left but memo.** drive has `session status` since 0.76.0. tg, max and wa have
+  `session status` and `session list`, and `account list` is removed from them with no alias.
+  WC-ACCT-1 no longer says that tg, max and wa name their profile list `account list`.
+
 ## 1.0.0 — 25.11.2026
 
 ### Fixed
