@@ -8,6 +8,50 @@ Versions before 0.8.0 are in the [git tags](https://github.com/WireCatLabs/cli-b
 Every entry says what changed as a caller sees it, why, and what to watch for — the rules are
 [`docs/dev/CONVENTIONS.md`](docs/dev/CONVENTIONS.md#the-changelog).
 
+## 1.2.0 — 28.11.2026
+
+### Added
+
+- **`@wirecat/cli-base/dev` exports the parts of `cli-dev bundle` that another package's own build reuses.**
+  `commonJsNames`, `ownPlaces` (now taking one options object, which works with no anchored packages),
+  `DEFAULT_EXTERNAL`, `DEFAULT_HARMLESS` and `bundle`. cli-core's pre-bundle script imports them instead of
+  copying them. The entry is not in `wirecat.stable`: it may change in a minor release.
+- **`cli-dev version` checks a CLI's override of `@wirecat/cli-core` (WC-TOOL-21).** cli-core's `X.Y.Z` now ships no
+  type files, and its `X.Y.Z-dev` is the same code with them. A CLI pins `X.Y.Z` in `package.json` and overrides it to
+  `X.Y.Z-dev` under `overrides:` in `pnpm-workspace.yaml`, which its users never read. `cli-dev version` fails when the
+  override names another version, or is missing while the installed cli-core has no types, and prints the line to
+  write. It only notes a missing override while the CLI pins a cli-core released before the `-dev` releases.
+  `node-ci.yml` runs the same check (`cli-dev version --cli-core-only`) right after install, so the message comes before
+  typecheck's TS7016. `cli-dev adopt` now moves the override with the pin
+  ([Toolchain](docs/standards/toolchain.md#wc-tool-21--pin-cli-core-xyz-and-override-it-to-xyz-dev-at-the-root)).
+- **A CLI can name its fixed MCP port in its manifest.** `ManifestIdentity.mcpPort` writes `desktop.mcpServer.port` in
+  `contracts/wirecat.json`, so WireCat Desktop reads the port of a WireCat tool's MCP server from the tool itself
+  instead of its own catalog. Without `mcpPort` the key is absent and the manifest of every other CLI stays the same,
+  byte for byte. A CLI that sets `mcpPort` without `mcp server start`, `stop`, `status` and `mcp revoke` is refused.
+  Only WireCat's own tools set it, each with a port no other tool has
+  ([reference](docs/REFERENCE.md)).
+- **A CLI can name the sync Desktop runs when it has several `<noun> sync` commands.** `ManifestIdentity.syncCommand`
+  takes the command and its flags, `["messages", "sync", "--all"]`, and the manifest's `desktop.sync` then runs it and
+  finds its last run. Before, such a CLI stated no sync, so Desktop kept its own words for the messengers. Words that
+  name no command are refused ([reference](docs/REFERENCE.md)).
+- **A CLI can name Desktop's timer for its sync.** `ManifestIdentity.syncSchedule` writes `desktop.sync.schedule`
+  with the interval a new timer starts with, the intervals Desktop offers and the command it runs. It needs cli-core's
+  `schedule command`, `list`, `remove` and `run`. Without it the key is absent and the manifest stays the same, byte
+  for byte.
+- **A WireCat tool's sign-in methods can say where Desktop passes what the person typed.** `signIn.methods` takes
+  `address`, `clientFile`, `portal` and `appId` (flags the command must take), `password` (the variable the CLI reads),
+  `clientId` (the setting that names the person's own OAuth app) and `oauth` (the words for a browser sign-in), as
+  Desktop's own catalog has them. Only `@wirecat` packages may set them, since Desktop refuses them from any other
+  tool.
+
+### Fixed
+
+- **`cli-dev bundle` drops the `.d.ts` and `.map` files tsc wrote to `dist/`, in a CLI with no `exports`.** Nothing
+  imports such a CLI, and no map is read for the bundle a user runs: esbuild writes no maps, and the tsc maps point at
+  `src/`, which a CLI does not publish. tg-cli's package loses 204 files and 2.0 MB unpacked, an estimated 20 MB
+  across the CLIs. A package with `exports`, such as drive-cli and zoom-cli, keeps them for whoever imports it. Run
+  `pnpm typecheck` before `pnpm build`, as CI does: its `--emitDeclarationOnly` writes the `.d.ts` files again.
+
 ## 1.1.0 — 27.11.2026
 
 ### Added
