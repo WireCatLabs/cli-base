@@ -1,4 +1,4 @@
-### Changed
+### Changed — may break callers
 
 - **`cli-dev bundle` leaves a pre-bundled cli-core outside the CLI's bundle.** When the installed `@wirecat/cli-core`
   ships pre-bundled (cli-core 3.0), cli-core, cli-base and cli-core's peers (commander among them) load from their
