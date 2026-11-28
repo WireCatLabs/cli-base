@@ -8,6 +8,12 @@ ManifestIdentity · interface · tagline?: string;
 ManifestIdentity · interface · signIn?: SignIn;
 ManifestIdentity · interface · syncs?: string;
 ManifestIdentity · interface · meetingsProvider?: string;
+ManifestIdentity · interface · syncCommand?: readonly string[];
+ManifestIdentity · interface · syncSchedule?: {
+ManifestIdentity · interface · every: string;
+ManifestIdentity · interface · choices: readonly string[];
+ManifestIdentity · interface · args?: readonly string[];
+ManifestIdentity · interface · };
 ManifestIdentity · interface · mcpPort?: number;
 ManifestIdentity · interface · hosts?: readonly string[];
 ManifestIdentity · interface · userHosts?: string;
@@ -35,6 +41,13 @@ SignIn · type · readonly words: v.SchemaWithPipe<readonly [v.ArraySchema<v.Sch
 SignIn · type · readonly stdin: v.OptionalSchema<v.BooleanSchema<undefined>, undefined>;
 SignIn · type · readonly site: v.OptionalSchema<v.LiteralSchema<"--site", undefined>, undefined>;
 SignIn · type · readonly login: v.OptionalSchema<v.LiteralSchema<"--login", undefined>, undefined>;
+SignIn · type · readonly address: v.OptionalSchema<v.LiteralSchema<"--address", undefined>, undefined>;
+SignIn · type · readonly password: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "an upper-case variable name">]>, undefined>;
+SignIn · type · readonly clientFile: v.OptionalSchema<v.LiteralSchema<"--client-file", undefined>, undefined>;
+SignIn · type · readonly clientId: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a snake_case setting name">]>, undefined>;
+SignIn · type · readonly oauth: v.OptionalSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>, undefined>;
+SignIn · type · readonly portal: v.OptionalSchema<v.LiteralSchema<"--portal", undefined>, undefined>;
+SignIn · type · readonly appId: v.OptionalSchema<v.LiteralSchema<"--client-id", undefined>, undefined>;
 SignIn · type · }, undefined>, undefined>, v.MinLengthAction<{
 SignIn · type · id: string;
 SignIn · type · label: string;
@@ -42,8 +55,21 @@ SignIn · type · words: string[];
 SignIn · type · stdin?: boolean | undefined;
 SignIn · type · site?: "--site" | undefined;
 SignIn · type · login?: "--login" | undefined;
+SignIn · type · address?: "--address" | undefined;
+SignIn · type · password?: string | undefined;
+SignIn · type · clientFile?: "--client-file" | undefined;
+SignIn · type · clientId?: string | undefined;
+SignIn · type · oauth?: string[] | undefined;
+SignIn · type · portal?: "--portal" | undefined;
+SignIn · type · appId?: "--client-id" | undefined;
 SignIn · type · }[], 1, undefined>]>, undefined>;
 SignIn · type · }, undefined>;
+SyncSchedule · type · export type SyncSchedule = v.InferOutput<typeof scheduleSchema>;
+SyncSchedule · type · declare const scheduleSchema: v.StrictObjectSchema<{
+SyncSchedule · type · readonly every: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "minutes or hours: 15m, 1h">]>;
+SyncSchedule · type · readonly choices: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "minutes or hours: 15m, 1h">]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+SyncSchedule · type · readonly args: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+SyncSchedule · type · }, undefined>;
 buildManifest · const · export declare const buildManifest: ({ identity, commands, pkg, skills }: ManifestInput) => Manifest;
 manifestSchema · const · export declare const manifestSchema: v.StrictObjectSchema<{
 manifestSchema · const · readonly wcat_manifest: v.LiteralSchema<2, undefined>;
@@ -92,6 +118,13 @@ manifestSchema · const · readonly words: v.SchemaWithPipe<readonly [v.ArraySch
 manifestSchema · const · readonly stdin: v.OptionalSchema<v.BooleanSchema<undefined>, undefined>;
 manifestSchema · const · readonly site: v.OptionalSchema<v.LiteralSchema<"--site", undefined>, undefined>;
 manifestSchema · const · readonly login: v.OptionalSchema<v.LiteralSchema<"--login", undefined>, undefined>;
+manifestSchema · const · readonly address: v.OptionalSchema<v.LiteralSchema<"--address", undefined>, undefined>;
+manifestSchema · const · readonly password: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "an upper-case variable name">]>, undefined>;
+manifestSchema · const · readonly clientFile: v.OptionalSchema<v.LiteralSchema<"--client-file", undefined>, undefined>;
+manifestSchema · const · readonly clientId: v.OptionalSchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "a snake_case setting name">]>, undefined>;
+manifestSchema · const · readonly oauth: v.OptionalSchema<v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>, undefined>;
+manifestSchema · const · readonly portal: v.OptionalSchema<v.LiteralSchema<"--portal", undefined>, undefined>;
+manifestSchema · const · readonly appId: v.OptionalSchema<v.LiteralSchema<"--client-id", undefined>, undefined>;
 manifestSchema · const · }, undefined>, undefined>, v.MinLengthAction<{
 manifestSchema · const · id: string;
 manifestSchema · const · label: string;
@@ -99,6 +132,13 @@ manifestSchema · const · words: string[];
 manifestSchema · const · stdin?: boolean | undefined;
 manifestSchema · const · site?: "--site" | undefined;
 manifestSchema · const · login?: "--login" | undefined;
+manifestSchema · const · address?: "--address" | undefined;
+manifestSchema · const · password?: string | undefined;
+manifestSchema · const · clientFile?: "--client-file" | undefined;
+manifestSchema · const · clientId?: string | undefined;
+manifestSchema · const · oauth?: string[] | undefined;
+manifestSchema · const · portal?: "--portal" | undefined;
+manifestSchema · const · appId?: "--client-id" | undefined;
 manifestSchema · const · }[], 1, undefined>]>, undefined>;
 manifestSchema · const · readonly setupFrom: v.OptionalSchema<v.LiteralSchema<"0.0.0", undefined>, undefined>;
 manifestSchema · const · }, undefined>, undefined>;
@@ -122,6 +162,11 @@ manifestSchema · const · readonly last: v.NullableSchema<v.SchemaWithPipe<read
 manifestSchema · const · readonly lastShape: v.LiteralSchema<"runs", undefined>;
 manifestSchema · const · readonly what: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "one line of text">, v.MaxLengthAction<string, number, undefined>]>;
 manifestSchema · const · readonly note: v.NullSchema<undefined>;
+manifestSchema · const · readonly schedule: v.OptionalSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly every: v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "minutes or hours: 15m, 1h">]>;
+manifestSchema · const · readonly choices: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.RegexAction<string, "minutes or hours: 15m, 1h">]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · readonly args: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
+manifestSchema · const · }, undefined>, undefined>;
 manifestSchema · const · }, undefined>, undefined>;
 manifestSchema · const · readonly storeInfo: v.NullSchema<undefined>;
 manifestSchema · const · readonly storeTables: v.NullSchema<undefined>;

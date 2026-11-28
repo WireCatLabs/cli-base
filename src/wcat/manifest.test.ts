@@ -177,6 +177,44 @@ describe("buildManifest", () => {
     expect(() => build({ meetingsProvider: "Acme PBX" }, describeProgram(tree))).toThrow("a provider name")
   })
 
+  it("runs the sync a CLI with several <noun> sync commands names, and finds its last run by the quoted phrase", () => {
+    const tree = new Command("acme")
+      .addCommand(new Command("doctor").action(() => {}))
+      .addCommand(new Command("runs").addCommand(new Command("list").action(() => {})))
+      .addCommand(new Command("session").addCommand(new Command("list").action(() => {})))
+    for (const noun of ["messages", "chats"])
+      tree.addCommand(new Command(noun).addCommand(new Command("sync").option("--all", "every chat").action(() => {})))
+    const commands = describeProgram(tree)
+    expect(build({}, commands).desktop.sync).toBeNull()
+    expect(build({ syncCommand: ["messages", "sync", "--all"] }, commands).desktop.sync).toEqual({
+      run: ["{profile}", "messages", "sync", "--all", "--record", "--json"],
+      last: ["runs", "list", 'command:"messages sync" status:success', "--limit", "50", "--no-record", "--json"],
+      lastShape: "runs",
+      what: "contacts and deals",
+      note: null,
+    })
+    expect(() => build({ syncCommand: ["calls", "sync"] }, commands)).toThrow("`calls sync` names no command")
+  })
+
+  it("names the sync's timer only when the identity sets one and the CLI has cli-core's schedule commands", () => {
+    const tree = program()
+    const schedule = new Command("schedule")
+    for (const name of ["command", "list", "remove", "run"]) schedule.addCommand(new Command(name).action(() => {}))
+    const commands = describeProgram(tree.addCommand(schedule))
+    const syncSchedule = { every: "1h", choices: ["15m", "1h", "24h"] }
+
+    expect(build({}, commands).desktop.sync).not.toHaveProperty("schedule")
+    expect(build({ syncSchedule }, commands).desktop.sync?.schedule).toEqual({ ...syncSchedule, args: ["sync"] })
+    expect(
+      build({ syncSchedule: { ...syncSchedule, args: ["sync", "--quick"] } }, commands).desktop.sync?.schedule,
+    ).toMatchObject({ args: ["sync", "--quick"] })
+    expect(() => build({ syncSchedule })).toThrow("syncSchedule needs `schedule command`")
+    expect(() => build({ syncSchedule: { ...syncSchedule, every: "2h" } }, commands)).toThrow("not one of its choices")
+    expect(() => build({ syncSchedule: { ...syncSchedule, choices: ["1 hour", "1h"] } }, commands)).toThrow(
+      "minutes or hours",
+    )
+  })
+
   it("names a fixed MCP port only when the identity sets one, so every other manifest stays as it was", () => {
     expect(build().desktop.mcpServer).not.toHaveProperty("port")
     expect(build({ mcpPort: 8754 }).desktop.mcpServer).toMatchObject({
@@ -240,8 +278,39 @@ describe("buildManifest", () => {
     expect(() => build({ signIn: as(["{profile}", "session", "start", "{port}"]) })).toThrow("the only slot")
     expect(() => build({ signIn: as(["{profile}", "session", "start", "$(id)"]) })).toThrow("is not a plain word")
     expect(() =>
-      build({ signIn: { ...identity.signIn, methods: [{ ...token, password: "ACME_TOKEN" }] } as never }),
-    ).toThrow(/password/)
+      build({
+        signIn: { ...identity.signIn, methods: [{ ...token, password: "ACME_TOKEN" }] } as ManifestIdentity["signIn"],
+      }),
+    ).toThrow("Desktop takes password only from WireCat's own @wirecat packages")
+  })
+
+  it("passes where Desktop puts what the person typed, for WireCat's own tools and a command that takes the flag", () => {
+    const tree = program()
+    tree.commands
+      .find((command) => command.name() === "session")
+      ?.commands.find((c) => c.name() === "start")
+      ?.option("--address <mail>", "the address")
+      .option("--client-file <file>", "the client file")
+    const commands = describeProgram(tree)
+    const ours = { name: "@wirecat/acme-cli", bin: pkg.bin }
+    const mail = {
+      id: "gmail",
+      label: "Google",
+      words: ["{profile}", "session", "start", "--json"],
+      address: "--address",
+      clientFile: "--client-file",
+      clientId: "google_client_id",
+      oauth: ["--method", "oauth"],
+      password: "ACME_PASSWORD",
+    } as const
+    const signIn = (method: object) => ({ ...identity.signIn, methods: [method] }) as ManifestIdentity["signIn"]
+    const built = (method: object, on = commands) =>
+      buildManifest({ identity: { ...identity, signIn: signIn(method) }, commands: on, pkg: ours, skills: true })
+
+    expect(built(mail).desktop.signIn?.methods).toEqual([mail])
+    expect(() => built(mail, describeProgram(program()))).toThrow("`session start` takes no --address or --client-file")
+    expect(() => built({ ...mail, portal: "--portal" })).toThrow("takes no --portal")
+    expect(() => built({ ...mail, clientId: "Google Client" })).toThrow("a snake_case setting name")
   })
 
   it("passes an application password sign-in's site and login flags, only when its command takes both", () => {
