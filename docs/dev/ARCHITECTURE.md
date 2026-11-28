@@ -27,6 +27,7 @@ review guidelines for module size. The entry-point map below applies it to this 
 | `/wcat` | the `wcat` umbrella: dispatching to `wcat-<name>` programs, `--wcat-describe`, the launcher and the shortcuts | Node built-ins, `cross-spawn`; the root's errors and failure rendering, loaded only when `wcat` itself runs |
 | `/wcat/start` | `wcatStart`, a CLI's first call: describe, dispatch mode, the launcher check | Node built-ins; the dispatcher only in dispatch mode |
 | `/wcat/manifest` | `contracts/wirecat.json` for WireCat Desktop: `buildManifest`, `manifestSchema`, the plain-word rule | `valibot`; `/commands` and `/standards` |
+| `/dev` | build time: the esbuild plugins and lists of `cli-dev bundle` (`ownPlaces`, `commonJsNames`, `DEFAULT_EXTERNAL`, `DEFAULT_HARMLESS`), for a package that bundles itself, as cli-core does | `esbuild` (optional peer) |
 | `/testing` | `memoryKeyring`, `fakeClock`, `allowNetwork`, `expectRegisteredEvents` | the root |
 | `/testing/setup` | a vitest `setupFiles` entry: per-file sandbox, a keyring that throws, no network | `vitest` (optional peer) |
 
