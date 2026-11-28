@@ -9,8 +9,10 @@
  *   anchored packages (cli-core, cli-base), `import.meta.url` becomes the module's own place, and a package they load
  *   at run time is resolved from there too: pnpm installs cli-core's dependencies beside cli-core, not beside the CLI.
  * - The build fails when a bundled module would still look in the wrong place.
+ * - A CLI with no `exports` drops tsc's `.d.ts` and `.map` files from `dist/`: nothing imports it, and no map is read
+ *   for the bundle a user runs. A package with `exports` keeps them for whoever imports it.
  */
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { isBuiltin } from "node:module"
 import { basename, dirname, join, relative, sep } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -267,7 +269,10 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
   if (!bin.startsWith(dist + sep)) return { problems: [`${options.bin} is not under dist/`], chunks: [] }
   if (readFileSync(bin, "utf8").includes(LOADER_MARK))
     return { problems: [`${options.bin} is already the loader — compile it again (tsc) first`], chunks: [] }
-  const { version } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string }
+  const { version, exports } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+    version: string
+    exports?: unknown
+  }
 
   rmSync(out, { recursive: true, force: true })
   const { metafile } = await build({
@@ -325,5 +330,9 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
   const missing = chunks.filter((chunk) => !existsSync(join(out, basename(chunk))))
   if (missing.length > 0) return { problems: missing.map((chunk) => `the loader names ${chunk}, not built`), chunks }
   writeFileSync(bin, loaderSource(name, version, chunks))
+  if (exports === undefined) {
+    for (const file of readdirSync(dist, { recursive: true, encoding: "utf8" }))
+      if (/\.d\.ts$|\.map$/.test(file)) rmSync(join(dist, file))
+  }
   return { problems: [], chunks }
 }

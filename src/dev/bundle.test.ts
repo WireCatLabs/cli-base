@@ -123,6 +123,24 @@ export const skill = async () => String(Database)
     expect(JSON.parse(run([]).stdout).shout).toBe("HI")
   })
 
+  it("drops the .d.ts and .map files tsc wrote, unless the package has exports someone imports", async () => {
+    const declarations = ["dist/program.d.ts", "dist/program.d.ts.map", "dist/program.js.map", "dist/bin/demo.js.map"]
+    for (const file of declarations) write(file, "{}\n")
+    await main(["bundle", "--bin", "dist/bin/demo.js"], io)
+    expect(declarations.filter((file) => existsSync(join(root, file)))).toEqual([])
+    expect(existsSync(join(root, "dist/program.js"))).toBe(true)
+    expect(existsSync(join(root, "dist/data.txt"))).toBe(true)
+
+    write(
+      "package.json",
+      json({ name: "demo", version: "1.2.3", type: "module", exports: { ".": "./dist/program.js" } }),
+    )
+    write("dist/bin/demo.js", `#!/usr/bin/env node\nawait import("../program.js")\n`)
+    for (const file of declarations) write(file, "{}\n")
+    await main(["bundle", "--bin", "dist/bin/demo.js"], io)
+    expect(declarations.filter((file) => existsSync(join(root, file)))).toEqual(declarations)
+  })
+
   it("refuses a bin that is already the loader, and asks for --bin", async () => {
     await main(["bundle", "--bin", "dist/bin/demo.js"], io)
     expect(await main(["bundle", "--bin", "dist/bin/demo.js"], io)).toBe(1)
