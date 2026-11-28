@@ -60,9 +60,10 @@ const lastWords = v.pipe(v.array(v.union([plainWord, v.pipe(v.string(), v.regex(
 const line = (max: number) => v.pipe(v.string(), v.regex(/^\S(?:[^\n\r]*\S)?$/, "one line of text"), v.maxLength(max))
 
 /**
- * A sign-in Desktop runs in its own window. Only the parts Desktop accepts from a tool it did not build: the words,
- * whether the secret the person types is the command's whole stdin, and for cli-core's application password sign-in
- * the flags that take the site and the user name Desktop asks for.
+ * A sign-in Desktop runs in its own window: the words, whether the secret the person types is the command's whole
+ * stdin, and for cli-core's application password sign-in the flags that take the site and the user name Desktop asks
+ * for. The other flags and names say where Desktop passes what the person typed. Desktop takes them only from
+ * WireCat's own tools, so a tool it did not build keeps to the words, `stdin`, `site` and `login`.
  */
 const signInMethodSchema = v.strictObject({
   id: v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{0,31}$/, "a lower-case method id")),
@@ -73,6 +74,19 @@ const signInMethodSchema = v.strictObject({
   stdin: v.optional(v.boolean()),
   site: v.optional(v.literal("--site")),
   login: v.optional(v.literal("--login")),
+  /** The flag that takes a new profile's mail address. */
+  address: v.optional(v.literal("--address")),
+  /** The variable the CLI reads an app password or token from: a flag would show it in the process list. */
+  password: v.optional(v.pipe(v.string(), v.regex(/^[A-Z][A-Z0-9_]*$/, "an upper-case variable name"))),
+  /** The flag that takes the person's own OAuth client file, which Desktop writes to a private file for the run. */
+  clientFile: v.optional(v.literal("--client-file")),
+  /** The setting that names the person's own OAuth app, saved before the run: `microsoft_client_id`. */
+  clientId: v.optional(v.pipe(v.string(), v.regex(SNAKE_CASE, "a snake_case setting name"))),
+  /** The words that make a new profile sign in in the browser with the CLI's own app: `["--method", "oauth"]`. */
+  oauth: v.optional(words),
+  /** The flags for a local application: the portal it signs in to and its id. Its key goes on stdin. */
+  portal: v.optional(v.literal("--portal")),
+  appId: v.optional(v.literal("--client-id")),
 })
 
 const signInSchema = v.strictObject({
@@ -85,6 +99,22 @@ const signInSchema = v.strictObject({
 })
 
 export type SignIn = v.InferOutput<typeof signInSchema>
+
+/** The method keys Desktop refuses from a tool it did not build (wirecat-desktop docs/dev/cli-registry.md, rule 4). */
+const OURS_ONLY = ["address", "password", "clientFile", "clientId", "oauth", "portal", "appId"] as const
+
+const duration = v.pipe(v.string(), v.regex(/^[1-9][0-9]*[mh]$/, "minutes or hours: 15m, 1h"))
+
+const scheduleSchema = v.strictObject({
+  /** The interval a new timer starts with; one of `choices`. */
+  every: duration,
+  /** The intervals Desktop offers. */
+  choices: v.pipe(v.array(duration), v.minLength(1)),
+  /** The command the timer runs, without the profile: the schedule's environment names it. */
+  args: words,
+})
+
+export type SyncSchedule = v.InferOutput<typeof scheduleSchema>
 
 const desktopSignInSchema = v.strictObject({
   ...signInSchema.entries,
@@ -128,6 +158,8 @@ const desktopSchema = v.strictObject({
       lastShape: v.literal("runs"),
       what: line(40),
       note: v.null(),
+      /** Left out, not `null`, without the identity's `syncSchedule`, so the manifest of every other CLI stays as it was. */
+      schedule: v.optional(scheduleSchema),
     }),
   ),
   storeInfo: v.null(),
@@ -249,6 +281,17 @@ export interface ManifestIdentity extends WcatTool {
    */
   meetingsProvider?: string
   /**
+   * The sync Desktop runs, when the CLI has no root `sync` and several `<noun> sync` commands: the command and its
+   * flags, without the profile: `["messages", "sync", "--all", "--timeout", "120m"]`. Without it such a CLI states no
+   * sync. Needs `syncs`.
+   */
+  syncCommand?: readonly string[]
+  /**
+   * Desktop's timer for the sync, run through cli-core's `schedule command`: the interval a new timer starts with, the
+   * intervals it offers, and the command when it differs from the sync's own (`args`, without the profile).
+   */
+  syncSchedule?: { every: string; choices: readonly string[]; args?: readonly string[] }
+  /**
    * The fixed port of the CLI's MCP server in WireCat Desktop: 8765. Only WireCat's own tools set it, each a port no
    * other tool has; Desktop gives every other tool one of its own. Needs `mcp server start`, `stop`, `status` and
    * `mcp revoke`.
@@ -316,6 +359,30 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
   if (!identity.tagline)
     throw new ManifestError(["no tagline: add `tagline`, at most 55 characters, to the identity the manifest reads"])
 
+  // Arguments may follow a command (`session start qr`), so the longest leading run of words that is one names it.
+  const commandAt = (words: readonly string[]) => {
+    for (let end = words.length; end > 0; end -= 1) {
+      const command = at.get(words.slice(0, end).join(" "))
+      if (command !== undefined && (command.commands.length === 0 || command.runnable === true)) return command
+    }
+    return undefined
+  }
+  const scheduleOf = (schedule: NonNullable<ManifestIdentity["syncSchedule"]>, run: readonly string[]) => {
+    const lacks = ["schedule command", "schedule list", "schedule remove", "schedule run"].filter(
+      (path) => !at.has(path),
+    )
+    if (lacks.length > 0)
+      throw new ManifestError([
+        `syncSchedule needs ${lacks.map((path) => `\`${path}\``).join(", ")}: Desktop runs them`,
+      ])
+    if (!schedule.choices.includes(schedule.every))
+      throw new ManifestError([`syncSchedule: every ${schedule.every} is not one of its choices`])
+    const args = [...(schedule.args ?? run)]
+    if (commandAt(args) === undefined)
+      throw new ManifestError([`syncSchedule: \`${args.join(" ")}\` names no command of this CLI`])
+    return { every: schedule.every, choices: [...schedule.choices], args }
+  }
+
   const setupPath = ["setup", "session start"].find((path) => at.has(path))
   const serves = has("mcp server start", "mcp server stop", "mcp server status", "mcp revoke")
   if (identity.mcpPort !== undefined && !serves)
@@ -343,7 +410,11 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     : null
 
   const nounSyncs = all.filter((command) => command.path.length === 2 && command.path[1] === "sync")
-  const syncPath = at.get("sync")?.path ?? (nounSyncs.length === 1 ? nounSyncs[0]?.path : undefined)
+  const named = identity.syncCommand ? commandAt(identity.syncCommand) : undefined
+  if (identity.syncCommand && named === undefined)
+    throw new ManifestError([`syncCommand: \`${identity.syncCommand.join(" ")}\` names no command of this CLI`])
+  const syncPath = named?.path ?? at.get("sync")?.path ?? (nounSyncs.length === 1 ? nounSyncs[0]?.path : undefined)
+  const syncWords = identity.syncCommand ?? syncPath ?? []
   if (syncPath && !identity.syncs)
     throw new ManifestError([
       `no syncs: \`${syncPath.join(" ")}\` exists, so add \`syncs\`, what it copies in at most 40 characters`,
@@ -354,13 +425,15 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     syncPath && has("runs list") ? ["runs", "list", ...query, "--limit", "50", "--no-record", "--json"] : null
   const sync = syncPath
     ? {
-        run: [...profile, ...syncPath, "--record", "--json"],
+        run: [...profile, ...syncWords, "--record", "--json"],
         last,
         lastShape: "runs",
         what: identity.syncs,
         note: null,
+        ...(identity.syncSchedule ? { schedule: scheduleOf(identity.syncSchedule, syncWords) } : {}),
       }
     : null
+  if (identity.syncSchedule && !sync) throw new ManifestError(["syncSchedule needs a sync command"])
 
   if (identity.meetingsProvider && !has("meetings show", "meetings transcript"))
     throw new ManifestError([
@@ -424,6 +497,16 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
       if (lacks.length > 0)
         throw new ManifestError([`signIn method ${method.id}: \`${path}\` takes no ${lacks.join(" or ")}`])
     }
+    const passed = OURS_ONLY.filter((key) => method[key] !== undefined)
+    if (passed.length > 0 && !(typeof pkg.name === "string" && pkg.name.startsWith("@wirecat/")))
+      throw new ManifestError([
+        `signIn method ${method.id}: Desktop takes ${passed.join(", ")} only from WireCat's own @wirecat packages`,
+      ])
+    const path = rest.slice(0, end + 1).join(" ")
+    const flags = [method.address, method.clientFile, method.portal, method.appId].filter((flag) => flag !== undefined)
+    const missing = flags.filter((flag) => !takes(path, flag))
+    if (missing.length > 0)
+      throw new ManifestError([`signIn method ${method.id}: \`${path}\` takes no ${missing.join(" or ")}`])
     if (rest.some((word) => word.includes("{")))
       throw new ManifestError([`signIn method ${method.id}: {profile} is the only slot Desktop fills in a sign-in`])
   }
