@@ -122,8 +122,9 @@ installing that command; nothing else is registered anywhere.
   is stale. `wcatStart` reads the shipped file for `--wcat-describe`, so the bin needs only the format-1 fields and
   keeps the program out of its first import. List `contracts/wirecat.json`, not all of `contracts`, in `files`
   ([WC-REL-16](releases.md#wc-rel-16--the-package-ships-only-the-files-it-names)). A CLI with a
-  `sync` command also sets `syncs`, what it copies in at most 40 characters. The file holds no version, and
-  `mcpServer` no port: Desktop reads the version from npm and gives the tool a free port. A command the manifest lists
+  `sync` command also sets `syncs`, what it copies in at most 40 characters. The file holds no version: Desktop reads it from npm.
+  `mcpServer` has a port only when the identity sets `mcpPort`, for a WireCat tool with a fixed port. Desktop gives
+  any other tool a free port. A command the manifest lists
   without `effects` counts as a write; `permissionOf` adds each command's permission key. See
   [WC-CMD-29](commands.md#wc-cmd-29--answer---wcat-describe-and-take-no-name-wirecat-reserves).
 - **The hosts it talks to.** `hosts` lists every host the CLI contacts (`[]` for none), and `userHosts` says in words

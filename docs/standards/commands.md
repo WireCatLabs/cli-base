@@ -387,7 +387,8 @@ its identity, never by hand. The developer types only `tagline`, `signIn`, with 
 command `syncs`, and for saved calls or meetings `meetingsProvider`; the
 commands, their `summary`, `effects` and `entity`, the fields of each entity a query covers, and every command word in
 `desktop` are derived, and every word passes Desktop's plain-word rule. The hosts it contacts are typed too
-([WC-CMD-32](#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch)). The file holds nothing that changes per release (no version), and no MCP port: Desktop assigns one. With the
+([WC-CMD-32](#wc-cmd-32--declare-every-host-the-cli-contacts-and-reach-them-only-through-hostfetch)). The file holds nothing that changes per release (no version). It holds an MCP port only for a WireCat tool, from
+`mcpPort`, one port per tool. Desktop assigns every other tool a port of its own. With the
 file shipped, `--wcat-describe` answers format 2: the format-1 keys with `"wcat_describe": 2`, the file's `desktop`
 and `manifest_sha256` of its bytes. Without it the answer stays format 1.
 
