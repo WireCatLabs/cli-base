@@ -253,7 +253,7 @@ export const WHAT_FLAGS: VocabularyFlag[] = [
   },
   { name: "--failed", role: "target", type: "switch", meaning: "every chat whose newest job failed or died" },
   { name: "--left", role: "target", type: "switch", meaning: "only the chats this account has left" },
-  { name: "--others", role: "target", type: "switch", meaning: "every session but this one" },
+  { name: "--others", role: "target", type: "switch", meaning: "every device but this one" },
   {
     name: "--saved",
     value: "<name|id>",
