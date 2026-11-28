@@ -149,9 +149,14 @@ const USAGE = `usage: cli-dev <command> [options]
                                        defaults --for to this CLI, --lint to its lint/ and --groups to
                                        config/parity-groups.json
   bundle --bin <dist/bin/name.js> [--external <package>]... [--anchor <package>]... [--harmless <path>]...
+         [--private-core]
                                        bundles the compiled bin with esbuild (a devDependency) into
-                                       dist/bundle/ and turns the bin into its loader. --external keeps
-                                       a package outside (* matches anything); --anchor adds a package
+                                       dist/bundle/ and turns the bin into its loader. When the installed
+                                       cli-core is pre-bundled, cli-core, cli-base and cli-core's peers
+                                       stay outside, loaded from their packages, and must be pinned
+                                       exactly; --private-core bundles them inside, as before.
+                                       --external keeps a package outside (* matches anything); --anchor
+                                       adds a package
                                        whose modules keep their installed place, as cli-core's do;
                                        --harmless names a third-party file whose import.meta or
                                        __dirname was read and found harmless. Fails when a bundled
@@ -971,6 +976,7 @@ const bundleCommand = async (args: string[], io: DevIo) => {
       external: { type: "string", multiple: true },
       anchor: { type: "string", multiple: true },
       harmless: { type: "string", multiple: true },
+      "private-core": { type: "boolean" },
     },
   })
   if (!values.bin) {
@@ -991,12 +997,14 @@ const bundleCommand = async (args: string[], io: DevIo) => {
     external: values.external ?? [],
     anchored: values.anchor ?? [],
     harmless: values.harmless ?? [],
+    privateCore: values["private-core"] ?? false,
   })
   if (result.problems.length > 0) {
     io.err(`the bundle would look for these in the wrong place, or is incomplete:\n${result.problems.join("\n")}`)
     return 1
   }
-  io.out(`bundle: ${values.bin} loads dist/bundle/; a server preloads ${result.chunks.length} chunks`)
+  const outside = result.shared.length > 0 ? `; ${result.shared.join(", ")} load from their packages` : ""
+  io.out(`bundle: ${values.bin} loads dist/bundle/; a server preloads ${result.chunks.length} chunks${outside}`)
   return 0
 }
 

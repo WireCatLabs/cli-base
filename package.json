@@ -28,84 +28,88 @@
     "THIRD_PARTY_NOTICES"
   ],
   "bin": {
-    "cli-dev": "dist/dev/bin.js"
+    "cli-dev": "dist/bundle/cli-dev.js"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "default": "./dist/bundle/index.js"
     },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
-      "default": "./dist/testing/index.js"
+      "default": "./dist/bundle/testing.js"
     },
     "./testing/setup": {
       "types": "./dist/testing/setup.d.ts",
-      "default": "./dist/testing/setup.js"
+      "default": "./dist/bundle/testing-setup.js"
     },
     "./http": {
       "types": "./dist/http/index.d.ts",
-      "default": "./dist/http/index.js"
+      "default": "./dist/bundle/http.js"
     },
     "./commands": {
       "types": "./dist/commands/index.d.ts",
-      "default": "./dist/commands/index.js"
+      "default": "./dist/bundle/commands.js"
     },
     "./completion": {
       "types": "./dist/completion/index.d.ts",
-      "default": "./dist/completion/index.js"
+      "default": "./dist/bundle/completion.js"
     },
     "./update": {
       "types": "./dist/update/index.d.ts",
-      "default": "./dist/update/index.js"
+      "default": "./dist/bundle/update.js"
     },
     "./codegen": {
       "types": "./dist/codegen/index.d.ts",
-      "default": "./dist/codegen/index.js"
+      "default": "./dist/bundle/codegen.js"
     },
     "./codegen/runtime": {
       "types": "./dist/codegen/runtime.d.ts",
-      "default": "./dist/codegen/runtime.js"
+      "default": "./dist/bundle/codegen-runtime.js"
     },
     "./release": {
       "types": "./dist/release/index.d.ts",
-      "default": "./dist/release/index.js"
+      "default": "./dist/bundle/release.js"
     },
     "./skill": {
       "types": "./dist/skill/index.d.ts",
-      "default": "./dist/skill/index.js"
+      "default": "./dist/bundle/skill.js"
     },
     "./mcp": {
       "types": "./dist/mcp/index.d.ts",
-      "default": "./dist/mcp/index.js"
+      "default": "./dist/bundle/mcp.js"
     },
     "./query": {
       "types": "./dist/query/index.d.ts",
-      "default": "./dist/query/index.js"
+      "default": "./dist/bundle/query.js"
     },
     "./standards": {
       "types": "./dist/standards/index.d.ts",
-      "default": "./dist/standards/index.js"
+      "default": "./dist/bundle/standards.js"
     },
     "./standards/tables": {
       "types": "./dist/standards/tables.d.ts",
-      "default": "./dist/standards/tables.js"
+      "default": "./dist/bundle/standards-tables.js"
     },
     "./wcat": {
       "types": "./dist/wcat/index.d.ts",
-      "default": "./dist/wcat/index.js"
+      "default": "./dist/bundle/wcat.js"
     },
     "./wcat/start": {
       "types": "./dist/wcat/start.d.ts",
-      "default": "./dist/wcat/start.js"
+      "default": "./dist/bundle/wcat-start.js"
     },
     "./wcat/manifest": {
       "types": "./dist/wcat/manifest.d.ts",
-      "default": "./dist/wcat/manifest.js"
+      "default": "./dist/bundle/wcat-manifest.js"
     },
     "./dev": {
       "types": "./dist/dev/index.d.ts",
-      "default": "./dist/dev/index.js"
+      "default": "./dist/bundle/dev.js"
+    },
+    "./preload": {
+      "types": "./dist/bundle/preload.d.ts",
+      "default": "./dist/bundle/preload.js"
     },
     "./biome": "./config/biome.base.json",
     "./tsconfig.base.json": "./config/tsconfig.base.json",
@@ -133,7 +137,7 @@
     ]
   },
   "scripts": {
-    "build": "tsc --build --force",
+    "build": "tsc --build --force && node scripts/bundle-dist.ts",
     "typecheck": "tsc --build --force --emitDeclarationOnly && tsc -p tsconfig.test.json && tsc -p tsconfig.scripts.json",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -176,6 +180,7 @@
     "esbuild": "0.28.2",
     "lefthook": "2.2.2",
     "markdownlint-cli2": "0.24.0",
+    "rolldown": "1.2.15",
     "swagger-converter": "2.1.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
@@ -187,6 +192,7 @@
     "@scalar/openapi-upgrader": "^0.4.6",
     "commander": "^15.0.0",
     "esbuild": "^0.28.0",
+    "rolldown": "^1.2.15",
     "swagger-converter": "^2.1.0",
     "vitest": "^5.0.0"
   },
@@ -198,6 +204,9 @@
       "optional": true
     },
     "esbuild": {
+      "optional": true
+    },
+    "rolldown": {
       "optional": true
     },
     "swagger-converter": {

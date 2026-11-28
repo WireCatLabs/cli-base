@@ -9,3 +9,4 @@ export {
   type OwnPlacesOptions,
   ownPlaces,
 } from "./bundle.js"
+export { bundlePackage, type PackageBundleOptions, type PackageBundleResult } from "./bundle-package.js"

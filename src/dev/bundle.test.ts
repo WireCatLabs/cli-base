@@ -94,16 +94,41 @@ describe("bundle", () => {
     expect(out.join("\n")).toMatch(/a server preloads \d+ chunks/)
   })
 
-  it("fails when an anchored package imports an outside package, which would resolve from the bundle", async () => {
+  it("loads a static import of an outside package in an anchored package from that package's place", async () => {
     write(
       "node_modules/@wirecat/cli-core/dist/index.js",
-      `import Database from "better-sqlite3"
-export const skill = async () => String(Database)
+      `import { readFileSync } from "node:fs"
+import engine, { name as engineName } from "fake-native"
+export const skill = async () => readFileSync(new URL("../skills/SKILL.md", import.meta.url), "utf8").trim() + engine + engineName
 `,
     )
+    write(
+      "node_modules/@wirecat/cli-core/node_modules/fake-native/package.json",
+      json({ name: "fake-native", type: "module" }),
+    )
+    write(
+      "node_modules/@wirecat/cli-core/node_modules/fake-native/index.js",
+      `export default " +"\nexport const name = "engine"\n`,
+    )
+    expect(await main(["bundle", "--bin", "dist/bin/demo.js", "--external", "fake-native"], io)).toBe(0)
+    expect(JSON.parse(run([]).stdout).core).toBe("core skill +engine")
+  })
+
+  it("fails when a third-party module imports an outside package, which would resolve from the bundle", async () => {
+    write("node_modules/shouting/index.js", `exports.shout = (text) => require("better-sqlite3") && text\n`)
     expect(await main(["bundle", "--bin", "dist/bin/demo.js"], io)).toBe(1)
     expect(err.join("\n")).toContain("imports better-sqlite3, which would resolve from the bundle")
     expect(readFileSync(join(root, "dist/bin/demo.js"), "utf8")).not.toContain(LOADER_MARK)
+  })
+
+  it("keeps the bin's #! line first when it rewrites the bin", async () => {
+    write(
+      "dist/bin/demo.js",
+      `#!/usr/bin/env node\nconst { shout } = await import("shouting")\nconsole.log(shout("hi"))\n`,
+    )
+    expect(await main(["bundle", "--bin", "dist/bin/demo.js", "--external", "shouting"], io)).toBe(0)
+    expect(readFileSync(join(root, "dist/bundle/demo.js"), "utf8").startsWith("#!")).toBe(true)
+    expect(run([]).stdout).toBe("HI\n")
   })
 
   it("fails on a third-party file that looks itself up, unless it is named harmless", async () => {
@@ -176,5 +201,100 @@ export const skill = async () => String(Database)
   it("writes the same server check into the loader", async () => {
     await main(["bundle", "--bin", "dist/bin/demo.js"], io)
     expect(readFileSync(join(root, "dist/bin/demo.js"), "utf8")).toContain(isServer.toString())
+  })
+})
+
+describe("bundle with a pre-bundled cli-core", () => {
+  beforeEach(() => {
+    write(
+      "package.json",
+      json({
+        name: "demo",
+        version: "1.2.3",
+        type: "module",
+        dependencies: { "@wirecat/cli-core": "3.0.0", "@wirecat/cli-base": "1.2.0", shouting: "1.0.0" },
+      }),
+    )
+    write(
+      "dist/program.js",
+      `import { marker } from "@wirecat/cli-base"
+import { skill, sameBase } from "@wirecat/cli-core"
+export const run = async () => {
+  const { shout } = await import("shouting")
+  console.log(JSON.stringify({ core: await skill(), oneBase: sameBase(marker), shout: shout("hi") }))
+}
+`,
+    )
+    write(
+      "node_modules/@wirecat/cli-core/package.json",
+      json({
+        name: "@wirecat/cli-core",
+        version: "3.0.0",
+        type: "module",
+        exports: { ".": { default: "./dist/bundle/index.js" }, "./preload": { default: "./dist/bundle/preload.js" } },
+        peerDependencies: { "@wirecat/cli-base": "^1.2.0", commander: "^15.0.0" },
+      }),
+    )
+    write(
+      "node_modules/@wirecat/cli-core/dist/bundle/index.js",
+      `import { readFileSync } from "node:fs"
+import { marker } from "@wirecat/cli-base"
+export const sameBase = (other) => other === marker
+export const skill = async () => readFileSync(new URL("../../skills/SKILL.md", import.meta.url), "utf8").trim()
+`,
+    )
+    write("node_modules/@wirecat/cli-core/dist/bundle/preload.js", "export const preload = async () => {}\n")
+    write(
+      "node_modules/@wirecat/cli-base/package.json",
+      json({ name: "@wirecat/cli-base", type: "module", exports: { ".": { default: "./dist/bundle/index.js" } } }),
+    )
+    write("node_modules/@wirecat/cli-base/dist/bundle/index.js", "export const marker = {}\n")
+  })
+
+  const bundled = () =>
+    readdirSync(join(root, "dist/bundle"))
+      .map((file) => readFileSync(join(root, "dist/bundle", file), "utf8"))
+      .join("\n")
+
+  it("leaves cli-core, cli-base and cli-core's peers outside, one instance each, and preloads cli-core for a server", async () => {
+    expect(await main(["bundle", "--bin", "dist/bin/demo.js"], io)).toBe(0)
+    expect(out.join("\n")).toContain("@wirecat/cli-core, @wirecat/cli-base, commander load from their packages")
+    expect(bundled()).not.toContain("sameBase = ")
+    expect(bundled()).toContain("toUpperCase")
+    const loader = readFileSync(join(root, "dist/bin/demo.js"), "utf8")
+    expect(loader).toContain('["@wirecat/cli-core/preload"]')
+    expect(loader).not.toContain("@wirecat/cli-base/preload")
+    const answer = run([])
+    expect(answer.stderr).toBe("")
+    expect(JSON.parse(answer.stdout)).toEqual({ core: "core skill", oneBase: true, shout: "HI" })
+  })
+
+  it("refuses a range for cli-core or cli-base, since the bundle runs whatever is installed", async () => {
+    write(
+      "package.json",
+      json({ name: "demo", version: "1.2.3", type: "module", dependencies: { "@wirecat/cli-core": "^3.0.0" } }),
+    )
+    expect(await main(["bundle", "--bin", "dist/bin/demo.js"], io)).toBe(1)
+    expect(err.join("\n")).toContain('@wirecat/cli-core is "^3.0.0" in dependencies: pin it exactly')
+  })
+
+  it("refuses a shared package the CLI imports but does not depend on", async () => {
+    write(
+      "package.json",
+      json({ name: "demo", version: "1.2.3", type: "module", dependencies: { "@wirecat/cli-core": "3.0.0" } }),
+    )
+    expect(await main(["bundle", "--bin", "dist/bin/demo.js"], io)).toBe(1)
+    expect(err.join("\n")).toContain("@wirecat/cli-base is not in dependencies")
+  })
+
+  it("bundles cli-core and cli-base inside with --private-core, as before", async () => {
+    expect(await main(["bundle", "--bin", "dist/bin/demo.js", "--private-core"], io)).toBe(0)
+    expect(out.join("\n")).not.toContain("load from their packages")
+    expect(bundled()).toContain("sameBase = ")
+    expect(readFileSync(join(root, "dist/bin/demo.js"), "utf8")).not.toContain("/preload")
+    renameSync(join(root, "node_modules/@wirecat/cli-core/dist"), join(root, "node_modules/@wirecat/cli-core/gone"))
+    mkdirSync(join(root, "node_modules/@wirecat/cli-core/dist/bundle"), { recursive: true })
+    write("node_modules/@wirecat/cli-core/dist/bundle/index.js", "export {}\n")
+    expect(JSON.parse(run([]).stdout)).toEqual({ core: "core skill", oneBase: true, shout: "HI" })
   })
 })

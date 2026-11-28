@@ -67,6 +67,9 @@ importers:
       markdownlint-cli2:
         specifier: 0.24.0
         version: 0.24.0
+      rolldown:
+        specifier: 1.2.15
+        version: 1.2.15
       swagger-converter:
         specifier: 2.1.0
         version: 2.1.0
