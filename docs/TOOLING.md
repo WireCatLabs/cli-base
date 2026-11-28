@@ -66,7 +66,7 @@ extends:
 | — | `cli-dev live record --script <path>` after a live check passed; `cli-dev live check` in `bin/release` ([WC-REL-17](standards/releases.md#wc-rel-17--a-release-pull-request-says-what-was-checked-and-the-release-needs-a-recorded-live-check)) |
 | — | `cli-dev ready [--json]`: the CLI's checks in order with the evidence for each and the one next step ([New CLI](standards/new-cli.md#done-when)) |
 | — | `cli-dev repo-check --cli <name>`: main's ruleset and its required checks, the `npm` environment, the monthly cron minute and a parity group ([New CLI](standards/new-cli.md#four-steps-that-need-a-person)) |
-| `scripts/bundle.ts` (tg) | `cli-dev bundle --bin dist/bin/<cli>.js [--external <package>]…`: the published bin as an esbuild bundle and its loader ([WC-LAY-10](standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds)) |
+| `scripts/bundle.ts` (tg) | `cli-dev bundle --bin dist/bin/<cli>.js [--external <package>]… [--private-core]`: the published bin as an esbuild bundle of the CLI's own code and its loader ([WC-LAY-10](standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds)) |
 
 `cli-dev lint` reads `<cli> commands --json`, refuses a document not in `commandsDocument`'s shape, and
 judges it by `LINT_RULES` and `VOCABULARY` from `/standards/tables`. Known violations live in

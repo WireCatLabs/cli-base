@@ -127,18 +127,30 @@ Rule ids on this page are `WC-LAY-<n>`. How to read a rule, how ids work and whi
 A command that imports about a thousand module files spends most of its start resolving and reading them. tg's
 bundle halved `--help` and every other short command
 ([measurements](https://github.com/WireCatLabs/cli-testing/blob/main/performance/startup/tg-bundle/README.md)).
+The bundle holds only the CLI's own code: cli-core and cli-base ship pre-bundled, and every CLI on one version of them
+loads the same installed files instead of carrying a 14 MB copy.
 
 - **Why:** one shared build keeps what tg learned in one place: lazy imports stay lazy, files and packages are found
-  where they were installed, and a running server survives an in-place upgrade.
-- **Enforced by:** `<app>: pnpm build` · `<app>: pnpm smoke:node` · `<app>: pnpm smoke:bun`.
+  where they were installed, and a running server survives an in-place upgrade. Leaving the shared core outside saves
+  about 15 MB per CLI and about 200 MB on a full WireCat Desktop.
+- **Enforced by:** `<app>: pnpm build` · `<app>: pnpm smoke:node` · `<app>: pnpm smoke:bun` · cli-template CI: the
+  start-time gate.
 - **Example:** `"build": "tsc --build --force && cli-dev bundle --bin dist/bin/tg.js --external \"@mtcute/*\" --external undici"`,
   with `esbuild` as a devDependency in cli-base's peer range. `dist/bundle/` holds the bundle, split so every lazy
   `import()` stays a chunk of its own; `dist/bin/tg.js` stays the path `"bin"` names and becomes a loader. What it
   does and checks:
+  - When the installed cli-core is pre-bundled (its `exports` point under `dist/bundle/`), cli-core, cli-base and
+    cli-core's peers (commander among them) stay outside the bundle and load from their packages. Each is then one
+    package folder in the process, so there is one instance of each: cli-core checks `instanceof CliError` and
+    `instanceof Command`. The build fails when the bundle would hold a copy of one of them, when the CLI imports one
+    it does not list in `dependencies`, or when `@wirecat/cli-core` or `@wirecat/cli-base` is a range rather than an
+    exact version: the bundle runs whatever version is installed.
+  - An unbundled cli-core (2.x) is bundled inside, as before, and so is everything with `--private-core`.
   - The loader answers `--version` from the version built into it, turns the compile cache on, and imports the
     bundle. Under `serve`, `watch` and `mcp` it loads every chunk 2 s after start and resolves imports between chunks
-    without looking on disk: an upgrade deletes the old chunks, whose names carry a hash.
-  - In the CLI's own modules and in cli-core's and cli-base's (`--anchor` adds a package), `import.meta.url` is the
+    without looking on disk: an upgrade deletes the old chunks, whose names carry a hash. It does the same before
+    `upgrade`. A shared package with a `./preload` export (cli-core, cli-base) is preloaded at the same moments.
+  - In the CLI's own modules and in the packages bundled inside (`--anchor` adds one), `import.meta.url` is the
     module's place before bundling, so skills, fonts, scenarios, migrations and child scripts are found. A package
     they load at run time resolves from that place too (a resolve hook under Node, `Bun.resolveSync` under Bun):
     pnpm installs cli-core's dependencies beside cli-core.
@@ -151,9 +163,12 @@ bundle halved `--help` and every other short command
     names a chunk that was not built. A third-party file read and found harmless is named with `--harmless`.
   - The CLI's smoke test runs the built bin under Node and Bun and checks that the store opens and the document
     readers resolve.
+  - **Start-time gate:** under Node, the median of 10 interleaved warm `--help` runs of the template CLI built this
+    way is at most 50 ms above the same CLI built with cli-core inside.
 - **Exceptions:** a CLI moves when its outputs are byte-identical before and after and its start gains 15% or more;
-  until then it ships `tsc`'s output. cli-base, cli-core and cli-testing ship libraries, not a bin.
-- **Applies to:** all CLIs. **Since:** cli-base 0.64.0. **Rulings:** none.
+  until then it ships `tsc`'s output. cli-base, cli-core and cli-testing ship libraries, not a bin: cli-base and
+  cli-core pre-bundle theirs with `bundlePackage` from `@wirecat/cli-base/dev`.
+- **Applies to:** all CLIs. **Since:** cli-base 0.64.0; the shared core since cli-core 3.0. **Rulings:** none.
 
 ## Sources
 

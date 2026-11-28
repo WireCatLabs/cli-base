@@ -5,9 +5,14 @@
  * - `dist/bundle/` holds the bundle. Its chunks keep every lazy `import()` lazy.
  * - The bin becomes a loader: it answers `--version`, turns the compile cache on before any of the bundle compiles,
  *   and for a server preloads every chunk so an in-place upgrade cannot pull one from under it.
+ * - cli-core, cli-base and cli-core's peers stay outside when the installed cli-core is pre-bundled: the bundle holds
+ *   only the CLI's code, and every CLI on one cli-core version shares that version's files. Outside, each is one
+ *   package folder, so the process has one instance of each (cli-core checks `instanceof CliError` and
+ *   `instanceof Command`). An unbundled cli-core, or `privateCore`, keeps the earlier mode: everything inside.
  * - A module moved into a chunk would look for files and packages from the chunk. In the CLI's own modules and in the
- *   anchored packages (cli-core, cli-base), `import.meta.url` becomes the module's own place, and a package they load
- *   at run time is resolved from there too: pnpm installs cli-core's dependencies beside cli-core, not beside the CLI.
+ *   anchored packages (cli-core and cli-base when they are inside), `import.meta.url` becomes the module's own place,
+ *   and a package they load at run time is resolved from there too: pnpm installs cli-core's dependencies beside
+ *   cli-core, not beside the CLI.
  * - The build fails when a bundled module would still look in the wrong place.
  * - A CLI with no `exports` drops tsc's `.d.ts` and `.map` files from `dist/`: nothing imports it, and no map is read
  *   for the bundle a user runs. A package with `exports` keeps them for whoever imports it.
@@ -29,12 +34,16 @@ export interface BundleOptions {
   anchored?: readonly string[]
   /** Third-party files read and found harmless, besides `DEFAULT_HARMLESS` (a path suffix each). */
   harmless?: readonly string[]
+  /** Bundle cli-core and cli-base inside, as before the shared core, even when the installed cli-core is pre-bundled. */
+  privateCore?: boolean
 }
 
 export interface BundleResult {
   problems: string[]
   /** The chunks a server preloads, as the loader names them. */
   chunks: string[]
+  /** The packages left outside to be shared, empty when cli-core and cli-base are inside. */
+  shared: string[]
 }
 
 /** Native modules, Bun's SQLite, and what cli-core loads only by name or starts as a worker from its own file. */
@@ -52,7 +61,10 @@ export const DEFAULT_EXTERNAL = [
   "ogg-opus-decoder",
 ]
 
-export const DEFAULT_ANCHORED = ["@wirecat/cli-core", "@wirecat/cli-base"]
+export const DEFAULT_ANCHORED: readonly string[] = []
+
+/** Anchored when they are bundled inside: an unbundled cli-core, or `privateCore`. */
+export const CORE_PACKAGES = ["@wirecat/cli-core", "@wirecat/cli-base"]
 
 // commander and @colors name these in comments and messages; liquidjs resolves partials with explicit `paths`, so the
 // requiring file does not matter.
@@ -66,7 +78,7 @@ export const LOADER_MARK = "// cli-dev bundle loader\n"
 
 const posix = (path: string) => path.split(sep).join("/")
 
-const matcher = (patterns: readonly string[]) => {
+export const matcher = (patterns: readonly string[]) => {
   const expressions = patterns.map((pattern) => new RegExp(`^${pattern.replaceAll(".", "\\.").replaceAll("*", ".*")}$`))
   return (specifier: string) => expressions.some((expression) => expression.test(specifier))
 }
@@ -101,6 +113,24 @@ export const importFrom = async (parent, specifier) => import(resolveFrom(parent
 
 const BY_NAME = /(?<![\w$.])import\(\s*(?!["'`.])/g
 const LITERAL = /(?<![\w$.])import\(\s*(["'])([^"'.][^"']*)\1\s*\)/g
+// As esbuild prints them: a pre-bundled package's chunks import natives this way.
+const STATIC = /^import\s+(?:([^"';]*?)\s*from\s*)?(["'])([^"'.][^"']*)\2;?[ \t]*$/gm
+
+/** `import a, { b as c } from "x"` as statements that take the names from `from`, a loaded module. */
+const bindings = (names: string, from: string): string[] => {
+  const statements: string[] = []
+  let rest = names.trim()
+  const first = rest.match(/^([\w$]+)\s*(?:,\s*|$)/)
+  if (first) {
+    statements.push(`const ${first[1]} = ${from}.default`)
+    rest = rest.slice(first[0].length)
+  }
+  const namespace = rest.match(/^\*\s*as\s+([\w$]+)$/)
+  if (namespace) statements.push(`const ${namespace[1]} = ${from}`)
+  const named = rest.match(/^\{([^}]*)\}$/)
+  if (named) statements.push(`const { ${(named[1] ?? "").replaceAll(/\s+as\s+/g, ": ")} } = ${from}`)
+  return statements
+}
 
 export interface OwnPlacesOptions {
   /** The modules under it keep their place: `import.meta.url` becomes their file before bundling. */
@@ -113,6 +143,8 @@ export interface OwnPlacesOptions {
   harmless?: readonly string[]
   /** What stays outside the bundle; a run-time import of it resolves from the module's own place. */
   isExternal?: (specifier: string) => boolean
+  /** Outside packages imported as written, so every module gets the one copy the CLI installed. */
+  isShared?: (specifier: string) => boolean
   /** Collects each module that would look for a file or package in the wrong place. */
   problems: string[]
 }
@@ -124,8 +156,12 @@ export const ownPlaces = ({
   anchored = [],
   harmless = DEFAULT_HARMLESS,
   isExternal = () => false,
+  isShared = () => false,
   problems,
 }: OwnPlacesOptions): Plugin => {
+  const loadsLate = (specifier: string) => isExternal(specifier) && !isShared(specifier)
+  // `bun:sqlite` has no place to resolve from.
+  const staticLate = (specifier: string) => loadsLate(specifier) && !specifier.includes(":")
   const placeOf = (file: string): string | undefined => {
     if (file.startsWith(dist + sep))
       return `new URL(${JSON.stringify(posix(relative(out, file)))}, import.meta.url).href`
@@ -155,20 +191,36 @@ export const ownPlaces = ({
           if (!known && /import\.meta|__dirname|__filename|require\.resolve/.test(source)) problems.push(args.path)
           return undefined
         }
-        const loadsOutside = [...source.matchAll(LITERAL)].some(([, , specifier]) => specifier && isExternal(specifier))
+        // Only an anchored package's static imports: the CLI's own resolve from the bundle, which is the CLI's place.
+        const own = args.path.startsWith(dist + sep)
+        const loadsOutside =
+          [...source.matchAll(LITERAL)].some(([, , specifier]) => specifier && loadsLate(specifier)) ||
+          (!own && [...source.matchAll(STATIC)].some(([, , , specifier]) => specifier && staticLate(specifier)))
         if (!source.includes("import.meta") && source.search(BY_NAME) < 0 && !loadsOutside) return undefined
         const other = source.match(/import\.meta\.(?!url\b|resolve\b)\w+/)
         if (other) problems.push(`${args.path}: ${other[0]}`)
+        let loaded = 0
         // `place` holds `import.meta.url` or `import.meta.resolve`, so it goes in last.
         const contents = source
+          .replaceAll(STATIC, (statement, names: string | undefined, quote, specifier) => {
+            if (own || !staticLate(specifier)) return statement
+            const from = `importFrom(PLACE, ${quote}${specifier}${quote})`
+            if (!names) return `await ${from};`
+            const name = `__outside${loaded++}`
+            return [`const ${name} = await ${from}`, ...bindings(names, name)].join(";\n")
+          })
           .replaceAll(/import\.meta\.resolve\(/g, "resolveFrom(PLACE, ")
           .replaceAll(BY_NAME, "importFrom(PLACE, ")
           .replaceAll(LITERAL, (call, quote, specifier) =>
-            isExternal(specifier) ? `importFrom(PLACE, ${quote}${specifier}${quote})` : call,
+            loadsLate(specifier) ? `importFrom(PLACE, ${quote}${specifier}${quote})` : call,
           )
           .replaceAll(/import\.meta\.url\b/g, "PLACE")
           .replaceAll(/\bPLACE\b/g, place)
-        return { contents: `import { importFrom, resolveFrom } from "${FROM}";\n${contents}`, loader: "js" }
+          // A pre-bundled package's banner may use the name this bundle's banner declares.
+          .replaceAll(/\b__bundleRequire\b/g, own ? "__bundleRequire" : "__anchoredRequire")
+        // The bin's `#!` must stay the first line.
+        const [, hashbang = "", body = contents] = contents.match(/^(#![^\n]*\n)?([\s\S]*)$/) ?? []
+        return { contents: `${hashbang}import { importFrom, resolveFrom } from "${FROM}";\n${body}`, loader: "js" }
       })
     },
   }
@@ -237,8 +289,19 @@ export const isUpgrade = (words: readonly string[]): boolean =>
     .slice(0, 2)
     .includes("upgrade")
 
-/** The bin that replaces the compiled one: `name` is the bundle's entry, `chunks` what a server preloads. */
-export const loaderSource = (name: string, version: string, chunks: readonly string[]): string => `#!/usr/bin/env node
+/**
+ * The bin that replaces the compiled one: `name` is the bundle's entry, `chunks` what a server preloads, `preloads` the
+ * shared packages whose own chunks it preloads too, through their `./preload` export, which also resolves imports
+ * between those chunks without looking on disk.
+ */
+export const loaderSource = (
+  name: string,
+  version: string,
+  chunks: readonly string[],
+  preloads: readonly string[] = [],
+): string => {
+  const shared = preloads.length > 0
+  return `#!/usr/bin/env node
 ${LOADER_MARK}import * as module from "node:module"
 
 const words = process.argv.slice(2)
@@ -263,13 +326,56 @@ if (
     })
   }
   const chunks = ${JSON.stringify(chunks)}
-  if ((${isUpgrade.toString()})(words)) await Promise.allSettled(chunks.map((chunk) => import(chunk)))
+${
+  shared
+    ? `  const preload = () =>
+    Promise.allSettled([
+      ...chunks.map((chunk) => import(chunk)),
+      ...${JSON.stringify(preloads.map((name) => `${name}/preload`))}.map((name) => import(name).then((loaded) => loaded.preload())),
+    ])
+  if ((${isUpgrade.toString()})(words)) await preload()`
+    : `  if ((${isUpgrade.toString()})(words)) await Promise.allSettled(chunks.map((chunk) => import(chunk)))`
+}
   const running = import(${JSON.stringify(`../bundle/${name}.js`)})
   // After the server answers its first request, so it starts no later.
-  if (serves) setTimeout(() => void Promise.allSettled(chunks.map((chunk) => import(chunk))), 2000).unref()
+  if (serves) setTimeout(() => void ${shared ? "preload()" : "Promise.allSettled(chunks.map((chunk) => import(chunk)))"}, 2000).unref()
   await running
 }
 `
+}
+
+interface Manifest {
+  version?: string
+  exports?: unknown
+  dependencies?: Record<string, string>
+  optionalDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>
+}
+
+const readManifest = (file: string): Manifest | undefined =>
+  existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as Manifest) : undefined
+
+const exportOf = (manifest: Manifest, key: string): unknown =>
+  typeof manifest.exports === "object" && manifest.exports !== null
+    ? (manifest.exports as Record<string, unknown>)[key]
+    : undefined
+
+/** Whether a package's root export is a bundle, as `bundlePackage` builds one. */
+const isPreBundled = (manifest: Manifest): boolean => {
+  const root = exportOf(manifest, ".")
+  const entry = typeof root === "string" ? root : (root as { default?: unknown } | undefined)?.default
+  return typeof entry === "string" && entry.startsWith("./dist/bundle/")
+}
+
+const packageName = (specifier: string) =>
+  specifier
+    .split("/")
+    .slice(0, specifier.startsWith("@") ? 2 : 1)
+    .join("/")
+
+// A range would let the installed version differ from the one the CLI was built and tested against.
+const EXACT = /^\d+\.\d+\.\d+(?:-[\w.-]+)?$/
 
 export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
   const { build } = await import("esbuild")
@@ -278,17 +384,38 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
   const out = join(dist, "bundle")
   const bin = join(root, options.bin)
   const name = basename(bin).replace(/\.[cm]?js$/, "")
-  const external = [...DEFAULT_EXTERNAL, ...(options.external ?? [])]
-  const isExternal = matcher(external)
   const problems: string[] = []
 
-  if (!bin.startsWith(dist + sep)) return { problems: [`${options.bin} is not under dist/`], chunks: [] }
+  if (!bin.startsWith(dist + sep)) return { problems: [`${options.bin} is not under dist/`], chunks: [], shared: [] }
   if (readFileSync(bin, "utf8").includes(LOADER_MARK))
-    return { problems: [`${options.bin} is already the loader — compile it again (tsc) first`], chunks: [] }
-  const { version, exports } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-    version: string
-    exports?: unknown
+    return { problems: [`${options.bin} is already the loader — compile it again (tsc) first`], chunks: [], shared: [] }
+  const manifest = readManifest(join(root, "package.json")) ?? {}
+  const installed = (name: string) => readManifest(join(root, "node_modules", name, "package.json"))
+
+  // cli-core brings its peers; a CLI on cli-base alone brings cli-base's.
+  const host = installed("@wirecat/cli-core") ?? installed("@wirecat/cli-base")
+  const sharing = !options.privateCore && host !== undefined && isPreBundled(host)
+  const shared = sharing ? [...new Set([...CORE_PACKAGES, ...Object.keys(host.peerDependencies ?? {})])] : []
+  const isShared = matcher(shared.flatMap((name) => [name, `${name}/*`]))
+  // cli-core loads an optional peer (pg, mysql2) only when a CLI installed it, from its own place, also when inside.
+  const optional = Object.entries(host?.peerDependenciesMeta ?? {}).flatMap(([name, meta]) =>
+    meta.optional ? [name] : [],
+  )
+  const external = [
+    ...DEFAULT_EXTERNAL,
+    ...[...shared, ...optional].flatMap((name) => [name, `${name}/*`]),
+    ...(options.external ?? []),
+  ]
+  const isExternal = matcher(external)
+  const declared = { ...manifest.peerDependencies, ...manifest.optionalDependencies, ...manifest.dependencies }
+  for (const core of CORE_PACKAGES) {
+    const range = manifest.dependencies?.[core]
+    if (sharing && range !== undefined && !EXACT.test(range))
+      problems.push(
+        `${core} is "${range}" in dependencies: pin it exactly, since the bundle runs the installed version`,
+      )
   }
+  if (problems.length > 0) return { problems, chunks: [], shared }
 
   rmSync(out, { recursive: true, force: true })
   const { metafile } = await build({
@@ -313,9 +440,10 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
       ownPlaces({
         dist,
         out,
-        anchored: [...DEFAULT_ANCHORED, ...(options.anchored ?? [])],
+        anchored: [...DEFAULT_ANCHORED, ...(sharing ? [] : CORE_PACKAGES), ...(options.anchored ?? [])],
         harmless: [...DEFAULT_HARMLESS, ...(options.harmless ?? [])],
         isExternal,
+        isShared,
         problems,
       }),
     ],
@@ -323,15 +451,28 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
     logLevel: "silent",
   })
   // Only the CLI's own modules may import a package that stays outside: it resolves from the bundle, the CLI's place.
+  // A shared package is the exception: from the bundle it is the CLI's copy, the one every module must get.
   const own = `${posix(relative(root, dist))}/`
   for (const [input, { imports }] of Object.entries(metafile.inputs)) {
+    for (const name of shared) {
+      if (input.includes(`node_modules/${name}/`))
+        problems.push(`${input} is a copy of ${name} in the bundle; it must load from the installed package`)
+    }
     if (input.startsWith(own)) continue
     for (const { path, external: outside } of imports) {
-      if (outside && !isBuiltin(path) && !["bun:sqlite", "<runtime>"].includes(path))
+      if (outside && !isShared(path) && !isBuiltin(path) && !["bun:sqlite", "<runtime>"].includes(path))
         problems.push(`${input} imports ${path}, which would resolve from the bundle`)
     }
   }
-  if (problems.length > 0) return { problems, chunks: [] }
+  for (const { imports } of Object.values(metafile.outputs)) {
+    for (const { path, external: outside } of imports) {
+      if (outside && isShared(path) && declared[packageName(path)] === undefined)
+        problems.push(
+          `the bundle imports ${path}, but ${packageName(path)} is not in dependencies, so no install has it`,
+        )
+    }
+  }
+  if (problems.length > 0) return { problems: [...new Set(problems)], chunks: [], shared }
 
   // An upgrade replaces the chunks under a running server, and their names carry a hash: a server that had not yet
   // loaded one would fail to find it. A server loads them all soon after it starts, and finds a chunk it holds without
@@ -344,11 +485,16 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
   }
   const chunks = [...lazy].sort()
   const missing = chunks.filter((chunk) => !existsSync(join(out, basename(chunk))))
-  if (missing.length > 0) return { problems: missing.map((chunk) => `the loader names ${chunk}, not built`), chunks }
-  writeFileSync(bin, loaderSource(name, version, chunks))
-  if (exports === undefined) {
+  if (missing.length > 0)
+    return { problems: missing.map((chunk) => `the loader names ${chunk}, not built`), chunks, shared }
+  const preloads = shared.filter((name) => {
+    const installedManifest = installed(name)
+    return installedManifest !== undefined && exportOf(installedManifest, "./preload") !== undefined
+  })
+  writeFileSync(bin, loaderSource(name, manifest.version ?? "", chunks, preloads))
+  if (manifest.exports === undefined) {
     for (const file of readdirSync(dist, { recursive: true, encoding: "utf8" }))
       if (/\.js\.map$|\.d\.ts(\.map)?$/.test(file)) rmSync(join(dist, file))
   }
-  return { problems: [], chunks }
+  return { problems: [], chunks, shared }
 }

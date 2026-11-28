@@ -12,6 +12,7 @@ describe("@wirecat/cli-base/dev", () => {
       "DEFAULT_EXTERNAL",
       "DEFAULT_HARMLESS",
       "bundle",
+      "bundlePackage",
       "commonJsNames",
       "ownPlaces",
     ])
