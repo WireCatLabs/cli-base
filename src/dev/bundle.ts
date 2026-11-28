@@ -102,14 +102,30 @@ export const importFrom = async (parent, specifier) => import(resolveFrom(parent
 const BY_NAME = /(?<![\w$.])import\(\s*(?!["'`.])/g
 const LITERAL = /(?<![\w$.])import\(\s*(["'])([^"'.][^"']*)\1\s*\)/g
 
-const ownPlaces = (
-  dist: string,
-  out: string,
-  anchored: readonly string[],
-  harmless: readonly string[],
-  isExternal: (specifier: string) => boolean,
-  problems: string[],
-): Plugin => {
+export interface OwnPlacesOptions {
+  /** The modules under it keep their place: `import.meta.url` becomes their file before bundling. */
+  dist: string
+  /** Where the bundle is written: the places are relative to it. */
+  out: string
+  /** Packages whose modules keep their installed place too. */
+  anchored?: readonly string[]
+  /** Third-party files that may look themselves up (a path suffix each); `DEFAULT_HARMLESS` when not given. */
+  harmless?: readonly string[]
+  /** What stays outside the bundle; a run-time import of it resolves from the module's own place. */
+  isExternal?: (specifier: string) => boolean
+  /** Collects each module that would look for a file or package in the wrong place. */
+  problems: string[]
+}
+
+/** The esbuild plugin that keeps each module's place (the header says why). */
+export const ownPlaces = ({
+  dist,
+  out,
+  anchored = [],
+  harmless = DEFAULT_HARMLESS,
+  isExternal = () => false,
+  problems,
+}: OwnPlacesOptions): Plugin => {
   const placeOf = (file: string): string | undefined => {
     if (file.startsWith(dist + sep))
       return `new URL(${JSON.stringify(posix(relative(out, file)))}, import.meta.url).href`
@@ -172,7 +188,7 @@ const isCommonJs = (file: string): boolean => {
  * `await import("yaml")` gets CommonJS's named exports from Node, but only `default` from a bundled chunk. A dynamic
  * import of CommonJS goes through a module that exports the names Node itself finds in it.
  */
-const commonJsNames: Plugin = {
+export const commonJsNames: Plugin = {
   name: "common-js-names",
   setup(context) {
     context.onResolve({ filter: /.*/ }, async (args) => {
@@ -294,14 +310,14 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
     },
     plugins: [
       commonJsNames,
-      ownPlaces(
+      ownPlaces({
         dist,
         out,
-        [...DEFAULT_ANCHORED, ...(options.anchored ?? [])],
-        [...DEFAULT_HARMLESS, ...(options.harmless ?? [])],
+        anchored: [...DEFAULT_ANCHORED, ...(options.anchored ?? [])],
+        harmless: [...DEFAULT_HARMLESS, ...(options.harmless ?? [])],
         isExternal,
         problems,
-      ),
+      }),
     ],
     metafile: true,
     logLevel: "silent",
