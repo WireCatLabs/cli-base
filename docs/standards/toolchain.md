@@ -6,7 +6,7 @@
 
 How a repository is built and checked before review: the shared presets and `standards:check`, strict TypeScript,
 the shared Biome preset and its grit plugins, the file size cap, import cycles, layer boundaries as lint, the command
-lint, spelling, Markdown lint, and the checks for a Go part.
+lint, spelling, Markdown lint, the checks for a Go part, and the root override that gives a CLI cli-core's types.
 
 Rule ids on this page are `WC-TOOL-<n>`. How to read a rule, how ids work and which rule wins are in the
 [index](README.md). What runs on which trigger is on the [CI page](ci.md).
@@ -266,6 +266,30 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
   example.
 - **Exceptions:** none.
 - **Applies to:** CLIs with a Go part (wa). **Since:** cli-base 0.44.0. **Rulings:** none.
+
+### WC-TOOL-21 · Pin cli-core `X.Y.Z` and override it to `X.Y.Z-dev` at the root
+
+- **Why:** the `X.Y.Z` of `@wirecat/cli-core` that users install has no type files, so they do not download 12.5 MB
+  that only a compiler reads. Every release also publishes `X.Y.Z-dev`: the same JavaScript with the `.d.ts` files,
+  their maps, the JavaScript maps and `src/`. pnpm reads `pnpm-workspace.yaml` only in the project it installs, and
+  npm and Bun never read it, so the CLI's checkout gets `-dev` and its users still get `X.Y.Z`.
+- **Enforced by:** `node-ci.yml:check` (right after install, before typecheck) · `<app>: pnpm version:check` (cli-dev
+  version) · `src/dev/core-override.test.ts`.
+- **Example:** `package.json` has `"@wirecat/cli-core": "2.1.0"` under `dependencies`, and `pnpm-workspace.yaml` has
+
+  ```yaml
+  overrides:
+    "@wirecat/cli-core": 2.1.0-dev
+  ```
+
+  Without the override, `pnpm typecheck` fails with TS7016, "Could not find a declaration file for module
+  '@wirecat/cli-core'", and `cli-dev version` fails with the line to add. With an override to another version, every
+  check runs against a cli-core the users never get, and `cli-dev version` names the line to change. The fix is that
+  line, then `pnpm install`. `cli-dev adopt <x.y.z>` moves the pin and the override together.
+- **Exceptions:** cli-core itself, and a repository with no `bin` or with cli-core only in `devDependencies`
+  (cli-docs). A cli-core released before the `-dev` releases has no `-dev` and still ships its types; while a CLI
+  pins one, `cli-dev version` only notes the missing override.
+- **Applies to:** the CLIs and cli-template. **Since:** cli-base 1.2.0. **Rulings:** NEED-10.
 
 ## Sources
 

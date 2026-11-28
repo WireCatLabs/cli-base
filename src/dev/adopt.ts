@@ -1,12 +1,14 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import { CORE, DEV_SUFFIX, needsCoreOverride, writeCoreOverride } from "./core-override.js"
 
 export type Run = (command: string, args: readonly string[]) => number
 
 const SECTIONS = ["dependencies", "devDependencies", "optionalDependencies"] as const
 
 /**
- * Moves the CLI onto `version` of a shared package the same way every time: the pin in package.json, the lockfile,
+ * Moves the CLI onto `version` of a shared package the same way every time: the pin in package.json (and for cli-core
+ * the -dev override beside it, WC-TOOL-21), the lockfile,
  * the generated files and the quick checks. What the checks then report (pins, baselines) is the adoption's work.
  */
 export const adopt = (cwd: string, name: string, version: string, run: Run, log: (line: string) => void): number => {
@@ -28,6 +30,10 @@ export const adopt = (cwd: string, name: string, version: string, run: Run, log:
   }
   writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`)
   log(`${name} ${version} in package.json`)
+  if (name === CORE && needsCoreOverride(cwd)) {
+    writeCoreOverride(cwd, version)
+    log(`${name} ${version}${DEV_SUFFIX} in pnpm-workspace.yaml`)
+  }
   const steps: [string, string[]][] = [
     ["pnpm", ["install"]],
     ...(["generate", "ci:quick"] as const)
