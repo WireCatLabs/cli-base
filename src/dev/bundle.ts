@@ -332,7 +332,7 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
   writeFileSync(bin, loaderSource(name, version, chunks))
   if (exports === undefined) {
     for (const file of readdirSync(dist, { recursive: true, encoding: "utf8" }))
-      if (/\.d\.ts$|\.map$/.test(file)) rmSync(join(dist, file))
+      if (/\.js\.map$|\.d\.ts(\.map)?$/.test(file)) rmSync(join(dist, file))
   }
   return { problems: [], chunks }
 }
