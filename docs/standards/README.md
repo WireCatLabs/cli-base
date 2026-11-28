@@ -27,7 +27,7 @@ the four steps that need a person. A new CLI is ready for its first release when
 
 | Page | Area id | Rules | What it covers |
 |---|---|---:|---|
-| [Toolchain](toolchain.md) | `TOOL` | 20 | TypeScript, Biome, grit plugins, size caps, import cycles, spelling, Markdown, Go |
+| [Toolchain](toolchain.md) | `TOOL` | 21 | TypeScript, Biome, grit plugins, size caps, import cycles, spelling, Markdown, Go, cli-core's `-dev` override |
 | [Layout](layout.md) | `LAY` | 10 | Repository layout, entry points, exports, file size, one job per file, splitting a unit, the bundled bin |
 | [Commands](commands.md) | `CMD` | 34 | Paths, vocabulary, flags, arguments, effects, lifetime, query, help, external references, joining `wcat`, settings in the config file, refs, network hosts, the generated `api` group, the paths cli-core reserves |
 | [Output](output.md) | `OUT` | 25 | Data on stdout only, envelopes, errors, exit codes, partial answers, projection, list results in a TypeScript API |

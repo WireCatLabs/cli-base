@@ -53,6 +53,7 @@ import { API_REPORT_USAGE, apiReportCommand } from "./api-report.js"
 import { type AuditInput, auditClis, scorecardTable, sharedDifferences, sharedReviews, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
+import { coreOverrideCheck } from "./core-override.js"
 import { familyPackages, installFamily } from "./family.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
 import {
@@ -89,7 +90,9 @@ const USAGE = `usage: cli-dev <command> [options]
                                        exits 1 when the report is missing
   next-version <wanted> <latest> <versions-json>
                                        the version bin/release publishes, given npm's answers
-  version [--sync] [--file <path>]     package.json's version against src/version.ts
+  version [--sync] [--file <path>]     package.json's version against src/version.ts, and a CLI's override of
+                                       @wirecat/cli-core in pnpm-workspace.yaml against its pin: the pinned
+                                       version plus -dev, the one with the type files (WC-TOOL-21)
   changelog fold [--version <x.y.z>] [--unreleased <title>] [--file <path>] [--land]
                                        folds the unreleased section (Unreleased) into the dated
                                        section below it when that is --version (package.json's), and
@@ -103,7 +106,8 @@ const USAGE = `usage: cli-dev <command> [options]
                                        to the unreleased section. Prints a line when it changed the
                                        file. --land lands it on main through a pull request
   adopt <x.y.z> [--package <name>]    moves the CLI onto that version of a shared package
-                                       (@wirecat/cli-core): the pin in package.json, pnpm install,
+                                       (@wirecat/cli-core): the pin in package.json (for cli-core also
+                                       its x.y.z-dev override in pnpm-workspace.yaml), pnpm install,
                                        then pnpm generate and ci:quick when the CLI has them
   changelog fragments [--collect <x.y.z>] [--ids <A,B>] [--file <path>]
                                        checks the changes/<branch>.md fragments (### headings of the
@@ -1037,7 +1041,10 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       const { code, message } = versionScript(io.cwd, values.sync ? ["--sync"] : [], values.file)
       if (code === 0) io.out(message)
       else io.err(message)
-      return code
+      const { problems, notes } = coreOverrideCheck(io.cwd)
+      for (const note of notes) io.out(note)
+      for (const problem of problems) io.err(problem)
+      return code !== 0 ? code : problems.length > 0 ? 1 : 0
     }
     case "changelog":
       return changelog(args, io)

@@ -24,6 +24,12 @@ vulnerabilities are reported as the
 4. **Nothing in the root export is HTTP.** HTTP helpers go to `/http`.
 5. **Everything under `src/` is published.** Test-only helpers go to `test/`.
 
+## cli-core's types come from its `-dev` release
+
+`@wirecat/cli-core` `X.Y.Z` ships no `.d.ts` files; `X.Y.Z-dev` is the same code with them. A CLI pins `X.Y.Z` and
+overrides it to `X.Y.Z-dev` in `pnpm-workspace.yaml`; `cli-dev version` enforces it and `cli-dev adopt` writes it
+([WC-TOOL-21](docs/standards/toolchain.md#wc-tool-21--pin-cli-core-xyz-and-override-it-to-xyz-dev-at-the-root)).
+
 ## Comments
 
 Sparse, and only *why*. The global rule in `~/.claude/CLAUDE.md` applies.
