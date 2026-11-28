@@ -105,9 +105,14 @@ const desktopSchema = v.strictObject({
   setup: v.nullable(words),
   signIn: v.nullable(desktopSignInSchema),
   skill: v.nullable(v.strictObject({ status: words, install: words, show: words })),
-  /** Desktop gives an own tool a free port of its own and fills `{port}`. */
+  /**
+   * `port` is a WireCat tool's fixed port, from the identity's `mcpPort`. Desktop gives any other tool a free port of
+   * its own and fills `{port}`. Left out, not `null`, without `mcpPort`, so the manifest of every other CLI stays as it
+   * was.
+   */
   mcpServer: v.nullable(
     v.strictObject({
+      port: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1024), v.maxValue(65535))),
       start: words,
       stop: words,
       status: words,
@@ -244,6 +249,12 @@ export interface ManifestIdentity extends WcatTool {
    */
   meetingsProvider?: string
   /**
+   * The fixed port of the CLI's MCP server in WireCat Desktop: 8765. Only WireCat's own tools set it, each a port no
+   * other tool has; Desktop gives every other tool one of its own. Needs `mcp server start`, `stop`, `status` and
+   * `mcp revoke`.
+   */
+  mcpPort?: number
+  /**
    * Every host the CLI contacts, as `hostFetch` checks them: `["api.acme.example", "*.cdn.acme.example"]`; `[]` for
    * none. Written to the manifest as `network.hosts`.
    */
@@ -306,8 +317,14 @@ export const buildManifest = ({ identity, commands, pkg, skills }: ManifestInput
     throw new ManifestError(["no tagline: add `tagline`, at most 55 characters, to the identity the manifest reads"])
 
   const setupPath = ["setup", "session start"].find((path) => at.has(path))
-  const mcpServer = has("mcp server start", "mcp server stop", "mcp server status", "mcp revoke")
+  const serves = has("mcp server start", "mcp server stop", "mcp server status", "mcp revoke")
+  if (identity.mcpPort !== undefined && !serves)
+    throw new ManifestError([
+      "mcpPort needs `mcp server start`, `stop`, `status` and `mcp revoke`: Desktop runs the server with them",
+    ])
+  const mcpServer = serves
     ? {
+        ...(identity.mcpPort !== undefined ? { port: identity.mcpPort } : {}),
         start: [
           "mcp",
           "server",

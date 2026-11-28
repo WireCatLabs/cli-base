@@ -177,6 +177,17 @@ describe("buildManifest", () => {
     expect(() => build({ meetingsProvider: "Acme PBX" }, describeProgram(tree))).toThrow("a provider name")
   })
 
+  it("names a fixed MCP port only when the identity sets one, so every other manifest stays as it was", () => {
+    expect(build().desktop.mcpServer).not.toHaveProperty("port")
+    expect(build({ mcpPort: 8754 }).desktop.mcpServer).toMatchObject({
+      port: 8754,
+      stop: ["mcp", "server", "stop", "--json"],
+    })
+    const bare = new Command("acme").addCommand(new Command("doctor").action(() => {}))
+    expect(() => build({ mcpPort: 8754 }, describeProgram(bare))).toThrow("mcpPort needs `mcp server start`")
+    expect(() => build({ mcpPort: 80 })).toThrow()
+  })
+
   it("removes an account with session end and account remove, and leaves the key out for a CLI with neither", () => {
     const withAccounts = (account: Command) => {
       const root = program().addCommand(account)

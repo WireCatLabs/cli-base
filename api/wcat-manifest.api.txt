@@ -8,6 +8,7 @@ ManifestIdentity · interface · tagline?: string;
 ManifestIdentity · interface · signIn?: SignIn;
 ManifestIdentity · interface · syncs?: string;
 ManifestIdentity · interface · meetingsProvider?: string;
+ManifestIdentity · interface · mcpPort?: number;
 ManifestIdentity · interface · hosts?: readonly string[];
 ManifestIdentity · interface · userHosts?: string;
 ManifestIdentity · interface · permissionOf?: (path: readonly string[]) => string | null;
@@ -107,6 +108,7 @@ manifestSchema · const · readonly install: v.SchemaWithPipe<readonly [v.ArrayS
 manifestSchema · const · readonly show: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
 manifestSchema · const · }, undefined>, undefined>;
 manifestSchema · const · readonly mcpServer: v.NullableSchema<v.StrictObjectSchema<{
+manifestSchema · const · readonly port: v.OptionalSchema<v.SchemaWithPipe<readonly [v.NumberSchema<undefined>, v.IntegerAction<number, undefined>, v.MinValueAction<number, 1024, undefined>, v.MaxValueAction<number, 65535, undefined>]>, undefined>;
 manifestSchema · const · readonly start: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
 manifestSchema · const · readonly stop: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
 manifestSchema · const · readonly status: v.SchemaWithPipe<readonly [v.ArraySchema<v.SchemaWithPipe<readonly [v.StringSchema<undefined>, v.MaxLengthAction<string, 100, "a command word is at most 100 characters">, v.RegexAction<string, (issue: v.RegexIssue<string>) => string>]>, undefined>, v.MinLengthAction<string[], 1, undefined>]>;
