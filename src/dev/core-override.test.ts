@@ -117,4 +117,14 @@ describe("the cli-core -dev override (WC-TOOL-21)", () => {
     expect(await main(["version"], io)).toBe(1)
     expect(err.join("\n")).toContain("WC-TOOL-21")
   })
+
+  it("checks only the override with --cli-core-only, as node-ci does before typecheck", async () => {
+    cli("2.2.0")
+    workspace("2.1.0-dev")
+    const err: string[] = []
+    const io: DevIo = { cwd: root, out: () => {}, err: (text) => err.push(text) }
+    expect(await main(["version", "--cli-core-only"], io)).toBe(1)
+    expect(err).toHaveLength(1)
+    expect(err[0]).toContain("WC-TOOL-21")
+  })
 })

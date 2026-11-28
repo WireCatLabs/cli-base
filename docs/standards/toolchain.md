@@ -273,7 +273,8 @@ no-unbounded-spread ([WC-TOOL-12](#wc-tool-12--do-not-spread-a-list-of-user-data
   that only a compiler reads. Every release also publishes `X.Y.Z-dev`: the same JavaScript with the `.d.ts` files,
   their maps, the JavaScript maps and `src/`. pnpm reads `pnpm-workspace.yaml` only in the project it installs, and
   npm and Bun never read it, so the CLI's checkout gets `-dev` and its users still get `X.Y.Z`.
-- **Enforced by:** `<app>: pnpm version:check` (cli-dev version) · `src/dev/core-override.test.ts`.
+- **Enforced by:** `node-ci.yml:check` (right after install, before typecheck) · `<app>: pnpm version:check` (cli-dev
+  version) · `src/dev/core-override.test.ts`.
 - **Example:** `package.json` has `"@wirecat/cli-core": "2.1.0"` under `dependencies`, and `pnpm-workspace.yaml` has
 
   ```yaml

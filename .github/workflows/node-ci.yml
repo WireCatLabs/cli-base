@@ -121,6 +121,18 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Before typecheck: a CLI that bumps cli-core without its -dev override fails there with a bare TS7016, and this
+      # names the line to add (WC-TOOL-21).
+      - name: cli-core override
+        if: inputs.cli && !contains(inputs.skip, 'version:check')
+        run: |
+          dev=node_modules/.bin/cli-dev
+          usage=$([ -x "$dev" ] && "$dev" help 2>&1 || true)
+          if [[ "$usage" != *--cli-core-only* ]]; then
+            echo "::notice::this cli-base's cli-dev has no cli-core override check"
+            exit 0
+          fi
+          "$dev" version --cli-core-only
       - run: pnpm lint
       - run: pnpm typecheck
       # The JSON report feeds the slow-test step. Naming a reporter drops Vitest's defaults, so they are named too.

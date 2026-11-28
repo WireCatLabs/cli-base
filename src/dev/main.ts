@@ -27,7 +27,6 @@ import {
   packageVersion,
   readFragments,
   structureProblems,
-  versionScript,
 } from "../release/index.js"
 import { AUDIT_BLOCKS, defineParityGroups, PARITY_GROUPS, REQUIRED_ROOTS } from "../standards/audit.js"
 import type { ErrorReason } from "../standards/errors.js"
@@ -53,7 +52,6 @@ import { API_REPORT_USAGE, apiReportCommand } from "./api-report.js"
 import { type AuditInput, auditClis, scorecardTable, sharedDifferences, sharedReviews, snakeKeys } from "./audit.js"
 import { readCapabilities } from "./capabilities.js"
 import { CONFORMANCE_USAGE, conformanceCommand } from "./conformance.js"
-import { coreOverrideCheck } from "./core-override.js"
 import { familyPackages, installFamily } from "./family.js"
 import { changelogChange, landChange, landFold, newestTag, processShell, restoreChange } from "./land.js"
 import {
@@ -73,6 +71,7 @@ import { readDeclarations } from "./result-shape.js"
 import type { ContractEdit } from "./shared-contracts.js"
 import { slowTests, type VitestReport } from "./slow-tests.js"
 import { matrixPage, matrixRows, type ProgramNode, parseArgvLog, type Untested } from "./test-matrix.js"
+import { versionCommand } from "./version-command.js"
 import { binNameWarnings, describeWarnings, hostsWarnings, WCAT_RULES, type WcatWarning } from "./wcat-lint.js"
 
 export interface DevIo {
@@ -90,9 +89,11 @@ const USAGE = `usage: cli-dev <command> [options]
                                        exits 1 when the report is missing
   next-version <wanted> <latest> <versions-json>
                                        the version bin/release publishes, given npm's answers
-  version [--sync] [--file <path>]     package.json's version against src/version.ts, and a CLI's override of
+  version [--sync] [--file <path>] [--cli-core-only]
+                                       package.json's version against src/version.ts, and a CLI's override of
                                        @wirecat/cli-core in pnpm-workspace.yaml against its pin: the pinned
-                                       version plus -dev, the one with the type files (WC-TOOL-21)
+                                       version plus -dev, the one with the type files (WC-TOOL-21);
+                                       --cli-core-only checks only the override
   changelog fold [--version <x.y.z>] [--unreleased <title>] [--file <path>] [--land]
                                        folds the unreleased section (Unreleased) into the dated
                                        section below it when that is --version (package.json's), and
@@ -1033,19 +1034,8 @@ export const main = async (argv: readonly string[], io: DevIo): Promise<number> 
       io.out(found.version)
       return 0
     }
-    case "version": {
-      const { values } = parseArgs({
-        args,
-        options: { sync: { type: "boolean", default: false }, file: { type: "string", default: "src/version.ts" } },
-      })
-      const { code, message } = versionScript(io.cwd, values.sync ? ["--sync"] : [], values.file)
-      if (code === 0) io.out(message)
-      else io.err(message)
-      const { problems, notes } = coreOverrideCheck(io.cwd)
-      for (const note of notes) io.out(note)
-      for (const problem of problems) io.err(problem)
-      return code !== 0 ? code : problems.length > 0 ? 1 : 0
-    }
+    case "version":
+      return versionCommand(args, io)
     case "changelog":
       return changelog(args, io)
     case "api-report":

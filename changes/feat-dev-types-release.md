@@ -5,5 +5,6 @@
   `X.Y.Z-dev` under `overrides:` in `pnpm-workspace.yaml`, which its users never read. `cli-dev version` fails when the
   override names another version, or is missing while the installed cli-core has no types, and prints the line to
   write. It only notes a missing override while the CLI pins a cli-core released before the `-dev` releases.
-  `cli-dev adopt` now moves the override with the pin
+  `node-ci.yml` runs the same check (`cli-dev version --cli-core-only`) right after install, so the message comes before
+  typecheck's TS7016. `cli-dev adopt` now moves the override with the pin
   ([Toolchain](../docs/standards/toolchain.md#wc-tool-21--pin-cli-core-xyz-and-override-it-to-xyz-dev-at-the-root)).
