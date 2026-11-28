@@ -155,7 +155,9 @@ const USAGE = `usage: cli-dev <command> [options]
                                        whose modules keep their installed place, as cli-core's do;
                                        --harmless names a third-party file whose import.meta or
                                        __dirname was read and found harmless. Fails when a bundled
-                                       module would look for a file or package in the wrong place
+                                       module would look for a file or package in the wrong place.
+                                       A CLI with no exports in package.json loses the .d.ts and .map
+                                       files tsc wrote to dist/, which nothing reads
 ${CONFORMANCE_USAGE}
 ${READY_USAGE}
 ${API_REPORT_USAGE}`
