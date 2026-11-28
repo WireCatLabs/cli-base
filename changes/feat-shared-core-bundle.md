@@ -5,8 +5,9 @@
   packages, so `dist/bundle` holds only the CLI's code: tg's drops from 16.5 MB to 1.7 MB, and every CLI on one
   cli-core version shares its files. The build now fails when the bundle would hold a copy of one of them, when the CLI
   imports one it does not list in `dependencies`, or when `@wirecat/cli-core` or `@wirecat/cli-base` is a range. With
-  today's unbundled cli-core 2.x nothing changes: the bundle is built as before, byte for byte. `--private-core` keeps
-  the old mode with any cli-core. For a server, and before `upgrade`, the loader also calls a shared package's
+  today's unbundled cli-core 2.x the bundle is built inside as before: tg's `--help` and `commands --json` stay
+  byte-identical. `--private-core` keeps that mode with any cli-core, a pre-bundled one included, and cli-core's
+  optional peers (pg, mysql2, ssh2) stay outside in both modes. For a server, and before `upgrade`, the loader also calls a shared package's
   `./preload`. A bin's leading `#!` stays first when the bin is rewritten, and a static import of a native module in a
   bundled package now loads from that package's place instead of failing the build
   ([WC-LAY-10](../docs/standards/layout.md#wc-lay-10--ship-the-bin-as-a-bundle-that-cli-dev-bundle-builds)).

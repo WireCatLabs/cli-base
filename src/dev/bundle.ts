@@ -34,7 +34,7 @@ export interface BundleOptions {
   anchored?: readonly string[]
   /** Third-party files read and found harmless, besides `DEFAULT_HARMLESS` (a path suffix each). */
   harmless?: readonly string[]
-  /** Bundle cli-core and cli-base inside, as before cli-base 1.2, even when the installed cli-core is pre-bundled. */
+  /** Bundle cli-core and cli-base inside, as before the shared core, even when the installed cli-core is pre-bundled. */
   privateCore?: boolean
 }
 
@@ -350,6 +350,7 @@ interface Manifest {
   dependencies?: Record<string, string>
   optionalDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>
 }
 
 const readManifest = (file: string): Manifest | undefined =>
@@ -396,7 +397,15 @@ export const bundle = async (options: BundleOptions): Promise<BundleResult> => {
   const sharing = !options.privateCore && host !== undefined && isPreBundled(host)
   const shared = sharing ? [...new Set([...CORE_PACKAGES, ...Object.keys(host.peerDependencies ?? {})])] : []
   const isShared = matcher(shared.flatMap((name) => [name, `${name}/*`]))
-  const external = [...DEFAULT_EXTERNAL, ...shared.flatMap((name) => [name, `${name}/*`]), ...(options.external ?? [])]
+  // cli-core loads an optional peer (pg, mysql2) only when a CLI installed it, from its own place, also when inside.
+  const optional = Object.entries(host?.peerDependenciesMeta ?? {}).flatMap(([name, meta]) =>
+    meta.optional ? [name] : [],
+  )
+  const external = [
+    ...DEFAULT_EXTERNAL,
+    ...[...shared, ...optional].flatMap((name) => [name, `${name}/*`]),
+    ...(options.external ?? []),
+  ]
   const isExternal = matcher(external)
   const declared = { ...manifest.peerDependencies, ...manifest.optionalDependencies, ...manifest.dependencies }
   for (const core of CORE_PACKAGES) {

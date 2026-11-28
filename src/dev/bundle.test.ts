@@ -297,4 +297,22 @@ export const skill = async () => readFileSync(new URL("../../skills/SKILL.md", i
     write("node_modules/@wirecat/cli-core/dist/bundle/index.js", "export {}\n")
     expect(JSON.parse(run([]).stdout)).toEqual({ core: "core skill", oneBase: true, shout: "HI" })
   })
+
+  it("keeps cli-core's optional peers outside with --private-core, since a CLI may not install them", async () => {
+    const core = JSON.parse(readFileSync(join(root, "node_modules/@wirecat/cli-core/package.json"), "utf8"))
+    write(
+      "node_modules/@wirecat/cli-core/package.json",
+      json({
+        ...core,
+        peerDependencies: { ...core.peerDependencies, pg: "^8.0.0" },
+        peerDependenciesMeta: { pg: { optional: true } },
+      }),
+    )
+    write(
+      "node_modules/@wirecat/cli-core/dist/bundle/index.js",
+      `${readFileSync(join(root, "node_modules/@wirecat/cli-core/dist/bundle/index.js"), "utf8")}export const database = () => import("pg")\n`,
+    )
+    expect(await main(["bundle", "--bin", "dist/bin/demo.js", "--private-core"], io)).toBe(0)
+    expect(JSON.parse(run([]).stdout).oneBase).toBe(true)
+  })
 })
