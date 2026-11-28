@@ -363,7 +363,9 @@ const collections: [string, string][] = [
   ["mentions", "phones, e-mail addresses, links and documents found in stored text, each where it was written"],
   ["images", "pictures in stored messages, searched by what they show"],
   ["duplicates", "pairs of things that may be one, each waiting for a decision"],
-  ["sessions", "devices and applications signed in to an account"],
+  ["devices", "devices and applications signed in to an account"],
+  // Until every messenger CLI is on the cli-core with `account devices` (NEED-2916 B), its `account sessions` stays known.
+  ["sessions", "devices and applications signed in to an account, the word before devices"],
   ["folders", "named groupings of chats or source files"],
   ["links", "stored or source-provided connections between selected things"],
   ["requests", "requests waiting for an explicit decision"],

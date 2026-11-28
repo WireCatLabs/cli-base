@@ -102,7 +102,7 @@ With no `permissions` set, a profile may do almost everything. The built-in defa
 
 ```json
 {
-  "messages.delete": "ask", "bot.messages.delete": "ask", "account.sessions.end": "ask",
+  "messages.delete": "ask", "bot.messages.delete": "ask", "account.devices.end": "ask",
   "topics.enable": "ask", "topics.delete": "ask", "chats.delete": "ask", "chats.clear": "ask",
   "replies.send": "deny",
   "mcp.authority": "deny",
@@ -186,9 +186,9 @@ An agent never deletes a message for everyone, and never ends the owner's other 
 - **Enforced by:** `cli-core: src/mcp/mcp.test.ts`.
 - **Example:** MCP `messages delete` has no `for_everyone` argument. A messenger whose every delete is for everyone
   sets `Messenger.deleteForMe: false`, and there the MCP delete refuses with `permission_error` without connecting.
-  No MCP command ends sessions; `account sessions end` exists only on the command line.
-- **Exceptions:** the owner still has `messages delete --for-everyone` and `account sessions end` on the command line.
-  The sessions limit holds today only because no agent command was written for it.
+  No MCP command logs out other devices; `account devices end` exists only on the command line.
+- **Exceptions:** the owner still has `messages delete --for-everyone` and `account devices end` on the command line.
+  The devices limit holds today only because no agent command was written for it.
 - **Applies to:** messenger CLIs. **Since:** cli-base 0.41.0. **Rulings:** NEED-202, NEED-1423.
 
 ### WC-PERM-12 · `<PREFIX>_READ_ONLY` refuses every write
